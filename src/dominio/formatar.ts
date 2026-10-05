@@ -19,3 +19,17 @@ export const ROTULO_FORMATO: Record<Formato, string> = {
   stories: 'Stories',
   tiktok: 'TikTok',
 }
+
+const DATA_HORA = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Belem',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+export function formatarDataHora(d: Date): string {
+  const p = Object.fromEntries(DATA_HORA.formatToParts(d).map((x) => [x.type, x.value]))
+  return `${p.day}/${p.month}/${p.year} às ${p.hour}:${p.minute}`
+}

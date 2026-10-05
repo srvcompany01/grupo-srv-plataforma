@@ -10,3 +10,8 @@ it('tem rótulo para todo status e formato', () => {
   expect(ROTULO_STATUS.ajuste).toBe('Ajuste solicitado')
   expect(ROTULO_FORMATO.reels).toBe('Reels')
 })
+
+it('formata data e hora no fuso de Belém', async () => {
+  const { formatarDataHora } = await import('@/dominio/formatar')
+  expect(formatarDataHora(new Date('2026-10-07T02:30:00Z'))).toBe('06/10/2026 às 23:30')
+})
