@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getDb } from '@/db/conexao'
+import { dbAdmin } from '@/infra/admin'
 import { CopiarLink } from '@/componentes/CopiarLink'
 import { FormNovoCliente } from '@/componentes/FormNovoCliente'
 import { urlBase } from '@/lib/url'
@@ -8,7 +8,7 @@ import { acaoDefinirAtivo, acaoRegenerarToken } from './acoes'
 import { BotaoConfirmar } from '@/componentes/BotaoConfirmar'
 
 export default async function Clientes() {
-  const lista = await listarClientes(await getDb())
+  const lista = await listarClientes(await dbAdmin())
   const base = await urlBase()
   return (
     <main className="space-y-6">

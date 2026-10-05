@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getDb } from '@/db/conexao'
+import { dbAdmin } from '@/infra/admin'
 import { ou404 } from '@/lib/pagina'
 import { formatarData, ROTULO_FORMATO, ROTULO_STATUS } from '@/dominio/formatar'
 import { STATUS, type Status } from '@/dominio/tipos'
@@ -12,7 +12,7 @@ export default async function PostsDoCliente({ params, searchParams }: PageProps
   const { id } = await params
   const { status } = await searchParams
   const filtro = STATUS.includes(status as Status) ? (status as Status) : undefined
-  const db = await getDb()
+  const db = await dbAdmin()
   const cliente = await ou404(buscarCliente(db, id))
   const lista = await listarPosts(db, id, filtro)
 

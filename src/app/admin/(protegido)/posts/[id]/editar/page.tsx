@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getDb } from '@/db/conexao'
+import { dbAdmin } from '@/infra/admin'
 import { EditorPost } from '@/componentes/EditorPost'
 import { SeloStatus } from '@/componentes/SeloStatus'
 import { urlLeitura } from '@/infra/r2'
@@ -8,7 +8,7 @@ import { detalhePost } from '@/servicos/posts'
 
 export default async function EditarPost({ params }: PageProps<'/admin/posts/[id]/editar'>) {
   const { id } = await params
-  const { post, cliente, versoes } = await ou404(detalhePost(await getDb(), id))
+  const { post, cliente, versoes } = await ou404(detalhePost(await dbAdmin(), id))
   const atual = versoes[0]
   const midias = await Promise.all(
     atual.midias.map(async (m) => ({

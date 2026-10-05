@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getDb } from '@/db/conexao'
+import { dbAdmin } from '@/infra/admin'
 import { CartaoResposta } from '@/componentes/CartaoResposta'
 import { SeloStatus } from '@/componentes/SeloStatus'
 import { TextosPost } from '@/componentes/TextosPost'
@@ -12,7 +12,7 @@ import { detalhePost } from '@/servicos/posts'
 
 export default async function DetalhePost({ params }: PageProps<'/admin/posts/[id]'>) {
   const { id } = await params
-  const { post, cliente, versoes } = await ou404(detalhePost(await getDb(), id))
+  const { post, cliente, versoes } = await ou404(detalhePost(await dbAdmin(), id))
   const [atual, ...anteriores] = versoes
   const midiasAtuais = await midiasParaVer(atual.midias)
   const midiasAnteriores = await Promise.all(anteriores.map((v) => midiasParaVer(v.midias)))
