@@ -27,7 +27,13 @@ export function gerarChave(postId: string, nomeOriginal: string): string {
   return `posts/${postId}/${crypto.randomUUID()}${ext ? `.${ext}` : ''}`
 }
 
+/** `ARMAZENAMENTO_LOCAL=1` grava em .dados/arquivos via /api/dev-arquivos. Nunca em produção. */
+export function armazenamentoLocal(): boolean {
+  return process.env.ARMAZENAMENTO_LOCAL === '1' && process.env.NODE_ENV !== 'production'
+}
+
 export async function urlUpload(chave: string, tipoMime: string, tamanhoBytes: number): Promise<string> {
+  if (armazenamentoLocal()) return `/api/dev-arquivos/${chave}`
   const cmd = new PutObjectCommand({
     Bucket: exigir('R2_BUCKET'),
     Key: chave,
@@ -38,6 +44,9 @@ export async function urlUpload(chave: string, tipoMime: string, tamanhoBytes: n
 }
 
 export async function urlLeitura(chave: string, opcoes: { download?: string } = {}): Promise<string> {
+  if (armazenamentoLocal()) {
+    return `/api/dev-arquivos/${chave}${opcoes.download ? `?download=${encodeURIComponent(opcoes.download)}` : ''}`
+  }
   const cmd = new GetObjectCommand({
     Bucket: exigir('R2_BUCKET'),
     Key: chave,
