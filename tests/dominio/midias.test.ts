@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validarArquivo, validarConjunto } from '@/dominio/midias'
+import { validarArquivo, validarConjunto, validarEntrada } from '@/dominio/midias'
 import type { MidiaEntrada, TipoMidia } from '@/dominio/tipos'
 import { ErroRegra, type CodigoErro } from '@/dominio/erros'
 
@@ -52,5 +52,34 @@ describe('validarConjunto', () => {
     expect(codigoDe(() => validarConjunto(imagens(21)))).toBe('midias_invalidas')
     expect(codigoDe(() => validarConjunto([m('video'), m('imagem', 1)]))).toBe('midias_invalidas')
     expect(codigoDe(() => validarConjunto([m('video'), m('video', 1)]))).toBe('midias_invalidas')
+  })
+})
+
+describe('validarEntrada', () => {
+  const e = (extra: Partial<MidiaEntrada>): MidiaEntrada => ({
+    chave: 'posts/p/x.jpg', tipo: 'imagem', nomeOriginal: 'x.jpg', tamanhoBytes: 10, ...extra,
+  })
+
+  it('aceita tipo coerente com a extensão da chave', () => {
+    expect(codigoDe(() => validarEntrada(e({})))).toBeUndefined()
+    expect(codigoDe(() => validarEntrada(e({ chave: 'posts/p/x.mov', tipo: 'video' })))).toBeUndefined()
+  })
+
+  it('recusa tipo que não bate com a extensão', () => {
+    expect(codigoDe(() => validarEntrada(e({ chave: 'posts/p/x.mp4', tipo: 'imagem' })))).toBe('midias_invalidas')
+    expect(codigoDe(() => validarEntrada(e({ tipo: 'qualquer' as TipoMidia })))).toBe('midias_invalidas')
+  })
+
+  it('recusa extensão desconhecida', () => {
+    expect(codigoDe(() => validarEntrada(e({ chave: 'posts/p/x.gif' })))).toBe('chave_invalida')
+    expect(codigoDe(() => validarEntrada(e({ chave: 'posts/p/x' })))).toBe('chave_invalida')
+  })
+
+  it('recusa tamanho fora de 1 byte a 1 GB e nome vazio', () => {
+    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 0 })))).toBe('midias_invalidas')
+    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: -5 })))).toBe('midias_invalidas')
+    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 1.5 })))).toBe('midias_invalidas')
+    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 1024 ** 3 + 1 })))).toBe('arquivo_grande')
+    expect(codigoDe(() => validarEntrada(e({ nomeOriginal: '' })))).toBe('midias_invalidas')
   })
 })

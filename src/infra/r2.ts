@@ -1,5 +1,6 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { EXTENSAO_POR_TIPO } from '@/dominio/midias'
 
 const EXPIRA_UPLOAD = 60 * 60
 const EXPIRA_LEITURA = 6 * 60 * 60
@@ -24,10 +25,11 @@ function s3(): S3Client {
   return cliente
 }
 
-export function gerarChave(postId: string, nomeOriginal: string): string {
-  const ponto = nomeOriginal.lastIndexOf('.')
-  const ext = ponto > 0 ? nomeOriginal.slice(ponto + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : ''
-  return `posts/${postId}/${crypto.randomUUID()}${ext ? `.${ext}` : ''}`
+/** A extensão vem do tipo já validado, não do nome que o usuário deu ao arquivo. */
+export function gerarChave(postId: string, tipoMime: string): string {
+  const ext = EXTENSAO_POR_TIPO[tipoMime]
+  if (!ext) throw new Error(`Tipo sem extensão conhecida: ${tipoMime}`)
+  return `posts/${postId}/${crypto.randomUUID()}.${ext}`
 }
 
 /** `ARMAZENAMENTO_LOCAL=1` grava em .dados/arquivos via /api/dev-arquivos. Nunca em produção. */

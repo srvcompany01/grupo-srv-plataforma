@@ -14,7 +14,7 @@ import {
 } from '@/db/schema'
 import { ErroRegra } from '@/dominio/erros'
 import { exigirUuid } from '@/dominio/ids'
-import { validarConjunto } from '@/dominio/midias'
+import { validarConjunto, validarEntrada } from '@/dominio/midias'
 import { edicaoCriaNovaVersao, podeEnviar, statusAposEdicao } from '@/dominio/status'
 import type { CamposPost, Formato, MidiaEntrada, Status } from '@/dominio/tipos'
 
@@ -100,6 +100,7 @@ export async function criarPost(db: Db, clienteId: string, formato: Formato, dat
 
 export async function salvarEdicao(db: Db, postId: string, campos: CamposPost, lista: MidiaEntrada[]): Promise<void> {
   validarChaves(postId, lista)
+  lista.forEach(validarEntrada)
   await db.transaction(async (tx) => {
     const post = await lerPostParaAlterar(tx, postId)
     if (post.status !== 'rascunho' || lista.length > 0) validarConjunto(lista)

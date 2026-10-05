@@ -143,3 +143,14 @@ describe('posts', () => {
     })
   })
 })
+
+it('salvarEdicao recusa mídia com tipo que não bate com o arquivo', async () => {
+  const db = await criarDbTeste()
+  const id = await criarPost(db, (await criarCliente(db, 'X')).id, 'feed', '2026-10-07')
+  await expect(salvarEdicao(db, id, campos(), [{ ...midia(id, 'imagem', 'a.mp4') }])).rejects.toMatchObject({
+    codigo: 'midias_invalidas',
+  })
+  await expect(salvarEdicao(db, id, campos(), [{ ...midia(id), tamanhoBytes: -1 }])).rejects.toMatchObject({
+    codigo: 'midias_invalidas',
+  })
+})

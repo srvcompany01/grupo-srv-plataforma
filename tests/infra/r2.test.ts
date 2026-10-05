@@ -10,9 +10,9 @@ beforeAll(() => {
   })
 })
 
-it('gera chave dentro do post com extensão minúscula', () => {
-  expect(gerarChave('p1', 'Foto Final.JPG')).toMatch(/^posts\/p1\/[0-9a-f-]{36}\.jpg$/)
-  expect(gerarChave('p1', 'semextensao')).toMatch(/^posts\/p1\/[0-9a-f-]{36}$/)
+it('gera chave dentro do post com extensão derivada do tipo', () => {
+  expect(gerarChave('p1', 'image/jpeg')).toMatch(/^posts\/p1\/[0-9a-f-]{36}\.jpg$/)
+  expect(gerarChave('p1', 'video/quicktime')).toMatch(/^posts\/p1\/[0-9a-f-]{36}\.mov$/)
 })
 
 it('URL de upload expira em 1 h e aponta para o bucket', async () => {

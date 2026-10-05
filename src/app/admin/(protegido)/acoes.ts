@@ -69,7 +69,7 @@ export async function acaoPedirUpload(
   try {
     const tipo = validarArquivo(arquivo)
     await detalhePost(await getDb(), postId)
-    const chave = gerarChave(postId, arquivo.nome)
+    const chave = gerarChave(postId, arquivo.tipoMime)
     return { chave, tipo, url: await urlUpload(chave, arquivo.tipoMime, arquivo.tamanhoBytes) }
   } catch (e) {
     return { erro: mensagemErro(e) }
