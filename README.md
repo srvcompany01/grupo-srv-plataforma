@@ -26,15 +26,7 @@ DATABASE_URL=... npx drizzle-kit migrate # aplica migrações no Neon
 
 ## Implantação
 
-1. **Cloudflare R2**
-   - Crie a conta → R2 → bucket `srv-conteudo` (privado, sem domínio público).
-   - Gere um token de API "Object Read & Write" restrito a esse bucket.
-     Anote Account ID, Access Key ID e Secret Access Key.
-   - Em Settings → CORS policy do bucket:
-     ```json
-     [{ "AllowedOrigins": ["https://conteudo.gruposrv.com.br", "http://localhost:3000"],
-        "AllowedMethods": ["GET", "PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
-     ```
+1. **Cloudflare R2** — passo a passo abaixo, em [Etapa Cloudflare](#etapa-cloudflare-r2).
 2. **Vercel**: crie o projeto `grupo-srv-conteudo` a partir desta pasta (`npx vercel`).
 3. **Neon**: no projeto, Storage → Neon → criar banco. Isso preenche `DATABASE_URL`.
    Rode as migrações: `DATABASE_URL=<url> npx drizzle-kit migrate`.
@@ -54,3 +46,87 @@ DATABASE_URL=... npx drizzle-kit migrate # aplica migrações no Neon
 
 Altere `ADMIN_SENHA` na Vercel e reimplante. Para derrubar todas as sessões abertas,
 troque também `SESSAO_SEGREDO`.
+
+---
+
+## Etapa Cloudflare (R2)
+
+Onde ficam as fotos e os vídeos. Plano gratuito: 10 GB armazenados, download sempre grátis.
+Os nomes dos menus podem variar um pouco; o caminho é este.
+
+### ☐ 1. Criar a conta
+
+- Acesse **https://dash.cloudflare.com/sign-up**, crie a conta e confirme o e-mail.
+- Se pedir para adicionar um site/domínio, **pule** — não é necessário.
+
+### ☐ 2. Ativar o R2
+
+- Menu lateral → **R2 Object Storage**.
+- Ele pede um **cartão de crédito** para ativar, mesmo no plano gratuito.
+  Só há cobrança acima de 10 GB armazenados.
+
+### ☐ 3. Criar o bucket
+
+- **Create bucket**
+  - Nome: `srv-conteudo`
+  - Location: **Automatic**
+  - Storage class: **Standard**
+- **Create bucket**.
+- ⚠️ **Não** ative "Public access" nem domínio público. O bucket fica privado.
+
+### ☐ 4. Configurar o CORS
+
+Permite que o navegador envie o arquivo direto para o R2.
+
+- Dentro do bucket → **Settings** → **CORS Policy** → **Add CORS policy**.
+- Apague o que estiver no campo, cole o texto abaixo e salve:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://conteudo.gruposrv.com.br", "http://localhost:3000"],
+    "AllowedMethods": ["GET", "PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+### ☐ 5. Gerar a chave de acesso
+
+- Página inicial do R2 → **Manage API tokens** (ou "API" → "Manage R2 API Tokens").
+- **Create API token**:
+  - Permissions: **Object Read & Write**
+  - Specify bucket: **Apply to specific buckets only** → `srv-conteudo`
+  - TTL: **Forever**
+- **Create**.
+- A tela seguinte mostra **Access Key ID** e **Secret Access Key**.
+  ⚠️ **Copie os dois agora** — o Secret aparece uma única vez.
+- Anote também o **Account ID**. ⚠️ O painel tem vários códigos de 32 caracteres parecidos.
+  O certo é o trecho antes de `.r2.cloudflarestorage.com` no campo **S3 API** do bucket
+  (Settings), o mesmo que aparece em `dash.cloudflare.com/<ACCOUNT_ID>/r2/...`.
+  Com o ID errado, a conexão falha com "SSL handshake failure".
+
+### ☐ 6. Colocar as chaves no projeto
+
+⚠️ Não cole o Secret em chat, e-mail ou WhatsApp.
+
+Abra o arquivo **`.env.local`** (na raiz deste projeto — **não** este README) e:
+
+1. **Apague** a linha `ARMAZENAMENTO_LOCAL=1`.
+2. **Adicione** no final, trocando pelos seus valores:
+
+```
+R2_ACCOUNT_ID=seu-account-id
+R2_ACCESS_KEY_ID=sua-access-key-id
+R2_SECRET_ACCESS_KEY=seu-secret
+R2_BUCKET=srv-conteudo
+```
+
+O banco continua local por enquanto (`DATABASE_URL=pglite:...`).
+
+### ☐ 7. Testar
+
+Avise o Claude que terminou: ele sobe o sistema localmente e faz um upload real de
+foto e vídeo para o R2. Os mesmos quatro valores do passo 6 vão depois para as
+variáveis de ambiente da Vercel.
