@@ -8,7 +8,9 @@ import type { MidiaParaVer } from '@/lib/midias-view'
 export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[]; formato: Formato }) {
   const [atual, setAtual] = useState(0)
   const trilho = useRef<HTMLDivElement>(null)
-  const proporcao = formato === 'feed' ? 'aspect-[4/5]' : 'aspect-[9/16]'
+  // max-w limita a altura a ~60% da tela, para os botões de resposta aparecerem sem rolar
+  const proporcao =
+    formato === 'feed' ? 'aspect-[4/5] mx-auto max-w-[calc(60vh*4/5)]' : 'aspect-[9/16] mx-auto max-w-[calc(60vh*9/16)]'
 
   function irPara(i: number) {
     const el = trilho.current
