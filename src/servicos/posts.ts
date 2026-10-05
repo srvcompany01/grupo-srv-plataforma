@@ -64,6 +64,18 @@ async function lerPost(tx: Tx | Db, postId: string): Promise<Post> {
   return p
 }
 
+/**
+ * Lê com trava de linha: se o cliente responder durante a edição, a resposta
+ * espera, ou a edição vê o status novo e cria outra versão em vez de alterar
+ * a versão que acabou de ser aprovada.
+ */
+async function lerPostParaAlterar(tx: Tx, postId: string): Promise<Post> {
+  exigirUuid(postId)
+  const [p] = await tx.select().from(posts).where(eq(posts.id, postId)).for('update')
+  if (!p) throw new ErroRegra('nao_encontrado', 'Post não encontrado.')
+  return p
+}
+
 async function inserirMidias(tx: Tx, versaoId: string, lista: MidiaEntrada[]) {
   if (lista.length === 0) return
   await tx.insert(midias).values(
@@ -89,7 +101,7 @@ export async function criarPost(db: Db, clienteId: string, formato: Formato, dat
 export async function salvarEdicao(db: Db, postId: string, campos: CamposPost, lista: MidiaEntrada[]): Promise<void> {
   validarChaves(postId, lista)
   await db.transaction(async (tx) => {
-    const post = await lerPost(tx, postId)
+    const post = await lerPostParaAlterar(tx, postId)
     if (post.status !== 'rascunho' || lista.length > 0) validarConjunto(lista)
 
     const textos = { ideia: campos.ideia, objetivo: campos.objetivo, legenda: campos.legenda }
@@ -120,7 +132,7 @@ export async function salvarEdicao(db: Db, postId: string, campos: CamposPost, l
 
 export async function enviarParaAprovacao(db: Db, postId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const post = await lerPost(tx, postId)
+    const post = await lerPostParaAlterar(tx, postId)
     if (!podeEnviar(post.status)) throw new ErroRegra('status_invalido', 'Este post já foi enviado.')
     const atual = await versaoAtual(tx, postId)
     const lista = await tx.select().from(midias).where(eq(midias.versaoId, atual.id))
