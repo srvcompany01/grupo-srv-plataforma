@@ -1,11 +1,16 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getDb } from '@/db/conexao'
+import { CabecalhoCliente } from '@/componentes/CabecalhoCliente'
 import { CartaoResposta } from '@/componentes/CartaoResposta'
+import { EtiquetaFormato } from '@/componentes/EtiquetaFormato'
 import { FormResposta } from '@/componentes/FormResposta'
+import { Icone } from '@/componentes/Icone'
+import { Propriedades } from '@/componentes/Propriedades'
 import { SeloStatus } from '@/componentes/SeloStatus'
 import { TextosPost } from '@/componentes/TextosPost'
 import { VisualizadorMidia } from '@/componentes/VisualizadorMidia'
+import { formatarData } from '@/dominio/formatar'
 import { midiasParaVer } from '@/lib/midias-view'
 import { ou404 } from '@/lib/pagina'
 import { buscarClientePorToken } from '@/servicos/clientes'
@@ -21,20 +26,31 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
   const midias = await midiasParaVer(atual.midias)
 
   return (
-    <main className="mx-auto max-w-[480px] space-y-5 p-4 pb-10">
-      <div className="flex items-center justify-between">
-        <Link href={`/c/${token}`} className="text-sm text-neutral-500">
-          ← Todos os posts
+    <>
+      <CabecalhoCliente nome={cliente.nome} token={token} />
+      <main className="mx-auto max-w-[560px] space-y-5 p-4 pb-12">
+        <Link href={`/c/${token}`} className="inline-flex items-center gap-1 text-[13px] text-texto-2 hover:text-marca">
+          <Icone nome="voltar" className="h-4 w-4" /> Todos os posts
         </Link>
-        <SeloStatus status={post.status} />
-      </div>
-      <VisualizadorMidia midias={midias} formato={post.formato} />
-      {post.status === 'aguardando' ? (
-        <FormResposta token={token} postId={post.id} versaoNumero={atual.numero} />
-      ) : (
-        atual.resposta && <CartaoResposta resposta={atual.resposta} />
-      )}
-      <TextosPost formato={post.formato} dataPrevista={post.dataPrevista} {...atual} />
-    </main>
+        <VisualizadorMidia midias={midias} formato={post.formato} />
+        {post.status === 'aguardando' ? (
+          <FormResposta token={token} postId={post.id} versaoNumero={atual.numero} />
+        ) : (
+          atual.resposta && <CartaoResposta resposta={atual.resposta} />
+        )}
+        <div className="space-y-5 rounded-xl border border-borda bg-white p-4">
+          <Propriedades
+            itens={[
+              { icone: 'status', rotulo: 'Status', valor: <SeloStatus status={post.status} /> },
+              { icone: 'formato', rotulo: 'Formato', valor: <EtiquetaFormato formato={post.formato} /> },
+              { icone: 'calendario', rotulo: 'Data prevista', valor: formatarData(post.dataPrevista) },
+            ]}
+          />
+          <div className="border-t border-borda pt-5">
+            <TextosPost {...atual} />
+          </div>
+        </div>
+      </main>
+    </>
   )
 }

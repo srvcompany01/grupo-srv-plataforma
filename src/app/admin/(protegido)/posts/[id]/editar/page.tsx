@@ -1,7 +1,6 @@
-import Link from 'next/link'
-import { dbAdmin } from '@/infra/admin'
+import { Cabecalho } from '@/componentes/Cabecalho'
 import { EditorPost } from '@/componentes/EditorPost'
-import { SeloStatus } from '@/componentes/SeloStatus'
+import { dbAdmin } from '@/infra/admin'
 import { urlLeitura } from '@/infra/r2'
 import { ou404 } from '@/lib/pagina'
 import { detalhePost } from '@/servicos/posts'
@@ -21,35 +20,39 @@ export default async function EditarPost({ params }: PageProps<'/admin/posts/[id
   )
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <Link href={`/admin/clientes/${cliente.id}`} className="text-sm text-neutral-500 hover:text-neutral-900">
-          ← {cliente.nome}
-        </Link>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold">Editar post</h1>
-          <SeloStatus status={post.status} />
-        </div>
-      </div>
-      {post.status === 'ajuste' && atual.resposta && (
-        <blockquote className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
-          <p className="font-medium">{atual.resposta.nomeRespondente} pediu ajuste:</p>
-          <p className="whitespace-pre-wrap">{atual.resposta.comentario}</p>
-        </blockquote>
-      )}
-      <EditorPost
-        postId={post.id}
-        status={post.status}
-        proximaVersao={atual.numero + 1}
-        iniciais={{
-          formato: post.formato,
-          dataPrevista: post.dataPrevista,
-          ideia: atual.ideia,
-          objetivo: atual.objetivo,
-          legenda: atual.legenda,
-        }}
-        midiasIniciais={midias}
+    <>
+      <Cabecalho
+        trilha={[
+          { rotulo: 'Clientes', href: '/admin' },
+          { rotulo: cliente.nome, href: `/admin/clientes/${cliente.id}` },
+          { rotulo: atual.ideia.split('\n')[0] || 'Post', href: `/admin/posts/${post.id}` },
+          { rotulo: 'Editar' },
+        ]}
       />
-    </main>
+      <main className="flex-1 overflow-auto bg-white">
+        <div className="mx-auto max-w-3xl space-y-6 px-4 pt-6 sm:px-8">
+          <h1 className="text-2xl font-semibold">Editar post</h1>
+          {post.status === 'ajuste' && atual.resposta && (
+            <div className="rounded-lg border border-st-ajuste/30 bg-orange-50 p-3 text-[14px]">
+              <p className="font-medium text-st-ajuste">{atual.resposta.nomeRespondente} pediu ajuste</p>
+              <p className="mt-1 whitespace-pre-wrap">{atual.resposta.comentario}</p>
+            </div>
+          )}
+          <EditorPost
+            postId={post.id}
+            status={post.status}
+            proximaVersao={atual.numero + 1}
+            iniciais={{
+              formato: post.formato,
+              dataPrevista: post.dataPrevista,
+              ideia: atual.ideia,
+              objetivo: atual.objetivo,
+              legenda: atual.legenda,
+            }}
+            midiasIniciais={midias}
+          />
+        </div>
+      </main>
+    </>
   )
 }

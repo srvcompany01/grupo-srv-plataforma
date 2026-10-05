@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition, type ReactNode } from 'react'
-import { botaoSecundario } from '@/lib/ui'
+import { botaoFantasma } from '@/lib/ui'
 
 export function BotaoConfirmar({
   acao,
@@ -17,7 +17,7 @@ export function BotaoConfirmar({
     <button
       type="button"
       disabled={pendente}
-      className={botaoSecundario}
+      className={botaoFantasma}
       onClick={() => {
         if (pergunta && !window.confirm(pergunta)) return
         iniciar(() => acao())

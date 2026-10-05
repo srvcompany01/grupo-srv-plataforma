@@ -18,12 +18,12 @@ export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[];
   }
 
   if (midias.length === 0) {
-    return <div className={`${proporcao} w-full rounded-2xl bg-neutral-200`} />
+    return <div className={`${proporcao} w-full rounded-xl bg-hover`} />
   }
 
   return (
     <div className="space-y-2">
-      <div className={`relative ${proporcao} w-full overflow-hidden rounded-2xl bg-black`}>
+      <div className={`relative ${proporcao} w-full overflow-hidden rounded-xl bg-black ring-1 ring-borda`}>
         <div
           ref={trilho}
           onScroll={(e) => setAtual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
@@ -50,7 +50,7 @@ export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[];
                 type="button"
                 aria-label="Anterior"
                 onClick={() => irPara(atual - 1)}
-                className="absolute left-2 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-white/80 sm:block"
+                className="absolute left-2 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-white/90 text-texto shadow sm:block"
               >
                 ‹
               </button>
@@ -60,7 +60,7 @@ export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[];
                 type="button"
                 aria-label="Próxima"
                 onClick={() => irPara(atual + 1)}
-                className="absolute right-2 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-white/80 sm:block"
+                className="absolute right-2 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-white/90 text-texto shadow sm:block"
               >
                 ›
               </button>
@@ -71,12 +71,12 @@ export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[];
       {midias.length > 1 && (
         <div className="flex justify-center gap-1.5">
           {midias.map((_, i) => (
-            <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === atual ? 'bg-neutral-900' : 'bg-neutral-300'}`} />
+            <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === atual ? 'bg-marca' : 'bg-borda-forte'}`} />
           ))}
         </div>
       )}
       {midias.length === 1 && midias[0].tipo === 'video' && (
-        <a href={midias[0].urlDownload} className="block text-center text-sm text-neutral-500 underline">
+        <a href={midias[0].urlDownload} className="block text-center text-[13px] text-texto-2 hover:text-marca">
           Não carregou? Baixar o vídeo
         </a>
       )}

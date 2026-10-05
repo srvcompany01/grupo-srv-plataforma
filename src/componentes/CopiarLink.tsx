@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { botaoSecundario } from '@/lib/ui'
+import { botaoFantasma } from '@/lib/ui'
+import { Icone } from './Icone'
 
 export function CopiarLink({ nome, url }: { nome: string; url: string }) {
   const [copiado, setCopiado] = useState(false)
@@ -16,8 +17,16 @@ export function CopiarLink({ nome, url }: { nome: string; url: string }) {
     }
   }
   return (
-    <button type="button" onClick={copiar} className={botaoSecundario}>
-      {copiado ? 'Copiado ✓' : 'Copiar mensagem com link'}
+    <button type="button" onClick={copiar} className={`${botaoFantasma} ${copiado ? 'text-st-aprovado' : ''}`}>
+      <Icone nome={copiado ? 'check' : 'link'} className="h-3.5 w-3.5" />
+      {copiado ? (
+        'Copiado'
+      ) : (
+        <>
+          <span className="sm:hidden">Copiar link</span>
+          <span className="hidden sm:inline">Copiar mensagem com link</span>
+        </>
+      )}
     </button>
   )
 }

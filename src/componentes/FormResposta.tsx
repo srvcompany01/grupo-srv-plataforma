@@ -3,7 +3,8 @@
 import { useState, useSyncExternalStore, useTransition } from 'react'
 import { acaoResponder } from '@/app/c/[token]/acoes'
 import type { Decisao } from '@/dominio/tipos'
-import { botao, campo } from '@/lib/ui'
+import { botao, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
+import { Icone } from './Icone'
 
 const CHAVE_NOME = 'srv_nome'
 const semAssinatura = () => () => {}
@@ -47,25 +48,25 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
   }
 
   return (
-    <div className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+    <div className="space-y-3 rounded-xl border border-borda bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       {!nomeSalvo && (
-        <label className="block text-sm">
-          Seu nome
+        <label className="block space-y-1.5">
+          <span className={rotulo}>Seu nome</span>
           <input value={nomeDigitado} onChange={(e) => setNome(e.target.value)} className={campo} autoComplete="name" />
         </label>
       )}
       {nomeSalvo && (
-        <p className="text-sm text-neutral-500">
+        <p className="text-[13px] text-texto-2">
           Respondendo como <strong>{nomeSalvo}</strong>{' '}
-          <button type="button" className="underline" onClick={() => setTrocando(true)}>
+          <button type="button" className="font-medium text-marca" onClick={() => setTrocando(true)}>
             trocar
           </button>
         </p>
       )}
 
       {decisao === 'ajuste' && (
-        <label className="block text-sm">
-          O que precisa ser ajustado?
+        <label className="block space-y-1.5">
+          <span className={rotulo}>O que precisa ser ajustado?</span>
           <textarea
             rows={4}
             autoFocus
@@ -76,14 +77,14 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
           />
         </label>
       )}
-      {erro && <p className="text-sm text-rose-700">{erro}</p>}
+      {erro && <p className="text-[13px] text-rose-600">{erro}</p>}
 
       {decisao === 'ajuste' ? (
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" disabled={enviando} onClick={() => setDecisao(null)} className={`${botao} border border-neutral-300`}>
+          <button type="button" disabled={enviando} onClick={() => setDecisao(null)} className={`${botaoSecundario} h-11`}>
             Voltar
           </button>
-          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')} className={`${botao} bg-rose-600 py-3 text-white`}>
+          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')} className={`${botao} h-11 bg-st-ajuste text-white hover:brightness-95`}>
             {enviando ? 'Enviando…' : 'Enviar ajuste'}
           </button>
         </div>
@@ -93,12 +94,16 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
             type="button"
             disabled={enviando}
             onClick={() => setDecisao('ajuste')}
-            className={`${botao} border border-neutral-300 py-3`}
+            className={`${botaoSecundario} h-11 text-sm`}
           >
-            Pedir ajuste
+            <Icone nome="mensagem" className="h-4 w-4" /> Pedir ajuste
           </button>
-          <button type="button" disabled={enviando} onClick={() => enviar('aprovado')} className={`${botao} bg-emerald-600 py-3 text-white`}>
-            {enviando ? 'Enviando…' : 'Aprovar'}
+          <button type="button" disabled={enviando} onClick={() => enviar('aprovado')} className={`${botaoPrimario} h-11 text-sm`}>
+            {enviando ? 'Enviando…' : (
+              <>
+                <Icone nome="check" className="h-4 w-4" /> Aprovar
+              </>
+            )}
           </button>
         </div>
       )}

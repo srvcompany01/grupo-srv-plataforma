@@ -1,32 +1,17 @@
-import { formatarData, ROTULO_FORMATO } from '@/dominio/formatar'
-import type { Formato } from '@/dominio/tipos'
+import { rotulo } from '@/lib/ui'
 
-export function TextosPost({
-  formato,
-  dataPrevista,
-  ideia,
-  objetivo,
-  legenda,
-}: {
-  formato: Formato
-  dataPrevista: string
-  ideia: string
-  objetivo: string
-  legenda: string
-}) {
+/** Ideia, objetivo e legenda exatamente como digitados (sem caixa alta, com quebras). */
+export function TextosPost({ ideia, objetivo, legenda }: { ideia: string; objetivo: string; legenda: string }) {
   return (
-    <div className="space-y-4 text-sm">
-      <p className="text-neutral-500">
-        {ROTULO_FORMATO[formato]} · previsto para {formatarData(dataPrevista)}
-      </p>
+    <div className="space-y-5">
       {[
         ['Ideia', ideia],
         ['Objetivo', objetivo],
         ['Legenda', legenda],
       ].map(([titulo, texto]) => (
         <section key={titulo}>
-          <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">{titulo}</h3>
-          <p className="whitespace-pre-wrap break-words">{texto || '—'}</p>
+          <h3 className={`${rotulo} mb-1.5`}>{titulo}</h3>
+          <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-texto">{texto || <span className="text-texto-3">—</span>}</p>
         </section>
       ))}
     </div>

@@ -1,23 +1,33 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getDb } from '@/db/conexao'
+import { CabecalhoCliente } from '@/componentes/CabecalhoCliente'
+import { EtiquetaFormato } from '@/componentes/EtiquetaFormato'
+import { Icone } from '@/componentes/Icone'
 import { SeloStatus } from '@/componentes/SeloStatus'
-import { formatarData, ROTULO_FORMATO } from '@/dominio/formatar'
+import { formatarData } from '@/dominio/formatar'
 import type { PostResumo } from '@/servicos/posts'
 import { buscarClientePorToken } from '@/servicos/clientes'
 import { postsDoClienteParaVer } from '@/servicos/respostas'
 
-function Cartao({ token, post }: { token: string; post: PostResumo }) {
+function Linha({ token, post, mostrarStatus }: { token: string; post: PostResumo; mostrarStatus?: boolean }) {
   return (
-    <Link href={`/c/${token}/p/${post.id}`} className="block rounded-2xl bg-white p-4 shadow-sm active:bg-neutral-50">
-      <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-        <span className="text-neutral-500">
-          {ROTULO_FORMATO[post.formato]} · {formatarData(post.dataPrevista)}
-        </span>
-        <SeloStatus status={post.status} />
-      </div>
-      <p className="line-clamp-2">{post.ideia || 'Post'}</p>
-    </Link>
+    <li>
+      <Link href={`/c/${token}/p/${post.id}`} className="flex items-center gap-3 px-4 py-3 transition active:bg-hover">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <p className="truncate text-[15px] font-medium">{post.ideia || 'Post'}</p>
+          <div className="flex flex-wrap items-center gap-2 text-[13px] text-texto-2">
+            <EtiquetaFormato formato={post.formato} />
+            <span className="flex items-center gap-1">
+              <Icone nome="calendario" className="h-3.5 w-3.5 text-texto-3" />
+              {formatarData(post.dataPrevista)}
+            </span>
+            {mostrarStatus && <SeloStatus status={post.status} />}
+          </div>
+        </div>
+        <Icone nome="seta" className="h-4 w-4 shrink-0 text-texto-3" />
+      </Link>
+    </li>
   )
 }
 
@@ -29,28 +39,36 @@ export default async function AreaDoCliente({ params }: PageProps<'/c/[token]'>)
   const { pendentes, respondidos } = await postsDoClienteParaVer(db, cliente.id)
 
   return (
-    <main className="mx-auto max-w-[480px] space-y-6 p-4">
-      <header className="pt-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Aprovação de conteúdo</p>
-        <h1 className="text-2xl font-semibold">{cliente.nome}</h1>
-      </header>
-
-      <section className="space-y-3">
-        <h2 className="font-semibold">Aguardando sua aprovação ({pendentes.length})</h2>
-        {pendentes.length === 0 && <p className="text-sm text-neutral-500">Tudo em dia por aqui. ✨</p>}
-        {pendentes.map((p) => (
-          <Cartao key={p.id} token={token} post={p} />
-        ))}
-      </section>
-
-      {respondidos.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="font-semibold text-neutral-500">Já respondidos</h2>
-          {respondidos.map((p) => (
-            <Cartao key={p.id} token={token} post={p} />
-          ))}
+    <>
+      <CabecalhoCliente nome={cliente.nome} token={token} />
+      <main className="mx-auto max-w-[560px] space-y-6 p-4 pb-12">
+        <section className="space-y-2">
+          <SeloStatus status="aguardando" contagem={pendentes.length} />
+          {pendentes.length === 0 ? (
+            <div className="rounded-xl border border-borda bg-white p-6 text-center text-texto-2">
+              <Icone nome="check" className="mx-auto mb-2 h-6 w-6 text-st-aprovado" />
+              Tudo em dia por aqui.
+            </div>
+          ) : (
+            <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-white">
+              {pendentes.map((p) => (
+                <Linha key={p.id} token={token} post={p} />
+              ))}
+            </ul>
+          )}
         </section>
-      )}
-    </main>
+
+        {respondidos.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-[13px] font-semibold text-texto-2">Já respondidos · {respondidos.length}</h2>
+            <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-white">
+              {respondidos.map((p) => (
+                <Linha key={p.id} token={token} post={p} mostrarStatus />
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+    </>
   )
 }

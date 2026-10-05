@@ -2,10 +2,17 @@ import { ROTULO_STATUS } from '@/dominio/formatar'
 import type { Status } from '@/dominio/tipos'
 import { COR_STATUS } from '@/lib/ui'
 
-export function SeloStatus({ status }: { status: Status }) {
+/** Pílula sólida de status, como os cabeçalhos de grupo da visão de lista. */
+export function SeloStatus({ status, contagem }: { status: Status; contagem?: number }) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${COR_STATUS[status]}`}>
-      {ROTULO_STATUS[status]}
+    <span className="inline-flex items-center gap-2">
+      <span
+        className={`inline-flex h-[22px] items-center gap-1.5 rounded-[5px] px-2 text-[11px] font-semibold uppercase tracking-wide text-white ${COR_STATUS[status]}`}
+      >
+        <span className="h-2 w-2 rounded-full border-[1.5px] border-white/90" />
+        {ROTULO_STATUS[status]}
+      </span>
+      {contagem !== undefined && <span className="text-xs font-medium text-texto-3">{contagem}</span>}
     </span>
   )
 }
