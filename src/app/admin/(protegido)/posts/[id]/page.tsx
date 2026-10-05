@@ -7,6 +7,7 @@ import { Propriedades } from '@/componentes/Propriedades'
 import { SeloStatus } from '@/componentes/SeloStatus'
 import { TextosPost } from '@/componentes/TextosPost'
 import { VisualizadorMidia } from '@/componentes/VisualizadorMidia'
+import { nomeZip } from '@/dominio/download'
 import { formatarData, formatarDataHora } from '@/dominio/formatar'
 import { dbAdmin } from '@/infra/admin'
 import { midiasParaVer } from '@/lib/midias-view'
@@ -21,6 +22,7 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
   const cronologia = [...versoes].reverse()
   const midias = await Promise.all(cronologia.map((v) => midiasParaVer(v.midias)))
   const midiasAtuais = midias[midias.length - 1]
+  const zip = nomeZip(cliente.nome, post.dataPrevista)
 
   return (
     <>
@@ -48,7 +50,7 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
             ]}
           />
           <div className="grid gap-8 border-t border-borda pt-6 md:grid-cols-[minmax(0,340px)_1fr]">
-            <VisualizadorMidia midias={midiasAtuais} formato={post.formato} />
+            <VisualizadorMidia midias={midiasAtuais} formato={post.formato} nomeZip={zip} />
             <TextosPost {...atual} />
           </div>
         </main>
@@ -69,7 +71,7 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
                       <details className="mt-1.5">
                         <summary className="cursor-pointer text-xs font-medium text-marca hover:underline">Ver conteúdo da v{v.numero}</summary>
                         <div className="mt-3 space-y-4 rounded-lg border border-borda bg-white p-3">
-                          <VisualizadorMidia midias={midias[i]} formato={post.formato} />
+                          <VisualizadorMidia midias={midias[i]} formato={post.formato} nomeZip={zip.replace('.zip', `-v${v.numero}.zip`)} />
                           <TextosPost {...v} />
                         </div>
                       </details>

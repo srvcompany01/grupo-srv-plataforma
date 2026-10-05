@@ -10,6 +10,7 @@ import { Propriedades } from '@/componentes/Propriedades'
 import { SeloStatus } from '@/componentes/SeloStatus'
 import { TextosPost } from '@/componentes/TextosPost'
 import { VisualizadorMidia } from '@/componentes/VisualizadorMidia'
+import { nomeZip } from '@/dominio/download'
 import { formatarData } from '@/dominio/formatar'
 import { midiasParaVer } from '@/lib/midias-view'
 import { ou404 } from '@/lib/pagina'
@@ -32,7 +33,7 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
         <Link href={`/c/${token}`} className="inline-flex items-center gap-1 text-[13px] text-texto-2 hover:text-marca">
           <Icone nome="voltar" className="h-4 w-4" /> Todos os posts
         </Link>
-        <VisualizadorMidia midias={midias} formato={post.formato} />
+        <VisualizadorMidia midias={midias} formato={post.formato} nomeZip={nomeZip(cliente.nome, post.dataPrevista)} />
         {post.status === 'aguardando' ? (
           <FormResposta token={token} postId={post.id} versaoNumero={atual.numero} />
         ) : (

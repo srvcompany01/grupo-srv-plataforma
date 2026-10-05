@@ -3,9 +3,19 @@
 import { useRef, useState } from 'react'
 import type { Formato } from '@/dominio/tipos'
 import type { MidiaParaVer } from '@/lib/midias-view'
+import { BotoesDownload } from './BotoesDownload'
 
 /** Moldura com a proporção do formato: Feed 4:5, os demais 9:16. */
-export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[]; formato: Formato }) {
+export function VisualizadorMidia({
+  midias,
+  formato,
+  nomeZip,
+}: {
+  midias: MidiaParaVer[]
+  formato: Formato
+  /** Com nome, mostra os botões de download abaixo da mídia. */
+  nomeZip?: string
+}) {
   const [atual, setAtual] = useState(0)
   const trilho = useRef<HTMLDivElement>(null)
   // max-w limita a altura a ~60% da tela, para os botões de resposta aparecerem sem rolar
@@ -75,11 +85,7 @@ export function VisualizadorMidia({ midias, formato }: { midias: MidiaParaVer[];
           ))}
         </div>
       )}
-      {midias.length === 1 && midias[0].tipo === 'video' && (
-        <a href={midias[0].urlDownload} className="block text-center text-[13px] text-texto-2 hover:text-marca">
-          Não carregou? Baixar o vídeo
-        </a>
-      )}
+      {nomeZip && <BotoesDownload midias={midias} atual={atual} nomeZip={nomeZip} />}
     </div>
   )
 }
