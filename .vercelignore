@@ -1,0 +1,6 @@
+.env*
+!.env.example
+.dados
+.superpowers
+.next
+node_modules
