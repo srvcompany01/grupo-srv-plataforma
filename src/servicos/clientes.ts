@@ -2,6 +2,7 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Db } from '@/db/conexao'
 import { clientes, posts, type Cliente } from '@/db/schema'
 import { ErroRegra } from '@/dominio/erros'
+import { exigirUuid } from '@/dominio/ids'
 import { gerarToken } from '@/dominio/token'
 
 export async function criarCliente(db: Db, nome: string): Promise<Cliente> {
@@ -28,6 +29,7 @@ export async function listarClientes(db: Db): Promise<(Cliente & { pendentes: nu
 }
 
 export async function buscarCliente(db: Db, id: string): Promise<Cliente> {
+  exigirUuid(id)
   const [c] = await db.select().from(clientes).where(eq(clientes.id, id))
   if (!c) throw new ErroRegra('nao_encontrado', 'Cliente não encontrado.')
   return c
@@ -44,6 +46,7 @@ export async function buscarClientePorToken(db: Db, token: string): Promise<Clie
 }
 
 export async function regenerarToken(db: Db, id: string): Promise<string> {
+  exigirUuid(id)
   const token = gerarToken()
   const r = await db.update(clientes).set({ token }).where(eq(clientes.id, id)).returning({ id: clientes.id })
   if (r.length === 0) throw new ErroRegra('nao_encontrado', 'Cliente não encontrado.')

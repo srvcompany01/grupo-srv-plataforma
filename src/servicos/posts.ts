@@ -13,6 +13,7 @@ import {
   type Versao,
 } from '@/db/schema'
 import { ErroRegra } from '@/dominio/erros'
+import { exigirUuid } from '@/dominio/ids'
 import { validarConjunto } from '@/dominio/midias'
 import { edicaoCriaNovaVersao, podeEnviar, statusAposEdicao } from '@/dominio/status'
 import type { CamposPost, Formato, MidiaEntrada, Status } from '@/dominio/tipos'
@@ -54,13 +55,6 @@ function validarChaves(postId: string, lista: MidiaEntrada[]) {
 export async function versaoAtual(tx: Tx | Db, postId: string): Promise<Versao> {
   const [v] = await tx.select().from(versoes).where(eq(versoes.postId, postId)).orderBy(desc(versoes.numero)).limit(1)
   return v
-}
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** Ids vêm da URL; um id malformado faria o Postgres lançar erro de cast. */
-export function exigirUuid(id: string): void {
-  if (!UUID.test(id)) throw new ErroRegra('nao_encontrado', 'Não encontrado.')
 }
 
 async function lerPost(tx: Tx | Db, postId: string): Promise<Post> {

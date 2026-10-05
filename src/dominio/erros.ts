@@ -9,6 +9,7 @@ export type CodigoErro =
   | 'nome_obrigatorio'
   | 'chave_invalida'
   | 'nao_encontrado'
+  | 'campos_invalidos'
 
 export class ErroRegra extends Error {
   constructor(

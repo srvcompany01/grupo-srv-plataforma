@@ -4,7 +4,8 @@ import { posts, respostas } from '@/db/schema'
 import { ErroRegra } from '@/dominio/erros'
 import { statusAposResposta } from '@/dominio/status'
 import type { Decisao } from '@/dominio/tipos'
-import { detalhePost, exigirUuid, listarPosts, versaoAtual, type PostDetalhe, type PostResumo } from './posts'
+import { exigirUuid } from '@/dominio/ids'
+import { detalhePost, listarPosts, versaoAtual, type PostDetalhe, type PostResumo } from './posts'
 
 export interface EntradaResposta {
   clienteId: string

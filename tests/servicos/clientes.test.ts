@@ -78,3 +78,8 @@ describe('clientes', () => {
     expect(lista[0].id).toBe(a.id)
   })
 })
+
+it('buscarCliente com id malformado lança nao_encontrado, não erro do banco', async () => {
+  const db = await criarDbTeste()
+  await expect(buscarCliente(db, 'nao-e-uuid')).rejects.toMatchObject({ codigo: 'nao_encontrado' })
+})
