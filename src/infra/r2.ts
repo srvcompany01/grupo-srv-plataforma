@@ -16,6 +16,9 @@ function s3(): S3Client {
     region: 'auto',
     endpoint: `https://${exigir('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
     forcePathStyle: true,
+    // SDK >= 3.729 assina um checksum do corpo; numa URL pré-assinada seria o de um corpo vazio.
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
     credentials: { accessKeyId: exigir('R2_ACCESS_KEY_ID'), secretAccessKey: exigir('R2_SECRET_ACCESS_KEY') },
   })
   return cliente

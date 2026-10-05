@@ -26,3 +26,9 @@ it('URL de leitura expira em 6 h e pode forçar download', async () => {
   const d = await urlLeitura('posts/p1/a.mp4', { download: 'vídeo final.mov' })
   expect(decodeURIComponent(d)).toContain('attachment')
 })
+
+it('URL de upload não carrega checksum de corpo vazio (o R2 recusaria o arquivo real)', async () => {
+  const u = await urlUpload('posts/p1/a.jpg', 'image/jpeg', 100)
+  expect(u.toLowerCase()).not.toContain('x-amz-checksum')
+  expect(u.toLowerCase()).not.toContain('x-amz-sdk-checksum-algorithm')
+})
