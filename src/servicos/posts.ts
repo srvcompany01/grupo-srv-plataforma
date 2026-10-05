@@ -17,7 +17,7 @@ import { validarConjunto } from '@/dominio/midias'
 import { edicaoCriaNovaVersao, podeEnviar, statusAposEdicao } from '@/dominio/status'
 import type { CamposPost, Formato, MidiaEntrada, Status } from '@/dominio/tipos'
 
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 export interface PostResumo {
   id: string
@@ -51,12 +51,20 @@ function validarChaves(postId: string, lista: MidiaEntrada[]) {
   }
 }
 
-async function versaoAtual(tx: Tx | Db, postId: string): Promise<Versao> {
+export async function versaoAtual(tx: Tx | Db, postId: string): Promise<Versao> {
   const [v] = await tx.select().from(versoes).where(eq(versoes.postId, postId)).orderBy(desc(versoes.numero)).limit(1)
   return v
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Ids vêm da URL; um id malformado faria o Postgres lançar erro de cast. */
+export function exigirUuid(id: string): void {
+  if (!UUID.test(id)) throw new ErroRegra('nao_encontrado', 'Não encontrado.')
+}
+
 async function lerPost(tx: Tx | Db, postId: string): Promise<Post> {
+  exigirUuid(postId)
   const [p] = await tx.select().from(posts).where(eq(posts.id, postId))
   if (!p) throw new ErroRegra('nao_encontrado', 'Post não encontrado.')
   return p
