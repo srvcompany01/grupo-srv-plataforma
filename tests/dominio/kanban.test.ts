@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { grupoDePrazo, posicaoAoSoltar, statusDaCategoria } from '@/dominio/kanban'
+import { grupoDePrazo, indiceAoSoltar, posicaoAoSoltar, statusDaCategoria } from '@/dominio/kanban'
 
 describe('posicaoAoSoltar', () => {
   const col = [
@@ -65,5 +65,25 @@ describe('grupoDePrazo', () => {
     ['2026-10-13', null, 'depois'],
   ] as const)('%s (concluída %s) → %s', (prazo, concluida, esperado) => {
     expect(grupoDePrazo(prazo, concluida, '2026-10-06')).toBe(esperado)
+  })
+})
+
+describe('indiceAoSoltar', () => {
+  const col = [{ id: 'A' }, { id: 'B' }, { id: 'C' }]
+  it('soltar sobre si mesmo não move', () => {
+    expect(indiceAoSoltar(col, 'A', 'A', true)).toBeNull()
+  })
+  it('descer uma posição na mesma coluna', () => {
+    expect(indiceAoSoltar(col, 'A', 'B', true)).toBe(1)
+  })
+  it('subir para o topo na mesma coluna', () => {
+    expect(indiceAoSoltar(col, 'C', 'A', true)).toBe(0)
+  })
+  it('soltar na área vazia da própria coluna vai para o fim', () => {
+    expect(indiceAoSoltar(col, 'A', 'coluna', true)).toBe(2)
+  })
+  it('vindo de outra coluna entra antes do cartão sob o cursor', () => {
+    expect(indiceAoSoltar(col, 'X', 'B', false)).toBe(1)
+    expect(indiceAoSoltar(col, 'X', 'coluna', false)).toBe(3)
   })
 })

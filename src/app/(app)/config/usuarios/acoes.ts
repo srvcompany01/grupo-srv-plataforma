@@ -30,6 +30,14 @@ export async function convidarUsuario(_: Resultado, form: FormData): Promise<Res
   const d = v.dados
   const admin = criarClienteAdmin()
 
+  // Já existe (inclusive convite ainda não aceito): não reconvida, para não mexer em quem já está cadastrado.
+  const existente = await admin.from('profiles').select('id').eq('email', d.email).maybeSingle()
+  if (existente.error) {
+    console.error(existente.error)
+    return { erro: 'Não foi possível enviar o convite.' }
+  }
+  if (existente.data) return { erro: 'Já existe um usuário com este e-mail.' }
+
   const { data, error } = await admin.auth.admin.inviteUserByEmail(d.email, {
     data: { full_name: d.nome },
     redirectTo: `${await urlBase()}/auth/confirmar`,

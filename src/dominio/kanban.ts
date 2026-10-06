@@ -28,3 +28,17 @@ export function grupoDePrazo(prazo: string | null, concluidaEm: string | null, h
   limite.setUTCDate(limite.getUTCDate() + 6)
   return prazo <= limite.toISOString().slice(0, 10) ? 'semana' : 'depois'
 }
+
+/**
+ * Índice (na coluna de destino, sem o cartão arrastado) onde o cartão deve entrar; null = não mover.
+ * `sobreId` é o cartão sob o cursor ou o id da própria coluna (área vazia).
+ * Na mesma coluna segue a semântica de arrayMove: o cartão ocupa o lugar do cartão sob o cursor.
+ */
+export function indiceAoSoltar(destino: { id: string }[], ativoId: string, sobreId: string, mesmaColuna: boolean): number | null {
+  if (sobreId === ativoId) return null
+  const sobre = destino.findIndex((t) => t.id === sobreId)
+  if (!mesmaColuna) return sobre < 0 ? destino.length : sobre
+  const de = destino.findIndex((t) => t.id === ativoId)
+  const para = sobre < 0 ? destino.length - 1 : sobre
+  return de === para ? null : para
+}

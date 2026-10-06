@@ -183,3 +183,38 @@ describe('etiquetas e listas', () => {
     await db.query(`update lists set client_id = $2 where id = $1`, [lista, b])
   })
 })
+
+describe('arquivamento em cascata', () => {
+  it('arquivar a mãe arquiva as subtarefas', async () => {
+    const db = await criarBanco()
+    const { lista, ana } = await base(db)
+    const mae = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    const filha = await criarTarefa(db, { listId: lista, responsaveis: [ana], parentId: mae })
+    const neta = await criarTarefa(db, { listId: lista, responsaveis: [ana], parentId: filha })
+    await db.query(`update tasks set archived_at = now() where id = $1`, [mae])
+    const { rows } = await db.query<{ n: number }>(`select count(*)::int as n from tasks where archived_at is null and id in ($1, $2)`, [filha, neta])
+    expect(rows[0].n).toBe(0)
+  })
+
+  it('arquivar pasta arquiva as listas; arquivar espaço arquiva pastas e listas', async () => {
+    const db = await criarBanco()
+    const { conteudo, a } = await base(db)
+    const pasta = (await db.query<{ id: string }>(`insert into folders (space_id, name, position) values ($1, 'P', 'a0') returning id`, [conteudo])).rows[0].id
+    const naPasta = await criarLista(db, { spaceId: conteudo, clientId: a, folderId: pasta })
+    await db.query(`update folders set archived_at = now() where id = $1`, [pasta])
+    expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [naPasta])).rows).toEqual([{ arq: true }])
+    const comercial = await idEspaco(db, 'Comercial')
+    const lc = await criarLista(db, { spaceId: comercial, clientId: a })
+    await db.query(`update spaces set archived_at = now() where id = $1`, [comercial])
+    expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [lc])).rows).toEqual([{ arq: true }])
+  })
+
+  it('desarquivar tarefa sem responsáveis é rejeitado', async () => {
+    const db = await criarBanco()
+    const { lista, ana } = await base(db)
+    const t = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    await db.query(`update tasks set archived_at = now() where id = $1`, [t])
+    await db.query(`delete from task_assignees where task_id = $1`, [t])
+    await expect(db.query(`update tasks set archived_at = null where id = $1`, [t])).rejects.toThrow(/pelo menos um responsável/)
+  })
+})

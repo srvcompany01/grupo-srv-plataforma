@@ -3,12 +3,8 @@
 import type { EmailOtpType } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { destinoAposConfirmar } from '@/dominio/convite'
 import { criarClienteNavegador } from '@/infra/supabase/navegador'
-
-/** Só caminhos internos (evita redirecionamento aberto). */
-function destinoSeguro(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
-}
 
 /**
  * Recebe os três formatos de link do Supabase:
@@ -23,7 +19,6 @@ export default function Confirmar() {
     const sb = criarClienteNavegador()
     const busca = new URLSearchParams(window.location.search)
     const fragmento = new URLSearchParams(window.location.hash.slice(1))
-    const destino = destinoSeguro(busca.get('next'))
 
     async function confirmar() {
       if (fragmento.get('error_description') || busca.get('error_description')) {
@@ -40,10 +35,8 @@ export default function Confirmar() {
       else if (codigo) resultado = await sb.auth.exchangeCodeForSession(codigo)
       else throw new Error('sem dados')
       if (resultado.error) throw resultado.error
-      // Convite e recuperação levam a definir senha.
-      const tipoFragmento = fragmento.get('type')
-      const precisaSenha = tipoFragmento === 'invite' || tipoFragmento === 'recovery' || tipo === 'invite' || tipo === 'recovery'
-      window.location.replace(precisaSenha ? '/login/nova-senha' : destino)
+      // Convite e recuperação levam a definir senha; o resto vai para o início.
+      window.location.replace(destinoAposConfirmar(tipo ?? fragmento.get('type')))
     }
 
     confirmar().catch(() => setErro('Este link expirou ou já foi usado. Peça um novo na tela de login.'))

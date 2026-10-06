@@ -123,3 +123,60 @@ describe('RLS de tarefas', () => {
     for (const tb of ['tasks', 'task_assignees', 'task_tags', 'tags']) expect(await ler(db, null, `select * from ${tb}`), tb).toEqual([])
   })
 })
+
+describe('mover tarefa (revisão final)', () => {
+  it('responsável de fora não move a tarefa para lista de outro departamento', async () => {
+    const db = await criarBanco()
+    const { lista, listaComercial, defora } = await base(db)
+    const m = await criarUsuario(db, { role: 'membro' })
+    await adicionarMembro(db, await idEspaco(db, 'Tráfego'), m, 'membro')
+    const t = await criarTarefa(db, { listId: lista, responsaveis: [m] })
+    await expect(executar(db, m, `update tasks set list_id = $2 where id = $1`, [t, listaComercial])).rejects.toThrow(
+      /não tem acesso à lista de destino/,
+    )
+    expect(defora).toBeTruthy()
+  })
+
+  it('membro do espaço não move tarefa para lista de espaço alheio', async () => {
+    const db = await criarBanco()
+    const { lista, listaComercial, membro } = await base(db)
+    const t = await criarTarefa(db, { listId: lista, responsaveis: [membro] })
+    await expect(executar(db, membro, `update tasks set list_id = $2 where id = $1`, [t, listaComercial])).rejects.toThrow(
+      /não tem acesso à lista de destino/,
+    )
+  })
+
+  it('não pendura tarefa sob tarefa que não enxerga', async () => {
+    const db = await criarBanco()
+    const { lista, listaComercial, membro, defora } = await base(db)
+    const t = await criarTarefa(db, { listId: lista, responsaveis: [membro] })
+    const alheia = await criarTarefa(db, { listId: listaComercial, responsaveis: [defora] })
+    await expect(executar(db, membro, `update tasks set parent_task_id = $2 where id = $1`, [t, alheia])).rejects.toThrow(
+      /não tem acesso/,
+    )
+  })
+
+  it('membro move tarefa entre listas do próprio espaço', async () => {
+    const db = await criarBanco()
+    const { lista, membro, conteudo } = await base(db)
+    const outra = await criarLista(db, { spaceId: conteudo, clientId: await criarCliente(db, 'B') })
+    const t = await criarTarefa(db, { listId: lista, responsaveis: [membro] })
+    expect(await executar(db, membro, `update tasks set list_id = $2 where id = $1`, [t, outra])).toBe(1)
+  })
+})
+
+describe('anônimo e funções', () => {
+  it('anônimo não executa funções auxiliares', async () => {
+    const db = await criarBanco()
+    const { lista } = await base(db)
+    await expect(ler(db, null, `select list_space($1)`, [lista])).rejects.toThrow(/permission denied/)
+    await expect(ler(db, null, `select primeiro_status_a_fazer($1)`, [lista])).rejects.toThrow(/permission denied/)
+    await expect(ler(db, null, `select is_admin()`)).rejects.toThrow(/permission denied/)
+  })
+
+  it('usuário logado continua executando as funções usadas pelo app', async () => {
+    const db = await criarBanco()
+    const { membro, conteudo } = await base(db)
+    expect(await ler(db, membro, `select is_space_manager($1) as r`, [conteudo])).toEqual([{ r: false }])
+  })
+})

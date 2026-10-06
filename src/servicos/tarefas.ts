@@ -8,7 +8,7 @@ import { dados } from './resultado'
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string }
 
 const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
-  lists!inner(name, space_id, reference_month, clients(name)),
+  lists!inner(name, space_id, reference_month, archived_at, clients(name)),
   task_assignees(profiles(id, full_name, avatar_url)),
   task_tags(tags(id, name, color))`
 
@@ -19,7 +19,8 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtr
   if (filtros.responsaveis.length || 'responsavelId' in escopo) campos += ', filtro_resp:task_assignees!inner(user_id)'
   if (filtros.tags.length) campos += ', filtro_tag:task_tags!inner(tag_id)'
 
-  let q = sb.from('tasks').select(campos).is('archived_at', null)
+  // Lista arquivada (ou de pasta/departamento arquivado, que arquivam as listas) some das telas.
+  let q = sb.from('tasks').select(campos).is('archived_at', null).is('lists.archived_at', null)
 
   if ('listaId' in escopo) q = q.eq('list_id', escopo.listaId)
   if ('espacoId' in escopo) {

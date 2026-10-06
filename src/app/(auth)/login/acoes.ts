@@ -53,7 +53,7 @@ export async function esqueciSenha(_: Estado, form: FormData): Promise<Estado> {
   const email = lerEmail(form)
   if (!email) return { erro: 'Informe um e-mail válido.' }
   const { error } = await clienteLinkPorEmail().auth.resetPasswordForEmail(email, {
-    redirectTo: `${await urlBase()}/auth/confirmar?next=/login/nova-senha`,
+    redirectTo: `${await urlBase()}/auth/confirmar`,
   })
   if (error?.status === 429) return { erro: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' }
   return { ok: RESPOSTA_NEUTRA }

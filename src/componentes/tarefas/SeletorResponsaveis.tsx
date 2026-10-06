@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 import { Avatar } from '@/componentes/Avatar'
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/componentes/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
+import { opcoesResponsaveis } from '@/dominio/convite'
 import type { Pessoa } from '@/dominio/tarefas'
 import { definirResponsaveisAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
@@ -41,10 +42,13 @@ export function SeletorResponsaveis({ tarefaId, atuais, equipe }: { tarefaId: st
           <CommandInput placeholder="Buscar pessoa…" />
           <CommandList>
             <CommandEmpty>Ninguém encontrado.</CommandEmpty>
-            {equipe.map((p) => (
+            {opcoesResponsaveis(equipe, atuais).map((p) => (
               <CommandItem key={p.id} value={p.nome} onSelect={() => alternar(p.id)}>
                 <Avatar nome={p.nome || '?'} tamanho="h-5 w-5 text-[9px]" />
-                <span className="flex-1">{p.nome}</span>
+                <span className="flex-1">
+                  {p.nome}
+                  {p.inativo && <span className="ml-1 text-[11px] text-texto-3">(inativo)</span>}
+                </span>
                 {marcados.has(p.id) && <Check className="h-4 w-4 text-marca" />}
               </CommandItem>
             ))}

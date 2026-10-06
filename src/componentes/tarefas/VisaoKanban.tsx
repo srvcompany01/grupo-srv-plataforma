@@ -15,7 +15,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { posicaoAoSoltar, statusDaCategoria } from '@/dominio/kanban'
+import { indiceAoSoltar, posicaoAoSoltar, statusDaCategoria } from '@/dominio/kanban'
 import type { Categoria, TarefaResumo } from '@/dominio/tarefas'
 import { moverTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
@@ -69,9 +69,9 @@ export function VisaoKanban({
     const destino = colunaDe(String(e.over.id))
     if (!origem || !destino) return
     const tarefa = itens[origem].find((t) => t.id === id)!
+    const indice = indiceAoSoltar(itens[destino], id, String(e.over.id), origem === destino)
+    if (indice === null) return
     const alvo = itens[destino].filter((t) => t.id !== id)
-    const indiceSobre = alvo.findIndex((t) => t.id === e.over!.id)
-    const indice = indiceSobre < 0 ? alvo.length : indiceSobre
     const statusId = modo === 'status' ? destino : statusDaCategoria(ctx.statusPorLista[tarefa.listaId] ?? [], destino as Categoria)
     if (!statusId) return void avisar({ erro: 'A lista desta tarefa não tem status nessa coluna.' })
     let posicao: string

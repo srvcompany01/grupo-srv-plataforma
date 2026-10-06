@@ -25,3 +25,16 @@ export function validarConvite(d: DadosConvite): { ok: true; dados: DadosConvite
   }
   return { ok: true, dados: { ...d, email, nome, clienteId: d.papel === 'cliente' ? d.clienteId : undefined } }
 }
+
+type PessoaOpcao = { id: string; nome: string; avatar: string | null }
+
+/** Opções do seletor de responsáveis: a equipe ativa + responsáveis atuais que saíram (para poder removê-los). */
+export function opcoesResponsaveis(equipe: PessoaOpcao[], atuais: PessoaOpcao[]): (PessoaOpcao & { inativo: boolean })[] {
+  const ativos = new Set(equipe.map((p) => p.id))
+  return [...equipe.map((p) => ({ ...p, inativo: false })), ...atuais.filter((p) => !ativos.has(p.id)).map((p) => ({ ...p, inativo: true }))]
+}
+
+/** Para onde ir depois de confirmar um link do e-mail. Sem parâmetro de destino: evita redirecionamento para fora. */
+export function destinoAposConfirmar(tipo: string | null): string {
+  return tipo === 'invite' || tipo === 'recovery' ? '/login/nova-senha' : '/'
+}

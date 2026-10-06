@@ -32,3 +32,28 @@ describe('validarConvite', () => {
     expect(validarConvite({ ...base, papel: 'admin', espacos: [] })).toMatchObject({ ok: true })
   })
 })
+
+describe('opcoesResponsaveis', () => {
+  it('inclui responsáveis atuais que saíram da equipe, marcados como inativos', async () => {
+    const { opcoesResponsaveis } = await import('@/dominio/convite')
+    const equipe = [{ id: 'a', nome: 'Ana', avatar: null }]
+    const atuais = [
+      { id: 'a', nome: 'Ana', avatar: null },
+      { id: 'z', nome: 'Zé', avatar: null },
+    ]
+    expect(opcoesResponsaveis(equipe, atuais)).toEqual([
+      { id: 'a', nome: 'Ana', avatar: null, inativo: false },
+      { id: 'z', nome: 'Zé', avatar: null, inativo: true },
+    ])
+  })
+})
+
+describe('destinoAposConfirmar', () => {
+  it('convite e recuperação vão definir a senha; o resto vai para o início', async () => {
+    const { destinoAposConfirmar } = await import('@/dominio/convite')
+    expect(destinoAposConfirmar('invite')).toBe('/login/nova-senha')
+    expect(destinoAposConfirmar('recovery')).toBe('/login/nova-senha')
+    expect(destinoAposConfirmar('magiclink')).toBe('/')
+    expect(destinoAposConfirmar(null)).toBe('/')
+  })
+})
