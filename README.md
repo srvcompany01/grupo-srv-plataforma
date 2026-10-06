@@ -1,4 +1,35 @@
-# Aprovação de Conteúdo — Grupo SRV
+# Plataforma Grupo SRV
+
+Gestão da agência (estilo ClickUp) em `app.gruposrv.com.br`: departamentos, clientes,
+listas, tarefas com subtarefas, Lista/Kanban, comentários e histórico, com acesso garantido
+por RLS no Supabase. Especificação: `docs/superpowers/specs/2026-10-06-plataforma-agencia-design.md`.
+
+## Ambientes
+
+| | Banco/Login | Site | Branch |
+|---|---|---|---|
+| Desenvolvimento | Supabase `srv-plataforma-dev` (`.env.local`) | `npm run dev` | qualquer |
+| Plataforma (teste) | Supabase `srv-plataforma` (`.env.producao`) | `app.gruposrv.com.br` | `feat/plataforma` (deploy automático) |
+| App antigo de aprovação | Neon + R2 | `conteudo.gruposrv.com.br` | `main` (produção) — sai na Fase 1b |
+
+## Comandos da plataforma
+
+```bash
+npm test                     # testes (RLS e regras do banco rodam no PGlite com shim do Supabase)
+npm run db:push              # aplica migrações no Supabase dev (.env.local)
+set -a; . ./.env.producao; set +a; npm run db:push   # aplica em produção
+npm run tipos                # regenera src/infra/supabase/tipos.ts
+npm run criar-admin -- <email> "<nome>"              # convida um admin (dev)
+```
+
+Modelos de e-mail e endereços de login: `supabase/config.toml` + `supabase/templates/`,
+aplicados com `npx supabase config push --project-ref <id>` (exige `SUPABASE_AUTH_SITE_URL`
+e `SUPABASE_AUTH_REDIRECT_URL` no ambiente).
+
+---
+
+# App antigo: Aprovação de Conteúdo
+
 
 Sistema em `conteudo.gruposrv.com.br`: a agência cadastra posts (ideia, objetivo,
 legenda, data, formato e mídia) e cada cliente aprova ou pede ajuste por um link
