@@ -23,3 +23,30 @@ export async function listarArvore(sb: Supabase): Promise<NoEspaco[]> {
     })),
   )
 }
+
+export type EspacoComMembros = {
+  id: string
+  nome: string
+  cor: string
+  posicao: string
+  paiId: string | null
+  membros: { id: string; nome: string; papel: 'gestor' | 'membro' }[]
+}
+
+export async function listarEspacosComMembros(sb: Supabase): Promise<EspacoComMembros[]> {
+  const linhas = dados(
+    await sb
+      .from('spaces')
+      .select('id, name, color, position, parent_id, space_members(user_id, role, profiles(full_name))')
+      .is('archived_at', null)
+      .order('position'),
+  )
+  return linhas.map((e) => ({
+    id: e.id,
+    nome: e.name,
+    cor: e.color,
+    posicao: e.position,
+    paiId: e.parent_id,
+    membros: e.space_members.map((m) => ({ id: m.user_id, nome: m.profiles?.full_name ?? '', papel: m.role as 'gestor' | 'membro' })),
+  }))
+}
