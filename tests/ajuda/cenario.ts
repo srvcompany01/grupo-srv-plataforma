@@ -87,3 +87,21 @@ export async function statusDaLista(
   )
   return rows
 }
+
+/** Tarefa + responsáveis na mesma transação (o banco exige ao menos um responsável no commit). */
+export function criarTarefa(
+  db: Banco,
+  opts: { listId: string; responsaveis: string[]; titulo?: string; parentId?: string; statusId?: string },
+): Promise<string> {
+  return db.transaction(async (tx) => {
+    const { rows } = await tx.query<{ id: string }>(
+      `insert into public.tasks (list_id, title, parent_task_id, status_id, position)
+       values ($1, $2, $3, $4, 'a0') returning id`,
+      [opts.listId, opts.titulo ?? 'Tarefa', opts.parentId ?? null, opts.statusId ?? null],
+    )
+    for (const u of opts.responsaveis) {
+      await tx.query(`insert into public.task_assignees (task_id, user_id) values ($1, $2)`, [rows[0].id, u])
+    }
+    return rows[0].id
+  })
+}
