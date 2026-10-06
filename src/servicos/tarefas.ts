@@ -150,3 +150,106 @@ export async function arquivarTarefa(sb: Supabase, id: string) {
   if (error) throw error
   if (!count) throw { code: '42501' }
 }
+
+export type TarefaCompleta = {
+  id: string
+  titulo: string
+  descricao: unknown
+  statusId: string
+  prioridade: Prioridade
+  inicio: string | null
+  prazo: string | null
+  estimativaMin: number | null
+  visivelCliente: boolean
+  concluidaEm: string | null
+  paiId: string | null
+  lista: { id: string; nome: string; espacoId: string; mes: string | null; clienteId: string; clienteNome: string }
+  responsaveis: { id: string; nome: string; avatar: string | null }[]
+  tags: { id: string; nome: string; cor: string }[]
+  subtarefas: TarefaResumo[]
+}
+
+/** null se a RLS esconder (a página responde 404). */
+export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaCompleta | null> {
+  const { data: t, error } = await sb
+    .from('tasks')
+    .select(
+      `id, title, description, status_id, priority, start_date, due_date, estimate_minutes, visible_to_client, completed_at, parent_task_id,
+       lists(id, name, space_id, reference_month, client_id, clients(name)),
+       task_assignees(profiles(id, full_name, avatar_url)),
+       task_tags(tags(id, name, color))`,
+    )
+    .eq('id', id)
+    .is('archived_at', null)
+    .maybeSingle()
+  if (error) throw error
+  if (!t) return null
+  const filhas = dados(await sb.from('tasks').select(CAMPOS_RESUMO).eq('parent_task_id', id).is('archived_at', null).order('position'))
+  return {
+    id: t.id,
+    titulo: t.title,
+    descricao: t.description,
+    statusId: t.status_id,
+    prioridade: t.priority as Prioridade,
+    inicio: t.start_date,
+    prazo: t.due_date,
+    estimativaMin: t.estimate_minutes,
+    visivelCliente: t.visible_to_client,
+    concluidaEm: t.completed_at,
+    paiId: t.parent_task_id,
+    lista: {
+      id: t.lists?.id ?? '',
+      nome: t.lists?.name ?? '',
+      espacoId: t.lists?.space_id ?? '',
+      mes: t.lists?.reference_month ?? null,
+      clienteId: t.lists?.client_id ?? '',
+      clienteNome: t.lists?.clients?.name ?? '',
+    },
+    responsaveis: t.task_assignees.flatMap((a) => (a.profiles ? [{ id: a.profiles.id, nome: a.profiles.full_name, avatar: a.profiles.avatar_url }] : [])),
+    tags: t.task_tags.flatMap((x) => (x.tags ? [{ id: x.tags.id, nome: x.tags.name, cor: x.tags.color }] : [])),
+    subtarefas: (filhas as unknown as LinhaResumo[]).map(paraResumo),
+  }
+}
+
+export async function definirEtiqueta(sb: Supabase, tarefaId: string, tagId: string, ligada: boolean) {
+  const { error } = ligada
+    ? await sb.from('task_tags').insert({ task_id: tarefaId, tag_id: tagId })
+    : await sb.from('task_tags').delete().eq('task_id', tarefaId).eq('tag_id', tagId)
+  if (error) throw error
+}
+
+export async function criarEtiqueta(sb: Supabase, espacoId: string, nome: string, cor: string): Promise<string> {
+  const { data, error } = await sb.from('tags').insert({ space_id: espacoId, name: nome, color: cor }).select('id').single()
+  if (error) throw error
+  return data.id
+}
+
+export type ItemAtividade = {
+  id: number
+  action: string
+  field: string | null
+  old_value: unknown
+  new_value: unknown
+  ator: string | null
+  criadoEm: string
+}
+
+export async function listarAtividade(sb: Supabase, tarefaId: string): Promise<ItemAtividade[]> {
+  const linhas = dados(
+    await sb
+      .from('task_activity')
+      .select('id, action, field, old_value, new_value, created_at, profiles(full_name)')
+      .eq('task_id', tarefaId)
+      .order('id', { ascending: false })
+      .limit(200),
+  )
+  return linhas.map((a) => ({
+    id: a.id,
+    action: a.action,
+    field: a.field,
+    old_value: a.old_value,
+    new_value: a.new_value,
+    ator: a.profiles?.full_name ?? null,
+    criadoEm: a.created_at,
+  }))
+}

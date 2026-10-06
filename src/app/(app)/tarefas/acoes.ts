@@ -5,6 +5,7 @@ import type { Categoria } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
+import * as comentarios from '@/servicos/comentarios'
 import * as status from '@/servicos/status'
 import * as tarefas from '@/servicos/tarefas'
 
@@ -66,4 +67,30 @@ export async function removerStatusAcao(id: string, destinoId: string): Promise<
 
 export async function reposicionarStatusAcao(id: string, antes: string | null, depois: string | null): Promise<Resultado> {
   return executar((sb) => status.reposicionarStatus(sb, id, antes, depois))
+}
+
+export async function definirEtiquetaAcao(tarefaId: string, tagId: string, ligada: boolean): Promise<Resultado> {
+  return executar((sb) => tarefas.definirEtiqueta(sb, tarefaId, tagId, ligada))
+}
+
+export async function criarEtiquetaAcao(tarefaId: string, espacoId: string, nome: string, cor: string): Promise<Resultado> {
+  if (!nome.trim()) return { erro: 'Informe o nome da etiqueta.' }
+  return executar(async (sb) => {
+    const tagId = await tarefas.criarEtiqueta(sb, espacoId, nome.trim(), cor)
+    await tarefas.definirEtiqueta(sb, tarefaId, tagId, true)
+  })
+}
+
+export async function comentarAcao(tarefaId: string, texto: string, interno: boolean): Promise<Resultado> {
+  if (!texto.trim()) return { erro: 'Escreva o comentário.' }
+  return executar((sb) => comentarios.comentar(sb, tarefaId, texto.trim(), interno))
+}
+
+export async function editarComentarioAcao(id: string, texto: string): Promise<Resultado> {
+  if (!texto.trim()) return { erro: 'O comentário não pode ficar vazio.' }
+  return executar((sb) => comentarios.editarComentario(sb, id, texto.trim()))
+}
+
+export async function apagarComentarioAcao(id: string): Promise<Resultado> {
+  return executar((sb) => comentarios.apagarComentario(sb, id))
 }

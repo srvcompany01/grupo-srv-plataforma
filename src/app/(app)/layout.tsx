@@ -5,13 +5,14 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarArvore } from '@/servicos/espacos'
 
 // Casca da área interna. Não protege as páginas (cada página chama exigirEquipe); só monta a navegação.
-export default async function LayoutApp({ children }: LayoutProps<'/'>) {
+export default async function LayoutApp({ children, painel }: LayoutProps<'/'> & { painel: React.ReactNode }) {
   const eu = await exigirEquipe()
   const arvore = await listarArvore(await criarClienteServidor())
   return (
     <div className="flex min-h-screen flex-col bg-fundo md:flex-row">
       <BarraLateral arvore={arvore} nome={eu.nome} papel={eu.papel} />
       <main className="min-w-0 flex-1">{children}</main>
+      {painel}
       <Toaster position="bottom-right" />
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import type { EmailOtpType } from '@supabase/supabase-js'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { criarClienteNavegador } from '@/infra/supabase/navegador'
 
@@ -53,9 +54,9 @@ export default function Confirmar() {
       {erro ? (
         <div className="space-y-3">
           <p className="text-sm text-rose-600">{erro}</p>
-          <a href="/login" className="text-sm text-marca hover:underline">
+          <Link href="/login" className="text-sm text-marca hover:underline">
             Ir para o login
-          </a>
+          </Link>
         </div>
       ) : (
         <p className="text-sm text-texto-2">Entrando…</p>
