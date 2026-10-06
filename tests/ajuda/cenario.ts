@@ -57,3 +57,33 @@ export function idEspaco(db: Banco, nome: string): Promise<string> {
 export function idInterno(db: Banco): Promise<string> {
   return inserir(db, `select id from public.clients where is_internal`, [])
 }
+
+export function criarPasta(db: Banco, spaceId: string, nome = 'Pasta'): Promise<string> {
+  return inserir(db, `insert into public.folders (space_id, name, position) values ($1, $2, 'a0') returning id`, [
+    spaceId,
+    nome,
+  ])
+}
+
+export function criarLista(
+  db: Banco,
+  opts: { spaceId: string; clientId: string; folderId?: string; nome?: string; mes?: string },
+): Promise<string> {
+  return inserir(
+    db,
+    `insert into public.lists (space_id, client_id, folder_id, name, reference_month, position)
+     values ($1, $2, $3, $4, $5, 'a0') returning id`,
+    [opts.spaceId, opts.clientId, opts.folderId ?? null, opts.nome ?? 'Lista', opts.mes ?? null],
+  )
+}
+
+export async function statusDaLista(
+  db: Banco,
+  listId: string,
+): Promise<{ id: string; name: string; category: string; color: string }[]> {
+  const { rows } = await db.query<{ id: string; name: string; category: string; color: string }>(
+    `select id, name, category, color from public.list_statuses where list_id = $1 order by position`,
+    [listId],
+  )
+  return rows
+}
