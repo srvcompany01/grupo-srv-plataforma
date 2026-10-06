@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Aprovação de conteúdo · Grupo SRV',
+  title: 'Grupo SRV',
   robots: { index: false, follow: false },
 }
 

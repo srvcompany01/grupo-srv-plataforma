@@ -33,3 +33,11 @@ export function formatarDataHora(d: Date): string {
   const p = Object.fromEntries(DATA_HORA.formatToParts(d).map((x) => [x.type, x.value]))
   return `${p.day}/${p.month}/${p.year} às ${p.hour}:${p.minute}`
 }
+
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+/** '2026-10-01' → 'out/26'. */
+export function rotuloMes(iso: string): string {
+  const [ano, mes] = iso.split('-')
+  return `${MESES[Number(mes) - 1]}/${ano.slice(2)}`
+}

@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { formatarData, ROTULO_FORMATO, ROTULO_STATUS } from '@/dominio/formatar'
 
 it('formata a data sem deslocar o dia por fuso', () => {
@@ -14,4 +14,12 @@ it('tem rótulo para todo status e formato', () => {
 it('formata data e hora no fuso de Belém', async () => {
   const { formatarDataHora } = await import('@/dominio/formatar')
   expect(formatarDataHora(new Date('2026-10-07T02:30:00Z'))).toBe('06/10/2026 às 23:30')
+})
+
+describe('rotuloMes', () => {
+  it('mês curto com ano de dois dígitos, sem fuso', async () => {
+    const { rotuloMes } = await import('@/dominio/formatar')
+    expect(rotuloMes('2026-10-01')).toBe('out/26')
+    expect(rotuloMes('2027-01-01')).toBe('jan/27')
+  })
 })
