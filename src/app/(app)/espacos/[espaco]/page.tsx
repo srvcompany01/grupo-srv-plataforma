@@ -17,6 +17,7 @@ import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
 import { MembrosEspaco } from '../../config/espacos/Espacos'
 import { Estrutura } from './Estrutura'
+import { IconeVisual } from '@/componentes/IconeVisual'
 
 type Aba = 'tarefas' | 'estrutura' | 'membros'
 
@@ -26,7 +27,7 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
   const [{ data: espaco }, { data: podeGerir }, { count: filhos }] = await Promise.all([
-    sb.from('spaces').select('id, name, color').eq('id', id).is('archived_at', null).maybeSingle(),
+    sb.from('spaces').select('id, name, description, color, icon, emoji').eq('id', id).is('archived_at', null).maybeSingle(),
     sb.rpc('is_space_manager', { space: id }),
     sb.from('spaces').select('id', { count: 'exact', head: true }).eq('parent_id', id),
   ])
@@ -38,10 +39,11 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
   return (
     <div className="page-shell">
       <header className="flex items-center gap-3">
-        <span className="h-3 w-3 rounded-full ring-4 ring-fundo" style={{ background: espaco.color }} />
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl text-white ring-4 ring-fundo" style={{ background: espaco.color }}><IconeVisual icone={espaco.icon} emoji={espaco.emoji} className="h-5 w-5" /></span>
         <div>
           <p className="eyebrow">Espaço</p>
           <h1 className="page-title mt-1">{espaco.name}</h1>
+          {espaco.description && <p className="mt-1 text-[13px] text-texto-2">{espaco.description}</p>}
         </div>
       </header>
       {abas.length > 1 && (

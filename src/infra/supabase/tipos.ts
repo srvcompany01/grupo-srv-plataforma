@@ -131,27 +131,86 @@ export type Database = {
           },
         ]
       }
+      custom_fields: {
+        Row: {
+          archived_at: string | null
+          color: string
+          config: Json
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          position: string
+          space_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          color?: string
+          config?: Json
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          position: string
+          space_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          color?: string
+          config?: Json
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          position?: string
+          space_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_fields_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           archived_at: string | null
+          color: string
           created_at: string
+          emoji: string | null
           id: string
+          icon: string
           name: string
           position: string
           space_id: string
         }
         Insert: {
           archived_at?: string | null
+          color?: string
           created_at?: string
+          emoji?: string | null
           id?: string
+          icon?: string
           name: string
           position: string
           space_id: string
         }
         Update: {
           archived_at?: string | null
+          color?: string
           created_at?: string
+          emoji?: string | null
           id?: string
+          icon?: string
           name?: string
           position?: string
           space_id?: string
@@ -162,6 +221,42 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      list_custom_fields: {
+        Row: {
+          created_at: string
+          field_id: string
+          list_id: string
+          position: string
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          list_id: string
+          position: string
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          list_id?: string
+          position?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_custom_fields_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_custom_fields_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
             referencedColumns: ["id"]
           },
         ]
@@ -211,9 +306,12 @@ export type Database = {
         Row: {
           archived_at: string | null
           client_id: string
+          color: string
           created_at: string
+          emoji: string | null
           folder_id: string | null
           id: string
+          icon: string
           name: string
           position: string
           reference_month: string | null
@@ -222,9 +320,12 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           client_id: string
+          color?: string
           created_at?: string
+          emoji?: string | null
           folder_id?: string | null
           id?: string
+          icon?: string
           name: string
           position: string
           reference_month?: string | null
@@ -233,9 +334,12 @@ export type Database = {
         Update: {
           archived_at?: string | null
           client_id?: string
+          color?: string
           created_at?: string
+          emoji?: string | null
           folder_id?: string | null
           id?: string
+          icon?: string
           name?: string
           position?: string
           reference_month?: string | null
@@ -339,7 +443,10 @@ export type Database = {
           archived_at: string | null
           color: string
           created_at: string
+          description: string | null
+          emoji: string | null
           id: string
+          icon: string
           name: string
           parent_id: string | null
           position: string
@@ -348,7 +455,10 @@ export type Database = {
           archived_at?: string | null
           color?: string
           created_at?: string
+          description?: string | null
+          emoji?: string | null
           id?: string
+          icon?: string
           name: string
           parent_id?: string | null
           position: string
@@ -357,7 +467,10 @@ export type Database = {
           archived_at?: string | null
           color?: string
           created_at?: string
+          description?: string | null
+          emoji?: string | null
           id?: string
+          icon?: string
           name?: string
           parent_id?: string | null
           position?: string
@@ -481,6 +594,54 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_custom_field_values: {
+        Row: {
+          boolean_value: boolean | null
+          date_value: string | null
+          field_id: string
+          number_value: number | null
+          task_id: string
+          text_value: string | null
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          boolean_value?: boolean | null
+          date_value?: string | null
+          field_id: string
+          number_value?: number | null
+          task_id: string
+          text_value?: string | null
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          boolean_value?: boolean | null
+          date_value?: string | null
+          field_id?: string
+          number_value?: number | null
+          task_id?: string
+          text_value?: string | null
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_custom_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_custom_field_values_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]

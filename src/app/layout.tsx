@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff' }
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${jakarta.variable} ${sometype.variable} h-full antialiased`}>
       <body className="min-h-full bg-fundo text-texto">{children}</body>

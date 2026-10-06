@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { montarArvoreEspacos } from '@/dominio/arvore-espacos'
 
-const esp = (id: string, posicao: string, paiId: string | null = null) => ({ id, nome: id, cor: '#000', posicao, paiId })
-const pasta = (id: string, espacoId: string, posicao: string) => ({ id, nome: id, espacoId, posicao })
+const esp = (id: string, posicao: string, paiId: string | null = null) => ({ id, nome: id, descricao: null, cor: '#000000', icone: 'layers-3', emoji: null, posicao, paiId })
+const pasta = (id: string, espacoId: string, posicao: string) => ({ id, nome: id, espacoId, cor: '#646464', icone: 'folder', emoji: null, posicao })
 const lista = (id: string, espacoId: string, posicao: string, pastaId: string | null = null, mes: string | null = null) => ({
   id,
   nome: id,
@@ -11,6 +11,9 @@ const lista = (id: string, espacoId: string, posicao: string, pastaId: string | 
   posicao,
   clienteNome: 'Padaria',
   mes,
+  cor: '#646464',
+  icone: 'list',
+  emoji: null,
 })
 
 describe('montarArvoreEspacos', () => {

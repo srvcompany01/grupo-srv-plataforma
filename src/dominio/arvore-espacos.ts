@@ -1,5 +1,6 @@
-export type EspacoPlano = { id: string; nome: string; cor: string; posicao: string; paiId: string | null }
-export type PastaPlana = { id: string; nome: string; espacoId: string; posicao: string }
+export type Visual = { cor: string; icone: string; emoji: string | null }
+export type EspacoPlano = Visual & { id: string; nome: string; descricao: string | null; posicao: string; paiId: string | null }
+export type PastaPlana = Visual & { id: string; nome: string; espacoId: string; posicao: string }
 export type ItemLista = {
   id: string
   nome: string
@@ -9,7 +10,7 @@ export type ItemLista = {
   clienteNome: string
   /** YYYY-MM-01 */
   mes: string | null
-}
+} & Visual
 
 export type NoPasta = PastaPlana & { listas: ItemLista[] }
 export type NoEspaco = EspacoPlano & { filhos: NoEspaco[]; pastas: NoPasta[]; listas: ItemLista[] }

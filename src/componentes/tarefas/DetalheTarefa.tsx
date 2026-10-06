@@ -21,11 +21,13 @@ import {
 } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
 import { Comentarios } from './Comentarios'
+import { CamposPersonalizados } from './CamposPersonalizados'
 import { EditorDescricao } from './EditorDescricao'
 import { Prazo } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
+import type { DefinicaoCampo } from '@/dominio/personalizacao'
 
 type Opcao = { id: string; nome: string; cor: string }
 type ListaOpcao = { id: string; nome: string; mes: string | null; clienteId: string; clienteNome: string; espacoNome: string }
@@ -38,6 +40,7 @@ export type PropsDetalhe = {
   listas: ListaOpcao[]
   comentarios: Comentario[]
   atividade: ItemAtividade[]
+  camposPersonalizados: DefinicaoCampo[]
   euId: string
   podeGerir: boolean
   hoje: string
@@ -217,6 +220,8 @@ export function DetalheTarefa(p: PropsDetalhe) {
         <span className={rotulo}>Descrição</span>
         <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />
       </div>
+
+      <CamposPersonalizados tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
 
       <div className="space-y-1">
         <span className={rotulo}>Subtarefas</span>

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
+import { GerenciarCampos } from '@/componentes/tarefas/GerenciarCampos'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
@@ -10,6 +11,7 @@ import { agruparPorStatus, montarArvore } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags } from '@/servicos/listas'
+import { listarCamposDaLista, listarCamposDoEspaco } from '@/servicos/campos-personalizados'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
 
@@ -22,10 +24,12 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
 
   const filtros = lerFiltros(await searchParams)
   const hoje = dataDeHoje(new Date())
-  const [tarefas, equipe, tags] = await Promise.all([
+  const [tarefas, equipe, tags, camposDaLista, camposDoEspaco] = await Promise.all([
     listarTarefas(sb, { listaId: id }, filtros, hoje),
     listarEquipe(sb),
     listarTags(sb, lista.espaco.id),
+    listarCamposDaLista(sb, id),
+    listarCamposDoEspaco(sb, lista.espaco.id),
   ])
   const arvore = montarArvore(tarefas)
   const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false }
@@ -41,7 +45,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
             {lista.mes && ` · ${rotuloMes(lista.mes)}`}
           </p>
         </div>
-        {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
+        {lista.podeGerir && <div className="flex flex-wrap items-center gap-2"><GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} /><EditorStatus listaId={id} status={lista.status} /></div>}
       </header>
       <AlternadorVisao caminho={`/listas/${id}`} filtros={filtros} />
       <BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} />

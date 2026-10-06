@@ -5,17 +5,17 @@ import { dados } from './resultado'
 // Pastas e listas de um espaço. Escrita pelo cliente do usuário: a RLS só deixa gestor do espaço/admin.
 
 export type Estrutura = {
-  pastas: { id: string; nome: string; posicao: string }[]
-  listas: { id: string; nome: string; pastaId: string | null; clienteNome: string; mes: string | null; posicao: string }[]
+  pastas: { id: string; nome: string; cor: string; icone: string; emoji: string | null; posicao: string }[]
+  listas: { id: string; nome: string; cor: string; icone: string; emoji: string | null; pastaId: string | null; clienteNome: string; mes: string | null; posicao: string }[]
 }
 
 export async function buscarEstrutura(sb: Supabase, espacoId: string): Promise<Estrutura> {
   const [pastas, listas] = await Promise.all([
-    sb.from('folders').select('id, name, position').eq('space_id', espacoId).is('archived_at', null).order('position'),
-    sb.from('lists').select('id, name, folder_id, reference_month, position, clients(name)').eq('space_id', espacoId).is('archived_at', null).order('position'),
+    sb.from('folders').select('id, name, color, icon, emoji, position').eq('space_id', espacoId).is('archived_at', null).order('position'),
+    sb.from('lists').select('id, name, color, icon, emoji, folder_id, reference_month, position, clients(name)').eq('space_id', espacoId).is('archived_at', null).order('position'),
   ])
   return {
-    pastas: dados(pastas).map((p) => ({ id: p.id, nome: p.name, posicao: p.position })),
+    pastas: dados(pastas).map((p) => ({ id: p.id, nome: p.name, cor: p.color, icone: p.icon, emoji: p.emoji, posicao: p.position })),
     listas: dados(listas).map((l) => ({
       id: l.id,
       nome: l.name,
@@ -23,6 +23,9 @@ export async function buscarEstrutura(sb: Supabase, espacoId: string): Promise<E
       clienteNome: l.clients?.name ?? '',
       mes: l.reference_month,
       posicao: l.position,
+      cor: l.color,
+      icone: l.icon,
+      emoji: l.emoji,
     })),
   }
 }
@@ -33,14 +36,21 @@ async function ultimaPosicao(sb: Supabase, tabela: 'folders' | 'lists', espacoId
   return posicaoEntre(r.data[0]?.position ?? null, null)
 }
 
-export async function criarPasta(sb: Supabase, espacoId: string, nome: string) {
-  const { error } = await sb.from('folders').insert({ space_id: espacoId, name: nome, position: await ultimaPosicao(sb, 'folders', espacoId) })
+export async function criarPasta(sb: Supabase, espacoId: string, nome: string, visual?: { cor?: string; icone?: string; emoji?: string | null }) {
+  const { error } = await sb.from('folders').insert({
+    space_id: espacoId,
+    name: nome,
+    color: visual?.cor,
+    icon: visual?.icone,
+    emoji: visual?.emoji,
+    position: await ultimaPosicao(sb, 'folders', espacoId),
+  })
   if (error) throw error
 }
 
 export async function criarLista(
   sb: Supabase,
-  d: { espacoId: string; pastaId: string | null; clienteId: string; nome: string; mes: string | null },
+  d: { espacoId: string; pastaId: string | null; clienteId: string; nome: string; mes: string | null; cor?: string; icone?: string; emoji?: string | null },
 ): Promise<string> {
   const { data, error } = await sb
     .from('lists')
@@ -50,6 +60,9 @@ export async function criarLista(
       client_id: d.clienteId,
       name: d.nome,
       reference_month: d.mes,
+      color: d.cor,
+      icon: d.icone,
+      emoji: d.emoji,
       position: await ultimaPosicao(sb, 'lists', d.espacoId),
     })
     .select('id')
