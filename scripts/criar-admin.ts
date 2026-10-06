@@ -4,6 +4,7 @@
  * O link do e-mail leva a NEXT_PUBLIC_URL_BASE (ou http://localhost:3000) para definir a senha.
  */
 import { createClient } from '@supabase/supabase-js'
+import { opcoesRealtime } from '../src/infra/supabase/realtime'
 
 async function main() {
   const [email, nome] = process.argv.slice(2)
@@ -13,6 +14,7 @@ async function main() {
   }
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
+    realtime: opcoesRealtime,
   })
   const base = process.env.NEXT_PUBLIC_URL_BASE ?? 'http://localhost:3000'
   const { data, error } = await sb.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {

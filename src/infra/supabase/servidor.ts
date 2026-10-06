@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
+import { opcoesRealtime } from './realtime'
 import type { Database } from './tipos'
 
 export type Supabase = SupabaseClient<Database>
@@ -14,6 +15,7 @@ export const criarClienteServidor = cache(async (): Promise<Supabase> => {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      realtime: opcoesRealtime,
       cookies: {
         getAll: () => store.getAll(),
         setAll: (lista) => {

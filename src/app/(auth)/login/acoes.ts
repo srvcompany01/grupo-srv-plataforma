@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
+import { opcoesRealtime } from '@/infra/supabase/realtime'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { urlBase } from '@/lib/url'
 
@@ -21,6 +22,7 @@ function lerEmail(form: FormData): string | null {
 function clienteLinkPorEmail() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { flowType: 'implicit', persistSession: false, autoRefreshToken: false },
+    realtime: opcoesRealtime,
   })
 }
 

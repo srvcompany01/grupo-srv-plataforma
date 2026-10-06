@@ -1,0 +1,152 @@
+import { prazoEm, type Filtros } from '@/dominio/filtros'
+import { posicaoEntre } from '@/dominio/posicao'
+import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
+import type { Supabase } from '@/infra/supabase/servidor'
+import type { Json } from '@/infra/supabase/tipos'
+import { dados } from './resultado'
+
+export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string }
+
+const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
+  lists!inner(name, space_id, reference_month, clients(name)),
+  task_assignees(profiles(id, full_name, avatar_url)),
+  task_tags(tags(id, name, color))`
+
+/** Tarefas não arquivadas do escopo, com os filtros aplicados no banco. A RLS esconde o resto. */
+export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtros, hoje: string): Promise<TarefaResumo[]> {
+  // Aliases extras (!inner) filtram sem cortar a lista completa de responsáveis/etiquetas exibida.
+  let campos = CAMPOS_RESUMO
+  if (filtros.responsaveis.length || 'responsavelId' in escopo) campos += ', filtro_resp:task_assignees!inner(user_id)'
+  if (filtros.tags.length) campos += ', filtro_tag:task_tags!inner(tag_id)'
+
+  let q = sb.from('tasks').select(campos).is('archived_at', null)
+
+  if ('listaId' in escopo) q = q.eq('list_id', escopo.listaId)
+  if ('espacoId' in escopo) {
+    const filhos = dados(await sb.from('spaces').select('id').eq('parent_id', escopo.espacoId))
+    q = q.in('lists.space_id', [escopo.espacoId, ...filhos.map((f) => f.id)])
+  }
+  if ('responsavelId' in escopo) q = q.eq('filtro_resp.user_id', escopo.responsavelId)
+  if (filtros.responsaveis.length) q = q.in('filtro_resp.user_id', filtros.responsaveis)
+  if (filtros.tags.length) q = q.in('filtro_tag.tag_id', filtros.tags)
+  if (filtros.status.length) q = q.in('status_id', filtros.status)
+  if (filtros.prioridades.length) q = q.in('priority', filtros.prioridades)
+  if (filtros.clientes.length) q = q.in('client_id', filtros.clientes)
+  if (filtros.mes) q = q.eq('lists.reference_month', filtros.mes)
+
+  const prazo = prazoEm(filtros.prazo, hoje)
+  if (prazo.semPrazo) q = q.is('due_date', null)
+  if (prazo.de) q = q.gte('due_date', prazo.de)
+  if (prazo.ate) q = q.lte('due_date', prazo.ate)
+  // "Atrasadas" = prazo vencido e ainda não concluída.
+  if (filtros.prazo === 'atrasadas') q = q.is('completed_at', null)
+
+  const linhas = dados(await q.order('position').limit(2000)) as unknown as LinhaResumo[]
+  return linhas.map(paraResumo)
+}
+
+type LinhaResumo = {
+  id: string
+  title: string
+  parent_task_id: string | null
+  status_id: string
+  priority: string
+  due_date: string | null
+  position: string
+  completed_at: string | null
+  list_id: string
+  lists: { name: string; clients: { name: string } | null } | null
+  task_assignees: { profiles: { id: string; full_name: string; avatar_url: string | null } | null }[]
+  task_tags: { tags: { id: string; name: string; color: string } | null }[]
+}
+
+function paraResumo(t: LinhaResumo): TarefaResumo {
+  return {
+    id: t.id,
+    titulo: t.title,
+    paiId: t.parent_task_id,
+    statusId: t.status_id,
+    prioridade: t.priority as Prioridade,
+    prazo: t.due_date,
+    posicao: t.position,
+    concluidaEm: t.completed_at,
+    listaId: t.list_id,
+    listaNome: t.lists?.name ?? '',
+    clienteNome: t.lists?.clients?.name ?? '',
+    responsaveis: t.task_assignees.flatMap((a) => (a.profiles ? [{ id: a.profiles.id, nome: a.profiles.full_name, avatar: a.profiles.avatar_url }] : [])),
+    tags: t.task_tags.flatMap((x) => (x.tags ? [{ id: x.tags.id, nome: x.tags.name, cor: x.tags.color }] : [])),
+  }
+}
+
+export async function criarTarefa(
+  sb: Supabase,
+  d: { listaId: string; titulo: string; responsaveis: string[]; paiId?: string | null; statusId?: string | null },
+): Promise<string> {
+  const { data: ultima, error: e1 } = await sb
+    .from('tasks')
+    .select('position')
+    .eq('list_id', d.listaId)
+    .order('position', { ascending: false })
+    .limit(1)
+  if (e1) throw e1
+  const { data, error } = await sb.rpc('criar_tarefa', {
+    p_list: d.listaId,
+    p_title: d.titulo,
+    p_assignees: d.responsaveis,
+    p_parent: d.paiId ?? undefined,
+    p_status: d.statusId ?? undefined,
+    p_position: posicaoEntre(ultima[0]?.position ?? null, null),
+  })
+  if (error) throw error
+  return data
+}
+
+export type CamposTarefa = Partial<{
+  titulo: string
+  descricao: unknown
+  statusId: string
+  prioridade: Prioridade
+  inicio: string | null
+  prazo: string | null
+  estimativaMin: number | null
+  visivelCliente: boolean
+}>
+
+export async function atualizarTarefa(sb: Supabase, id: string, c: CamposTarefa) {
+  const campos = {
+    title: c.titulo,
+    description: c.descricao as Json | undefined,
+    status_id: c.statusId,
+    priority: c.prioridade,
+    start_date: c.inicio,
+    due_date: c.prazo,
+    estimate_minutes: c.estimativaMin,
+    visible_to_client: c.visivelCliente,
+  }
+  // Campos undefined não vão na requisição.
+  const { error, count } = await sb.from('tasks').update(campos, { count: 'exact' }).eq('id', id)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+}
+
+export async function definirResponsaveis(sb: Supabase, id: string, ids: string[]) {
+  const { error } = await sb.rpc('definir_responsaveis', { p_task: id, p_assignees: ids })
+  if (error) throw error
+}
+
+export async function moverTarefa(sb: Supabase, id: string, statusId: string, posicao: string) {
+  const { error } = await sb.rpc('mover_tarefa', { p_task: id, p_status: statusId, p_position: posicao })
+  if (error) throw error
+}
+
+export async function moverParaLista(sb: Supabase, id: string, listaId: string) {
+  const { error, count } = await sb.from('tasks').update({ list_id: listaId, parent_task_id: null }, { count: 'exact' }).eq('id', id)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+}
+
+export async function arquivarTarefa(sb: Supabase, id: string) {
+  const { error, count } = await sb.from('tasks').update({ archived_at: new Date().toISOString() }, { count: 'exact' }).eq('id', id)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+}

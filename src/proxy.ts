@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { rotaPublica } from '@/dominio/acesso'
+import { opcoesRealtime } from '@/infra/supabase/realtime'
 import { COOKIE_SESSAO, sessaoValida } from '@/infra/sessao'
 
 // Checagem otimista: renova a sessão do Supabase e manda quem não está logado para /login.
@@ -18,6 +19,7 @@ export async function proxy(req: NextRequest) {
 
   let res = NextResponse.next({ request: req })
   const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    realtime: opcoesRealtime,
     cookies: {
       getAll: () => req.cookies.getAll(),
       setAll: (lista, cabecalhos) => {
