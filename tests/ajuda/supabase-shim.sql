@@ -17,7 +17,13 @@ create table auth.users (
 
 create function auth.uid() returns uuid
 language sql stable
-as $$ select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::uuid $$;
+-- Mesma definição do Supabase.
+as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
+$$;
 
 grant usage on schema public, auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
