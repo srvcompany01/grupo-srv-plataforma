@@ -31,12 +31,12 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
   const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false }
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="page-shell">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[12px] text-texto-3">{lista.espaco.nome}</p>
-          <h1 className="text-lg font-semibold">{lista.nome}</h1>
-          <p className="text-[13px] text-texto-2">
+          <p className="eyebrow">{lista.espaco.nome}</p>
+          <h1 className="page-title mt-1">{lista.nome}</h1>
+          <p className="mt-1 text-[13px] text-texto-2">
             {lista.cliente.nome}
             {lista.mes && ` · ${rotuloMes(lista.mes)}`}
           </p>

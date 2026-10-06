@@ -10,21 +10,24 @@ export default async function Clientes() {
   const clientes = await listarClientes(await criarClienteServidor())
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
-      <h1 className="text-lg font-semibold">Clientes</h1>
+    <div className="page-shell">
+      <div>
+        <p className="eyebrow">Relacionamento</p>
+        <h1 className="page-title mt-1">Clientes</h1>
+      </div>
       {podeCriar && (
         <details className="group">
-          <summary className="cursor-pointer text-[13px] font-medium text-marca">+ Novo cliente</summary>
+          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-carbon">+ Novo cliente</summary>
           <div className="mt-2">
             <FormCliente acao={criarCliente} podeEditar />
           </div>
         </details>
       )}
-      <div className="overflow-hidden rounded-lg border border-borda bg-white">
+      <div className="overflow-hidden rounded-xl border border-borda bg-white">
         {clientes.map((c) => (
           <Link key={c.id} href={`/clientes/${c.id}`} className="flex items-center gap-3 border-t border-borda px-3 py-2.5 text-[13px] first:border-t-0 hover:bg-hover">
             <span className="flex-1 font-medium">{c.nome}</span>
-            {c.interno && <span className="rounded bg-marca-fundo px-1.5 py-0.5 text-[11px] text-marca">Interno</span>}
+            {c.interno && <span className="rounded-full bg-marca-fundo px-2 py-0.5 text-[10px] font-semibold text-marca">Interno</span>}
             <span className="text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</span>
           </Link>
         ))}

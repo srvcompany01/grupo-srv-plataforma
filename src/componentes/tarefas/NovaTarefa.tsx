@@ -13,7 +13,7 @@ export function NovaTarefa({ listaId, statusId, euId, paiId }: { listaId: string
 
   if (!aberta) {
     return (
-      <button onClick={() => setAberta(true)} className="flex h-8 w-full items-center gap-1.5 px-9 text-[13px] text-texto-3 hover:text-marca">
+      <button onClick={() => setAberta(true)} className="flex h-9 w-full items-center gap-1.5 border-t border-borda px-10 text-[12px] font-medium text-texto-3 transition hover:bg-hover/70 hover:text-texto">
         <Plus className="h-3.5 w-3.5" /> {paiId ? 'Nova subtarefa' : 'Nova tarefa'}
       </button>
     )

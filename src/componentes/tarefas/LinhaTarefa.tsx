@@ -29,7 +29,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; 
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   return (
     <>
-      <div className="group flex h-9 items-center gap-2 border-t border-borda px-2 text-[13px] hover:bg-hover" style={{ paddingLeft: 8 + nivel * 20 }}>
+      <div className="group flex h-10 items-center gap-2 border-t border-borda px-3 text-[13px] transition-colors hover:bg-hover/80" style={{ paddingLeft: 12 + nivel * 20 }}>
         <button
           aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
           onClick={() => setAberta(!aberta)}
@@ -43,7 +43,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; 
           {tarefa.filhos.length > 0 && <span className="ml-1.5 text-[11px] text-texto-3">{tarefa.filhos.length}</span>}
         </Link>
         {tarefa.tags.map((t) => (
-          <span key={t.id} className="hidden rounded px-1.5 py-0.5 text-[11px] text-white md:inline" style={{ background: t.cor }}>
+          <span key={t.id} className="hidden rounded-full px-2 py-0.5 text-[10px] font-medium text-white md:inline" style={{ background: t.cor }}>
             {t.nome}
           </span>
         ))}

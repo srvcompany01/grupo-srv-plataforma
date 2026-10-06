@@ -31,10 +31,13 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
   const ctx = { equipe, hoje, statusPorLista, mostrarLista: true }
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="page-shell">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">Minhas tarefas</h1>
-        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="text-[13px] text-texto-2 hover:text-marca">
+        <div>
+          <p className="eyebrow">Visão pessoal</p>
+          <h1 className="page-title mt-1">Minhas tarefas</h1>
+        </div>
+        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="rounded-full border border-borda bg-white px-3 py-1.5 text-[12px] font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
           {comConcluidas ? 'Ocultar concluídas' : 'Mostrar concluídas'}
         </Link>
       </header>

@@ -22,7 +22,7 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   'sem-prazo': 'Sem prazo',
 }
 
-const botao = 'inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[12px] font-medium transition'
+const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
 
 type ChaveMulti = 'responsaveis' | 'status' | 'tags' | 'clientes' | 'prioridades'
 
@@ -92,7 +92,7 @@ export function BarraFiltros({
     !!filtros.mes
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Responsável" chave="responsaveis" opcoes={equipe} />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Status" chave="status" opcoes={status} />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Prioridade" chave="prioridades" opcoes={PRIORIDADES.map((p) => ({ id: p, nome: ROTULO_PRIORIDADE[p] }))} />

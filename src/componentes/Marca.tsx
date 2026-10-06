@@ -1,8 +1,8 @@
-/** Selo do Grupo SRV no lugar do logo: quadrado com degradê da paleta. */
+/** Monograma provisório da marca, deliberadamente simples e legível em tamanhos pequenos. */
 export function Marca({ tamanho = 'h-8 w-8 text-sm' }: { tamanho?: string }) {
   return (
     <span
-      className={`${tamanho} inline-flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-marca via-violet-500 to-pink-500 font-bold text-white shadow-sm`}
+      className={`${tamanho} inline-flex shrink-0 items-center justify-center rounded-[10px] bg-marca font-[var(--font-plus-jakarta)] font-extrabold text-white`}
     >
       S
     </span>

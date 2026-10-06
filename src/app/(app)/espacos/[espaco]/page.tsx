@@ -36,18 +36,21 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
   const abas: [Aba, string][] = [['tarefas', 'Tarefas'], ...(podeGerir ? ([...(folha ? [['estrutura', 'Pastas e listas']] : []), ['membros', 'Membros']] as [Aba, string][]) : [])]
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
-      <header className="flex items-center gap-2">
-        <span className="h-3 w-3 rounded-sm" style={{ background: espaco.color }} />
-        <h1 className="text-lg font-semibold">{espaco.name}</h1>
+    <div className="page-shell">
+      <header className="flex items-center gap-3">
+        <span className="h-3 w-3 rounded-full ring-4 ring-fundo" style={{ background: espaco.color }} />
+        <div>
+          <p className="eyebrow">Espaço</p>
+          <h1 className="page-title mt-1">{espaco.name}</h1>
+        </div>
       </header>
       {abas.length > 1 && (
-        <nav className="flex gap-4 border-b border-borda">
+        <nav className="flex gap-6 border-b border-borda">
           {abas.map(([a, rotulo]) => (
             <Link
               key={a}
               href={a === 'tarefas' ? `/espacos/${id}` : `/espacos/${id}?aba=${a}`}
-              className={`-mb-px border-b-2 pb-2 text-[13px] font-medium ${aba === a ? 'border-marca text-marca' : 'border-transparent text-texto-2 hover:text-texto'}`}
+              className={`-mb-px border-b-2 pb-2.5 text-[13px] font-semibold ${aba === a ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
             >
               {rotulo}
             </Link>
@@ -109,7 +112,7 @@ async function AbaMembros({ espacoId, podePromover }: { espacoId: string; podePr
   const espaco = espacos.find((e) => e.id === espacoId)
   if (!espaco) notFound()
   return (
-    <div className="rounded-lg border border-borda bg-white p-4">
+    <div className="rounded-xl border border-borda bg-white p-5">
       <MembrosEspaco espaco={espaco} equipe={equipe} podePromover={podePromover} />
     </div>
   )

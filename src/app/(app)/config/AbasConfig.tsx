@@ -11,12 +11,12 @@ const ABAS = [
 export function AbasConfig() {
   const caminho = usePathname()
   return (
-    <nav className="mt-3 flex gap-4 border-b border-borda">
+    <nav className="mt-5 flex gap-6 border-b border-borda">
       {ABAS.map(([href, rotulo]) => (
         <Link
           key={href}
           href={href}
-          className={`-mb-px border-b-2 pb-2 text-[13px] font-medium ${caminho === href ? 'border-marca text-marca' : 'border-transparent text-texto-2 hover:text-texto'}`}
+          className={`-mb-px border-b-2 pb-2.5 text-[13px] font-semibold ${caminho === href ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
         >
           {rotulo}
         </Link>

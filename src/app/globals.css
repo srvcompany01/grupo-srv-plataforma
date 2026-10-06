@@ -4,23 +4,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Linguagem visual inspirada no ClickUp: roxo de marca, cinzas neutros, densidade alta. */
+/* Sistema visual SRV: produtividade densa, superfícies planas e acentos contidos. */
 @theme inline {
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-mono: var(--font-sometype-mono), 'SFMono-Regular', Consolas, monospace;
 
-  --color-marca: #7b68ee;
-  --color-marca-escura: #5f48ea;
-  --color-marca-clara: #d3cdf9;
-  --color-marca-fundo: #f3f1fd;
+  --color-marca: #6647f0;
+  --color-marca-escura: #5538df;
+  --color-marca-clara: #dcd5ff;
+  --color-marca-fundo: #f4f1ff;
+  --color-sinal: #0091ff;
+  --color-carbon: #2a2a2a;
 
   --color-texto: #202020;
   --color-texto-2: #646464;
-  --color-texto-3: #8a8a8a;
+  --color-texto-3: #838383;
   --color-borda: #e8e8e8;
-  --color-borda-forte: #d6d6d6;
-  --color-fundo: #fafbfc;
-  --color-hover: #f5f5f7;
-  --color-trilho: #1b1b23;
+  --color-borda-forte: #d4d4d4;
+  --color-fundo: #f8f9fa;
+  --color-hover: #f3f4f6;
+  --color-trilho: #202020;
 
   --color-st-rascunho: #87909e;
   --color-st-aguardando: #7b68ee;
@@ -70,6 +74,7 @@
 body {
   font-family: var(--font-sans);
   font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 :root {
@@ -79,7 +84,7 @@ body {
   --card-foreground: #202020;
   --popover: oklch(1 0 0);
   --popover-foreground: #202020;
-  --primary: #7b68ee;
+  --primary: #202020;
   --primary-foreground: #ffffff;
   --secondary: #f5f5f7;
   --secondary-foreground: #202020;
@@ -90,14 +95,14 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: #e8e8e8;
   --input: #e8e8e8;
-  --ring: #7b68ee;
+  --ring: #6647f0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.5rem;
-  --sidebar: #fafbfc;
+  --radius: 0.625rem;
+  --sidebar: #f8f9fa;
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -119,5 +124,67 @@ body {
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+  ::selection {
+    background: #dcd5ff;
+    color: #202020;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-[1200px] space-y-6 px-4 py-5 md:px-8 md:py-7;
+  }
+
+  .page-title {
+    @apply text-[26px] leading-tight font-bold text-texto md:text-[30px];
+    font-family: var(--font-display);
+    letter-spacing: -0.035em;
+  }
+
+  .eyebrow {
+    @apply text-[10px] leading-5 font-medium uppercase text-texto-3;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-borda bg-white;
+  }
+
+  .focus-control {
+    @apply outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/15;
+  }
+
+  .brand-orbit {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .brand-orbit::before {
+    position: absolute;
+    z-index: -1;
+    inset: -2px;
+    border-radius: inherit;
+    content: '';
+    background: conic-gradient(from 90deg, #7d5be7 19%, #bc3fda 28%, #fa24ce 37%, #fb49a5 45%, #fc6d7b 52%, #fd8461 55%, #fd9a46 58%, #f687c6 65%, #a3a0e0 80%, #4fb9fa 95%, #0091ff 100%);
+    animation: srv-orbit 3.6s linear infinite;
+  }
+}
+
+@keyframes srv-orbit {
+  to { transform: rotate(1turn); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
