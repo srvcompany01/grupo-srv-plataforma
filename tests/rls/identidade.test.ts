@@ -48,6 +48,21 @@ describe('profiles', () => {
     expect(perfil.rows).toEqual([{ full_name: 'Xis', role: 'cliente', active: false }])
   })
 
+  it('perfil copia o e-mail do login e acompanha a troca', async () => {
+    const db = await criarBanco()
+    const id = await criarUsuario(db, { role: 'membro', email: 'Ana@X.com' })
+    expect((await db.query(`select email from profiles where id = $1`, [id])).rows).toEqual([{ email: 'ana@x.com' }])
+    await db.query(`update auth.users set email = 'nova@x.com' where id = $1`, [id])
+    expect((await db.query(`select email from profiles where id = $1`, [id])).rows).toEqual([{ email: 'nova@x.com' }])
+  })
+
+  it('usuário não altera o próprio e-mail no perfil', async () => {
+    const db = await criarBanco()
+    const id = await criarUsuario(db, { role: 'membro', email: 'ana@x.com' })
+    await executar(db, id, `update profiles set email = 'hack@x.com' where id = $1`, [id])
+    expect((await db.query(`select email from profiles where id = $1`, [id])).rows).toEqual([{ email: 'ana@x.com' }])
+  })
+
   it('membro não altera o próprio papel', async () => {
     const db = await criarBanco()
     const m = await criarUsuario(db, { role: 'membro' })

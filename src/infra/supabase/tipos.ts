@@ -270,6 +270,7 @@ export type Database = {
           active: boolean
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           role: string
@@ -279,6 +280,7 @@ export type Database = {
           active?: boolean
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id: string
           role?: string
@@ -288,6 +290,7 @@ export type Database = {
           active?: boolean
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           role?: string
