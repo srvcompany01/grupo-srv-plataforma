@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "db:push": "[ -n \"$SUPABASE_DB_URL\" ] || { set -a; . ./.env.local; set +a; } && supabase db push --db-url \"$SUPABASE_DB_URL\" --yes",
+    "tipos": "[ -n \"$SUPABASE_PROJECT_ID\" ] || { set -a; . ./.env.local; set +a; }; supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/infra/supabase/tipos.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
