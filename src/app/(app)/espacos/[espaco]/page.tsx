@@ -1,0 +1,116 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
+import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
+import { CATEGORIAS } from '@/componentes/tarefas/categorias'
+import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
+import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
+import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
+import { montarArvore, type Categoria } from '@/dominio/tarefas'
+import { exigirEquipe } from '@/infra/supabase/sessao'
+import { criarClienteServidor } from '@/infra/supabase/servidor'
+import { listarClientes } from '@/servicos/clientes-plataforma'
+import { listarEspacosComMembros } from '@/servicos/espacos'
+import { buscarEstrutura } from '@/servicos/estrutura'
+import { listarTags, statusDasListas } from '@/servicos/listas'
+import { listarTarefas } from '@/servicos/tarefas'
+import { listarEquipe } from '@/servicos/usuarios'
+import { MembrosEspaco } from '../../config/espacos/Espacos'
+import { Estrutura } from './Estrutura'
+
+type Aba = 'tarefas' | 'estrutura' | 'membros'
+
+export default async function PaginaEspaco({ params, searchParams }: PageProps<'/espacos/[espaco]'>) {
+  const { espaco: id } = await params
+  const sp = await searchParams
+  const eu = await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const [{ data: espaco }, { data: podeGerir }, { count: filhos }] = await Promise.all([
+    sb.from('spaces').select('id, name, color').eq('id', id).is('archived_at', null).maybeSingle(),
+    sb.rpc('is_space_manager', { space: id }),
+    sb.from('spaces').select('id', { count: 'exact', head: true }).eq('parent_id', id),
+  ])
+  if (!espaco) notFound()
+  const folha = !filhos
+  const aba: Aba = podeGerir && (sp.aba === 'estrutura' || sp.aba === 'membros') ? sp.aba : 'tarefas'
+  const abas: [Aba, string][] = [['tarefas', 'Tarefas'], ...(podeGerir ? ([...(folha ? [['estrutura', 'Pastas e listas']] : []), ['membros', 'Membros']] as [Aba, string][]) : [])]
+
+  return (
+    <div className="space-y-4 p-4 md:p-6">
+      <header className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm" style={{ background: espaco.color }} />
+        <h1 className="text-lg font-semibold">{espaco.name}</h1>
+      </header>
+      {abas.length > 1 && (
+        <nav className="flex gap-4 border-b border-borda">
+          {abas.map(([a, rotulo]) => (
+            <Link
+              key={a}
+              href={a === 'tarefas' ? `/espacos/${id}` : `/espacos/${id}?aba=${a}`}
+              className={`-mb-px border-b-2 pb-2 text-[13px] font-medium ${aba === a ? 'border-marca text-marca' : 'border-transparent text-texto-2 hover:text-texto'}`}
+            >
+              {rotulo}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {aba === 'tarefas' && <Tarefas espacoId={id} sp={sp} euId={eu.id} />}
+      {aba === 'estrutura' && <AbaEstrutura espacoId={id} />}
+      {aba === 'membros' && <AbaMembros espacoId={id} podePromover={eu.papel === 'admin'} />}
+    </div>
+  )
+}
+
+async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<string, string | string[] | undefined>; euId: string }) {
+  const sb = await criarClienteServidor()
+  const filtros = lerFiltros(sp)
+  const hoje = dataDeHoje(new Date())
+  const [tarefas, equipe, clientes, tags] = await Promise.all([
+    listarTarefas(sb, { espacoId }, filtros, hoje),
+    listarEquipe(sb),
+    listarClientes(sb),
+    listarTags(sb, espacoId),
+  ])
+  const statusPorLista = await statusDasListas(sb, [...new Set(tarefas.map((t) => t.listaId))])
+  const categoria = (t: { listaId: string; statusId: string }): Categoria =>
+    statusPorLista[t.listaId]?.find((s) => s.id === t.statusId)?.categoria ?? 'todo'
+  const arvore = montarArvore(tarefas)
+  const ctx = { equipe, hoje, statusPorLista, mostrarLista: true }
+
+  return (
+    <div className="space-y-4">
+      <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} />
+      <BarraFiltros filtros={filtros} equipe={equipe} status={[]} tags={tags} clientes={clientes} comMes />
+      {tarefas.length === 0 && <p className="text-[13px] text-texto-3">Nenhuma tarefa encontrada.</p>}
+      {filtros.visao === 'lista' ? (
+        <VisaoLista grupos={CATEGORIAS.map((c) => ({ ...c, tarefas: arvore.filter((t) => categoria(t) === c.id) }))} ctx={ctx} euId={euId} />
+      ) : (
+        <VisaoKanban
+          modo="categoria"
+          colunas={CATEGORIAS}
+          tarefas={Object.fromEntries(CATEGORIAS.map((c) => [c.id, arvore.filter((t) => categoria(t) === c.id)]))}
+          subtarefas={Object.fromEntries(arvore.map((t) => [t.id, t.filhos.length]))}
+          ctx={ctx}
+        />
+      )}
+    </div>
+  )
+}
+
+async function AbaEstrutura({ espacoId }: { espacoId: string }) {
+  const sb = await criarClienteServidor()
+  const [dados, clientes] = await Promise.all([buscarEstrutura(sb, espacoId), listarClientes(sb)])
+  return <Estrutura espacoId={espacoId} dados={dados} clientes={clientes.filter((c) => c.status !== 'encerrado').map((c) => ({ id: c.id, nome: c.nome }))} />
+}
+
+async function AbaMembros({ espacoId, podePromover }: { espacoId: string; podePromover: boolean }) {
+  const sb = await criarClienteServidor()
+  const [espacos, equipe] = await Promise.all([listarEspacosComMembros(sb), listarEquipe(sb)])
+  const espaco = espacos.find((e) => e.id === espacoId)
+  if (!espaco) notFound()
+  return (
+    <div className="rounded-lg border border-borda bg-white p-4">
+      <MembrosEspaco espaco={espaco} equipe={equipe} podePromover={podePromover} />
+    </div>
+  )
+}

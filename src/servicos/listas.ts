@@ -60,3 +60,14 @@ export async function listarTags(sb: Supabase, espacoId: string) {
   const linhas = dados(await sb.from('tags').select('id, name, color').in('space_id', ids).order('name'))
   return linhas.map((t) => ({ id: t.id, nome: t.name, cor: t.color }))
 }
+
+/** Status de várias listas (departamento e "Minhas tarefas" misturam listas). */
+export async function statusDasListas(sb: Supabase, ids: string[]): Promise<Record<string, StatusLista[]>> {
+  if (!ids.length) return {}
+  const linhas = dados(
+    await sb.from('list_statuses').select('id, list_id, name, color, category, position').in('list_id', ids).order('position'),
+  )
+  const mapa: Record<string, StatusLista[]> = {}
+  for (const s of linhas) (mapa[s.list_id] ??= []).push({ id: s.id, nome: s.name, cor: s.color, categoria: s.category as Categoria })
+  return mapa
+}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
+import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { rotuloMes } from '@/dominio/formatar'
@@ -50,6 +51,15 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
           ctx={ctx}
           criarEm={id}
           euId={eu.id}
+        />
+      )}
+      {filtros.visao === 'kanban' && (
+        <VisaoKanban
+          modo="status"
+          colunas={lista.status.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor }))}
+          tarefas={Object.fromEntries(lista.status.map((s) => [s.id, arvore.filter((t) => t.statusId === s.id)]))}
+          subtarefas={Object.fromEntries(arvore.map((t) => [t.id, t.filhos.length]))}
+          ctx={ctx}
         />
       )}
     </div>

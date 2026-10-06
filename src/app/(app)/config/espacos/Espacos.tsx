@@ -5,14 +5,7 @@ import { useActionState, useState, useTransition } from 'react'
 import { avisar } from '../usuarios/ControlesUsuario'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { EspacoComMembros } from '@/servicos/espacos'
-import {
-  adicionarMembroEspaco,
-  arquivarEspaco,
-  criarEspaco,
-  moverEspaco,
-  removerMembroEspaco,
-  renomearEspaco,
-} from './acoes'
+import { adicionarMembroEspaco, arquivarEspaco, criarEspaco, moverEspaco, removerMembroEspaco, renomearEspaco } from './acoes'
 
 type Pessoa = { id: string; nome: string }
 
@@ -50,9 +43,6 @@ export function FormNovoEspaco({ pais }: { pais: Pessoa[] }) {
 export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equipe: Pessoa[] }) {
   const [pendente, iniciar] = useTransition()
   const [nome, setNome] = useState(espaco.nome)
-  const [novo, setNovo] = useState('')
-  const [papelNovo, setPapelNovo] = useState<'membro' | 'gestor'>('membro')
-  const fora = equipe.filter((p) => !espaco.membros.some((m) => m.id === p.id))
   const rodar = (fn: () => Promise<Parameters<typeof avisar>[0]>) => iniciar(async () => avisar(await fn()))
 
   return (
@@ -81,20 +71,35 @@ export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equ
           <Archive className="h-4 w-4" />
         </button>
       </div>
+      <MembrosEspaco espaco={espaco} equipe={equipe} podePromover />
+    </div>
+  )
+}
+
+export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: EspacoComMembros; equipe: Pessoa[]; podePromover: boolean }) {
+  const [pendente, iniciar] = useTransition()
+  const [novo, setNovo] = useState('')
+  const [papelNovo, setPapelNovo] = useState<'membro' | 'gestor'>('membro')
+  const fora = equipe.filter((p) => !espaco.membros.some((m) => m.id === p.id))
+  const rodar = (fn: () => Promise<Parameters<typeof avisar>[0]>) => iniciar(async () => avisar(await fn()))
+  return (
+    <>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {espaco.membros.length === 0 && <span className="text-[13px] text-texto-3">Sem membros.</span>}
         {espaco.membros.map((m) => (
           <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-hover px-2 py-0.5 text-[12px]">
             {m.nome}
             {m.papel === 'gestor' && <span className="text-marca">· gestor</span>}
-            <button
-              aria-label={`Remover ${m.nome}`}
-              disabled={pendente}
-              onClick={() => rodar(() => removerMembroEspaco(espaco.id, m.id))}
-              className="rounded-full p-0.5 hover:bg-black/10"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            {(podePromover || m.papel === 'membro') && (
+              <button
+                aria-label={`Remover ${m.nome}`}
+                disabled={pendente}
+                onClick={() => rodar(() => removerMembroEspaco(espaco.id, m.id))}
+                className="rounded-full p-0.5 hover:bg-black/10"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </span>
         ))}
       </div>
@@ -108,28 +113,32 @@ export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equ
               </option>
             ))}
           </select>
-          <select
-            value={papelNovo}
-            onChange={(e) => setPapelNovo(e.target.value as 'membro' | 'gestor')}
-            aria-label="Papel no departamento"
-            className={`${campo} h-8 w-28 py-0 text-[13px]`}
-          >
-            <option value="membro">Membro</option>
-            <option value="gestor">Gestor</option>
-          </select>
+          {podePromover && (
+            <select
+              value={papelNovo}
+              onChange={(e) => setPapelNovo(e.target.value as 'membro' | 'gestor')}
+              aria-label="Papel no departamento"
+              className={`${campo} h-8 w-28 py-0 text-[13px]`}
+            >
+              <option value="membro">Membro</option>
+              <option value="gestor">Gestor</option>
+            </select>
+          )}
           <button
             disabled={!novo || pendente}
-            onClick={() => rodar(async () => {
-              const r = await adicionarMembroEspaco(espaco.id, novo, papelNovo)
-              setNovo('')
-              return r
-            })}
+            onClick={() =>
+              rodar(async () => {
+                const r = await adicionarMembroEspaco(espaco.id, novo, papelNovo)
+                setNovo('')
+                return r
+              })
+            }
             className={botaoSecundario}
           >
             Adicionar
           </button>
         </div>
       )}
-    </div>
+    </>
   )
 }
