@@ -6,6 +6,9 @@ export function posicaoAoSoltar(coluna: { id: string; posicao: string }[], movid
   const outros = coluna.filter((c) => c.id !== movidoId)
   const antes = outros[indice - 1]?.posicao ?? null
   const depois = outros[indice]?.posicao ?? null
+  // No departamento a coluna mistura listas: vizinhos podem ter posições iguais ou fora de ordem.
+  // A ordem só importa dentro da lista de cada tarefa, então basta ficar depois do vizinho de cima.
+  if (antes !== null && depois !== null && antes >= depois) return posicaoEntre(antes, null)
   return posicaoEntre(antes, depois)
 }
 

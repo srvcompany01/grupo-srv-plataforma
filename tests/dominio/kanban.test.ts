@@ -22,6 +22,18 @@ describe('posicaoAoSoltar', () => {
     const p = posicaoAoSoltar(col, 'a', 1)
     expect(p > 'a1' && p < 'a2').toBe(true)
   })
+  it('vizinhos com a mesma posição (listas diferentes no departamento) não quebram', () => {
+    const iguais = [
+      { id: 'a', posicao: 'a1' },
+      { id: 'b', posicao: 'a1' },
+    ]
+    const p = posicaoAoSoltar(iguais, 'x', 1)
+    expect(p > 'a1').toBe(true)
+  })
+  it('vizinhos fora de ordem não quebram', () => {
+    const p = posicaoAoSoltar([{ id: 'a', posicao: 'a5' }, { id: 'b', posicao: 'a2' }], 'x', 1)
+    expect(p > 'a5').toBe(true)
+  })
   it('coluna vazia', () => {
     expect(posicaoAoSoltar([], 'x', 0)).toMatch(/.+/)
   })

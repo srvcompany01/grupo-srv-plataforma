@@ -74,7 +74,13 @@ export function VisaoKanban({
     const indice = indiceSobre < 0 ? alvo.length : indiceSobre
     const statusId = modo === 'status' ? destino : statusDaCategoria(ctx.statusPorLista[tarefa.listaId] ?? [], destino as Categoria)
     if (!statusId) return void avisar({ erro: 'A lista desta tarefa não tem status nessa coluna.' })
-    const posicao = posicaoAoSoltar(itens[destino], id, indice)
+    let posicao: string
+    try {
+      posicao = posicaoAoSoltar(itens[destino], id, indice)
+    } catch (erro) {
+      console.error(erro)
+      return void avisar({ erro: 'Não foi possível mover o cartão. Recarregue a página e tente de novo.' })
+    }
     if (origem === destino && tarefa.posicao === posicao) return
 
     const anterior = itens
