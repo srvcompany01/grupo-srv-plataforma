@@ -1,11 +1,10 @@
+import { lerAgrupamento } from './agrupamento'
 import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
 export const VISOES = ['lista', 'kanban', 'calendario'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
-export const AGRUPAMENTOS = ['status', 'prioridade', 'mes'] as const
-export type AgrupamentoTarefas = (typeof AGRUPAMENTOS)[number]
 
 export type Filtros = {
   responsaveis: string[]
@@ -18,7 +17,8 @@ export type Filtros = {
   mes: string | null
   busca: string
   visao: VisaoTarefas
-  agrupamento: AgrupamentoTarefas
+  /** 'status' | 'nenhum' | 'prioridade' | 'mes' | 'cliente' | 'responsavel' | 'etiqueta' | 'campo:<uuid>' */
+  agrupamento: string
 }
 
 type Params = Record<string, string | string[] | undefined>
@@ -43,7 +43,7 @@ export function lerFiltros(sp: Params): Filtros {
     mes: /^\d{4}-(0[1-9]|1[0-2])-01$/.test(mes) ? mes : null,
     busca: valor(sp, 'busca').trim().slice(0, 120),
     visao: de(VISOES, valor(sp, 'visao')) ? (valor(sp, 'visao') as VisaoTarefas) : 'lista',
-    agrupamento: de(AGRUPAMENTOS, valor(sp, 'grupo')) ? (valor(sp, 'grupo') as AgrupamentoTarefas) : 'status',
+    agrupamento: lerAgrupamento(valor(sp, 'grupo')),
   }
 }
 

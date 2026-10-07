@@ -6,7 +6,7 @@ import { salvarValorCampo } from '@/app/(app)/acoes-campos'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
-import { formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
+import { corDaOpcao, formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
 import type { Pessoa } from '@/dominio/tarefas'
 import type { Json } from '@/infra/supabase/tipos'
 import { botaoSecundario, campo } from '@/lib/ui'
@@ -16,6 +16,37 @@ function paraTexto(valor: Json | null | undefined) {
   return valor == null ? '' : String(valor)
 }
 
+function Pilula({ nome, cor }: { nome: string; cor: string }) {
+  return <span className="inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-texto" style={{ background: `${cor}22` }}><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cor }} /><span className="truncate">{nome}</span></span>
+}
+
+/** Escolha de opções coloridas: uma (lista suspensa) ou várias (rótulos). */
+function SeletorOpcoes({ definicao, valor, multiplo, compacto, pendente, onChange }: { definicao: DefinicaoCampo; valor: Json | null; multiplo: boolean; compacto: boolean; pendente: boolean; onChange: (novo: Json | null) => void }) {
+  const opcoes = definicao.configuracao.options ?? []
+  const atuais = multiplo ? (Array.isArray(valor) ? valor.map(String) : []) : typeof valor === 'string' && valor ? [valor] : []
+  const alternar = (opcao: string) => {
+    if (!multiplo) return onChange(atuais[0] === opcao ? null : opcao)
+    onChange(atuais.includes(opcao) ? atuais.filter((x) => x !== opcao) : [...atuais, opcao])
+  }
+  return (
+    <Popover>
+      <PopoverTrigger disabled={pendente} className={`flex min-h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-[12px] hover:bg-white hover:ring-1 hover:ring-borda ${compacto ? '' : 'border border-borda bg-white'}`}>
+        <span className="flex min-w-0 flex-1 flex-wrap gap-1 py-1">{atuais.length ? atuais.map((o) => <Pilula key={o} nome={o} cor={corDaOpcao(definicao.configuracao, o)} />) : <span className="text-texto-3">{compacto ? '—' : 'Sem seleção'}</span>}</span>
+        <ChevronDown className="h-3 w-3 shrink-0 text-texto-3" />
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 space-y-1 p-2">
+        {opcoes.length === 0 && <p className="px-2 py-1 text-xs text-texto-3">Nenhuma opção configurada.</p>}
+        {opcoes.map((opcao) => (
+          <button key={opcao} type="button" disabled={pendente} onClick={() => alternar(opcao)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-hover">
+            <Pilula nome={opcao} cor={corDaOpcao(definicao.configuracao, opcao)} />
+            {atuais.includes(opcao) && <Check className="ml-auto h-3.5 w-3.5 text-marca" />}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tarefaId: string; definicao: DefinicaoCampo; equipe: Pessoa[]; compacto?: boolean }) {
   const [valor, setValor] = useState<Json | null>(definicao.valor ?? null)
   const [pendente, iniciar] = useTransition()
@@ -23,7 +54,6 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
   const classe = compacto
     ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-2 text-[12px] outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
     : `${campo} h-8 py-1.5 text-[13px]`
-  const opcoes = definicao.configuracao.options ?? []
   const somenteLeitura = definicao.tipo === 'formula' || definicao.tipo === 'progress_auto'
 
   if (somenteLeitura) {
@@ -36,11 +66,11 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
   if (definicao.tipo === 'checkbox') {
     return <label className="inline-flex items-center gap-2 text-[13px]"><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
   }
-  if (definicao.tipo === 'dropdown') {
-    return <select className={classe} value={typeof valor === 'string' ? valor : ''} disabled={pendente} onChange={(e) => { setValor(e.target.value); salvar(e.target.value) }}><option value="">Sem seleção</option>{opcoes.map((opcao) => <option key={opcao} value={opcao}>{opcao}</option>)}</select>
+  if (definicao.tipo === 'dropdown' || definicao.tipo === 'labels') {
+    return <SeletorOpcoes definicao={definicao} valor={valor} multiplo={definicao.tipo === 'labels'} compacto={compacto} pendente={pendente} onChange={(novo) => { setValor(novo); salvar(novo) }} />
   }
-  if (definicao.tipo === 'labels' || definicao.tipo === 'people') {
-    const itens = definicao.tipo === 'people' ? equipe.map((p) => ({ valor: p.id, nome: p.nome })) : opcoes.map((x) => ({ valor: x, nome: x }))
+  if (definicao.tipo === 'people') {
+    const itens = equipe.map((p) => ({ valor: p.id, nome: p.nome }))
     const atuais = Array.isArray(valor) ? valor.map(String) : []
     if (compacto) {
       return (

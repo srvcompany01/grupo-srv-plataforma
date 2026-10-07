@@ -7,6 +7,7 @@ import { formatarData } from '@/dominio/formatar'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
 import { CelulaCampoPersonalizado } from './CamposPersonalizados'
+import type { PropsGerenciarCampos } from './GerenciarCampos'
 import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
@@ -25,6 +26,8 @@ export type Contexto = {
   podeGerirTagCliente?: boolean
   /** Admin: libera configurar e arquivar campos a partir do cabeçalho da lista. */
   podeEditarCampos?: boolean
+  /** Habilita o "+" do cabeçalho para criar ou adicionar campos à lista. */
+  gerirCampos?: PropsGerenciarCampos
   largurasColunas?: Record<string, number>
   selecionadas?: ReadonlySet<string>
   alternarSelecao?: (id: string, selecionada: boolean) => void
@@ -42,11 +45,14 @@ export function larguraDaColuna(id: string, larguras: Record<string, number> = {
   return larguras[id] ?? base?.largura ?? 180
 }
 
-export function gradeDaLista(campos: DefinicaoCampo[], larguras: Record<string, number> = {}) {
+export const LARGURA_NOVO_CAMPO = 40
+
+/** `comMais` reserva a coluna final do "+" (só o cabeçalho usa). */
+export function gradeDaLista(campos: DefinicaoCampo[], larguras: Record<string, number> = {}, comMais = false) {
   // A coluna de nome ocupa o espaço que sobra; a largura salva vira o mínimo.
   const fixas = COLUNAS_BASE.map((coluna) => (coluna.id === 'nome' ? `minmax(${larguraDaColuna(coluna.id, larguras)}px, 1fr)` : `${larguraDaColuna(coluna.id, larguras)}px`))
   const personalizadas = campos.map((campo) => `${larguraDaColuna(`campo:${campo.id}`, larguras)}px`)
-  return [...fixas, ...personalizadas].join(' ')
+  return [...fixas, ...personalizadas, ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
 }
 
 export function Prazo({ prazo, concluida, hoje }: { prazo: string | null; concluida: boolean; hoje: string }) {

@@ -6,6 +6,11 @@ export const CORES_PERSONALIZACAO = [
   '#64748b', '#202020',
 ] as const
 
+export function corDaOpcao(config: ConfigCampo, opcao: string): string {
+  const indice = Math.max(0, (config.options ?? []).indexOf(opcao))
+  return config.optionColors?.[opcao] ?? CORES_PERSONALIZACAO[indice % CORES_PERSONALIZACAO.length]
+}
+
 export const ICONES_PERSONALIZACAO = [
   'layers-3', 'folder', 'list', 'briefcase', 'building-2', 'megaphone', 'palette',
   'rocket', 'target', 'chart-no-axes-combined', 'users', 'heart', 'star', 'zap',
@@ -50,6 +55,8 @@ export type ConfigCampo = {
   locale?: string
   decimals?: number
   options?: string[]
+  /** Cor (#rrggbb) de cada opção, pelo texto da opção. Sem entrada, usa a cor padrão da paleta. */
+  optionColors?: Record<string, string>
   max?: number
   buttonLabel?: string
   buttonUrl?: string
@@ -112,7 +119,7 @@ export const TIPOS_CAMPO = new Set<TipoCampoPersonalizado>(CATALOGO_CAMPOS.map((
 export function configuracaoPadrao(tipo: TipoCampoPersonalizado): ConfigCampo {
   if (tipo === 'money') return { currency: 'BRL', locale: 'pt-BR', decimals: 2 }
   if (tipo === 'rating') return { max: 5 }
-  if (tipo === 'dropdown' || tipo === 'labels') return { options: [] }
+  if (tipo === 'dropdown' || tipo === 'labels') return { options: ['Opção 1', 'Opção 2'] }
   if (tipo === 'button') return { buttonLabel: 'Abrir', buttonUrl: 'https://' }
   return {}
 }

@@ -1,19 +1,21 @@
 'use client'
 
-import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Settings2, Trash2, UserRound, X } from 'lucide-react'
+import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import type { GrupoTarefas } from '@/dominio/agrupamento'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { No, TarefaResumo } from '@/dominio/tarefas'
 import { avisar } from './avisar'
 import { ConfigurarCampo } from './ConfigurarCampo'
+import { GerenciarCampos } from './GerenciarCampos'
 import { COLUNAS_BASE, LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
 
-export type Grupo = { id: string; nome: string; cor: string; tarefas: No<TarefaResumo>[]; statusId?: string }
+export type Grupo = GrupoTarefas
 
 type LimiteColuna = { minima: number; maxima: number; largura: number }
 type ConfigCampos = { ocultas: string[]; ordem: string[] }
@@ -72,6 +74,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const largurasRef = useRef(larguras)
   const arrasteRef = useRef<Arraste | null>(null)
   const [configurando, setConfigurando] = useState<string | null>(null)
+  const [novoCampo, setNovoCampo] = useState(false)
   const [config, setConfig] = useState<ConfigCampos>({ ocultas: [], ordem: [] })
   const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
@@ -230,6 +233,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
+      {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} />}
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {camposOcultos.length > 0 && (
         <div className="flex justify-end">
@@ -242,19 +246,21 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
         </div>
       )}
       <div className="overflow-x-auto pb-2">
-        <div className="space-y-5" style={{ minWidth: gradeDaLista(camposVisiveis, larguras).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+        <div className="space-y-5" style={{ minWidth: gradeDaLista(camposVisiveis, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g) => (
         <section key={g.id} className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_6px_24px_rgba(32,32,32,0.035)]" style={{ boxShadow: `inset 3px 0 0 ${g.cor}, 0 6px 24px rgba(32,32,32,0.035)` }}>
-          <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>
-            <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
-            <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-white" style={{ background: g.cor }}>
-              {g.nome}
-            </span>
-            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
-          </button>
-          {!fechados.has(g.id) && (
+          {!g.semCabecalho && (
+            <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>
+              <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+              <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-white" style={{ background: g.cor }}>
+                {g.nome}
+              </span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
+            </button>
+          )}
+          {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-8 items-center border-t border-borda bg-[#fbfbfc] text-[10px] font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(camposVisiveis, larguras) }}>
+              <div className="grid min-h-8 items-center border-t border-borda bg-[#fbfbfc] text-[10px] font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(camposVisiveis, larguras, !!ctx.gerirCampos) }}>
                 <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-sky-600" /> Nome</span></CabecalhoColuna>
                 <CabecalhoColuna colunaId="responsavel" {...propsRedimensionamento}><span className="flex items-center gap-1"><UserRound className="h-3 w-3" /> Responsável</span></CabecalhoColuna>
                 <CabecalhoColuna colunaId="prazo" {...propsRedimensionamento}>Prazo</CabecalhoColuna>
@@ -280,6 +286,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                     </DropdownMenu>
                   </CabecalhoColuna>
                 ))}
+                {ctx.gerirCampos && (
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/70 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                )}
               </div>
               {g.tarefas.map((t) => (
                 <LinhaTarefa key={t.id} tarefa={t} nivel={0} ctx={contexto} euId={euId} />

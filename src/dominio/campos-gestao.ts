@@ -1,3 +1,5 @@
+import type { ConfigCampo } from '@/dominio/personalizacao'
+
 const HEX = /^#[0-9a-f]{6}$/i
 
 /** Aceita "#abc", "abc", "#aabbcc" ou "aabbcc" e devolve "#aabbcc" em minúsculas; null se inválido. */
@@ -16,4 +18,16 @@ export function caminhoDaLista(lista: ListaLocal, espacos: Local[], pastas: (Loc
   const espaco = lista.espacoId ? espacos.find((e) => e.id === lista.espacoId)?.nome : 'Raiz'
   const pasta = lista.pastaId ? pastas.find((p) => p.id === lista.pastaId)?.nome : null
   return [espaco ?? 'Espaço removido', pasta, lista.nome].filter(Boolean).join(' › ')
+}
+
+/** Remove opções vazias/repetidas e cores sem opção ou inválidas. Sem `options`, devolve a config como veio. */
+export function limparOpcoes(config: ConfigCampo): ConfigCampo {
+  if (!config.options) return config
+  const options = [...new Set(config.options.map((o) => o.trim()).filter(Boolean))]
+  const optionColors: Record<string, string> = {}
+  for (const o of options) {
+    const cor = normalizarHex(config.optionColors?.[o] ?? '')
+    if (cor) optionColors[o] = cor
+  }
+  return { ...config, options, optionColors }
 }

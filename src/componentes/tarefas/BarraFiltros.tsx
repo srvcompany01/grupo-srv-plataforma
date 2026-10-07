@@ -6,11 +6,14 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/componentes/ui/dropdown-menu'
-import { escreverFiltros, type AgrupamentoTarefas, type FiltroPrazo, type Filtros } from '@/dominio/filtros'
+import { AGRUPAMENTOS_BASICOS, ROTULO_AGRUPAMENTO } from '@/dominio/agrupamento'
+import { escreverFiltros, type FiltroPrazo, type Filtros } from '@/dominio/filtros'
 import { PRIORIDADES, ROTULO_PRIORIDADE } from '@/dominio/tarefas'
 
 type Opcao = { id: string; nome: string }
@@ -30,12 +33,6 @@ const TOM = {
   âmbar: 'border-marca-clara bg-marca-fundo text-marca-escura',
   verde: 'border-marca-clara bg-marca-fundo text-marca-escura',
 } as const
-
-const ROTULO_AGRUPAMENTO: Record<AgrupamentoTarefas, string> = {
-  status: 'Status',
-  prioridade: 'Prioridade',
-  mes: 'Mês do prazo',
-}
 
 type ChaveMulti = 'responsaveis' | 'status' | 'tags' | 'clientes' | 'prioridades'
 
@@ -90,6 +87,7 @@ export function BarraFiltros({
   clientes,
   comMes = false,
   comAgrupamento = false,
+  camposAgrupaveis = [],
 }: {
   filtros: Filtros
   equipe: Opcao[]
@@ -98,6 +96,8 @@ export function BarraFiltros({
   clientes?: Opcao[]
   comMes?: boolean
   comAgrupamento?: boolean
+  /** Campos personalizados da lista que podem virar grupo (id do campo + nome). */
+  camposAgrupaveis?: Opcao[]
 }) {
   const router = useRouter()
   const caminho = usePathname()
@@ -105,6 +105,10 @@ export function BarraFiltros({
     const qs = escreverFiltros({ ...filtros, ...mudanca }).toString()
     router.replace(qs ? `${caminho}?${qs}` : caminho, { scroll: false })
   }
+
+  const rotuloAgrupamento = filtros.agrupamento.startsWith('campo:')
+    ? (camposAgrupaveis.find((campo) => `campo:${campo.id}` === filtros.agrupamento)?.nome ?? ROTULO_AGRUPAMENTO.status)
+    : ROTULO_AGRUPAMENTO[filtros.agrupamento as keyof typeof ROTULO_AGRUPAMENTO]
 
   const algum =
     filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length > 0 ||
@@ -117,13 +121,18 @@ export function BarraFiltros({
       {comAgrupamento && (
         <DropdownMenu>
           <DropdownMenuTrigger className={`${botao} border-teal-200 bg-teal-50 text-teal-700`}>
-            <Layers3 className="h-3.5 w-3.5" /> Agrupar: {ROTULO_AGRUPAMENTO[filtros.agrupamento]}
+            <Layers3 className="h-3.5 w-3.5" /> Agrupar: {rotuloAgrupamento}
             <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuRadioGroup value={filtros.agrupamento} onValueChange={(v) => aplicar({ agrupamento: v as AgrupamentoTarefas })}>
-              {(Object.keys(ROTULO_AGRUPAMENTO) as AgrupamentoTarefas[]).map((grupo) => (
+          <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+            <DropdownMenuRadioGroup value={filtros.agrupamento} onValueChange={(v) => aplicar({ agrupamento: v })}>
+              {AGRUPAMENTOS_BASICOS.map((grupo) => (
                 <DropdownMenuRadioItem key={grupo} value={grupo}>{ROTULO_AGRUPAMENTO[grupo]}</DropdownMenuRadioItem>
+              ))}
+              {camposAgrupaveis.length > 0 && <DropdownMenuSeparator />}
+              {camposAgrupaveis.length > 0 && <DropdownMenuLabel>Campos personalizados</DropdownMenuLabel>}
+              {camposAgrupaveis.map((campo) => (
+                <DropdownMenuRadioItem key={campo.id} value={`campo:${campo.id}`}>{campo.nome}</DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>

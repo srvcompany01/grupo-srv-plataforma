@@ -9,10 +9,11 @@ import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
 import { GerenciarCampos } from '@/componentes/tarefas/GerenciarCampos'
 import { VisaoCalendario } from '@/componentes/tarefas/VisaoCalendario'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
-import { VisaoLista, type Grupo } from '@/componentes/tarefas/VisaoLista'
-import { dataDeHoje, lerFiltros, type Filtros } from '@/dominio/filtros'
+import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
+import { agruparTarefas, TIPOS_AGRUPAVEIS } from '@/dominio/agrupamento'
+import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { rotuloMes } from '@/dominio/formatar'
-import { agruparPorStatus, montarArvore, PRIORIDADES, ROTULO_PRIORIDADE, type No, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
+import { montarArvore } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags } from '@/servicos/listas'
@@ -20,40 +21,6 @@ import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoConte
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
 import { listarClientes } from '@/servicos/clientes-plataforma'
-
-const COR_PRIORIDADE = { urgente: '#e5484d', alta: '#f59e0b', normal: '#38bdf8', baixa: '#10b981' } as const
-const CORES_MESES = ['#0ea5e9', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#6366f1']
-
-function gruposDaLista(arvore: No<TarefaResumo>[], status: (StatusLista & { posicao: string })[], filtros: Filtros): Grupo[] {
-  if (filtros.agrupamento === 'prioridade') {
-    return PRIORIDADES.map((prioridade) => ({
-      id: prioridade,
-      nome: ROTULO_PRIORIDADE[prioridade],
-      cor: COR_PRIORIDADE[prioridade],
-      tarefas: arvore.filter((tarefa) => tarefa.prioridade === prioridade),
-    })).filter((grupo) => grupo.tarefas.length)
-  }
-  if (filtros.agrupamento === 'mes') {
-    const meses = [...new Set(arvore.map((tarefa) => tarefa.prazo?.slice(0, 7) ?? 'sem-prazo'))].sort((a, b) => {
-      if (a === 'sem-prazo') return 1
-      if (b === 'sem-prazo') return -1
-      return a.localeCompare(b)
-    })
-    return meses.map((mes, indice) => ({
-      id: mes,
-      nome: mes === 'sem-prazo' ? 'Sem prazo' : rotuloMes(`${mes}-01`),
-      cor: mes === 'sem-prazo' ? '#87909e' : CORES_MESES[indice % CORES_MESES.length],
-      tarefas: arvore.filter((tarefa) => (tarefa.prazo?.slice(0, 7) ?? 'sem-prazo') === mes),
-    }))
-  }
-  return agruparPorStatus(arvore, status).map((grupo) => ({
-    id: grupo.status.id,
-    nome: grupo.status.nome,
-    cor: grupo.status.cor,
-    tarefas: grupo.tarefas,
-    statusId: grupo.status.id,
-  }))
-}
 
 export default async function PaginaLista({ params, searchParams }: PageProps<'/listas/[lista]'>) {
   const { lista: id } = await params
@@ -86,8 +53,12 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
     tagsCliente,
     podeGerirTagCliente: lista.podeGerir,
     podeEditarCampos: eu.papel === 'admin',
+    gerirCampos: lista.podeGerir ? { listaId: id, espacoId: lista.espaco.id, camposDaLista, camposDoEspaco } : undefined,
   }
-  const grupos = gruposDaLista(arvore, lista.status, filtros)
+  const camposAgrupaveis = camposDaLista.filter((campo) => TIPOS_AGRUPAVEIS.includes(campo.tipo))
+  // Agrupar por um campo que saiu da lista (URL antiga) volta para status.
+  const agrupamento = filtros.agrupamento.startsWith('campo:') && !camposAgrupaveis.some((campo) => `campo:${campo.id}` === filtros.agrupamento) ? 'status' : filtros.agrupamento
+  const grupos = agruparTarefas(arvore, agrupamento, { status: lista.status, campos: camposAgrupaveis, equipe })
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
@@ -125,11 +96,11 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
         <AlternadorVisao caminho={`/listas/${id}`} filtros={filtros} visoes={['lista', 'calendario', 'kanban']} abas />
       </header>
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
-        <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} /></div>
+        <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
         <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
       </div>
       <main className="p-4 md:p-5">
-        {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={filtros.agrupamento === 'status' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
+        {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} />}
         {filtros.visao === 'kanban' && (
           <VisaoKanban

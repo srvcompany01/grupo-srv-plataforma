@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { limparOpcoes } from '@/dominio/campos-gestao'
 import { configuracaoPadrao, TIPOS_CAMPO, type ConfigCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
 import { posicaoEntre } from '@/dominio/posicao'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -33,7 +34,7 @@ export async function criarCampoPersonalizado(dados: {
     consultaPosicao = dados.espacoId ? consultaPosicao.eq('space_id', dados.espacoId) : consultaPosicao.is('space_id', null)
     const { data: ultimos, error: erroPosicao } = await consultaPosicao
     if (erroPosicao) throw erroPosicao
-    const configuracao = { ...configuracaoPadrao(dados.tipo), ...dados.configuracao }
+    const configuracao = limparOpcoes({ ...configuracaoPadrao(dados.tipo), ...dados.configuracao })
     const { data, error } = await sb
       .from('custom_fields')
       .insert({

@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { normalizarHex } from '@/dominio/campos-gestao'
+import { limparOpcoes, normalizarHex } from '@/dominio/campos-gestao'
 import { configuracaoPadrao, TIPOS_CAMPO, type ConfigCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
 import { posicaoEntre } from '@/dominio/posicao'
 import { exigirAdmin } from '@/infra/supabase/sessao'
@@ -56,7 +56,7 @@ export async function criarCampoGestaoAcao(espacoId: string | null, tipo: TipoCa
         space_id: espacoId,
         name: v.nome,
         type: tipo,
-        config: { ...configuracaoPadrao(tipo), ...entrada.configuracao } as Json,
+        config: limparOpcoes({ ...configuracaoPadrao(tipo), ...entrada.configuracao }) as Json,
         color: v.cor,
         icon: v.icone,
         position: posicaoEntre(ultimos[0]?.position ?? null, null),
@@ -77,7 +77,7 @@ export async function atualizarCampoGestaoAcao(id: string, entrada: Entrada): Pr
   if ('erro' in v) return v
   const sb = await criarClienteServidor()
   const r = await tentar(async () => {
-    const { error } = await sb.from('custom_fields').update({ name: v.nome, color: v.cor, icon: v.icone, config: entrada.configuracao as Json, updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await sb.from('custom_fields').update({ name: v.nome, color: v.cor, icon: v.icone, config: limparOpcoes(entrada.configuracao) as Json, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) throw error
     const { data: atuais, error: e2 } = await sb.from('list_custom_fields').select('list_id').eq('field_id', id)
     if (e2) throw e2

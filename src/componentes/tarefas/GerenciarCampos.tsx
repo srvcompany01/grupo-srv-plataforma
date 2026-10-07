@@ -14,6 +14,7 @@ import {
   type DefinicaoCampo,
   type ItemCatalogoCampo,
 } from '@/dominio/personalizacao'
+import { EditorOpcoes } from './EditorOpcoes'
 import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 const TIPOS_NUMERICOS = new Set(['number', 'money', 'rating', 'progress_auto', 'progress_manual', 'vote', 'formula'])
@@ -28,7 +29,7 @@ export function ConfiguracaoCampo({ item, config, onChange, campos }: { item: It
     )
   }
   if (item.tipo === 'dropdown' || item.tipo === 'labels') {
-    return <label className="block space-y-1"><span className={rotulo}>Opções — uma por linha</span><textarea className={`${campo} min-h-28`} value={(config.options ?? []).join('\n')} onChange={(e) => onChange({ ...config, options: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) })} placeholder={'Planejado\nEm andamento\nConcluído'} /></label>
+    return <div className="space-y-1"><span className={rotulo}>Opções</span><EditorOpcoes config={config} onChange={onChange} /></div>
   }
   if (item.tipo === 'rating') {
     return <label className="block space-y-1"><span className={rotulo}>Nota máxima</span><input className={campo} type="number" min={2} max={10} value={config.max ?? 5} onChange={(e) => onChange({ ...config, max: Number(e.target.value) })} /></label>
@@ -65,8 +66,13 @@ export function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: 
   )
 }
 
-export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco }: { listaId: string; espacoId: string | null; camposDaLista: DefinicaoCampo[]; camposDoEspaco: DefinicaoCampo[] }) {
-  const [aberto, setAberto] = useState(false)
+export type PropsGerenciarCampos = { listaId: string; espacoId: string | null; camposDaLista: DefinicaoCampo[]; camposDoEspaco: DefinicaoCampo[] }
+
+/** Sem `aberto`, mostra o próprio botão; com `aberto`/`aoMudarAberto`, é controlado de fora (ex.: o "+" do cabeçalho). */
+export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco, aberto: abertoExterno, aoMudarAberto }: PropsGerenciarCampos & { aberto?: boolean; aoMudarAberto?: (aberto: boolean) => void }) {
+  const [abertoInterno, setAbertoInterno] = useState(false)
+  const aberto = abertoExterno ?? abertoInterno
+  const setAberto = aoMudarAberto ?? setAbertoInterno
   const [busca, setBusca] = useState('')
   const [selecionado, setSelecionado] = useState<ItemCatalogoCampo | null>(null)
   const [nome, setNome] = useState('')
@@ -82,7 +88,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild><button className={botaoSecundario}><SlidersHorizontal className="h-4 w-4" /> Campos ({camposDaLista.length})</button></DialogTrigger>
+      {abertoExterno === undefined && <DialogTrigger asChild><button className={botaoSecundario}><SlidersHorizontal className="h-4 w-4" /> Campos ({camposDaLista.length})</button></DialogTrigger>}
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader><DialogTitle>Campos personalizados</DialogTitle><DialogDescription>Crie dados tipados para tarefas. Números, moedas e datas ficam prontos para filtros, métricas e relatórios.</DialogDescription></DialogHeader>
         {selecionado ? (
