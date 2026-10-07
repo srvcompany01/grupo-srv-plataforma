@@ -69,7 +69,13 @@ export function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: 
 export type PropsGerenciarCampos = { listaId: string; espacoId: string | null; camposDaLista: DefinicaoCampo[]; camposDoEspaco: DefinicaoCampo[] }
 
 /** Sem `aberto`, mostra o próprio botão; com `aberto`/`aoMudarAberto`, é controlado de fora (ex.: o "+" do cabeçalho). */
-export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco, aberto: abertoExterno, aoMudarAberto }: PropsGerenciarCampos & { aberto?: boolean; aoMudarAberto?: (aberto: boolean) => void }) {
+export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco, aberto: abertoExterno, aoMudarAberto, colunasPadrao = [], aoAlternarColuna }: PropsGerenciarCampos & {
+  aberto?: boolean
+  aoMudarAberto?: (aberto: boolean) => void
+  /** Colunas nativas da lista (Status, Prazo…) com a visibilidade atual; só a lista informa. */
+  colunasPadrao?: { id: string; nome: string; visivel: boolean }[]
+  aoAlternarColuna?: (id: string) => void
+}) {
   const [abertoInterno, setAbertoInterno] = useState(false)
   const aberto = abertoExterno ?? abertoInterno
   const setAberto = aoMudarAberto ?? setAbertoInterno
@@ -101,7 +107,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
           </form>
         ) : (
           <Tabs defaultValue="novo">
-            <TabsList><TabsTrigger value="novo">Criar novo</TabsTrigger><TabsTrigger value="existente">Adicionar existente</TabsTrigger><TabsTrigger value="lista">Na lista ({camposDaLista.length})</TabsTrigger></TabsList>
+            <TabsList><TabsTrigger value="novo">Criar novo</TabsTrigger><TabsTrigger value="existente">Adicionar existente</TabsTrigger>{colunasPadrao.length > 0 && <TabsTrigger value="padrao">Campos existentes</TabsTrigger>}<TabsTrigger value="lista">Na lista ({camposDaLista.length})</TabsTrigger></TabsList>
             <div className="relative mt-3"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" /><input className={`${campo} pl-9`} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar campos de tarefa" /></div>
             <TabsContent value="novo" className="pt-3"><Catalogo busca={busca} onSelect={escolher} /></TabsContent>
             <TabsContent value="existente" className="space-y-1 pt-3">
@@ -110,6 +116,15 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
                 return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-emerald-600" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
               })}
               {camposDoEspaco.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Ainda não há campos reutilizáveis neste espaço.</p>}
+            </TabsContent>
+            <TabsContent value="padrao" className="space-y-1 pt-3">
+              <p className="px-1 pb-1 text-xs text-texto-3">Campos que toda tarefa já tem. Escolha quais aparecem como coluna na lista.</p>
+              {colunasPadrao.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
+                <button key={item.id} type="button" onClick={() => aoAlternarColuna?.(item.id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover">
+                  <span className="flex-1 text-sm font-medium">{item.nome}</span>
+                  {item.visivel ? <><Check className="h-4 w-4 text-emerald-600" /><span className="text-xs text-texto-3">Na lista</span></> : <><Plus className="h-4 w-4" /><span className="text-xs text-texto-3">Mostrar</span></>}
+                </button>
+              ))}
             </TabsContent>
             <TabsContent value="lista" className="space-y-1 pt-3">
               {camposDaLista.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (

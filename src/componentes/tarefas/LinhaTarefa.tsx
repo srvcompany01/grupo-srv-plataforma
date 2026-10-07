@@ -3,6 +3,7 @@
 import { ChevronRight, CornerDownRight, Flag } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
 import { formatarData } from '@/dominio/formatar'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
@@ -22,6 +23,8 @@ export type Contexto = {
   statusPorLista: Record<string, StatusLista[]>
   mostrarLista: boolean
   camposPersonalizados?: DefinicaoCampo[]
+  /** Ids das colunas após Nome, na ordem: nativas (`status`) e campos (`campo:<id>`). */
+  colunas?: string[]
   tagsCliente?: TagCliente[]
   podeGerirTagCliente?: boolean
   /** Admin: libera configurar e arquivar campos a partir do cabeçalho da lista. */
@@ -33,26 +36,22 @@ export type Contexto = {
   alternarSelecao?: (id: string, selecionada: boolean) => void
 }
 
-export const COLUNAS_BASE = [
-  { id: 'nome', largura: 360, minima: 220, maxima: 800 },
-  { id: 'responsavel', largura: 110, minima: 80, maxima: 320 },
-  { id: 'prazo', largura: 78, minima: 62, maxima: 240 },
-  { id: 'prioridade', largura: 44, minima: 36, maxima: 120 },
-] as const
-
 export function larguraDaColuna(id: string, larguras: Record<string, number> = {}) {
   const base = COLUNAS_BASE.find((coluna) => coluna.id === id)
-  return larguras[id] ?? base?.largura ?? 180
+  return larguras[id] ?? base?.largura ?? LIMITE_CAMPO.largura
 }
 
 export const LARGURA_NOVO_CAMPO = 40
 
-/** `comMais` reserva a coluna final do "+" (só o cabeçalho usa). */
-export function gradeDaLista(campos: DefinicaoCampo[], larguras: Record<string, number> = {}, comMais = false) {
+/** Colunas exibidas quando o contexto não define `colunas` (nativas padrão + todos os campos). */
+export const colunasDoContexto = (ctx: Pick<Contexto, 'colunas' | 'camposPersonalizados'>) =>
+  ctx.colunas ?? [...COLUNAS_PADRAO.filter((c) => c.padrao).map((c) => c.id), ...(ctx.camposPersonalizados ?? []).map((c) => `campo:${c.id}`)]
+
+/** `colunas` = ids após Nome, na ordem de exibição. `comMais` reserva a coluna final do "+" (só o cabeçalho usa). */
+export function gradeDaLista(colunas: string[], larguras: Record<string, number> = {}, comMais = false) {
   // A coluna de nome ocupa o espaço que sobra; a largura salva vira o mínimo.
-  const fixas = COLUNAS_BASE.map((coluna) => (coluna.id === 'nome' ? `minmax(${larguraDaColuna(coluna.id, larguras)}px, 1fr)` : `${larguraDaColuna(coluna.id, larguras)}px`))
-  const personalizadas = campos.map((campo) => `${larguraDaColuna(`campo:${campo.id}`, larguras)}px`)
-  return [...fixas, ...personalizadas, ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
+  const nome = `minmax(${larguraDaColuna('nome', larguras)}px, 1fr)`
+  return [nome, ...colunas.map((id) => `${larguraDaColuna(id, larguras)}px`), ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
 }
 
 export function Prazo({ prazo, concluida, hoje }: { prazo: string | null; concluida: boolean; hoje: string }) {
@@ -65,11 +64,50 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   const [aberta, setAberta] = useState(false)
   const [criandoSubtarefa, setCriandoSubtarefa] = useState(false)
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
-  const campos = ctx.camposPersonalizados ?? []
+  const colunas = colunasDoContexto(ctx)
   const selecionada = ctx.selecionadas?.has(tarefa.id) ?? false
+  const celula = (colunaId: string) => {
+    if (colunaId.startsWith('campo:')) {
+      const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
+      if (!definicao) return null
+      return (
+        <div key={colunaId} className="min-w-0 border-l border-borda/70 px-1.5 py-1">
+          <CelulaCampoPersonalizado tarefaId={tarefa.id} definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }} equipe={ctx.equipe} />
+        </div>
+      )
+    }
+    switch (colunaId) {
+      case 'responsavel':
+        return <span key={colunaId} className="px-2"><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
+      case 'prazo':
+        return <span key={colunaId} className="px-2 text-[12px] tabular-nums"><Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
+      case 'prioridade':
+        return (
+          <span key={colunaId} className="px-2" title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
+            {tarefa.prioridade !== 'normal' && <Flag className={`h-3.5 w-3.5 ${COR_PRIORIDADE[tarefa.prioridade]}`} />}
+          </span>
+        )
+      case 'status':
+        return <span key={colunaId} className="min-w-0 px-2"><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
+      case 'tagcliente':
+        return (
+          <span key={colunaId} className="min-w-0 px-2">
+            <SeletorTagCliente listaId={tarefa.listaId} atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
+          </span>
+        )
+      case 'etiquetas':
+        return (
+          <span key={colunaId} className="flex min-w-0 flex-wrap gap-1 px-2">
+            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ background: t.cor }}>{t.nome}</span>)}
+          </span>
+        )
+      default:
+        return null
+    }
+  }
   return (
     <>
-      <div className={`group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors ${selecionada ? 'bg-sky-50/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(campos, ctx.largurasColunas) }}>
+      <div className={`group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors ${selecionada ? 'bg-sky-50/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div className="flex min-w-0 items-center gap-2 px-3" style={{ paddingLeft: 12 + nivel * 20 }}>
           <input
             type="checkbox"
@@ -85,7 +123,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           >
             <ChevronRight className={`h-3.5 w-3.5 transition ${aberta ? 'rotate-90' : ''}`} />
           </button>
-          <SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} />
+          {!colunas.includes('status') && <SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} />}
           <div className="min-w-0 flex-1">
             <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block truncate font-medium hover:text-marca">
               {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
@@ -93,13 +131,15 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             </Link>
             {ctx.mostrarLista && <span className="block truncate text-[10px] text-texto-3" title={`${tarefa.listaNome} · @${tarefa.clienteNome}`}>{tarefa.listaNome} · @{tarefa.clienteNome}</span>}
           </div>
-          <SeletorTagCliente
-            listaId={tarefa.listaId}
-            atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }}
-            opcoes={ctx.tagsCliente}
-            podeGerir={ctx.podeGerirTagCliente}
-          />
-          {tarefa.tags.map((t) => (
+          {!colunas.includes('tagcliente') && (
+            <SeletorTagCliente
+              listaId={tarefa.listaId}
+              atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }}
+              opcoes={ctx.tagsCliente}
+              podeGerir={ctx.podeGerirTagCliente}
+            />
+          )}
+          {!colunas.includes('etiquetas') && tarefa.tags.map((t) => (
             <span key={t.id} className="hidden rounded-full px-2 py-0.5 text-[10px] font-medium text-white xl:inline" style={{ background: t.cor }}>
               {t.nome}
             </span>
@@ -118,24 +158,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             <span className="hidden 2xl:inline">Subtarefa</span>
           </button>
         </div>
-        <span className="px-2">
-          <SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} />
-        </span>
-        <span className="px-2 text-[12px] tabular-nums">
-          <Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
-        </span>
-        <span className="px-2" title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
-          {tarefa.prioridade !== 'normal' && <Flag className={`h-3.5 w-3.5 ${COR_PRIORIDADE[tarefa.prioridade]}`} />}
-        </span>
-        {campos.map((definicao) => (
-          <div key={definicao.id} className="min-w-0 border-l border-borda/70 px-1.5 py-1">
-            <CelulaCampoPersonalizado
-              tarefaId={tarefa.id}
-              definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }}
-              equipe={ctx.equipe}
-            />
-          </div>
-        ))}
+        {colunas.map(celula)}
       </div>
       {aberta && tarefa.filhos.map((f) => <LinhaTarefa key={f.id} tarefa={f} nivel={nivel + 1} ctx={ctx} euId={euId} />)}
       {criandoSubtarefa && (
