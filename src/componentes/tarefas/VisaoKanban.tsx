@@ -93,7 +93,7 @@ export function VisaoKanban({
   }
 
   return (
-    <DndContext sensors={sensores} collisionDetection={closestCorners} onDragStart={inicio} onDragEnd={fim} onDragCancel={() => setArrastando(null)}>
+    <DndContext id="kanban-tarefas" sensors={sensores} collisionDetection={closestCorners} onDragStart={inicio} onDragEnd={fim} onDragCancel={() => setArrastando(null)}>
       <div className="flex gap-4 overflow-x-auto pb-4">
         {colunas.map((c) => (
           <ColunaKanban key={c.id} coluna={c} tarefas={itens[c.id] ?? []} ctx={ctx} subtarefas={subtarefas} />

@@ -22,3 +22,14 @@ it('usa texto escuro em fundo claro e claro em fundo escuro', () => {
 it('cai no padrão quando o hex é inválido', () => {
   expect(cssLateral('lixo')).toContain('--lat-bg:#F6F6F7')
 })
+
+it('lê modo e largura da barra com fallback seguro', async () => {
+  const { lerLarguraLateral, lerModoLateral, limitarLargura } = await import('@/dominio/tema-lateral')
+  expect(lerModoLateral('recolhida')).toBe('recolhida')
+  expect(lerModoLateral('qualquer')).toBe('fixa')
+  expect(lerModoLateral(undefined)).toBe('fixa')
+  expect(lerLarguraLateral(undefined)).toBe(272)
+  expect(lerLarguraLateral('abc')).toBe(272)
+  expect(lerLarguraLateral('9999')).toBe(440)
+  expect(limitarLargura(10)).toBe(208)
+})

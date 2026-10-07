@@ -28,6 +28,7 @@ export function AlternadorVisao({
     const { rotulo, Icone } = OPCOES[visao]
     return (
     <Link
+      key={visao}
       href={href(visao)}
       scroll={false}
       className={`inline-flex items-center gap-1.5 text-[12px] font-semibold transition ${

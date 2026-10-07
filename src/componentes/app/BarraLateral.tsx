@@ -5,16 +5,17 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities'
 import {
   CheckSquare,
-  ChevronRight,
-  GripVertical,
+  ChevronDown,
   LogOut,
   Menu,
+  PanelLeftClose,
+  Pin,
   Settings,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition, type ComponentType, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Avatar } from '@/componentes/Avatar'
@@ -27,6 +28,7 @@ import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 import { sair } from '@/app/(auth)/login/acoes'
 
 type Opcao = { id: string; nome: string }
@@ -50,24 +52,38 @@ function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
   style?: CSSProperties
   children: ReactNode
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: idArrastavel(tipo, id),
     data: { tipo, id },
     disabled: !habilitado,
   })
+  // Segurar e arrastar a linha inteira (o PointerSensor só ativa após 6px, então cliques seguem funcionando).
   return (
     <div
       ref={setNodeRef}
-      className={`${className} ${isDragging ? 'z-20 opacity-45 ring-1 ring-marca/40' : ''}`}
+      {...listeners}
+      className={`${className} ${isDragging ? 'z-20 cursor-grabbing opacity-45 ring-1 ring-marca/40' : ''}`}
       style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
     >
-      {habilitado && (
-        <button ref={setActivatorNodeRef} type="button" aria-label="Arrastar para organizar" className="-ml-1 cursor-grab touch-none rounded p-0.5 text-lat-3 opacity-0 hover:bg-lat-hover hover:text-lat-fg focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca group-hover:opacity-100 active:cursor-grabbing" {...attributes} {...listeners}>
-          <GripVertical className="h-3 w-3" />
-        </button>
-      )}
       {children}
     </div>
+  )
+}
+
+/** Ícone do item; ao passar o mouse vira a seta de abrir/recolher (quando há o que abrir). */
+function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto: boolean; alternar: () => void; rotulo: string; ativo: boolean; children: ReactNode }) {
+  if (!ativo) return <span className="flex h-4 w-4 shrink-0 items-center justify-center">{children}</span>
+  return (
+    <button
+      type="button"
+      onClick={alternar}
+      aria-label={`${aberto ? 'Recolher' : 'Expandir'} ${rotulo}`}
+      aria-expanded={aberto}
+      className="group/seta relative flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca"
+    >
+      <span className="flex transition-opacity group-hover/seta:opacity-0 group-focus-visible/seta:opacity-0">{children}</span>
+      <ChevronDown aria-hidden="true" className={`absolute h-3.5 w-3.5 text-lat-fg opacity-0 transition group-hover/seta:opacity-100 group-focus-visible/seta:opacity-100 ${aberto ? '' : '-rotate-90'}`} />
+    </button>
   )
 }
 
@@ -108,10 +124,10 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       id={lista.id}
       habilitado={podeArrastar}
       className={`${item} group ${caminho === href ? ativo : ''}`}
-      style={{ paddingLeft: 10 + nivel * 14 }}
+      style={{ paddingLeft: 8 + nivel * 14 }}
     >
       <Link href={href} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
-        <span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center" style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
         <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
       </Link>
       {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
@@ -124,11 +140,10 @@ function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrast
 
   return (
     <div>
-      <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 6 + nivel * 14 }}>
-        <button type="button" onClick={() => setAberta(!aberta)} aria-label={aberta ? `Recolher ${pasta.nome}` : `Expandir ${pasta.nome}`} aria-expanded={aberta} className="rounded p-0.5 hover:bg-lat-hover">
-          <ChevronRight className={`h-3 w-3 shrink-0 text-lat-3 transition-transform ${aberta ? 'rotate-90' : ''}`} />
-        </button>
-        <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
+      <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
+        <IconeAlternavel aberto={aberta} alternar={() => setAberta(!aberta)} rotulo={pasta.nome} ativo>
+          <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
+        </IconeAlternavel>
         <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
         <span className="ml-auto text-[9px] tabular-nums text-lat-3">{pasta.listas.length}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
@@ -147,19 +162,12 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
 
   return (
     <div>
-      <LinhaArrastavel tipo="space" id={espaco.id} habilitado={podeArrastar} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 6 + nivel * 14 }}>
-        <button
-          type="button"
-          onClick={() => temConteudo && setAberto(!aberto)}
-          aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'}
-          aria-expanded={aberto}
-          className={`rounded p-0.5 hover:bg-lat-hover ${temConteudo ? '' : 'invisible'}`}
-        >
-          <ChevronRight className={`h-3 w-3 transition-transform ${aberto ? 'rotate-90' : ''}`} />
-        </button>
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-lat-fg" style={{ background: espaco.cor }}>
-          <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
-        </span>
+      <LinhaArrastavel tipo="space" id={espaco.id} habilitado={podeArrastar} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
+        <IconeAlternavel aberto={aberto} alternar={() => setAberto(!aberto)} rotulo={espaco.nome} ativo={temConteudo}>
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
+            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
+          </span>
+        </IconeAlternavel>
         <Link href={href} className="min-w-0 flex-1 truncate">
           {espaco.nome}
         </Link>
@@ -178,7 +186,7 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId }: Props) {
+function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
   const caminho = usePathname()
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
@@ -221,6 +229,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-lat-borda px-4">
         <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
+        {acaoTopo}
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
@@ -235,7 +244,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
         <div className="mx-2 my-3 border-t border-lat-borda" />
 
-        <DndContext sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
+        <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
               <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
@@ -284,11 +293,115 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
   )
 }
 
-export function BarraLateral(props: Props) {
+const botaoTopo = 'rounded-md p-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca'
+
+function gravarPreferencia(chave: string, valor: string) {
+  document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
+}
+
+export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & { modoInicial: ModoLateral; larguraInicial: number }) {
+  const [modo, setModo] = useState(modoInicial)
+  const [largura, setLargura] = useState(larguraInicial)
+  const [aberta, setAberta] = useState(false)
+  const asideRef = useRef<HTMLElement>(null)
+  const arrasto = useRef<{ x: number; largura: number } | null>(null)
+  const atraso = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recolhida = modo === 'recolhida'
+
+  const trocarModo = (novo: ModoLateral) => {
+    setModo(novo)
+    setAberta(false)
+    gravarPreferencia(COOKIE_MODO_LATERAL, novo)
+  }
+  const abrir = () => {
+    if (atraso.current) clearTimeout(atraso.current)
+    setAberta(true)
+  }
+  const fecharComAtraso = () => {
+    if (atraso.current) clearTimeout(atraso.current)
+    atraso.current = setTimeout(() => {
+      // Mantém aberta enquanto um popover/diálogo aberto a partir da barra ainda está ativo
+      // (só gatilhos com aria-haspopup; os botões de expandir a árvore ficam sempre expandidos).
+      if (asideRef.current?.querySelector('[aria-haspopup][aria-expanded="true"]')) return
+      setAberta(false)
+    }, 250)
+  }
+  const aplicarLargura = (valor: number) => {
+    const nova = limitarLargura(valor)
+    setLargura(nova)
+    gravarPreferencia(COOKIE_LARGURA_LATERAL, String(nova))
+  }
+  const iniciarArrasto = (evento: PointerEvent<HTMLButtonElement>) => {
+    arrasto.current = { x: evento.clientX, largura: asideRef.current?.offsetWidth ?? largura }
+    evento.currentTarget.setPointerCapture(evento.pointerId)
+    evento.preventDefault()
+  }
+  // Durante o arrasto só a variável CSS muda (sem re-render da árvore); o estado é gravado ao soltar.
+  const moverArrasto = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (!arrasto.current) return
+    asideRef.current?.style.setProperty('--lat-w', `${limitarLargura(arrasto.current.largura + evento.clientX - arrasto.current.x)}px`)
+  }
+  const soltarArrasto = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (!arrasto.current) return
+    arrasto.current = null
+    if (evento.currentTarget.hasPointerCapture(evento.pointerId)) evento.currentTarget.releasePointerCapture(evento.pointerId)
+    if (asideRef.current) aplicarLargura(asideRef.current.offsetWidth)
+  }
+  const redimensionarComTeclado = (evento: KeyboardEvent<HTMLButtonElement>) => {
+    if (evento.key !== 'ArrowLeft' && evento.key !== 'ArrowRight') return
+    evento.preventDefault()
+    aplicarLargura(largura + (evento.key === 'ArrowRight' ? 16 : -16))
+  }
+
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 border-r border-lat-borda md:flex">
-        <Painel {...props} />
+      {recolhida && <div aria-hidden="true" className="fixed inset-y-0 left-0 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      <aside
+        ref={asideRef}
+        style={{ '--lat-w': `${largura}px` } as CSSProperties}
+        onMouseEnter={recolhida ? abrir : undefined}
+        onMouseLeave={recolhida ? fecharComAtraso : undefined}
+        onFocus={recolhida ? abrir : undefined}
+        onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
+        className={`hidden h-screen w-[var(--lat-w)] border-r border-lat-borda md:flex ${
+          recolhida
+            ? `fixed inset-y-0 left-0 z-40 shadow-2xl transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-full'}`
+            : 'sticky top-0 shrink-0'
+        }`}
+      >
+        <Painel
+          {...props}
+          acaoTopo={
+            recolhida ? (
+              <button type="button" onClick={() => trocarModo('fixa')} aria-label="Fixar barra lateral" title="Fixar barra lateral" className={botaoTopo}>
+                <Pin className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : (
+              <button type="button" onClick={() => trocarModo('recolhida')} aria-label="Recolher barra lateral" title="Recolher barra lateral" className={botaoTopo}>
+                <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )
+          }
+        />
+        {!recolhida && (
+          <button
+            type="button"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Ajustar largura da barra lateral"
+            aria-valuenow={largura}
+            aria-valuemin={LARGURA_LATERAL.minima}
+            aria-valuemax={LARGURA_LATERAL.maxima}
+            title="Arraste para ajustar. Duplo clique restaura."
+            onPointerDown={iniciarArrasto}
+            onPointerMove={moverArrasto}
+            onPointerUp={soltarArrasto}
+            onPointerCancel={soltarArrasto}
+            onDoubleClick={() => aplicarLargura(LARGURA_LATERAL.padrao)}
+            onKeyDown={redimensionarComTeclado}
+            className="absolute -right-1 top-0 z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-transparent hover:after:bg-marca focus-visible:after:w-0.5 focus-visible:after:bg-marca"
+          />
+        )}
       </aside>
 
       <div className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-borda bg-white/95 px-3 backdrop-blur md:hidden">
