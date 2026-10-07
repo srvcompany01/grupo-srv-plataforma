@@ -29,6 +29,21 @@ const DATA_HORA = new Intl.DateTimeFormat('pt-BR', {
   minute: '2-digit',
 })
 
+const ATIVIDADE = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Belem',
+  day: 'numeric',
+  month: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+/** 'jun 1 às 17:51' (fuso de Belém), como na linha do tempo da tarefa. */
+export function formatarDataAtividade(d: Date): string {
+  const p = Object.fromEntries(ATIVIDADE.formatToParts(d).map((x) => [x.type, x.value]))
+  return `${MESES[Number(p.month) - 1]} ${Number(p.day)} às ${p.hour}:${p.minute}`
+}
+
 export function formatarDataHora(d: Date): string {
   const p = Object.fromEntries(DATA_HORA.formatToParts(d).map((x) => [x.type, x.value]))
   return `${p.day}/${p.month}/${p.year} às ${p.hour}:${p.minute}`

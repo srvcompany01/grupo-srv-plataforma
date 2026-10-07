@@ -64,40 +64,47 @@ function Item({ c, meu }: { c: Comentario; meu: boolean }) {
   )
 }
 
-export function Comentarios({ tarefaId, comentarios, euId }: { tarefaId: string; comentarios: Comentario[]; euId: string }) {
+/** Caixa mínima de comentário (provisória até a Task 9 trazer menções e anexos). */
+export function FormularioComentario({ tarefaId }: { tarefaId: string }) {
   const [texto, setTexto] = useState('')
   const [interno, setInterno] = useState(true)
   const [pendente, iniciar] = useTransition()
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        iniciar(async () => {
+          if (avisar(await comentarAcao(tarefaId, texto, interno))) setTexto('')
+        })
+      }}
+      className="space-y-2 rounded-md border border-borda p-2"
+    >
+      <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva um comentário…" className="w-full resize-none text-[13px] outline-none" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex rounded-md bg-hover p-0.5 text-[12px]">
+          <button type="button" onClick={() => setInterno(true)} className={`rounded px-2 py-0.5 ${interno ? 'bg-white shadow-sm' : 'text-texto-2'}`}>
+            Interno
+          </button>
+          <button type="button" onClick={() => setInterno(false)} className={`rounded px-2 py-0.5 ${!interno ? 'bg-white text-emerald-700 shadow-sm' : 'text-texto-2'}`}>
+            Externo
+          </button>
+        </div>
+        <button disabled={pendente || !texto.trim()} className={botaoPrimario}>
+          Comentar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export function Comentarios({ tarefaId, comentarios, euId }: { tarefaId: string; comentarios: Comentario[]; euId: string }) {
   return (
     <div className="space-y-4">
       {comentarios.length === 0 && <p className="text-[13px] text-texto-3">Nenhum comentário ainda.</p>}
       {comentarios.map((c) => (
         <Item key={c.id} c={c} meu={c.autorId === euId} />
       ))}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          iniciar(async () => {
-            if (avisar(await comentarAcao(tarefaId, texto, interno))) setTexto('')
-          })
-        }}
-        className="space-y-2 rounded-md border border-borda p-2"
-      >
-        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva um comentário…" className="w-full resize-none text-[13px] outline-none" />
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex rounded-md bg-hover p-0.5 text-[12px]">
-            <button type="button" onClick={() => setInterno(true)} className={`rounded px-2 py-0.5 ${interno ? 'bg-white shadow-sm' : 'text-texto-2'}`}>
-              Interno
-            </button>
-            <button type="button" onClick={() => setInterno(false)} className={`rounded px-2 py-0.5 ${!interno ? 'bg-white text-emerald-700 shadow-sm' : 'text-texto-2'}`}>
-              Externo
-            </button>
-          </div>
-          <button disabled={pendente || !texto.trim()} className={botaoPrimario}>
-            Comentar
-          </button>
-        </div>
-      </form>
+      <FormularioComentario tarefaId={tarefaId} />
     </div>
   )
 }

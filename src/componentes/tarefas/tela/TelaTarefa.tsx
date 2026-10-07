@@ -4,13 +4,16 @@ import { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/tabs'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { Pessoa, StatusLista } from '@/dominio/tarefas'
+import type { NomesAtividade } from '@/dominio/atividade'
 import { rotulo } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios'
 import type { ItemAtividade, TarefaCompleta } from '@/servicos/tarefas'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
+import { FormularioComentario } from '../Comentarios'
 import { EditorDescricao } from '../EditorDescricao'
 import { CabecalhoTarefa } from './CabecalhoTarefa'
 import { GradePropriedades } from './GradePropriedades'
+import { PainelAtividade } from './PainelAtividade'
 import { SecaoCampos } from './SecaoCampos'
 import { SecaoSubtarefas } from './SecaoSubtarefas'
 
@@ -38,6 +41,12 @@ export type PropsTela = {
 /** Tela da tarefa: coluna principal rolável + coluna Atividade (400px; aba abaixo de lg). */
 export function TelaTarefa(p: PropsTela) {
   const t = p.tarefa
+  const nomes: NomesAtividade = {
+    status: Object.fromEntries(p.status.map((s) => [s.id, s.nome])),
+    usuarios: Object.fromEntries(p.equipe.map((u) => [u.id, u.nome])),
+    tags: Object.fromEntries(p.tags.map((g) => [g.id, g.nome])),
+    campos: Object.fromEntries(p.camposPersonalizados.map((c) => [c.id, { nome: c.nome, tipo: c.tipo, configuracao: c.configuracao }])),
+  }
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-white">
@@ -58,8 +67,8 @@ export function TelaTarefa(p: PropsTela) {
           <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
-        <aside className={`min-h-0 flex-col overflow-y-auto border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden lg:flex'}`}>
-          <h2 className="border-b border-borda px-4 py-3 text-[14px] font-semibold">Atividade</h2>
+        <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden lg:flex'}`}>
+          <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<FormularioComentario tarefaId={t.id} />} />
         </aside>
       </div>
     </div>

@@ -39,3 +39,12 @@ describe('duração', () => {
     expect(formatarRelogio(65)).toBe('0:01:05')
   })
 })
+
+describe('formatarDataAtividade', () => {
+  it('"jun 1 às 17:51" no fuso de Belém', async () => {
+    const { formatarDataAtividade } = await import('@/dominio/formatar')
+    expect(formatarDataAtividade(new Date('2026-06-01T20:51:00Z'))).toBe('jun 1 às 17:51')
+    // 02:30Z ainda é o dia anterior em Belém
+    expect(formatarDataAtividade(new Date('2026-10-07T02:30:00Z'))).toBe('out 6 às 23:30')
+  })
+})
