@@ -496,6 +496,7 @@ export type Database = {
           name: string
           position: string
           reference_month: string | null
+          slug: string | null
           space_id: string | null
         }
         Insert: {
@@ -510,6 +511,7 @@ export type Database = {
           name: string
           position: string
           reference_month?: string | null
+          slug?: string | null
           space_id?: string | null
         }
         Update: {
@@ -524,6 +526,7 @@ export type Database = {
           name?: string
           position?: string
           reference_month?: string | null
+          slug?: string | null
           space_id?: string | null
         }
         Relationships: [

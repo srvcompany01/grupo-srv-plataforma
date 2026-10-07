@@ -10,6 +10,8 @@ export type Lista = {
   emoji: string | null
   mes: string | null
   cliente: { id: string; nome: string; cor: string }
+  /** Área fixa da plataforma (a lista é a própria tela da área). */
+  slug: string | null
   espaco: { id: string | null; slug: string | null; nome: string; cor: string; icone: string; emoji: string | null }
   pasta: { id: string; nome: string; cor: string; icone: string; emoji: string | null } | null
   status: (StatusLista & { posicao: string })[]
@@ -21,7 +23,7 @@ export type Lista = {
 export async function buscarLista(sb: Supabase, id: string): Promise<Lista | null> {
   const { data: l, error } = await sb
     .from('lists')
-    .select('id, name, color, icon, emoji, reference_month, space_id, clients(id, name, color), spaces(id, name, color, icon, emoji, slug), folders(id, name, color, icon, emoji), list_statuses(id, name, color, category, position)')
+    .select('id, name, slug, color, icon, emoji, reference_month, space_id, clients(id, name, color), spaces(id, name, color, icon, emoji, slug), folders(id, name, color, icon, emoji), list_statuses(id, name, color, category, position)')
     .eq('id', id)
     .is('archived_at', null)
     .maybeSingle()
@@ -30,6 +32,7 @@ export async function buscarLista(sb: Supabase, id: string): Promise<Lista | nul
   const { data: podeGerir } = await sb.rpc('can_manage_space_target', { space: l.space_id })
   return {
     id: l.id,
+    slug: l.slug,
     nome: l.name,
     cor: l.color,
     icone: l.icon,

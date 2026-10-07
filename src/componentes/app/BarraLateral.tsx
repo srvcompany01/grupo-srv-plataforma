@@ -1,11 +1,7 @@
 'use client'
 
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import {
   CheckSquare,
-  ChevronDown,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -15,10 +11,8 @@ import {
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
-import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
-import { avisar } from '@/componentes/tarefas/avisar'
+import { usePathname } from 'next/navigation'
+import { useRef, useState, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { Avatar } from '@/componentes/Avatar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
@@ -26,190 +20,35 @@ import { IndicadorCronometro } from './IndicadorCronometro'
 import { SinoAvisos } from './SinoAvisos'
 import type { Aviso } from '@/servicos/avisos'
 import type { CronometroAtivo } from '@/servicos/tempo'
-import { CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
-import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
-import { rotuloMes } from '@/dominio/formatar'
+import type { Navegacao, NoEspaco } from '@/dominio/arvore-espacos'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 import { sair } from '@/app/(auth)/login/acoes'
 
-type Opcao = { id: string; nome: string }
-type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null; avisos: Aviso[]; naoLidos: number; euId: string }
+type Props = { navegacao: Navegacao; nome: string; papel: string; cronometro: CronometroAtivo | null; avisos: Aviso[]; naoLidos: number; euId: string }
 type IconeLucide = ComponentType<{ className?: string }>
-type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
   'flex h-8 items-center gap-2 rounded-md px-2 text-legenda tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
 
-function idArrastavel(tipo: TipoArrastavel, id: string) {
-  return `${tipo}:${id}`
-}
-
-function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
-  tipo: TipoArrastavel
-  id: string
-  habilitado: boolean
-  className: string
-  style?: CSSProperties
-  children: ReactNode
-}) {
-  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: idArrastavel(tipo, id),
-    data: { tipo, id },
-    disabled: !habilitado,
-  })
-  // Segurar e arrastar a linha inteira (o PointerSensor só ativa após 6px, então cliques seguem funcionando).
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      className={`${className} ${isDragging ? 'z-20 cursor-grabbing opacity-45 ring-1 ring-marca/40' : ''}`}
-      style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
-    >
-      {children}
-    </div>
-  )
-}
-
-/** Ícone do item; ao passar o mouse vira a seta de abrir/recolher (quando há o que abrir). */
-function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto: boolean; alternar: () => void; rotulo: string; ativo: boolean; children: ReactNode }) {
-  if (!ativo) return <span className="flex h-4 w-4 shrink-0 items-center justify-center">{children}</span>
-  return (
-    <button
-      type="button"
-      onClick={alternar}
-      aria-label={`${aberto ? 'Recolher' : 'Expandir'} ${rotulo}`}
-      aria-expanded={aberto}
-      className="group/seta relative flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca"
-    >
-      <span className="flex transition-opacity group-hover/seta:opacity-0 group-focus-visible/seta:opacity-0">{children}</span>
-      <ChevronDown aria-hidden="true" className={`absolute h-3.5 w-3.5 text-lat-fg opacity-0 transition group-hover/seta:opacity-100 group-focus-visible/seta:opacity-100 ${aberto ? '' : '-rotate-90'}`} />
-    </button>
-  )
-}
-
-function idsDaNavegacao(navegacao: Navegacao): string[] {
-  const ids: string[] = []
-  const adicionarEspaco = (espaco: NoEspaco) => {
-    ids.push(idArrastavel('space', espaco.id))
-    espaco.filhos.forEach(adicionarEspaco)
-    for (const pasta of espaco.pastas) {
-      ids.push(idArrastavel('folder', pasta.id))
-      pasta.listas.forEach((lista) => ids.push(idArrastavel('list', lista.id)))
-    }
-    espaco.listas.forEach((lista) => ids.push(idArrastavel('list', lista.id)))
-  }
-  navegacao.espacos.forEach(adicionarEspaco)
-  for (const pasta of navegacao.pastasRaiz) {
-    ids.push(idArrastavel('folder', pasta.id))
-    pasta.listas.forEach((lista) => ids.push(idArrastavel('list', lista.id)))
-  }
-  navegacao.listasRaiz.forEach((lista) => ids.push(idArrastavel('list', lista.id)))
-  return ids
-}
-
-function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista; nivel: number; podeGerir: boolean; podeArrastar: boolean }) {
+/** Área fixa da plataforma: um link direto para a lista da área. */
+function LinkArea({ espaco }: { espaco: NoEspaco }) {
   const caminho = usePathname()
-  const href = `/listas/${lista.id}`
-  const detalhe = [`@${lista.clienteNome}`, lista.mes && rotuloMes(lista.mes)].filter(Boolean).join(' · ')
-
-  return (
-    <LinhaArrastavel
-      tipo="list"
-      id={lista.id}
-      habilitado={podeArrastar}
-      className={`${item} group ${caminho === href ? ativo : ''}`}
-      style={{ paddingLeft: 8 + nivel * 14 }}
-    >
-      <Link href={href} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center" style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
-        <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
-      </Link>
-      {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
-    </LinhaArrastavel>
-  )
-}
-
-function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; clientes: Opcao[]; podeGerir: boolean; podeArrastar: boolean }) {
-  const [aberta, setAberta] = useState(true)
-
-  return (
-    <div>
-      <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberta} alternar={() => setAberta(!aberta)} rotulo={pasta.nome} ativo>
-          <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
-        </IconeAlternavel>
-        <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
-        {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
-        {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
-      </LinhaArrastavel>
-      {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-    </div>
-  )
-}
-
-function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; clientes: Opcao[]; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
-  const caminho = usePathname()
-  const [aberto, setAberto] = useState(true)
   const href = `/${espaco.slug}`
-  const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
-
   return (
-    <div>
-      <LinhaArrastavel tipo="space" id={espaco.id} habilitado={podeArrastar} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberto} alternar={() => setAberto(!aberto)} rotulo={espaco.nome} ativo={temConteudo}>
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
-            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
-          </span>
-        </IconeAlternavel>
-        <Link href={href} className="min-w-0 flex-1 truncate">
-          {espaco.nome}
-        </Link>
-        {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} />}
-        {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
-      </LinhaArrastavel>
-
-      {aberto && (
-        <div>
-          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} clientes={clientes} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
-          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-          {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-        </div>
-      )}
-    </div>
+    <Link href={href} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
+        <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{espaco.nome}</span>
+    </Link>
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
+function Painel({ navegacao, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
   const caminho = usePathname()
-  const router = useRouter()
-  const [movendo, iniciarMovimento] = useTransition()
-  const podeArrastar = papel === 'admin'
-  const sensores = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
   // Só as áreas fixas aparecem; espaços antigos (sem slug) ficam fora da navegação.
-  const arvore = navegacao.espacos.filter((espaco) => espaco.slug)
-  const itensOrdenaveis = useMemo(() => idsDaNavegacao(navegacao), [navegacao])
-
-  const concluirMovimento = (evento: DragEndEvent) => {
-    if (!evento.over) return
-    const origem = evento.active.data.current as { tipo?: TipoArrastavel; id?: string } | undefined
-    const destino = evento.over.data.current as { tipo?: TipoArrastavel | 'root'; id?: string } | undefined
-    if (!origem?.tipo || !origem.id || !destino?.tipo) return
-    if (destino.tipo !== 'root' && !destino.id) return
-    const tipoOrigem = origem.tipo
-    const idOrigem = origem.id
-    const tipoDestino = destino.tipo
-    const idDestino = destino.id
-    iniciarMovimento(async () => {
-      const alvo = tipoDestino === 'root' ? { tipo: 'root' as const } : { tipo: tipoDestino, id: idDestino as string }
-      if (!avisar(await moverItemNavegacao({ tipo: tipoOrigem, id: idOrigem, alvo }), true)) return
-      router.refresh()
-    })
-  }
+  const areas = navegacao.espacos.filter((espaco) => espaco.slug)
 
   const link = (href: string, rotulo: string, Icone: IconeLucide) => (
     <Link href={href} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
@@ -226,7 +65,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
         {acaoTopo}
       </div>
 
-      <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         <div className="flex h-8 items-center px-2">
           <h2 className="text-legenda font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
         </div>
@@ -239,19 +78,13 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
         <div className="mx-2 my-3 border-t border-lat-borda" />
 
-        <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragEnd={concluirMovimento}>
-          <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
-            <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Áreas</h2>
-            </div>
-
-            <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhuma área disponível.</p>}
-              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={false} podeArrastar={podeArrastar} />)}
-            </nav>
-
-          </SortableContext>
-        </DndContext>
+        <div className="flex h-8 items-center px-2">
+          <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Áreas</h2>
+        </div>
+        <nav className="space-y-0.5">
+          {areas.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhuma área disponível.</p>}
+          {areas.map((espaco) => <LinkArea key={espaco.id} espaco={espaco} />)}
+        </nav>
       </div>
 
       <div className="shrink-0 border-t border-lat-borda p-2">

@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
+import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { PaginaArea } from '../espacos/PaginaArea'
+import { PaginaLista } from '../listas/PaginaLista'
 
 export default async function Area({ searchParams }: PageProps<'/trafego-performance'>) {
-  const { data } = await (await criarClienteServidor()).from('spaces').select('id').eq('slug', 'trafego-performance').is('archived_at', null).maybeSingle()
+  await exigirEquipe()
+  const { data } = await (await criarClienteServidor()).from('lists').select('id').eq('slug', 'trafego-performance').is('archived_at', null).maybeSingle()
   if (!data) notFound()
-  return <PaginaArea id={data.id} caminho="/trafego-performance" sp={await searchParams} />
+  return <PaginaLista id={data.id} caminho="/trafego-performance" sp={await searchParams} />
 }
