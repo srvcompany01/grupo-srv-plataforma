@@ -1,8 +1,8 @@
 'use client'
 
-import { Check, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { Check, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
-import { adicionarCampoExistente, criarCampoPersonalizado } from '@/app/(app)/acoes-campos'
+import { adicionarCampoExistente, criarCampoPersonalizado, removerCampoDaLista } from '@/app/(app)/acoes-campos'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
@@ -65,7 +65,7 @@ function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: ItemCat
   )
 }
 
-export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco }: { listaId: string; espacoId: string; camposDaLista: DefinicaoCampo[]; camposDoEspaco: DefinicaoCampo[] }) {
+export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspaco }: { listaId: string; espacoId: string | null; camposDaLista: DefinicaoCampo[]; camposDoEspaco: DefinicaoCampo[] }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
   const [selecionado, setSelecionado] = useState<ItemCatalogoCampo | null>(null)
@@ -95,7 +95,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
           </form>
         ) : (
           <Tabs defaultValue="novo">
-            <TabsList><TabsTrigger value="novo">Criar novo</TabsTrigger><TabsTrigger value="existente">Adicionar existente</TabsTrigger></TabsList>
+            <TabsList><TabsTrigger value="novo">Criar novo</TabsTrigger><TabsTrigger value="existente">Adicionar existente</TabsTrigger><TabsTrigger value="lista">Na lista ({camposDaLista.length})</TabsTrigger></TabsList>
             <div className="relative mt-3"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" /><input className={`${campo} pl-9`} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar campos de tarefa" /></div>
             <TabsContent value="novo" className="pt-3"><Catalogo busca={busca} onSelect={escolher} /></TabsContent>
             <TabsContent value="existente" className="space-y-1 pt-3">
@@ -104,6 +104,25 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
                 return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-emerald-600" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
               })}
               {camposDoEspaco.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Ainda não há campos reutilizáveis neste espaço.</p>}
+            </TabsContent>
+            <TabsContent value="lista" className="space-y-1 pt-3">
+              {camposDaLista.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
+                <div key={item.id} className="flex items-center gap-3 rounded-xl border border-borda px-3 py-2.5">
+                  <span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{item.nome}</span><span className="block text-[11px] text-texto-3">{CATALOGO_CAMPOS.find((catalogo) => catalogo.tipo === item.tipo)?.nome ?? item.tipo}</span></span>
+                  <button
+                    type="button"
+                    disabled={pendente}
+                    aria-label={`Remover ${item.nome} da lista`}
+                    title="Remover da lista"
+                    onClick={() => iniciar(async () => void avisar(await removerCampoDaLista(listaId, item.id)))}
+                    className="rounded-lg p-2 text-texto-3 transition hover:bg-rose-50 hover:text-rose-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              {camposDaLista.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Nenhum campo foi adicionado a esta lista.</p>}
             </TabsContent>
           </Tabs>
         )}

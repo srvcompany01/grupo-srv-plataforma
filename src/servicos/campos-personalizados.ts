@@ -1,11 +1,12 @@
 import { calcularFormula, type ConfigCampo, type DefinicaoCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
+import type { TarefaResumo } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { dados } from './resultado'
 
 type LinhaCampo = {
   id: string
-  space_id: string
+  space_id: string | null
   name: string
   type: string
   config: Json
@@ -35,6 +36,17 @@ export async function listarCamposDoEspaco(sb: Supabase, espacoId: string): Prom
       .order('position'),
   )
   return (linhas as LinhaCampo[]).map(paraCampo)
+}
+
+/** Campos reutilizáveis disponíveis no mesmo contexto da lista, inclusive na raiz. */
+export async function listarCamposDoContexto(sb: Supabase, espacoId: string | null): Promise<DefinicaoCampo[]> {
+  let consulta = sb
+    .from('custom_fields')
+    .select('id, space_id, name, type, config, color, icon')
+    .is('archived_at', null)
+    .order('position')
+  consulta = espacoId ? consulta.eq('space_id', espacoId) : consulta.is('space_id', null)
+  return (dados(await consulta) as LinhaCampo[]).map(paraCampo)
 }
 
 export async function listarCamposDaLista(sb: Supabase, listaId: string): Promise<DefinicaoCampo[]> {
@@ -74,6 +86,57 @@ export async function listarCamposDaTarefa(sb: Supabase, tarefaId: string, lista
   return campos
 }
 
+type LinhaValor = { task_id: string; field_id: string; value: Json }
+
+/**
+ * Anexa os valores tipados às tarefas para que a visão de lista use exatamente a
+ * mesma fonte do painel da tarefa. Fórmulas e progresso automático são calculados
+ * na leitura, sem duplicar resultados derivados no banco.
+ */
+export function anexarValoresPersonalizados(
+  tarefas: TarefaResumo[],
+  campos: DefinicaoCampo[],
+  linhas: LinhaValor[],
+): TarefaResumo[] {
+  const porTarefa = new Map<string, Map<string, Json | null>>()
+  for (const tarefa of tarefas) porTarefa.set(tarefa.id, new Map())
+  for (const linha of linhas) porTarefa.get(linha.task_id)?.set(linha.field_id, linha.value)
+
+  const filhos = new Map<string, TarefaResumo[]>()
+  for (const tarefa of tarefas) {
+    if (tarefa.paiId) filhos.set(tarefa.paiId, [...(filhos.get(tarefa.paiId) ?? []), tarefa])
+  }
+
+  return tarefas.map((tarefa) => {
+    const valores = porTarefa.get(tarefa.id) ?? new Map<string, Json | null>()
+    const subtarefas = filhos.get(tarefa.id) ?? []
+    const concluidas = subtarefas.filter((item) => !!item.concluidaEm).length
+    for (const campo of campos) {
+      if (campo.tipo === 'progress_auto') valores.set(campo.id, subtarefas.length ? Math.round((concluidas / subtarefas.length) * 100) : 0)
+    }
+    for (const campo of campos) {
+      if (campo.tipo === 'formula') valores.set(campo.id, calcularFormula(campo.configuracao, valores))
+    }
+    return { ...tarefa, camposPersonalizados: Object.fromEntries(valores) }
+  })
+}
+
+export async function carregarValoresPersonalizados(
+  sb: Supabase,
+  tarefas: TarefaResumo[],
+  campos: DefinicaoCampo[],
+): Promise<TarefaResumo[]> {
+  if (!tarefas.length || !campos.length) return tarefas
+  const linhas = dados(
+    await sb
+      .from('task_custom_field_values')
+      .select('task_id, field_id, value')
+      .in('task_id', tarefas.map((tarefa) => tarefa.id))
+      .in('field_id', campos.map((campo) => campo.id)),
+  ) as LinhaValor[]
+  return anexarValoresPersonalizados(tarefas, campos, linhas)
+}
+
 /** Dados numéricos já normalizados para relatórios, somas, médias e séries. */
 export async function valoresNumericosParaRelatorio(sb: Supabase, campoId: string) {
   return dados(
@@ -82,5 +145,15 @@ export async function valoresNumericosParaRelatorio(sb: Supabase, campoId: strin
       .select('task_id, number_value, updated_at')
       .eq('field_id', campoId)
       .not('number_value', 'is', null),
+  )
+}
+
+/** Fonte tipada completa para painéis: cada tipo usa sua coluna normalizada. */
+export async function valoresParaRelatorio(sb: Supabase, campoId: string) {
+  return dados(
+    await sb
+      .from('task_custom_field_values')
+      .select('task_id, field_id, value, number_value, text_value, date_value, boolean_value, updated_at')
+      .eq('field_id', campoId),
   )
 }

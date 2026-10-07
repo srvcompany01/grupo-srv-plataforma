@@ -75,6 +75,7 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',
     clienteNome: t.lists?.clients?.name ?? '',
+    camposPersonalizados: {},
     responsaveis: t.task_assignees.flatMap((a) => (a.profiles ? [{ id: a.profiles.id, nome: a.profiles.full_name, avatar: a.profiles.avatar_url }] : [])),
     tags: t.task_tags.flatMap((x) => (x.tags ? [{ id: x.tags.id, nome: x.tags.name, cor: x.tags.color }] : [])),
   }

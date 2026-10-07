@@ -141,7 +141,7 @@ export type Database = {
           id: string
           name: string
           position: string
-          space_id: string
+          space_id: string | null
           type: string
           updated_at: string
         }
@@ -154,7 +154,7 @@ export type Database = {
           id?: string
           name: string
           position: string
-          space_id: string
+          space_id?: string | null
           type: string
           updated_at?: string
         }
@@ -167,7 +167,7 @@ export type Database = {
           id?: string
           name?: string
           position?: string
-          space_id?: string
+          space_id?: string | null
           type?: string
           updated_at?: string
         }

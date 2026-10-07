@@ -139,7 +139,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
     <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-[13px] transition hover:border-borda-forte">
       {ctx.mostrarLista && (
         <p className="truncate text-[11px] text-texto-3">
-          {tarefa.listaNome} · {tarefa.clienteNome}
+          {tarefa.listaNome} · @{tarefa.clienteNome}
         </p>
       )}
       <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium hover:text-marca">

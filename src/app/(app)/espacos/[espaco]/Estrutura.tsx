@@ -67,14 +67,14 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
           <input name="nome" required placeholder="Ex.: Conteúdo Estratégico" className={campo} />
         </label>
         <label className="space-y-1">
-          <span className={rotulo}>Cliente</span>
+          <span className={rotulo}>Tag do cliente</span>
           <select name="clienteId" required defaultValue="" className={campo}>
             <option value="" disabled>
-              Escolha…
+              Escolha a tag…
             </option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nome}
+                @{c.nome}
               </option>
             ))}
           </select>

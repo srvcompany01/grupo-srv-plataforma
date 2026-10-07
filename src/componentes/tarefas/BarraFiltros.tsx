@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, ChevronDown, CircleDot, Flag, Layers3, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
+import { ChevronDown, CircleDot, Flag, Layers3, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   DropdownMenu,
@@ -133,7 +133,7 @@ export function BarraFiltros({
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Status" chave="status" opcoes={status} Icone={CircleDot} tom="violeta" />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Prioridade" chave="prioridades" opcoes={PRIORIDADES.map((p) => ({ id: p, nome: ROTULO_PRIORIDADE[p] }))} Icone={Flag} tom="âmbar" />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Etiqueta" chave="tags" opcoes={tags} Icone={Tags} tom="rosa" />
-      {clientes && <Multi filtros={filtros} aplicar={aplicar} rotulo="Cliente" chave="clientes" opcoes={clientes} Icone={Building2} tom="verde" />}
+      {clientes && <Multi filtros={filtros} aplicar={aplicar} rotulo="Tag do cliente" chave="clientes" opcoes={clientes.map((cliente) => ({ ...cliente, nome: `@${cliente.nome}` }))} Icone={Tags} tom="verde" />}
       <DropdownMenu>
         <DropdownMenuTrigger className={`${botao} ${filtros.prazo ? 'border-marca bg-marca-fundo text-marca' : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
           {filtros.prazo ? ROTULO_PRAZO[filtros.prazo] : 'Prazo'}

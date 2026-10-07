@@ -61,7 +61,7 @@ export type ConfigCampo = {
 
 export type DefinicaoCampo = {
   id: string
-  espacoId: string
+  espacoId: string | null
   nome: string
   tipo: TipoCampoPersonalizado
   configuracao: ConfigCampo

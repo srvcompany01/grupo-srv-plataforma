@@ -16,7 +16,7 @@ import { agruparPorStatus, montarArvore, PRIORIDADES, ROTULO_PRIORIDADE, type No
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags } from '@/servicos/listas'
-import { listarCamposDaLista, listarCamposDoEspaco } from '@/servicos/campos-personalizados'
+import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
 
@@ -63,15 +63,16 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
 
   const filtros = lerFiltros(await searchParams)
   const hoje = dataDeHoje(new Date())
-  const [tarefas, equipe, tags, camposDaLista, camposDoEspaco] = await Promise.all([
+  const [tarefasBrutas, equipe, tags, camposDaLista, camposDoEspaco] = await Promise.all([
     listarTarefas(sb, { listaId: id }, filtros, hoje),
     listarEquipe(sb),
     listarTags(sb, lista.espaco.id),
     listarCamposDaLista(sb, id),
-    lista.espaco.id ? listarCamposDoEspaco(sb, lista.espaco.id) : Promise.resolve([]),
+    listarCamposDoContexto(sb, lista.espaco.id),
   ])
+  const tarefas = await carregarValoresPersonalizados(sb, tarefasBrutas, camposDaLista)
   const arvore = montarArvore(tarefas)
-  const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false }
+  const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false, camposPersonalizados: camposDaLista }
   const grupos = gruposDaLista(arvore, lista.status, filtros)
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
@@ -97,13 +98,13 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
               <h1 className="flex min-w-0 items-center gap-1.5 font-bold text-texto"><span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.nome}</span></h1>
             </nav>
             <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-[10px]">
-              <span className="rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{lista.cliente.nome}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700"><span className="text-emerald-500">#</span>{lista.cliente.nome}</span>
               {lista.mes && <span className="rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">{rotuloMes(lista.mes)}</span>}
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">
             <CompartilharLista nome={lista.nome} />
-            {lista.podeGerir && lista.espaco.id && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
+            {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
           </div>
         </div>

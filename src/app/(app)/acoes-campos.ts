@@ -11,7 +11,7 @@ import { tentar, type Resultado } from '@/servicos/acao'
 export type ResultadoCampo = { ok?: string; erro?: string; id?: string } | null
 
 export async function criarCampoPersonalizado(dados: {
-  espacoId: string
+  espacoId: string | null
   listaId: string
   nome: string
   tipo: TipoCampoPersonalizado
@@ -25,12 +25,13 @@ export async function criarCampoPersonalizado(dados: {
   const sb = await criarClienteServidor()
   let id = ''
   const resultado = await tentar(async () => {
-    const { data: ultimos, error: erroPosicao } = await sb
+    let consultaPosicao = sb
       .from('custom_fields')
       .select('position')
-      .eq('space_id', dados.espacoId)
       .order('position', { ascending: false })
       .limit(1)
+    consultaPosicao = dados.espacoId ? consultaPosicao.eq('space_id', dados.espacoId) : consultaPosicao.is('space_id', null)
+    const { data: ultimos, error: erroPosicao } = await consultaPosicao
     if (erroPosicao) throw erroPosicao
     const configuracao = { ...configuracaoPadrao(dados.tipo), ...dados.configuracao }
     const { data, error } = await sb
@@ -84,11 +85,31 @@ export async function adicionarCampoExistente(listaId: string, campoId: string):
   return resultado
 }
 
+export async function removerCampoDaLista(listaId: string, campoId: string): Promise<Resultado> {
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const resultado = await tentar(async () => {
+    const { error, count } = await sb
+      .from('list_custom_fields')
+      .delete({ count: 'exact' })
+      .eq('list_id', listaId)
+      .eq('field_id', campoId)
+    if (error) throw error
+    if (!count) throw { code: '42501' }
+  }, 'Campo removido da lista. Os valores foram preservados caso ele seja adicionado novamente.')
+  revalidatePath(`/listas/${listaId}`)
+  return resultado
+}
+
 export async function salvarValorCampo(tarefaId: string, campoId: string, valor: Json | null): Promise<Resultado> {
   await exigirEquipe()
   const sb = await criarClienteServidor()
   const vazio = valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)
+  let listaId = ''
   const resultado = await tentar(async () => {
+    const { data: tarefa, error: erroTarefa } = await sb.from('tasks').select('list_id').eq('id', tarefaId).single()
+    if (erroTarefa) throw erroTarefa
+    listaId = tarefa.list_id
     if (vazio) {
       const { error } = await sb.from('task_custom_field_values').delete().eq('task_id', tarefaId).eq('field_id', campoId)
       if (error) throw error
@@ -98,5 +119,6 @@ export async function salvarValorCampo(tarefaId: string, campoId: string, valor:
     if (error) throw error
   })
   revalidatePath(`/tarefas/${tarefaId}`)
+  if (listaId) revalidatePath(`/listas/${listaId}`)
   return resultado
 }

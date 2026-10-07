@@ -205,7 +205,7 @@ export function CriarEstruturaDialog({
             <label className="block flex-1 space-y-1"><span className={rotulo}>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
           </div>
           {modo === 'lista' && <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1"><span className={rotulo}>Cliente</span><select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}><option value="">Escolha…</option>{clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></label>
+            <label className="space-y-1"><span className={rotulo}>Tag do cliente</span><select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}><option value="">Escolha a tag…</option>{clientes.map((c) => <option key={c.id} value={c.id}>@{c.nome}</option>)}</select></label>
             <label className="space-y-1"><span className={rotulo}>Pasta</span><select value={pastaId} onChange={(e) => setPastaId(e.target.value)} className={campo}><option value="">Sem pasta</option>{pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
             <label className="space-y-1 sm:col-span-2"><span className={rotulo}>Mês de referência</span><input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className={campo} /></label>
           </div>}

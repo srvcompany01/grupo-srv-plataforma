@@ -107,7 +107,7 @@ function idsDaNavegacao(navegacao: Navegacao): string[] {
 function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista; nivel: number; podeGerir: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
   const href = `/listas/${lista.id}`
-  const detalhe = [lista.clienteNome, lista.mes && rotuloMes(lista.mes)].filter(Boolean).join(' · ')
+  const detalhe = [`@${lista.clienteNome}`, lista.mes && rotuloMes(lista.mes)].filter(Boolean).join(' · ')
 
   return (
     <LinhaArrastavel

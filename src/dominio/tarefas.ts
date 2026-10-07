@@ -1,3 +1,5 @@
+import type { Json } from '@/infra/supabase/tipos'
+
 export const PRIORIDADES = ['urgente', 'alta', 'normal', 'baixa'] as const
 export type Prioridade = (typeof PRIORIDADES)[number]
 
@@ -35,6 +37,8 @@ export type TarefaResumo = {
   listaNome: string
   clienteNome: string
   concluidaEm: string | null
+  /** Valores dos campos vinculados à lista, indexados pelo id da definição. */
+  camposPersonalizados?: Record<string, Json | null>
 }
 
 export type No<T> = T & { filhos: No<T>[] }

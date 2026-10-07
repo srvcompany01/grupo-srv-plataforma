@@ -87,7 +87,7 @@ export function DetalheTarefa(p: PropsDetalhe) {
           {t.lista.nome}
         </Link>
         {' · '}
-        {t.lista.clienteNome}
+        @{t.lista.clienteNome}
         {t.lista.mes && ` · ${rotuloMes(t.lista.mes)}`}
         {t.paiId && (
           <>
@@ -199,7 +199,7 @@ export function DetalheTarefa(p: PropsDetalhe) {
               onChange={(e) => {
                 const destino = p.listas.find((l) => l.id === e.target.value)
                 if (!destino) return
-                const aviso = destino.clienteId !== t.lista.clienteId ? `\n\nAtenção: o cliente muda para ${destino.clienteNome}.` : ''
+                const aviso = destino.clienteId !== t.lista.clienteId ? `\n\nAtenção: a tag do cliente muda para @${destino.clienteNome}.` : ''
                 if (confirm(`Mover a tarefa (e as subtarefas) para "${destino.nome}"?${aviso}`)) {
                   iniciar(async () => void avisar(await moverParaListaAcao(t.id, destino.id), true))
                 } else e.target.value = t.lista.id
@@ -208,7 +208,7 @@ export function DetalheTarefa(p: PropsDetalhe) {
             >
               {p.listas.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.espacoNome} › {l.nome} · {l.clienteNome}
+                  {l.espacoNome} › {l.nome} · @{l.clienteNome}
                   {l.mes ? ` · ${rotuloMes(l.mes)}` : ''}
                 </option>
               ))}
