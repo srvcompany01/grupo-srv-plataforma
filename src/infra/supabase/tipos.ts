@@ -984,10 +984,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_space_target: { Args: { space: string }; Returns: boolean }
+      can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
       can_manage_list: { Args: { list: string }; Returns: boolean }
-      can_manage_space_target: { Args: { space: string }; Returns: boolean }
+      can_manage_space_target: { Args: { space: string | null }; Returns: boolean }
       can_read_list: { Args: { list: string }; Returns: boolean }
       can_read_task: { Args: { task: string }; Returns: boolean }
       can_see_space: { Args: { space: string }; Returns: boolean }
@@ -1031,7 +1031,7 @@ export type Database = {
         }
         Returns: string
       }
-      list_space: { Args: { list: string }; Returns: string }
+      list_space: { Args: { list: string }; Returns: string | null }
       mover_tarefa: {
         Args: { p_position: string; p_status: string; p_task: string }
         Returns: undefined
