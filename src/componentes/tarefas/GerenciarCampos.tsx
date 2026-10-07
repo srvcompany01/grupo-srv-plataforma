@@ -18,7 +18,7 @@ import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 const TIPOS_NUMERICOS = new Set(['number', 'money', 'rating', 'progress_auto', 'progress_manual', 'vote', 'formula'])
 
-function ConfiguracaoCampo({ item, config, onChange, campos }: { item: ItemCatalogoCampo; config: ConfigCampo; onChange: (config: ConfigCampo) => void; campos: DefinicaoCampo[] }) {
+export function ConfiguracaoCampo({ item, config, onChange, campos }: { item: ItemCatalogoCampo; config: ConfigCampo; onChange: (config: ConfigCampo) => void; campos: DefinicaoCampo[] }) {
   if (item.tipo === 'money') {
     return (
       <div className="grid grid-cols-2 gap-3">
@@ -48,7 +48,7 @@ function ConfiguracaoCampo({ item, config, onChange, campos }: { item: ItemCatal
   return <label className="block space-y-1"><span className={rotulo}>Texto de ajuda (opcional)</span><input className={campo} value={config.placeholder ?? ''} onChange={(e) => onChange({ ...config, placeholder: e.target.value })} placeholder="O que a equipe deve preencher?" /></label>
 }
 
-function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: ItemCatalogoCampo) => void }) {
+export function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: ItemCatalogoCampo) => void }) {
   const itens = CATALOGO_CAMPOS.filter((item) => `${item.nome} ${item.descricao}`.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
   return (
     <div className="max-h-[52vh] overflow-y-auto pr-1">
