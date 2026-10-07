@@ -6,15 +6,26 @@
 
 /* Sistema visual SRV: produtividade densa, superfícies planas e acentos contidos. */
 @theme inline {
-  /* Fonte única: Sora em todo o site. */
-  --font-sans: var(--font-sora), system-ui, sans-serif;
-  --font-display: var(--font-sans);
+  /* Duas famílias: Inter na interface; Cormorant Garamond só em títulos de página, números de KPI e destaques editoriais (classe font-display). */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, serif;
   --font-mono: var(--font-sans);
 
-  --color-marca: #d11a22;
-  --color-marca-escura: #a8131a;
-  --color-marca-clara: #f8c4c7;
-  --color-marca-fundo: #fdf0f0;
+  /* Identidade editorial: bordô como acento, petróleo para ação principal e navegação, marfim como base. */
+  /* Ação e acento vêm do tema (Configurações → Personalização); as variações saem por color-mix. */
+  --color-marca: var(--tema-acento);
+  --color-marca-escura: color-mix(in oklab, var(--tema-acento) 72%, black);
+  --color-marca-clara: color-mix(in oklab, var(--tema-acento) 28%, white);
+  --color-marca-fundo: color-mix(in oklab, var(--tema-acento) 10%, white);
+  --color-petroleo: var(--tema-acao);
+  --color-petroleo-700: color-mix(in oklab, var(--tema-acao) 84%, white);
+  --color-petroleo-100: color-mix(in oklab, var(--tema-acao) 14%, white);
+  --color-terracota: #b75b4b;
+  --color-areia: #f2e3c8;
+  --color-azul: #3e78b8;
+  --color-azul-fundo: #ddeaf8;
+  /* Superfície marfim no lugar do branco puro (bg-white/text-white seguem o token). */
+  --color-white: var(--tema-superficie);
   --color-lat-bg: var(--lat-bg);
   --color-lat-fg: var(--lat-fg);
   --color-lat-2: var(--lat-2);
@@ -22,8 +33,8 @@
   --color-lat-hover: var(--lat-hover);
   --color-lat-ativo: var(--lat-ativo);
   --color-lat-borda: var(--lat-borda);
-  --color-sinal: #d11a22;
-  --color-carbon: #111111;
+  --color-sinal: #c64343;
+  --color-carbon: #261b19;
 
   /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
   --text-legenda: 11px;
@@ -32,26 +43,30 @@
   --text-destaque: 14px;
 
   /* Cores semânticas: erro/exclusão, sucesso e aviso, cada uma com tom forte, base, borda e fundo suave. */
-  --color-perigo: #e11d48;
-  --color-perigo-forte: #be123c;
-  --color-perigo-borda: #fda4af;
-  --color-perigo-fundo: #fff1f2;
-  --color-sucesso: #059669;
-  --color-sucesso-forte: #047857;
-  --color-sucesso-fundo: #ecfdf5;
-  --color-aviso: #f97316;
-  --color-aviso-forte: #c2410c;
-  --color-aviso-fundo: #fff7ed;
+  --color-perigo: #c64343;
+  --color-perigo-forte: #a92727;
+  --color-perigo-borda: #edb4b0;
+  --color-perigo-fundo: #f9dedc;
+  --color-sucesso: #22865d;
+  --color-sucesso-forte: #216d4d;
+  --color-sucesso-fundo: #dcefe3;
+  --color-aviso: #d79528;
+  --color-aviso-forte: #8c6417;
+  --color-aviso-fundo: #fbe9b9;
 
-  --color-texto: #111111;
-  /* Contraste sobre branco: texto-2 ~7:1, texto-3 ~5,3:1 (mínimo AA 4,5:1). */
-  --color-texto-2: #555555;
-  --color-texto-3: #6b6b6b;
-  --color-borda: #e8e8e8;
-  --color-borda-forte: #d4d4d4;
-  --color-fundo: #f8f9fa;
-  --color-hover: #f3f4f6;
-  --color-trilho: #111111;
+  /* Sombras: cartão (repouso) e flutuante (menus, painéis, hover de card). */
+  --shadow-cartao: 0 2px 10px rgba(38, 27, 25, 0.05);
+  --shadow-flutuante: 0 12px 30px rgba(38, 27, 25, 0.12);
+
+  --color-texto: #261b19;
+  /* Contraste sobre o marfim: texto-2 ~6,9:1, texto-3 ~4,8:1 (mínimo AA 4,5:1). */
+  --color-texto-2: #5e5450;
+  --color-texto-3: #746a65;
+  --color-borda: #e7ded5;
+  --color-borda-forte: #d6c9bc;
+  --color-fundo: var(--tema-fundo);
+  --color-hover: color-mix(in oklab, var(--tema-fundo), #261b19 3%);
+  --color-trilho: #261b19;
 
   --color-st-rascunho: #87909e;
   --color-st-aguardando: #7b68ee;
@@ -89,11 +104,12 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  /* Raios: 8 (controles), 12 (cartões), 16 (painéis); pílula só em chips e selos. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
@@ -105,38 +121,43 @@ body {
 }
 
 :root {
-  /* Barra lateral: valores padrão; o layout sobrescreve conforme a preferência salva. */
-  --lat-bg: #f6f6f7;
-  --lat-fg: #111111;
-  --lat-2: rgba(17, 17, 17, 0.72);
-  --lat-3: rgba(17, 17, 17, 0.52);
-  --lat-hover: rgba(0, 0, 0, 0.05);
-  --lat-ativo: rgba(0, 0, 0, 0.09);
-  --lat-borda: rgba(0, 0, 0, 0.1);
-  --background: #ffffff;
-  --foreground: #111111;
-  --card: oklch(1 0 0);
-  --card-foreground: #202020;
-  --popover: oklch(1 0 0);
-  --popover-foreground: #202020;
-  --primary: #111111;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f7;
-  --secondary-foreground: #202020;
-  --muted: #f5f5f7;
-  --muted-foreground: #646464;
-  --accent: #fdf0f0;
-  --accent-foreground: #202020;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e8e8e8;
-  --input: #e8e8e8;
-  --ring: #d11a22;
+  /* Tema padrão (Editorial). O layout da área interna sobrescreve com o tema salvo pelo admin. */
+  --tema-acao: #073f3b;
+  --tema-acento: #70262d;
+  --tema-fundo: #f7f3ed;
+  --tema-superficie: #fffcf8;
+  /* Barra lateral (camada de espaços): marfim derivado do fundo. */
+  --lat-bg: color-mix(in oklab, var(--tema-fundo), var(--tema-superficie) 45%);
+  --lat-fg: #261b19;
+  --lat-2: rgba(38, 27, 25, 0.74);
+  --lat-3: rgba(38, 27, 25, 0.58);
+  --lat-hover: rgba(38, 27, 25, 0.05);
+  --lat-ativo: color-mix(in oklab, var(--tema-acento) 10%, white);
+  --lat-borda: #e7ded5;
+  --background: var(--tema-superficie);
+  --foreground: #261b19;
+  --card: var(--tema-superficie);
+  --card-foreground: #261b19;
+  --popover: var(--tema-superficie);
+  --popover-foreground: #261b19;
+  --primary: var(--tema-acao);
+  --primary-foreground: #fffdf9;
+  --secondary: #f2ece5;
+  --secondary-foreground: #261b19;
+  --muted: #f2ece5;
+  --muted-foreground: #746a65;
+  --accent: color-mix(in oklab, var(--tema-acento) 10%, white);
+  --accent-foreground: #261b19;
+  --destructive: #c64343;
+  --border: #e7ded5;
+  --input: #e7ded5;
+  --ring: var(--tema-acao);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: #f8f9fa;
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -161,12 +182,11 @@ body {
     @apply font-sans;
   }
   h1, h2, h3, h4 {
-    font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
   ::selection {
-    background: #f8c4c7;
-    color: #111111;
+    background: #f7dddc;
+    color: #261b19;
   }
 }
 
@@ -175,10 +195,13 @@ body {
     @apply w-full space-y-5 px-4 py-5 md:px-6 md:py-6;
   }
 
+  /* Título editorial da página (serifado). */
   .page-title {
-    @apply text-[26px] leading-tight font-bold text-texto md:text-[30px];
+    @apply font-semibold text-texto;
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-size: clamp(2rem, 3.6vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
   }
 
   .eyebrow {
@@ -206,7 +229,7 @@ body {
     inset: -2px;
     border-radius: inherit;
     content: '';
-    background: conic-gradient(from 90deg, #d11a22 0%, #111111 50%, #d11a22 100%);
+    background: conic-gradient(from 90deg, #70262d 0%, #073f3b 50%, #70262d 100%);
     animation: srv-orbit 3.6s linear infinite;
   }
 }

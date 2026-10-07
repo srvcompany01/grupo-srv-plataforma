@@ -42,7 +42,7 @@ export async function criarCampoPersonalizado(dados: {
         name: dados.nome.trim(),
         type: dados.tipo,
         config: configuracao as Json,
-        color: /^#[0-9a-f]{6}$/i.test(dados.cor) ? dados.cor : '#d11a22',
+        color: /^#[0-9a-f]{6}$/i.test(dados.cor) ? dados.cor : '#70262d',
         icon: dados.icone,
         position: posicaoEntre(ultimos[0]?.position ?? null, null),
       })

@@ -76,7 +76,7 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [paiId, setPaiId] = useState('')
-  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#d11a22', icone: 'layers-3', emoji: null })
+  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#70262d', icone: 'layers-3', emoji: null })
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>

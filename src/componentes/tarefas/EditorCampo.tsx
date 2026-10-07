@@ -21,7 +21,7 @@ export function EditorCampo({ alvo, espacos, listas, campos, aoFechar }: { alvo:
   const [item, setItem] = useState<ItemCatalogoCampo | null>(editando ? (CATALOGO_CAMPOS.find((i) => i.tipo === editando.tipo) ?? null) : null)
   const [busca, setBusca] = useState('')
   const [nome, setNome] = useState(editando?.nome ?? '')
-  const [cor, setCor] = useState(editando?.cor ?? '#d11a22')
+  const [cor, setCor] = useState(editando?.cor ?? '#70262d')
   const [icone, setIcone] = useState(editando?.icone ?? '')
   const [config, setConfig] = useState<ConfigCampo>(editando?.configuracao ?? {})
   const [espaco, setEspaco] = useState<string>(editando ? (editando.espacoId ?? RAIZ) : (espacos[0]?.id ?? RAIZ))

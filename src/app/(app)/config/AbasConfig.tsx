@@ -8,7 +8,7 @@ const ABAS = [
   ['/config/espacos', 'Departamentos'],
   ['/config/campos', 'Campos personalizados'],
   ['/config/campos-clientes', 'Campos de cliente'],
-  ['/config/aparencia', 'Aparência'],
+  ['/config/personalizacao', 'Personalização'],
 ] as const
 
 export function AbasConfig() {

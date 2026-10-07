@@ -2,8 +2,8 @@ import type { Json } from '@/infra/supabase/tipos'
 
 export const CORES_PERSONALIZACAO = [
   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6',
-  '#06b6d4', '#3b82f6', '#6366f1', '#d11a22', '#a855f7', '#ec4899',
-  '#64748b', '#202020',
+  '#06b6d4', '#3b82f6', '#6366f1', '#70262d', '#a855f7', '#ec4899',
+  '#64748b', '#073f3b',
 ] as const
 
 export function corDaOpcao(config: ConfigCampo, opcao: string): string {

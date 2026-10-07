@@ -66,7 +66,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
       <header className="border-b border-borda bg-white">
         <div
           className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-2.5 md:px-5"
-          style={{ background: `linear-gradient(100deg, ${lista.espaco.cor}12, #ffffff 42%, ${lista.cor}0d)` }}
+          style={{ background: `linear-gradient(100deg, ${lista.espaco.cor}12, #fffcf8 42%, ${lista.cor}0d)` }}
         >
           <div className="min-w-0">
             <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">

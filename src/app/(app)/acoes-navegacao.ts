@@ -14,7 +14,7 @@ type AlvoMovimento = { tipo: 'root' } | { tipo: 'space' | 'folder' | 'list'; id:
 
 function validarVisual(visual: Visual): Visual {
   return {
-    cor: /^#[0-9a-f]{6}$/i.test(visual.cor) ? visual.cor : '#d11a22',
+    cor: /^#[0-9a-f]{6}$/i.test(visual.cor) ? visual.cor : '#70262d',
     icone: (ICONES_PERSONALIZACAO as readonly string[]).includes(visual.icone) ? visual.icone : 'layers-3',
     emoji: visual.emoji?.trim().slice(0, 8) || null,
   }

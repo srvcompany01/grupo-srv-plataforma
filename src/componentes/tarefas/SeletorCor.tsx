@@ -22,7 +22,7 @@ export function SeletorCor({ cor, onChange }: { cor: string; onChange: (cor: str
       </div>
       <div className="flex items-center gap-2">
         <input type="color" aria-label="Escolher cor" value={normalizarHex(texto) ?? cor} onChange={(e) => aplicar(e.target.value)} className="h-9 w-10 cursor-pointer rounded-md border border-borda bg-white p-1" />
-        <input value={texto} onChange={(e) => aplicar(e.target.value)} maxLength={7} placeholder="#D11A22" aria-label="Cor em HEX" aria-invalid={!valido} className={`${estiloCampo} w-32 font-mono ${valido ? '' : 'border-perigo-borda'}`} />
+        <input value={texto} onChange={(e) => aplicar(e.target.value)} maxLength={7} placeholder="#70262D" aria-label="Cor em HEX" aria-invalid={!valido} className={`${estiloCampo} w-32 font-mono ${valido ? '' : 'border-perigo-borda'}`} />
         {!valido && <span className="text-xs text-perigo">Use #RRGGBB</span>}
       </div>
     </div>

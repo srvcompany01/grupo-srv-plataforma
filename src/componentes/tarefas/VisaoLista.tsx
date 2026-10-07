@@ -287,7 +287,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       {grupos.map((g) => (
         <section key={g.id} className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_6px_24px_rgba(32,32,32,0.035)]" style={{ boxShadow: `inset 3px 0 0 ${g.cor}, 0 6px 24px rgba(32,32,32,0.035)` }}>
           {!g.semCabecalho && (
-            <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>
+            <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f7f3ed 42%, #fffcf8)` }}>
               <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
               <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-[0.04em] text-white" style={{ background: g.cor }}>
                 {g.nome}
