@@ -49,6 +49,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          color: string
           created_at: string
           document: string | null
           email: string | null
@@ -61,6 +62,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string
           created_at?: string
           document?: string | null
           email?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string
           created_at?: string
           document?: string | null
           email?: string | null

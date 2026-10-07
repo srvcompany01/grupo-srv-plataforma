@@ -10,6 +10,7 @@ import { CelulaCampoPersonalizado } from './CamposPersonalizados'
 import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
+import { SeletorTagCliente, type TagCliente } from './SeletorTagCliente'
 
 const COR_PRIORIDADE = { urgente: 'text-rose-600', alta: 'text-amber-500', normal: 'text-texto-3', baixa: 'text-sky-500' } as const
 
@@ -20,6 +21,8 @@ export type Contexto = {
   statusPorLista: Record<string, StatusLista[]>
   mostrarLista: boolean
   camposPersonalizados?: DefinicaoCampo[]
+  tagsCliente?: TagCliente[]
+  podeGerirTagCliente?: boolean
   largurasColunas?: Record<string, number>
   selecionadas?: ReadonlySet<string>
   alternarSelecao?: (id: string, selecionada: boolean) => void
@@ -81,6 +84,12 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             </Link>
             {ctx.mostrarLista && <span className="block truncate text-[10px] text-texto-3" title={`${tarefa.listaNome} · @${tarefa.clienteNome}`}>{tarefa.listaNome} · @{tarefa.clienteNome}</span>}
           </div>
+          <SeletorTagCliente
+            listaId={tarefa.listaId}
+            atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }}
+            opcoes={ctx.tagsCliente}
+            podeGerir={ctx.podeGerirTagCliente}
+          />
           {tarefa.tags.map((t) => (
             <span key={t.id} className="hidden rounded-full px-2 py-0.5 text-[10px] font-medium text-white xl:inline" style={{ background: t.cor }}>
               {t.nome}

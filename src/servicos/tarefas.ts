@@ -8,7 +8,7 @@ import { dados } from './resultado'
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string }
 
 const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
-  lists!inner(name, space_id, reference_month, archived_at, clients(name)),
+  lists!inner(name, space_id, reference_month, archived_at, clients(id, name, color)),
   task_assignees(profiles(id, full_name, avatar_url)),
   task_tags(tags(id, name, color))`
 
@@ -57,7 +57,7 @@ type LinhaResumo = {
   position: string
   completed_at: string | null
   list_id: string
-  lists: { name: string; clients: { name: string } | null } | null
+  lists: { name: string; clients: { id: string; name: string; color: string } | null } | null
   task_assignees: { profiles: { id: string; full_name: string; avatar_url: string | null } | null }[]
   task_tags: { tags: { id: string; name: string; color: string } | null }[]
 }
@@ -74,7 +74,9 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     concluidaEm: t.completed_at,
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',
+    clienteId: t.lists?.clients?.id ?? '',
     clienteNome: t.lists?.clients?.name ?? '',
+    clienteCor: t.lists?.clients?.color ?? '#64748b',
     camposPersonalizados: {},
     responsaveis: t.task_assignees.flatMap((a) => (a.profiles ? [{ id: a.profiles.id, nome: a.profiles.full_name, avatar: a.profiles.avatar_url }] : [])),
     tags: t.task_tags.flatMap((x) => (x.tags ? [{ id: x.tags.id, nome: x.tags.name, cor: x.tags.color }] : [])),
@@ -178,7 +180,7 @@ export type TarefaCompleta = {
   concluidaEm: string | null
   paiId: string | null
   pai: { id: string; titulo: string } | null
-  lista: { id: string; nome: string; espacoId: string | null; mes: string | null; clienteId: string; clienteNome: string }
+  lista: { id: string; nome: string; espacoId: string | null; mes: string | null; clienteId: string; clienteNome: string; clienteCor: string }
   responsaveis: { id: string; nome: string; avatar: string | null }[]
   tags: { id: string; nome: string; cor: string }[]
   subtarefas: TarefaResumo[]
@@ -190,7 +192,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     .from('tasks')
     .select(
       `id, title, description, status_id, priority, start_date, due_date, estimate_minutes, visible_to_client, completed_at, parent_task_id,
-       lists(id, name, space_id, reference_month, client_id, clients(name)),
+       lists(id, name, space_id, reference_month, client_id, clients(name, color)),
        task_assignees(profiles(id, full_name, avatar_url)),
        task_tags(tags(id, name, color))`,
     )
@@ -225,6 +227,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
       mes: t.lists?.reference_month ?? null,
       clienteId: t.lists?.client_id ?? '',
       clienteNome: t.lists?.clients?.name ?? '',
+      clienteCor: t.lists?.clients?.color ?? '#64748b',
     },
     responsaveis: t.task_assignees.flatMap((a) => (a.profiles ? [{ id: a.profiles.id, nome: a.profiles.full_name, avatar: a.profiles.avatar_url }] : [])),
     tags: t.task_tags.flatMap((x) => (x.tags ? [{ id: x.tags.id, nome: x.tags.name, cor: x.tags.color }] : [])),

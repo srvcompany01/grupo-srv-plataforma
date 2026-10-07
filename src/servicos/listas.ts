@@ -9,7 +9,7 @@ export type Lista = {
   icone: string
   emoji: string | null
   mes: string | null
-  cliente: { id: string; nome: string }
+  cliente: { id: string; nome: string; cor: string }
   espaco: { id: string | null; nome: string; cor: string; icone: string; emoji: string | null }
   pasta: { id: string; nome: string; cor: string; icone: string; emoji: string | null } | null
   status: (StatusLista & { posicao: string })[]
@@ -21,7 +21,7 @@ export type Lista = {
 export async function buscarLista(sb: Supabase, id: string): Promise<Lista | null> {
   const { data: l, error } = await sb
     .from('lists')
-    .select('id, name, color, icon, emoji, reference_month, space_id, clients(id, name), spaces(id, name, color, icon, emoji), folders(id, name, color, icon, emoji), list_statuses(id, name, color, category, position)')
+    .select('id, name, color, icon, emoji, reference_month, space_id, clients(id, name, color), spaces(id, name, color, icon, emoji), folders(id, name, color, icon, emoji), list_statuses(id, name, color, category, position)')
     .eq('id', id)
     .is('archived_at', null)
     .maybeSingle()
@@ -35,7 +35,7 @@ export async function buscarLista(sb: Supabase, id: string): Promise<Lista | nul
     icone: l.icon,
     emoji: l.emoji,
     mes: l.reference_month,
-    cliente: { id: l.clients?.id ?? '', nome: l.clients?.name ?? '' },
+    cliente: { id: l.clients?.id ?? '', nome: l.clients?.name ?? '', cor: l.clients?.color ?? '#64748b' },
     // Responsável de fora do espaço lê a lista mas não o espaço.
     espaco: {
       id: l.space_id,

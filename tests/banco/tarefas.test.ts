@@ -168,19 +168,27 @@ describe('etiquetas e listas', () => {
     await db.query(`insert into task_tags values ($1, $2)`, [t, await tag(operacional)])
   })
 
-  it('não é possível trocar o cliente de uma lista com tarefas', async () => {
+  it('trocar a tag de cliente sincroniza mãe e subtarefas', async () => {
     const db = await criarBanco()
     const { lista, ana, b } = await base(db)
-    await criarTarefa(db, { listId: lista, responsaveis: [ana] })
-    await expect(db.query(`update lists set client_id = $2 where id = $1`, [lista, b])).rejects.toThrow(
-      /Não é possível trocar o cliente de uma lista com tarefas/,
-    )
+    const mae = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    const filha = await criarTarefa(db, { listId: lista, responsaveis: [ana], parentId: mae })
+    await db.query(`update lists set client_id = $2 where id = $1`, [lista, b])
+    expect((await tarefa(db, mae)).client_id).toBe(b)
+    expect((await tarefa(db, filha)).client_id).toBe(b)
   })
 
   it('troca o cliente de uma lista vazia', async () => {
     const db = await criarBanco()
     const { lista, b } = await base(db)
     await db.query(`update lists set client_id = $2 where id = $1`, [lista, b])
+  })
+
+  it('cor da tag exige hexadecimal completo', async () => {
+    const db = await criarBanco()
+    const cliente = await criarCliente(db, 'Colorido')
+    await db.query(`update clients set color = '#3b82f6' where id = $1`, [cliente])
+    await expect(db.query(`update clients set color = 'azul' where id = $1`, [cliente])).rejects.toThrow()
   })
 })
 

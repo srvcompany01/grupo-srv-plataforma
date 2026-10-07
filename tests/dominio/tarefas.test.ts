@@ -13,7 +13,9 @@ const t = (id: string, posicao: string, paiId: string | null = null, statusId = 
   tags: [],
   listaId: 'l',
   listaNome: 'Lista',
+  clienteId: 'c',
   clienteNome: 'C',
+  clienteCor: '#3b82f6',
   concluidaEm: null,
 })
 

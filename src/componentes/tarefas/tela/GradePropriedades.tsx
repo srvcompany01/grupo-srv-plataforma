@@ -11,6 +11,7 @@ import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
 import { SeletorResponsaveis } from '../SeletorResponsaveis'
 import { SeletorStatus } from '../SeletorStatus'
+import { SeletorTagCliente } from '../SeletorTagCliente'
 import type { Opcao } from './TelaTarefa'
 
 function Linha({ icone: Icone, titulo, children }: { icone: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
@@ -38,6 +39,7 @@ export function GradePropriedades({
   status,
   equipe,
   tags,
+  tagsCliente,
   podeGerir,
   hoje,
   children,
@@ -46,6 +48,7 @@ export function GradePropriedades({
   status: StatusLista[]
   equipe: Pessoa[]
   tags: Opcao[]
+  tagsCliente: Opcao[]
   podeGerir: boolean
   hoje: string
   /** Conteúdo da célula "Rastrear tempo". */
@@ -73,6 +76,14 @@ export function GradePropriedades({
   return (
     <div className="grid gap-x-8 gap-y-1 md:grid-cols-2">
       <div className="space-y-1">
+        <Linha icone={Tag} titulo="Cliente">
+          <SeletorTagCliente
+            listaId={t.lista.id}
+            atual={{ id: t.lista.clienteId, nome: t.lista.clienteNome, cor: t.lista.clienteCor }}
+            opcoes={tagsCliente}
+            podeGerir={podeGerir}
+          />
+        </Linha>
         <Linha icone={CircleDot} titulo="Status">
           <span className="flex items-center gap-1">
             <SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={status} comNome />

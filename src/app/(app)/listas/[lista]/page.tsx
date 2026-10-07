@@ -19,6 +19,7 @@ import { buscarLista, listarTags } from '@/servicos/listas'
 import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
+import { listarClientes } from '@/servicos/clientes-plataforma'
 
 const COR_PRIORIDADE = { urgente: '#e5484d', alta: '#f59e0b', normal: '#38bdf8', baixa: '#10b981' } as const
 const CORES_MESES = ['#0ea5e9', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#6366f1']
@@ -63,16 +64,28 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
 
   const filtros = lerFiltros(await searchParams)
   const hoje = dataDeHoje(new Date())
-  const [tarefasBrutas, equipe, tags, camposDaLista, camposDoEspaco] = await Promise.all([
+  const [tarefasBrutas, equipe, tags, camposDaLista, camposDoEspaco, clientes] = await Promise.all([
     listarTarefas(sb, { listaId: id }, filtros, hoje),
     listarEquipe(sb),
     listarTags(sb, lista.espaco.id),
     listarCamposDaLista(sb, id),
     listarCamposDoContexto(sb, lista.espaco.id),
+    listarClientes(sb),
   ])
   const tarefas = await carregarValoresPersonalizados(sb, tarefasBrutas, camposDaLista)
   const arvore = montarArvore(tarefas)
-  const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false, camposPersonalizados: camposDaLista }
+  const tagsCliente = clientes
+    .filter((cliente) => cliente.status !== 'encerrado' || cliente.id === lista.cliente.id)
+    .map((cliente) => ({ id: cliente.id, nome: cliente.nome, cor: cliente.cor }))
+  const ctx = {
+    equipe,
+    hoje,
+    statusPorLista: { [id]: lista.status },
+    mostrarLista: false,
+    camposPersonalizados: camposDaLista,
+    tagsCliente,
+    podeGerirTagCliente: lista.podeGerir,
+  }
   const grupos = gruposDaLista(arvore, lista.status, filtros)
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
@@ -98,7 +111,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
               <h1 className="flex min-w-0 items-center gap-1.5 font-bold text-texto"><span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.nome}</span></h1>
             </nav>
             <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-[10px]">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700"><span className="text-emerald-500">#</span>{lista.cliente.nome}</span>
+              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold" style={{ color: lista.cliente.cor, borderColor: `${lista.cliente.cor}50`, backgroundColor: `${lista.cliente.cor}12` }}><span>#</span>{lista.cliente.nome}</span>
               {lista.mes && <span className="rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">{rotuloMes(lista.mes)}</span>}
             </div>
           </div>

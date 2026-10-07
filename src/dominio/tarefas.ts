@@ -35,7 +35,9 @@ export type TarefaResumo = {
   tags: { id: string; nome: string; cor: string }[]
   listaId: string
   listaNome: string
+  clienteId: string
   clienteNome: string
+  clienteCor: string
   concluidaEm: string | null
   /** Valores dos campos vinculados à lista, indexados pelo id da definição. */
   camposPersonalizados?: Record<string, Json | null>

@@ -6,6 +6,7 @@ export type StatusCliente = 'ativo' | 'pausado' | 'encerrado'
 export type Cliente = {
   id: string
   nome: string
+  cor: string
   razaoSocial: string | null
   documento: string | null
   email: string | null
@@ -14,11 +15,12 @@ export type Cliente = {
   interno: boolean
 }
 
-const CAMPOS = 'id, name, legal_name, document, email, phone, status, is_internal'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal'
 
 type Linha = {
   id: string
   name: string
+  color: string
   legal_name: string | null
   document: string | null
   email: string | null
@@ -30,6 +32,7 @@ type Linha = {
 const paraCliente = (c: Linha): Cliente => ({
   id: c.id,
   nome: c.name,
+  cor: c.color,
   razaoSocial: c.legal_name,
   documento: c.document,
   email: c.email,
