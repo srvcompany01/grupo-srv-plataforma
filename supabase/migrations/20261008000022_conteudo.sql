@@ -133,3 +133,51 @@ begin
 end $$;
 revoke execute on function public.criar_post_conteudo(uuid, uuid, text, text, date) from public, anon;
 grant execute on function public.criar_post_conteudo(uuid, uuid, text, text, date) to authenticated, service_role;
+
+-- 6) Regras de versão e de mídia no banco (testáveis e iguais para qualquer cliente que chame).
+-- Salva o texto do post. Rascunho e aguardando editam a versão atual; depois da resposta do cliente
+-- (aprovado/ajuste) a versão está congelada, então nasce a versão N+1 e o post volta a aguardar.
+create function public.salvar_texto_conteudo(p_task uuid, p_idea text, p_objective text, p_caption text)
+returns integer
+language plpgsql security invoker set search_path = public
+as $$
+declare
+  post content_posts%rowtype;
+begin
+  select * into post from content_posts where task_id = p_task for update;
+  if not found then raise exception 'Post não encontrado'; end if;
+  if post.approval in ('aprovado', 'ajuste') then
+    insert into content_versions (task_id, number, idea, objective, caption)
+    values (p_task, post.current_version + 1, p_idea, p_objective, p_caption);
+    update content_posts set current_version = post.current_version + 1, approval = 'aguardando' where task_id = p_task;
+    return post.current_version + 1;
+  end if;
+  update content_versions set idea = p_idea, objective = p_objective, caption = p_caption
+  where task_id = p_task and number = post.current_version;
+  return post.current_version;
+end $$;
+
+-- Registra uma mídia já enviada ao R2 na versão atual. A chave precisa ser desta tarefa.
+create function public.registrar_midia_conteudo(p_task uuid, p_key text, p_kind text, p_name text, p_size bigint)
+returns uuid
+language plpgsql security invoker set search_path = public
+as $$
+declare
+  versao uuid;
+  nova uuid;
+begin
+  if p_key !~ ('^conteudo/' || p_task::text || '/[0-9a-f-]{36}\.(jpg|png|webp|mp4|mov)$') then
+    raise exception 'Chave de mídia inválida para este post';
+  end if;
+  select v.id into versao from content_versions v join content_posts p on p.task_id = v.task_id and p.current_version = v.number where v.task_id = p_task;
+  if versao is null then raise exception 'Post não encontrado'; end if;
+  insert into content_media (version_id, task_id, position, kind, r2_key, original_name, size_bytes)
+  values (versao, p_task, coalesce((select max(position) + 1 from content_media where version_id = versao), 0), p_kind, p_key, p_name, p_size)
+  returning id into nova;
+  return nova;
+end $$;
+
+revoke execute on function public.salvar_texto_conteudo(uuid, text, text, text) from public, anon;
+revoke execute on function public.registrar_midia_conteudo(uuid, text, text, text, bigint) from public, anon;
+grant execute on function public.salvar_texto_conteudo(uuid, text, text, text) to authenticated, service_role;
+grant execute on function public.registrar_midia_conteudo(uuid, text, text, text, bigint) to authenticated, service_role;

@@ -97,4 +97,54 @@ describe('conteúdo: dados', () => {
     for (const { approval_token } of r) expect(approval_token).toMatch(/^[0-9a-f]{64}$/)
     expect(new Set(r.map((x) => x.approval_token)).size).toBe(2)
   })
+
+  it('salvar_texto: rascunho edita a versão atual; depois da resposta nasce a versão 2 e a 1 não muda', async () => {
+    const db = await criarBanco()
+    const { cliente, ana, lista } = await base(db)
+    const id = await criarPost(db, ana, lista, cliente)
+    const salvar = (texto: string) =>
+      comoUsuario(db, ana, async (tx) => (await tx.query<{ n: number }>(`select salvar_texto_conteudo($1, $2, 'obj', $2) as n`, [id, texto])).rows[0].n)
+    expect(await salvar('primeira')).toBe(1)
+    expect(await salvar('segunda')).toBe(1)
+    expect((await db.query(`select caption from content_versions where task_id = $1`, [id])).rows).toEqual([{ caption: 'segunda' }])
+
+    const v1 = (await db.query<{ id: string }>(`select id from content_versions where task_id = $1`, [id])).rows[0].id
+    await db.query(`update content_posts set approval = 'ajuste' where task_id = $1`, [id])
+    await db.query(`insert into content_responses (version_id, task_id, decision, comment, responder_name) values ($1, $2, 'ajuste', 'trocar a arte', 'Maria')`, [v1, id])
+
+    expect(await salvar('terceira')).toBe(2)
+    const versoes = (await db.query(`select number, caption from content_versions where task_id = $1 order by number`, [id])).rows
+    expect(versoes).toEqual([{ number: 1, caption: 'segunda' }, { number: 2, caption: 'terceira' }])
+    expect((await db.query(`select approval, current_version from content_posts where task_id = $1`, [id])).rows).toEqual([{ approval: 'aguardando', current_version: 2 }])
+    expect((await db.query(`select comment from content_responses where version_id = $1`, [v1])).rows).toEqual([{ comment: 'trocar a arte' }])
+  })
+
+  it('registrar_midia: aceita a chave da tarefa e rejeita a de outra; posição cresce', async () => {
+    const db = await criarBanco()
+    const { cliente, ana, lista } = await base(db)
+    const id = await criarPost(db, ana, lista, cliente)
+    const outra = await criarPost(db, ana, lista, cliente)
+    const reg = (task: string, chave: string) =>
+      comoUsuario(db, ana, (tx) => tx.query(`select registrar_midia_conteudo($1, $2, 'imagem', 'a.png', 1000)`, [task, chave]))
+    const uuid = (n: number) => `0b9c6d36-1d8e-4f43-8d5c-12345678900${n}`
+    await reg(id, `conteudo/${id}/${uuid(1)}.png`)
+    await reg(id, `conteudo/${id}/${uuid(2)}.png`)
+    expect((await db.query(`select position from content_media where task_id = $1 order by position`, [id])).rows).toEqual([{ position: 0 }, { position: 1 }])
+    await expect(reg(id, `conteudo/${outra}/${uuid(3)}.png`)).rejects.toThrow(/Chave de mídia inválida/)
+    await expect(reg(id, `conteudo/${id}/../${uuid(3)}.png`)).rejects.toThrow(/Chave de mídia inválida/)
+  })
+
+  it('mídia de versão respondida não pode ser registrada nem removida', async () => {
+    const db = await criarBanco()
+    const { cliente, ana, lista } = await base(db)
+    const id = await criarPost(db, ana, lista, cliente)
+    const chave = `conteudo/${id}/0b9c6d36-1d8e-4f43-8d5c-123456789001.png`
+    const m = await comoUsuario(db, ana, async (tx) => (await tx.query<{ m: string }>(`select registrar_midia_conteudo($1, $2, 'imagem', 'a.png', 10) as m`, [id, chave])).rows[0].m)
+    const v1 = (await db.query<{ id: string }>(`select id from content_versions where task_id = $1`, [id])).rows[0].id
+    await db.query(`insert into content_responses (version_id, task_id, decision, responder_name) values ($1, $2, 'aprovado', 'Maria')`, [v1, id])
+    await expect(db.query(`delete from content_media where id = $1`, [m])).rejects.toThrow(/congelada/)
+    await expect(
+      comoUsuario(db, ana, (tx) => tx.query(`select registrar_midia_conteudo($1, $2, 'imagem', 'b.png', 10)`, [id, `conteudo/${id}/0b9c6d36-1d8e-4f43-8d5c-123456789002.png`])),
+    ).rejects.toThrow(/congelada/)
+  })
 })

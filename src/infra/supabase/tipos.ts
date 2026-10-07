@@ -18,25 +18,71 @@ export type Database = {
         Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
         Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
         Update: { id?: string; kind?: string; original_name?: string; position?: number; r2_key?: string; size_bytes?: number; task_id?: string; version_id?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_media_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "content_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_media_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
       }
       content_posts: {
         Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string }
         Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string }
         Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_posts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_responses: {
         Row: { comment: string; created_at: string; decision: string; id: string; responder_name: string; task_id: string; version_id: string }
         Insert: { comment?: string; created_at?: string; decision: string; id?: string; responder_name: string; task_id: string; version_id: string }
         Update: { comment?: string; created_at?: string; decision?: string; id?: string; responder_name?: string; task_id?: string; version_id?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_responses_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "content_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_responses_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
       }
       content_versions: {
         Row: { caption: string; created_at: string; id: string; idea: string; number: number; objective: string; task_id: string }
         Insert: { caption?: string; created_at?: string; id?: string; idea?: string; number: number; objective?: string; task_id: string }
         Update: { caption?: string; created_at?: string; id?: string; idea?: string; number?: number; objective?: string; task_id?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_versions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
@@ -1113,6 +1159,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
+      salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }
       criar_post_conteudo: { Args: { p_client: string; p_date: string; p_format: string; p_list: string; p_title: string }; Returns: string }
       can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
