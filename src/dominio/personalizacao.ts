@@ -2,7 +2,7 @@ import type { Json } from '@/infra/supabase/tipos'
 
 export const CORES_PERSONALIZACAO = [
   '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6',
-  '#06b6d4', '#3b82f6', '#6366f1', '#6647f0', '#a855f7', '#ec4899',
+  '#06b6d4', '#3b82f6', '#6366f1', '#d11a22', '#a855f7', '#ec4899',
   '#64748b', '#202020',
 ] as const
 
@@ -84,16 +84,16 @@ export const CATALOGO_CAMPOS: ItemCatalogoCampo[] = [
   { tipo: 'text', nome: 'Texto', descricao: 'Texto curto em uma linha', icone: 'type', cor: '#1677d2', popular: true },
   { tipo: 'date', nome: 'Data', descricao: 'Data com filtro e agrupamento temporal', icone: 'calendar-days', cor: '#0f8a5f', popular: true },
   { tipo: 'long_text', nome: 'Área de texto', descricao: 'Texto longo em várias linhas', icone: 'text-cursor-input', cor: '#1677d2', popular: true },
-  { tipo: 'number', nome: 'Número', descricao: 'Valor numérico agregável', icone: 'hash', cor: '#009b91', popular: true },
+  { tipo: 'number', nome: 'Número', descricao: 'Valor numérico agregável', icone: 'hash', cor: '#111111', popular: true },
   { tipo: 'labels', nome: 'Rótulos', descricao: 'Seleção múltipla de rótulos', icone: 'tags', cor: '#168b58', popular: true },
-  { tipo: 'files', nome: 'Arquivos', descricao: 'Referências de arquivos anexados', icone: 'paperclip', cor: '#6647f0' },
+  { tipo: 'files', nome: 'Arquivos', descricao: 'Referências de arquivos anexados', icone: 'paperclip', cor: '#d11a22' },
   { tipo: 'signature', nome: 'Assinatura', descricao: 'Assinatura ou aceite registrado', icone: 'pen-line', cor: '#e73578' },
-  { tipo: 'rating', nome: 'Avaliação', descricao: 'Nota configurável com estrelas', icone: 'star', cor: '#6647f0' },
-  { tipo: 'button', nome: 'Botão', descricao: 'Ação para uma URL configurada', icone: 'badge', cor: '#6647f0' },
-  { tipo: 'checkbox', nome: 'Caixa de seleção', descricao: 'Sim ou não', icone: 'square-check-big', cor: '#6647f0' },
-  { tipo: 'money', nome: 'Dinheiro', descricao: 'Valor monetário com moeda e casas decimais', icone: 'badge-dollar-sign', cor: '#009b91' },
+  { tipo: 'rating', nome: 'Avaliação', descricao: 'Nota configurável com estrelas', icone: 'star', cor: '#d11a22' },
+  { tipo: 'button', nome: 'Botão', descricao: 'Ação para uma URL configurada', icone: 'badge', cor: '#d11a22' },
+  { tipo: 'checkbox', nome: 'Caixa de seleção', descricao: 'Sim ou não', icone: 'square-check-big', cor: '#d11a22' },
+  { tipo: 'money', nome: 'Dinheiro', descricao: 'Valor monetário com moeda e casas decimais', icone: 'badge-dollar-sign', cor: '#111111' },
   { tipo: 'email', nome: 'E-mail', descricao: 'Endereço validado e clicável', icone: 'mail', cor: '#e73578' },
-  { tipo: 'formula', nome: 'Fórmula', descricao: 'Resultado numérico calculado', icone: 'function-square', cor: '#009b91' },
+  { tipo: 'formula', nome: 'Fórmula', descricao: 'Resultado numérico calculado', icone: 'function-square', cor: '#111111' },
   { tipo: 'location', nome: 'Localização', descricao: 'Endereço ou coordenadas', icone: 'map-pin', cor: '#e73578' },
   { tipo: 'people', nome: 'Pessoas', descricao: 'Uma ou mais pessoas da equipe', icone: 'users', cor: '#e73578' },
   { tipo: 'progress_auto', nome: 'Progresso automático', descricao: 'Percentual calculado pelas subtarefas', icone: 'list-checks', cor: '#f05a00' },
@@ -102,7 +102,7 @@ export const CATALOGO_CAMPOS: ItemCatalogoCampo[] = [
   { tipo: 'site', nome: 'Site', descricao: 'URL validada e clicável', icone: 'globe-2', cor: '#e73578' },
   { tipo: 'tasks', nome: 'Tarefas', descricao: 'Relaciona outras tarefas', icone: 'layers-3', cor: '#915224' },
   { tipo: 'phone', nome: 'Telefone', descricao: 'Telefone clicável', icone: 'phone', cor: '#e73578' },
-  { tipo: 'vote', nome: 'Votação', descricao: 'Contador de votos', icone: 'chart-no-axes-column-increasing', cor: '#6647f0' },
+  { tipo: 'vote', nome: 'Votação', descricao: 'Contador de votos', icone: 'chart-no-axes-column-increasing', cor: '#d11a22' },
   { tipo: 'instagram', nome: 'Instagram', descricao: 'Usuário ou URL do Instagram', icone: 'instagram', cor: '#e73578' },
   { tipo: 'tiktok', nome: 'TikTok', descricao: 'Usuário ou URL do TikTok', icone: 'music-2', cor: '#202020' },
 ]

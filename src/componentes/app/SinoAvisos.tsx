@@ -56,7 +56,7 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="relative rounded-md p-1.5 text-[#65676b] hover:bg-[#ededee] hover:text-[#292a2d]">
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="relative rounded-md p-1.5 text-white/75 hover:bg-white/10 hover:text-white">
         <Bell className="h-4 w-4" />
         {selo && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-semibold text-white">{selo}</span>}
       </PopoverTrigger>

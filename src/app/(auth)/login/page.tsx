@@ -36,7 +36,7 @@ export default function Login() {
           <div className="flex items-center gap-3">
             <Marca tamanho="h-9 w-9 text-sm" />
             <div>
-              <p className="font-[var(--font-plus-jakarta)] text-sm font-bold tracking-[-0.025em]">Grupo SRV</p>
+              <p className="font-sans text-sm font-bold tracking-[-0.025em]">Grupo SRV</p>
               <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-texto-3">Plataforma da agência</p>
             </div>
           </div>
@@ -54,7 +54,7 @@ export default function Login() {
 
             <div className="mt-8 overflow-hidden rounded-2xl border border-borda bg-white">
               {[
-                ['PLANEJAMENTO', 'Campanha de outubro', '#6647f0'],
+                ['PLANEJAMENTO', 'Campanha de outubro', '#d11a22'],
                 ['EM PRODUÇÃO', 'Criativos para social', '#0091ff'],
                 ['APROVADO', 'Calendário editorial', '#16a36a'],
               ].map(([status, titulo, cor], i) => (

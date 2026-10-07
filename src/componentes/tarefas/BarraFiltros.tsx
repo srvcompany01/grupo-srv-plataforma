@@ -24,11 +24,11 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
 
 const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
 const TOM = {
-  violeta: 'border-violet-200 bg-violet-50 text-violet-700',
-  azul: 'border-sky-200 bg-sky-50 text-sky-700',
-  rosa: 'border-pink-200 bg-pink-50 text-pink-700',
-  âmbar: 'border-amber-200 bg-amber-50 text-amber-700',
-  verde: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  violeta: 'border-marca-clara bg-marca-fundo text-marca-escura',
+  azul: 'border-marca-clara bg-marca-fundo text-marca-escura',
+  rosa: 'border-marca-clara bg-marca-fundo text-marca-escura',
+  âmbar: 'border-marca-clara bg-marca-fundo text-marca-escura',
+  verde: 'border-marca-clara bg-marca-fundo text-marca-escura',
 } as const
 
 const ROTULO_AGRUPAMENTO: Record<AgrupamentoTarefas, string> = {

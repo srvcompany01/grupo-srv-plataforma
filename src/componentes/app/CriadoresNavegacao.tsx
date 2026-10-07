@@ -63,7 +63,7 @@ const GatilhoPadrao = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
   ref,
 ) {
   return (
-    <button ref={ref} type="button" aria-label={aria} title={aria} className="rounded-[5px] p-1 text-[#8a8b90] opacity-0 transition hover:bg-[#dedee0] hover:text-[#303136] group-hover:opacity-100 focus:opacity-100" {...props}>
+    <button ref={ref} type="button" aria-label={aria} title={aria} className="rounded-[5px] p-1 text-white/60 opacity-0 transition hover:bg-white/10 hover:text-white group-hover:opacity-100 focus:opacity-100" {...props}>
       {children}
     </button>
   )
@@ -76,7 +76,7 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [paiId, setPaiId] = useState('')
-  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#6647f0', icone: 'layers-3', emoji: null })
+  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#d11a22', icone: 'layers-3', emoji: null })
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>

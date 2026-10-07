@@ -6,9 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   CheckSquare,
   ChevronRight,
-  Home,
   GripVertical,
-  Layers3,
   LogOut,
   Menu,
   Settings,
@@ -37,8 +35,8 @@ type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
-  'flex h-8 items-center gap-2 rounded-md px-2 text-[12px] text-[#65676b] transition-colors hover:bg-[#ededee] hover:text-[#292a2d]'
-const ativo = 'bg-[#e4e4e6] font-semibold text-[#292a2d] hover:bg-[#dedee0] hover:text-[#292a2d]'
+  'flex h-8 items-center gap-2 rounded-md px-2 text-[11px] tracking-[0.04em] text-white/75 transition-colors hover:bg-white/10 hover:text-white'
+const ativo = 'bg-white/15 font-semibold text-white hover:bg-white/20 hover:text-white'
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
@@ -64,7 +62,7 @@ function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
       style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
     >
       {habilitado && (
-        <button ref={setActivatorNodeRef} type="button" aria-label="Arrastar para organizar" className="-ml-1 cursor-grab touch-none rounded p-0.5 text-[#b0b1b5] opacity-0 hover:bg-black/5 hover:text-[#65666b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca group-hover:opacity-100 active:cursor-grabbing" {...attributes} {...listeners}>
+        <button ref={setActivatorNodeRef} type="button" aria-label="Arrastar para organizar" className="-ml-1 cursor-grab touch-none rounded p-0.5 text-white/40 opacity-0 hover:bg-white/10 hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca group-hover:opacity-100 active:cursor-grabbing" {...attributes} {...listeners}>
           <GripVertical className="h-3 w-3" />
         </button>
       )}
@@ -76,15 +74,7 @@ function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
 function ZonaRaiz({ visivel }: { visivel: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
   if (!visivel) return null
-  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-[#cfd0d3] text-[#8d8e93]'}`}>Solte aqui para deixar sem espaço</div>
-}
-
-function listasDoEspaco(espaco: NoEspaco): string[] {
-  return [
-    ...espaco.listas.map((lista) => lista.id),
-    ...espaco.pastas.flatMap((pasta) => pasta.listas.map((lista) => lista.id)),
-    ...espaco.filhos.flatMap(listasDoEspaco),
-  ]
+  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-white bg-white/10 text-white' : 'border-white/25 text-white/60'}`}>Solte aqui para deixar sem espaço</div>
 }
 
 function idsDaNavegacao(navegacao: Navegacao): string[] {
@@ -135,12 +125,12 @@ function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrast
   return (
     <div>
       <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 6 + nivel * 14 }}>
-        <button type="button" onClick={() => setAberta(!aberta)} aria-label={aberta ? `Recolher ${pasta.nome}` : `Expandir ${pasta.nome}`} aria-expanded={aberta} className="rounded p-0.5 hover:bg-black/5">
-          <ChevronRight className={`h-3 w-3 shrink-0 text-[#999a9f] transition-transform ${aberta ? 'rotate-90' : ''}`} />
+        <button type="button" onClick={() => setAberta(!aberta)} aria-label={aberta ? `Recolher ${pasta.nome}` : `Expandir ${pasta.nome}`} aria-expanded={aberta} className="rounded p-0.5 hover:bg-white/10">
+          <ChevronRight className={`h-3 w-3 shrink-0 text-white/50 transition-transform ${aberta ? 'rotate-90' : ''}`} />
         </button>
         <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-[9px] tabular-nums text-[#a1a2a6]">{pasta.listas.length}</span>
+        <span className="ml-auto text-[9px] tabular-nums text-white/50">{pasta.listas.length}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
       </LinhaArrastavel>
@@ -163,7 +153,7 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
           onClick={() => temConteudo && setAberto(!aberto)}
           aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'}
           aria-expanded={aberto}
-          className={`rounded p-0.5 hover:bg-black/5 ${temConteudo ? '' : 'invisible'}`}
+          className={`rounded p-0.5 hover:bg-white/10 ${temConteudo ? '' : 'invisible'}`}
         >
           <ChevronRight className={`h-3 w-3 transition-transform ${aberto ? 'rotate-90' : ''}`} />
         </button>
@@ -184,68 +174,6 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
           {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
         </div>
       )}
-    </div>
-  )
-}
-
-function Trilho({ navegacao, papel }: Pick<Props, 'navegacao' | 'papel'>) {
-  const caminho = usePathname()
-  const arvore = navegacao.espacos
-  const departamentos = arvore.slice(0, 5)
-  const hrefEspacos = departamentos[0] ? `/espacos/${departamentos[0].id}` : '/inicio'
-
-  const link = (href: string, rotulo: string, Icone: IconeLucide, estaAtivo: boolean) => (
-    <Link
-      href={href}
-      aria-label={rotulo}
-      title={rotulo}
-      className={`group flex min-h-12 w-full flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-[8px] font-semibold leading-tight transition-colors ${
-        estaAtivo ? 'bg-white/15 text-white' : 'text-white/75 hover:bg-white/10 hover:text-white'
-      }`}
-    >
-      <Icone className="h-[18px] w-[18px]" />
-      <span className="line-clamp-1 max-w-12">{rotulo}</span>
-    </Link>
-  )
-
-  return (
-    <div className="flex h-full w-14 shrink-0 flex-col overflow-hidden bg-[#075e57] text-white">
-      <Link href="/inicio" aria-label="Grupo SRV" className="flex h-12 shrink-0 items-center justify-center border-b border-white/10">
-        <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-white font-[var(--font-plus-jakarta)] text-xs font-extrabold text-[#075e57]">
-          S
-        </span>
-      </Link>
-
-      <nav className="min-h-0 flex-1 overflow-y-auto py-1">
-        {link('/inicio', 'Início', Home, caminho.startsWith('/inicio'))}
-        {link('/clientes', 'Clientes', Users, caminho.startsWith('/clientes'))}
-        <div className="mx-2 my-1 border-t border-white/15" />
-        {link(hrefEspacos, 'Espaços', Layers3, caminho.startsWith('/espacos') || caminho.startsWith('/listas'))}
-        {departamentos.map((espaco) => {
-          const listaIds = listasDoEspaco(espaco)
-          const selecionado = caminho === `/espacos/${espaco.id}` || listaIds.some((id) => caminho === `/listas/${id}`)
-          return (
-            <Link
-              key={espaco.id}
-              href={`/espacos/${espaco.id}`}
-              aria-label={espaco.nome}
-              title={espaco.nome}
-              className={`group flex min-h-12 w-full flex-col items-center justify-center gap-0.5 px-1 py-1 text-[8px] font-semibold leading-tight transition-colors ${
-                selecionado ? 'bg-white/15 text-white' : 'text-white/75 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <span className="flex h-[19px] w-[19px] items-center justify-center rounded-[5px] text-white" style={{ background: espaco.cor }}>
-                <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-3 w-3" />
-              </span>
-              <span className="line-clamp-1 max-w-12">{espaco.nome}</span>
-            </Link>
-          )
-        })}
-      </nav>
-
-      <nav className="border-t border-white/10 py-1">
-        {papel === 'admin' && link('/config', 'Ajustes', Settings, caminho.startsWith('/config'))}
-      </nav>
     </div>
   )
 }
@@ -283,22 +211,21 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
   const link = (href: string, rotulo: string, Icone: IconeLucide) => (
     <Link href={href} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
-      <Icone className="h-3.5 w-3.5 text-[#7d7e83]" />
+      <Icone className="h-3.5 w-3.5 text-white/70" />
       <span className="truncate">{rotulo}</span>
     </Link>
   )
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col bg-[#f7f7f8]">
-      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-[#e2e2e4] px-3">
-        <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-marca text-[9px] font-extrabold text-white">S</span>
-        <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[#303136]">Grupo SRV</p>
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-lateral text-white">
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-4">
+        <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-white">Grupo SRV</p>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         <div className="flex h-8 items-center px-2">
-          <h2 className="text-[14px] font-semibold tracking-[-0.02em] text-[#292a2d]">Início</h2>
+          <h2 className="text-[10px] font-semibold tracking-[0.18em] text-white/55">Navegação</h2>
         </div>
         <nav className="space-y-0.5">
           {link('/inicio', 'Minhas tarefas', CheckSquare)}
@@ -306,30 +233,30 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
           {papel === 'admin' && link('/config', 'Configurações', Settings)}
         </nav>
 
-        <div className="mx-2 my-3 border-t border-[#e1e1e3]" />
+        <div className="mx-2 my-3 border-t border-white/10" />
 
         <DndContext sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-[11px] font-semibold text-[#626368]">Espaços</h2>
+              <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-white/55">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
             </div>
 
             <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-[#8d8e93]">Você ainda não faz parte de nenhum departamento.</p>}
+              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-white/50">Você ainda não faz parte de nenhum departamento.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
 
             {(papel === 'admin' || navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
-              <div className="mt-3 border-t border-[#e1e1e3] pt-2">
+              <div className="mt-3 border-t border-white/10 pt-2">
                 <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-[11px] font-semibold text-[#626368]">Itens soltos</h2>
+                  <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-white/55">Itens soltos</h2>
                   {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
                 </div>
                 <nav className="space-y-0.5">
                   {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                   {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-[#9b9ca0]">Pastas e listas sem espaço aparecem aqui.</p>}
+                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-white/45">Pastas e listas sem espaço aparecem aqui.</p>}
                 </nav>
               </div>
             )}
@@ -338,17 +265,17 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
         </DndContext>
       </div>
 
-      <div className="shrink-0 border-t border-[#e2e2e4] p-2">
+      <div className="shrink-0 border-t border-white/10 p-2">
         <IndicadorCronometro cronometro={cronometro} />
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#ededee]">
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/10">
           <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-[9px]" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-semibold text-[#35363a]">{nome}</p>
-            <p className="truncate text-[9px] capitalize text-[#96979b]">{papel}</p>
+            <p className="truncate text-[11px] font-semibold text-white">{nome}</p>
+            <p className="truncate text-[9px] text-white/55">{papel}</p>
           </div>
           <form action={sair}>
-            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-[#8b8c90] transition hover:bg-white hover:text-[#303136]">
-              <LogOut className="h-3.5 w-3.5" />
+            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white">
+              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </form>
         </div>
@@ -360,8 +287,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 export function BarraLateral(props: Props) {
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[296px] shrink-0 border-r border-[#dfdfe1] md:flex">
-        <Trilho navegacao={props.navegacao} papel={props.papel} />
+      <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 md:flex">
         <Painel {...props} />
       </aside>
 
@@ -370,13 +296,12 @@ export function BarraLateral(props: Props) {
           <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] border-r-borda bg-[#f7f7f8] p-0">
+          <SheetContent side="left" className="w-[280px] border-r-0 bg-lateral p-0 text-white">
             <SheetTitle className="sr-only">Menu</SheetTitle>
             <Painel {...props} />
           </SheetContent>
         </Sheet>
-        <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#075e57] text-[9px] font-extrabold text-white">S</span>
-        <span className="text-[13px] font-semibold">Grupo SRV</span>
+        <span className="text-[13px] font-bold tracking-[0.22em]">Grupo SRV</span>
       </div>
     </>
   )
