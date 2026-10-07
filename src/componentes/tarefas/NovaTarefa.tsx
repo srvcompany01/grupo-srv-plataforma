@@ -6,10 +6,32 @@ import { criarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
 
 /** Criação rápida: título + Enter. Responsável inicial é quem criou. */
-export function NovaTarefa({ listaId, statusId, euId, paiId }: { listaId: string; statusId?: string; euId: string; paiId?: string }) {
-  const [aberta, setAberta] = useState(false)
+export function NovaTarefa({
+  listaId,
+  statusId,
+  euId,
+  paiId,
+  abertaInicial = false,
+  recuo,
+  onFechar,
+  onCriada,
+}: {
+  listaId: string
+  statusId?: string
+  euId: string
+  paiId?: string
+  abertaInicial?: boolean
+  recuo?: number
+  onFechar?: () => void
+  onCriada?: () => void
+}) {
+  const [aberta, setAberta] = useState(abertaInicial)
   const [titulo, setTitulo] = useState('')
   const [pendente, iniciar] = useTransition()
+  const fechar = () => {
+    setAberta(false)
+    onFechar?.()
+  }
 
   if (!aberta) {
     return (
@@ -23,19 +45,22 @@ export function NovaTarefa({ listaId, statusId, euId, paiId }: { listaId: string
       onSubmit={(e) => {
         e.preventDefault()
         iniciar(async () => {
-          if (avisar(await criarTarefaAcao({ listaId, titulo, responsaveis: [euId], statusId, paiId }))) setTitulo('')
+          if (!avisar(await criarTarefaAcao({ listaId, titulo, responsaveis: [euId], statusId, paiId }))) return
+          setTitulo('')
+          onCriada?.()
         })
       }}
       className="flex h-9 items-center gap-2 border-t border-borda px-9"
+      style={recuo === undefined ? undefined : { paddingLeft: recuo }}
     >
       <input
         autoFocus
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        onKeyDown={(e) => e.key === 'Escape' && setAberta(false)}
-        onBlur={() => !titulo && setAberta(false)}
+        onKeyDown={(e) => e.key === 'Escape' && fechar()}
+        onBlur={() => !titulo && fechar()}
         disabled={pendente}
-        placeholder="Nome da tarefa (Enter para salvar, Esc para cancelar)"
+        placeholder={`${paiId ? 'Nome da subtarefa' : 'Nome da tarefa'} (Enter para salvar, Esc para cancelar)`}
         className="flex-1 bg-transparent text-[13px] outline-none"
       />
     </form>

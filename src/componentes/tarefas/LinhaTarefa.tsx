@@ -1,12 +1,13 @@
 'use client'
 
-import { ChevronRight, Flag } from 'lucide-react'
+import { ChevronRight, CornerDownRight, Flag } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { formatarData } from '@/dominio/formatar'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
 import { CelulaCampoPersonalizado } from './CamposPersonalizados'
+import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
 
@@ -46,8 +47,9 @@ export function Prazo({ prazo, concluida, hoje }: { prazo: string | null; conclu
   return <span className={atrasada ? 'font-medium text-rose-600' : 'text-texto-2'}>{formatarData(prazo).slice(0, 5)}</span>
 }
 
-export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto }) {
+export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto; euId: string }) {
   const [aberta, setAberta] = useState(false)
+  const [criandoSubtarefa, setCriandoSubtarefa] = useState(false)
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   const campos = ctx.camposPersonalizados ?? []
   return (
@@ -74,6 +76,19 @@ export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; 
               {t.nome}
             </span>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setAberta(true)
+              setCriandoSubtarefa(true)
+            }}
+            aria-label={`Adicionar subtarefa em ${tarefa.titulo}`}
+            title="Adicionar subtarefa"
+            className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-semibold text-texto-3 opacity-60 transition hover:bg-white hover:text-marca focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          >
+            <CornerDownRight className="h-3.5 w-3.5" />
+            <span className="hidden 2xl:inline">Subtarefa</span>
+          </button>
         </div>
         <span className="px-2">
           <SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} />
@@ -94,7 +109,19 @@ export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; 
           </div>
         ))}
       </div>
-      {aberta && tarefa.filhos.map((f) => <LinhaTarefa key={f.id} tarefa={f} nivel={nivel + 1} ctx={ctx} />)}
+      {aberta && tarefa.filhos.map((f) => <LinhaTarefa key={f.id} tarefa={f} nivel={nivel + 1} ctx={ctx} euId={euId} />)}
+      {criandoSubtarefa && (
+        <NovaTarefa
+          listaId={tarefa.listaId}
+          statusId={tarefa.statusId}
+          euId={euId}
+          paiId={tarefa.id}
+          abertaInicial
+          recuo={52 + nivel * 20}
+          onFechar={() => setCriandoSubtarefa(false)}
+          onCriada={() => setCriandoSubtarefa(false)}
+        />
+      )}
     </>
   )
 }
