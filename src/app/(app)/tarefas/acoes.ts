@@ -84,13 +84,12 @@ export async function criarEtiquetaAcao(tarefaId: string, espacoId: string, nome
   })
 }
 
-/** `mencoes` e `anexos` são opcionais enquanto a UI antiga (Comentarios.tsx) chama só com texto. */
 export async function comentarAcao(
   tarefaId: string,
   texto: string,
   interno: boolean,
-  mencoes: string[] = [],
-  anexos: comentarios.NovoAnexo[] = [],
+  mencoes: string[],
+  anexos: comentarios.NovoAnexo[],
 ): Promise<Resultado> {
   if (!texto.trim() && !anexos.length) return { erro: 'Escreva o comentário ou anexe um arquivo.' }
   if (anexos.length > MAX_ANEXOS) return { erro: `Máximo de ${MAX_ANEXOS} anexos por comentário.` }

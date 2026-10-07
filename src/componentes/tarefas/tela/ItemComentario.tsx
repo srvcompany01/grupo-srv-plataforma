@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { apagarComentarioAcao, editarComentarioAcao } from '@/app/(app)/tarefas/acoes'
 import { Avatar } from '@/componentes/Avatar'
 import { formatarDataAtividade } from '@/dominio/formatar'
-import { segmentarTexto } from '@/dominio/mencoes'
+import { mencoesDaEdicao, mencoesParaEdicao, segmentarTexto } from '@/dominio/mencoes'
 import { botaoFantasma, botaoPrimario } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios'
 import { avisar } from '../avisar'
@@ -12,7 +12,7 @@ import { ListaAnexos } from './ListaAnexos'
 
 export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
   const [editando, setEditando] = useState(false)
-  const [texto, setTexto] = useState(c.texto)
+  const [texto, setTexto] = useState(() => mencoesParaEdicao(c.texto))
   const [pendente, iniciar] = useTransition()
   return (
     <div className="flex gap-2 rounded-lg border border-borda bg-white p-3">
@@ -32,7 +32,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
                 disabled={pendente}
                 onClick={() =>
                   iniciar(async () => {
-                    if (avisar(await editarComentarioAcao(c.id, texto))) setEditando(false)
+                    if (avisar(await editarComentarioAcao(c.id, mencoesDaEdicao(texto, segmentarTexto(c.texto).flatMap((x) => (x.tipo === 'mencao' ? [{ id: x.id, nome: x.nome }] : [])))))) setEditando(false)
                   })
                 }
                 className={botaoPrimario}
@@ -41,7 +41,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
               </button>
               <button
                 onClick={() => {
-                  setTexto(c.texto)
+                  setTexto(mencoesParaEdicao(c.texto))
                   setEditando(false)
                 }}
                 className={botaoFantasma}

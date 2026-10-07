@@ -9,10 +9,10 @@ import { rotulo } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios'
 import type { ItemAtividade, TarefaCompleta } from '@/servicos/tarefas'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
-import { FormularioComentario } from '../Comentarios'
 import { EditorDescricao } from '../EditorDescricao'
 import { CabecalhoTarefa } from './CabecalhoTarefa'
 import { GradePropriedades } from './GradePropriedades'
+import { CaixaComentario } from './CaixaComentario'
 import { PainelAtividade } from './PainelAtividade'
 import { SecaoCampos } from './SecaoCampos'
 import { SecaoSubtarefas } from './SecaoSubtarefas'
@@ -68,7 +68,7 @@ export function TelaTarefa(p: PropsTela) {
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
         <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden lg:flex'}`}>
-          <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<FormularioComentario tarefaId={t.id} />} />
+          <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<CaixaComentario tarefaId={t.id} pessoas={p.pessoas} />} />
         </aside>
       </div>
     </div>

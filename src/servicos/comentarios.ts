@@ -86,11 +86,6 @@ export async function pessoasDaTarefa(sb: Supabase, tarefaId: string): Promise<{
   return linhas.map((p) => ({ id: p.id, nome: p.full_name, avatar: p.avatar_url }))
 }
 
-export async function comentar(sb: Supabase, tarefaId: string, texto: string, interno: boolean) {
-  const { error } = await sb.from('comments').insert({ task_id: tarefaId, body: texto, is_internal: interno })
-  if (error) throw error
-}
-
 export async function editarComentario(sb: Supabase, id: string, texto: string) {
   const { error, count } = await sb.from('comments').update({ body: texto }, { count: 'exact' }).eq('id', id)
   if (error) throw error
