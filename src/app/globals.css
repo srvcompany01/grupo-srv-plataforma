@@ -6,8 +6,8 @@
 
 /* Sistema visual SRV: produtividade densa, superfícies planas e acentos contidos. */
 @theme inline {
-  /* Fonte única: mono espaçada em todo o site. */
-  --font-sans: var(--font-mono-srv), 'SFMono-Regular', Consolas, monospace;
+  /* Fonte única: Sora em todo o site. */
+  --font-sans: var(--font-sora), system-ui, sans-serif;
   --font-display: var(--font-sans);
   --font-mono: var(--font-sans);
 
@@ -145,11 +145,6 @@ body {
   font-family: var(--font-sans);
   font-size: 13px;
   letter-spacing: 0;
-}
-
-/* Padrão visual: tudo em caixa alta (inclui campos, botões e menus). */
-*, *::before, *::after {
-  text-transform: uppercase;
 }
 
 :root {
