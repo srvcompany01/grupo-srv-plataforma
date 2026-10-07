@@ -2,10 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
+import { iniciais } from '@/dominio/clientes-galeria'
+import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
 import { buscarCliente, usuariosDoCliente } from '@/servicos/clientes-plataforma'
 import { FormConvite } from '../../config/usuarios/FormConvite'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
+import { CamposCliente } from './CamposCliente'
+import { SeletorCapa } from './SeletorCapa'
 
 export default async function Cliente({ params }: PageProps<'/clientes/[cliente]'>) {
   const { cliente: id } = await params
@@ -14,6 +18,9 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
   const cliente = await buscarCliente(sb, id)
   if (!cliente) notFound()
   const admin = eu.papel === 'admin'
+  const podeGerir = admin || eu.papel === 'gestor'
+  const [campos, valores, capas] = await Promise.all([listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
+  const capa = capas[id]
   const usuarios = admin && !cliente.interno ? await usuariosDoCliente(sb, id) : []
 
   return (
@@ -22,7 +29,23 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
         ← Clientes
       </Link>
       <h1 className="page-title">{cliente.nome}</h1>
-      <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={admin || eu.papel === 'gestor'} />
+      <section className="space-y-3">
+        <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl border border-borda" style={{ background: cliente.cor }}>
+          {capa?.url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
+            <img src={capa.url} alt="" width={1200} height={375} className="h-full w-full object-cover" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-[0.08em] text-white/90">{iniciais(cliente.nome)}</span>
+          )}
+          {capa?.credito && <span className="absolute bottom-1.5 right-2 rounded bg-black/50 px-1.5 py-0.5 text-[9px] text-white/90">{capa.credito}</span>}
+        </div>
+        {podeGerir && <SeletorCapa clienteId={id} temCapa={!!capa?.url} />}
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold">Informações da galeria</h2>
+        <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
+      </section>
+      <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={podeGerir} />
       {admin && !cliente.interno && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold">Acesso ao portal</h2>

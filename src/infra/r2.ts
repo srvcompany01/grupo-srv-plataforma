@@ -1,6 +1,7 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { EXTENSAO_ANEXO, normalizarMime } from '@/dominio/anexos'
+import { EXTENSAO_CAPA } from '@/dominio/clientes-galeria'
 import { EXTENSAO_POR_TIPO } from '@/dominio/midias'
 
 const EXPIRA_UPLOAD = 60 * 60
@@ -39,6 +40,13 @@ export function gerarChaveTarefa(tarefaId: string, mime: string): string {
   const ext = Object.hasOwn(EXTENSAO_ANEXO, m) ? EXTENSAO_ANEXO[m] : undefined
   if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
   return `tarefas/${tarefaId}/${crypto.randomUUID()}.${ext}`
+}
+
+/** Capas de cliente: `clientes/<id>/<uuid>.<ext>`; a extensão vem do mime já validado. */
+export function gerarChaveCliente(clienteId: string, mime: string): string {
+  const ext = EXTENSAO_CAPA[mime]
+  if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
+  return `clientes/${clienteId}/${crypto.randomUUID()}.${ext}`
 }
 
 /** `ARMAZENAMENTO_LOCAL=1` grava em .dados/arquivos via /api/dev-arquivos. Nunca em produção. */

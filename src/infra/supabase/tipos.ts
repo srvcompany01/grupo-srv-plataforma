@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_field_values: {
+        Row: {
+          client_id: string
+          field_id: string
+          value: string
+        }
+        Insert: {
+          client_id: string
+          field_id: string
+          value: string
+        }
+        Update: {
+          client_id?: string
+          field_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_field_values_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "client_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_fields: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          position: number
+          show_on_card: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          position?: number
+          show_on_card?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          position?: number
+          show_on_card?: boolean
+        }
+        Relationships: []
+      }
       client_users: {
         Row: {
           client_id: string
@@ -50,6 +110,8 @@ export type Database = {
       clients: {
         Row: {
           color: string
+          cover_credit: string | null
+          cover_url: string | null
           created_at: string
           document: string | null
           email: string | null
@@ -63,6 +125,8 @@ export type Database = {
         }
         Insert: {
           color?: string
+          cover_credit?: string | null
+          cover_url?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
@@ -76,6 +140,8 @@ export type Database = {
         }
         Update: {
           color?: string
+          cover_credit?: string | null
+          cover_url?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
