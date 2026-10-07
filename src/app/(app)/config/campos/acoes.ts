@@ -8,6 +8,7 @@ import { exigirAdmin } from '@/infra/supabase/sessao'
 import { criarClienteServidor, type Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { tentar, type Resultado } from '@/servicos/acao'
+import { dadosGestaoCampos, type DadosGestaoCampos } from '@/servicos/campos-gestao'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -104,4 +105,10 @@ export async function arquivarCampoGestaoAcao(id: string): Promise<Resultado> {
   }, 'Campo arquivado.')
   atualizado()
   return r
+}
+
+/** Dados da gestão sob demanda, para o editor aberto a partir do cabeçalho da lista. */
+export async function dadosGestaoCamposAcao(): Promise<DadosGestaoCampos> {
+  await exigirAdmin()
+  return dadosGestaoCampos(await criarClienteServidor())
 }

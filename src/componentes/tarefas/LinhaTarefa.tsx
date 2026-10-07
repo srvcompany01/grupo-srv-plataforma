@@ -23,6 +23,8 @@ export type Contexto = {
   camposPersonalizados?: DefinicaoCampo[]
   tagsCliente?: TagCliente[]
   podeGerirTagCliente?: boolean
+  /** Admin: libera configurar e arquivar campos a partir do cabeçalho da lista. */
+  podeEditarCampos?: boolean
   largurasColunas?: Record<string, number>
   selecionadas?: ReadonlySet<string>
   alternarSelecao?: (id: string, selecionada: boolean) => void

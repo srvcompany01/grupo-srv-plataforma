@@ -85,6 +85,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
     camposPersonalizados: camposDaLista,
     tagsCliente,
     podeGerirTagCliente: lista.podeGerir,
+    podeEditarCampos: eu.papel === 'admin',
   }
   const grupos = gruposDaLista(arvore, lista.status, filtros)
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))

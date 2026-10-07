@@ -1,13 +1,15 @@
 'use client'
 
-import { ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Trash2, UserRound, X } from 'lucide-react'
+import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { No, TarefaResumo } from '@/dominio/tarefas'
 import { avisar } from './avisar'
+import { ConfigurarCampo } from './ConfigurarCampo'
 import { COLUNAS_BASE, LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
 
@@ -69,6 +71,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const [larguras, setLarguras] = useState<Record<string, number>>({})
   const largurasRef = useRef(larguras)
   const arrasteRef = useRef<Arraste | null>(null)
+  const [configurando, setConfigurando] = useState<string | null>(null)
   const [config, setConfig] = useState<ConfigCampos>({ ocultas: [], ordem: [] })
   const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
@@ -124,6 +127,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       const ids = camposVisiveis.map((campo) => campo.id).filter((x) => x !== id)
       return { ...c, ordem: para === 'inicio' ? [id, ...ids] : [...ids, id] }
     })
+
+  const arquivarCampo = (id: string, nome: string) => {
+    if (!confirm(`Arquivar "${nome}"? Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.`)) return
+    void arquivarCampoGestaoAcao(id).then((r) => avisar(r, true))
+  }
 
   const aplicarLargura = (id: string, largura: number) => {
     const limite = limiteDaColuna(id, campos)
@@ -222,6 +230,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
+      {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {camposOcultos.length > 0 && (
         <div className="flex justify-end">
           <DropdownMenu>
@@ -261,6 +270,12 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                         <DropdownMenuItem onSelect={() => moverCampo(definicao.id, 'inicio')}><ArrowLeftToLine className="h-4 w-4" />Mover para o início</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => moverCampo(definicao.id, 'final')}><ArrowRightToLine className="h-4 w-4" />Mover para o final</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => restaurarLargura(`campo:${definicao.id}`)}><MoveHorizontal className="h-4 w-4" />Restaurar largura</DropdownMenuItem>
+                        {ctx.podeEditarCampos && (
+                          <>
+                            <DropdownMenuItem onSelect={() => setConfigurando(definicao.id)}><Settings2 className="h-4 w-4" />Configurar campo…</DropdownMenuItem>
+                            <DropdownMenuItem variant="destructive" onSelect={() => arquivarCampo(definicao.id, definicao.nome)}><Archive className="h-4 w-4" />Arquivar campo</DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </CabecalhoColuna>
