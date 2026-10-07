@@ -8,16 +8,15 @@ import { buscarTarefa, listarAtividade } from '@/servicos/tarefas'
 import { cronometroAtivo, listarTempo } from '@/servicos/tempo'
 import { listarEquipe } from '@/servicos/usuarios'
 import { listarCamposDaTarefa } from '@/servicos/campos-personalizados'
-import { DetalheTarefa } from './DetalheTarefa'
+import { TelaTarefa } from './tela/TelaTarefa'
 
 /** Carrega tudo da tarefa (como o usuário logado) e renderiza o detalhe. 404 se a RLS esconder. */
-export async function CarregarTarefa({ id, noPainel = false }: { id: string; noPainel?: boolean }) {
+export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJanela?: boolean }) {
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
   const tarefa = await buscarTarefa(sb, id)
   if (!tarefa) notFound()
-  // registrosTempo, cronometro e pessoas ainda não vão para DetalheTarefa (a Task 6 liga as props).
-  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, , , ] = await Promise.all([
+  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas] = await Promise.all([
     buscarLista(sb, tarefa.lista.id),
     listarEquipe(sb),
     listarTags(sb, tarefa.lista.espacoId),
@@ -30,7 +29,7 @@ export async function CarregarTarefa({ id, noPainel = false }: { id: string; noP
     pessoasDaTarefa(sb, id),
   ])
   return (
-    <DetalheTarefa
+    <TelaTarefa
       tarefa={tarefa}
       status={lista?.status ?? []}
       equipe={equipe}
@@ -42,7 +41,10 @@ export async function CarregarTarefa({ id, noPainel = false }: { id: string; noP
       euId={eu.id}
       podeGerir={lista?.podeGerir ?? false}
       hoje={dataDeHoje(new Date())}
-      noPainel={noPainel}
+      tempo={tempo}
+      cronometro={cronometro}
+      pessoas={pessoas}
+      emJanela={emJanela}
     />
   )
 }
