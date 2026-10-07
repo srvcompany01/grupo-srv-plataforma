@@ -14,6 +14,7 @@ import { CabecalhoTarefa } from './CabecalhoTarefa'
 import { GradePropriedades } from './GradePropriedades'
 import { CaixaComentario } from './CaixaComentario'
 import { PainelAtividade } from './PainelAtividade'
+import { RastrearTempo } from './RastrearTempo'
 import { SecaoCampos } from './SecaoCampos'
 import { SecaoSubtarefas } from './SecaoSubtarefas'
 
@@ -59,7 +60,9 @@ export function TelaTarefa(p: PropsTela) {
       <div className="grid min-h-0 flex-1 lg:grid-cols-[1fr_400px]">
         <div className={`min-h-0 space-y-6 overflow-y-auto p-5 md:px-8 ${aba === 'detalhes' ? '' : 'hidden lg:block'}`}>
           <CabecalhoTarefa tarefa={t} listas={p.listas} podeGerir={p.podeGerir} emJanela={p.emJanela} />
-          <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} podeGerir={p.podeGerir} hoje={p.hoje} />
+          <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} podeGerir={p.podeGerir} hoje={p.hoje}>
+            <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
+          </GradePropriedades>
           <div className="space-y-1">
             <span className={rotulo}>Descrição</span>
             <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />

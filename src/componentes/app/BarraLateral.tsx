@@ -23,13 +23,15 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Avatar } from '@/componentes/Avatar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
+import { IndicadorCronometro } from './IndicadorCronometro'
+import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
 import { sair } from '@/app/(auth)/login/acoes'
 
 type Opcao = { id: string; nome: string }
-type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string }
+type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null }
 type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
@@ -248,7 +250,7 @@ function Trilho({ navegacao, papel }: Pick<Props, 'navegacao' | 'papel'>) {
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel }: Props) {
+function Painel({ navegacao, clientes, nome, papel, cronometro }: Props) {
   const caminho = usePathname()
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
@@ -337,6 +339,7 @@ function Painel({ navegacao, clientes, nome, papel }: Props) {
       </div>
 
       <div className="shrink-0 border-t border-[#e2e2e4] p-2">
+        <IndicadorCronometro cronometro={cronometro} />
         <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#ededee]">
           <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-[9px]" />
           <div className="min-w-0 flex-1">
