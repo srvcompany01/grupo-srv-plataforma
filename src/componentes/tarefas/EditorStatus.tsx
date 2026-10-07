@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
@@ -17,6 +18,7 @@ type S = StatusLista & { posicao: string }
 
 export function EditorStatus({ listaId, status }: { listaId: string; status: S[] }) {
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const [novo, setNovo] = useState({ nome: '', cor: '#7b68ee', categoria: 'in_progress' as Categoria })
   const rodar = (fn: () => Promise<Parameters<typeof avisar>[0]>) => iniciar(async () => void avisar(await fn()))
 
@@ -69,9 +71,9 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
               <button
                 aria-label="Remover"
                 disabled={pendente}
-                onClick={() => {
+                onClick={async () => {
                   const destino = status.find((o) => o.id !== s.id && o.categoria === 'todo') ?? status.find((o) => o.id !== s.id)
-                  if (destino && confirm(`Remover "${s.nome}"? As tarefas dele vão para "${destino.nome}".`)) {
+                  if (destino && (await confirmar({ titulo: `Remover "${s.nome}"?`, descricao: `As tarefas dele vão para "${destino.nome}".`, confirmar: 'Remover', perigo: true }))) {
                     rodar(() => removerStatusAcao(s.id, destino.id))
                   }
                 }}

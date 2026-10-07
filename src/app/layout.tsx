@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Sora } from 'next/font/google'
+import { ConfirmarProvider } from '@/componentes/ConfirmarProvider'
 import './globals.css'
 
 const sora = Sora({ variable: '--font-sora', subsets: ['latin'] })
@@ -14,7 +15,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${sora.variable} h-full antialiased`}>
-      <body className="min-h-full bg-fundo text-texto">{children}</body>
+      <body className="min-h-full bg-fundo text-texto"><ConfirmarProvider>{children}</ConfirmarProvider></body>
     </html>
   )
 }

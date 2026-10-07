@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
@@ -70,6 +71,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const [fechados, setFechados] = useState<Set<string>>(new Set())
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set())
   const [excluindo, iniciarExclusao] = useTransition()
+  const confirmar = useConfirmar()
   const [larguras, setLarguras] = useState<Record<string, number>>({})
   const largurasRef = useRef(larguras)
   const arrasteRef = useRef<Arraste | null>(null)
@@ -130,8 +132,8 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const moverCampo = (id: string, para: 'inicio' | 'final') => atualizarColunas(moverColuna(config, colunas, id, para))
   const alternarColuna = (id: string) => (visivel(id, config) ? ocultarCampo(id) : mostrarCampo(id))
 
-  const arquivarCampo = (id: string, nome: string) => {
-    if (!confirm(`Arquivar "${nome}"? Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.`)) return
+  const arquivarCampo = async (id: string, nome: string) => {
+    if (!(await confirmar({ titulo: `Arquivar "${nome}"?`, descricao: 'Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.', confirmar: 'Arquivar', perigo: true }))) return
     void arquivarCampoGestaoAcao(id).then((r) => avisar(r, true))
   }
 
@@ -207,9 +209,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       return true
     })
   }
-  const excluirSelecionadas = () => {
+  const excluirSelecionadas = async () => {
     const quantidade = selecionadas.size
-    if (!quantidade || !confirm(`Excluir ${quantidade} ${quantidade === 1 ? 'tarefa' : 'tarefas'}? As subtarefas relacionadas também serão removidas da visualização.`)) return
+    if (!quantidade || !(await confirmar({ titulo: `Excluir ${quantidade} ${quantidade === 1 ? 'tarefa' : 'tarefas'}?`, descricao: 'As subtarefas relacionadas também serão removidas da visualização.', confirmar: 'Excluir', perigo: true }))) return
     iniciarExclusao(async () => {
       if (!avisar(await arquivarTarefasAcao(idsRaizSelecionados()), true)) return
       setSelecionadas(new Set())

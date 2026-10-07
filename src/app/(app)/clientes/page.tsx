@@ -1,3 +1,5 @@
+import { Users } from 'lucide-react'
+import { EstadoVazio } from '@/componentes/EstadoVazio'
 import { formatarCampoCliente } from '@/dominio/clientes-galeria'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -27,7 +29,7 @@ export default async function Clientes() {
           </div>
         </details>
       )}
-      {clientes.length === 0 && <p className="rounded-xl border border-dashed border-borda px-4 py-10 text-center text-corpo text-texto-3">Nenhum cliente cadastrado ainda.</p>}
+      {clientes.length === 0 && <EstadoVazio icone={Users} titulo="Nenhum cliente cadastrado ainda" descricao={podeCriar ? 'Use "Novo cliente" acima para cadastrar o primeiro.' : undefined} />}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {clientes.map((c) => {
           const info = camposNaCapa.flatMap((campo) => {

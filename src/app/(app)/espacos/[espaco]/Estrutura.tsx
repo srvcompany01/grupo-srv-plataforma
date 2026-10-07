@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, Folder, List } from 'lucide-react'
 import Link from 'next/link'
 import { useActionState, useState, useTransition } from 'react'
@@ -27,11 +28,12 @@ function Nome({ tabela, id, nome }: { tabela: 'folders' | 'lists'; id: string; n
 
 function Arquivar({ tabela, id, nome }: { tabela: 'folders' | 'lists'; id: string; nome: string }) {
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   return (
     <button
       aria-label={`Arquivar ${nome}`}
       disabled={pendente}
-      onClick={() => confirm(`Arquivar "${nome}"?`) && iniciar(async () => void avisar(await arquivarAcao(tabela, id), true))}
+      onClick={async () => (await confirmar({ titulo: `Arquivar "${nome}"?`, confirmar: 'Arquivar', perigo: true })) && iniciar(async () => void avisar(await arquivarAcao(tabela, id), true))}
       className={botaoFantasma}
     >
       <Archive className="h-4 w-4" />

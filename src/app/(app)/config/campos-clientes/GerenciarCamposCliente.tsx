@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Trash2 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { avisar } from '@/componentes/tarefas/avisar'
@@ -12,6 +13,7 @@ const rotuloTipo = (tipo: string) => TIPOS_CAMPO_CLIENTE.find((t) => t.tipo === 
 function LinhaCampo({ campo }: { campo: CampoCliente }) {
   const [nome, setNome] = useState(campo.nome)
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const salvarNome = () => {
     if (nome.trim() === campo.nome) return
     iniciar(async () => void avisar(await atualizarCampoClienteAcao(campo.id, { nome }), true))
@@ -42,7 +44,7 @@ function LinhaCampo({ campo }: { campo: CampoCliente }) {
       <button
         type="button"
         disabled={pendente}
-        onClick={() => confirm(`Excluir o campo "${campo.nome}"? Os valores preenchidos nos clientes também serão apagados.`) && iniciar(async () => void avisar(await excluirCampoClienteAcao(campo.id), true))}
+        onClick={async () => (await confirmar({ titulo: `Excluir o campo "${campo.nome}"?`, descricao: 'Os valores preenchidos nos clientes também serão apagados.', confirmar: 'Excluir', perigo: true })) && iniciar(async () => void avisar(await excluirCampoClienteAcao(campo.id), true))}
         aria-label={`Excluir campo ${campo.nome}`}
         className="rounded-md p-1.5 text-texto-3 transition-colors hover:bg-perigo-fundo hover:text-perigo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca"
       >

@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, ArrowRightLeft, CircleDot, Link2, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,6 +18,7 @@ import type { ListaOpcao } from './TelaTarefa'
 export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { tarefa: TarefaCompleta; listas: ListaOpcao[]; podeGerir: boolean; emJanela: boolean }) {
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const [titulo, setTitulo] = useState(t.titulo)
   const [movendo, setMovendo] = useState(false)
   const ehSubtarefa = !!t.paiId
@@ -30,11 +32,11 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
     }
   }
 
-  function mover(destinoId: string) {
+  async function mover(destinoId: string) {
     const destino = listas.find((l) => l.id === destinoId)
     if (!destino || destino.id === t.lista.id) return
-    const aviso = destino.clienteId !== t.lista.clienteId ? `\n\nAtenção: a tag do cliente muda para @${destino.clienteNome}.` : ''
-    if (!confirm(`Mover a tarefa (e as subtarefas) para "${destino.nome}"?${aviso}`)) return
+    const aviso = destino.clienteId !== t.lista.clienteId ? `Atenção: a tag do cliente muda para @${destino.clienteNome}.` : undefined
+    if (!(await confirmar({ titulo: `Mover a tarefa (e as subtarefas) para "${destino.nome}"?`, descricao: aviso, confirmar: 'Mover' }))) return
     iniciar(async () => {
       if (avisar(await moverParaListaAcao(t.id, destino.id), true)) setMovendo(false)
     })
@@ -63,8 +65,8 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
             {podeGerir && (
               <DropdownMenuItem
                 variant="destructive"
-                onSelect={() =>
-                  confirm('Arquivar esta tarefa? Ela some das listas.') &&
+                onSelect={async () =>
+                  (await confirmar({ titulo: 'Arquivar esta tarefa?', descricao: 'Ela some das listas.', confirmar: 'Arquivar', perigo: true })) &&
                   iniciar(async () => {
                     if (!avisar(await arquivarTarefaAcao(t.id), true)) return
                     if (emJanela) router.back()

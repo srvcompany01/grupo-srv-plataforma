@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { ArrowDown, ArrowUp, Archive, X } from 'lucide-react'
 import { useActionState, useState, useTransition } from 'react'
 import { avisar } from '../usuarios/ControlesUsuario'
@@ -42,6 +43,7 @@ export function FormNovoEspaco({ pais }: { pais: Pessoa[] }) {
 
 export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equipe: Pessoa[] }) {
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const [nome, setNome] = useState(espaco.nome)
   const rodar = (fn: () => Promise<Parameters<typeof avisar>[0]>) => iniciar(async () => avisar(await fn()))
 
@@ -65,7 +67,7 @@ export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equ
         <button
           aria-label="Arquivar"
           disabled={pendente}
-          onClick={() => confirm(`Arquivar "${espaco.nome}"? Ele some da navegação.`) && rodar(() => arquivarEspaco(espaco.id))}
+          onClick={async () => (await confirmar({ titulo: `Arquivar "${espaco.nome}"?`, descricao: 'Ele some da navegação.', confirmar: 'Arquivar', perigo: true })) && rodar(() => arquivarEspaco(espaco.id))}
           className={botaoFantasma}
         >
           <Archive className="h-4 w-4" />

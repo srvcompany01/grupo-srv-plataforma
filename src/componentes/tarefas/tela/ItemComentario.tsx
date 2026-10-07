@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { useState, useTransition } from 'react'
 import { apagarComentarioAcao, editarComentarioAcao } from '@/app/(app)/tarefas/acoes'
 import { Avatar } from '@/componentes/Avatar'
@@ -14,6 +15,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
   const [editando, setEditando] = useState(false)
   const [texto, setTexto] = useState(() => mencoesParaEdicao(c.texto))
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   return (
     <div className="flex gap-2 rounded-lg border border-borda bg-white p-3">
       <Avatar nome={c.autorNome || '?'} tamanho="h-7 w-7 text-legenda" />
@@ -73,7 +75,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
             </button>
             <button
               disabled={pendente}
-              onClick={() => confirm('Apagar este comentário?') && iniciar(async () => void avisar(await apagarComentarioAcao(c.id)))}
+              onClick={async () => (await confirmar({ titulo: 'Apagar este comentário?', confirmar: 'Apagar', perigo: true })) && iniciar(async () => void avisar(await apagarComentarioAcao(c.id)))}
               className="hover:text-perigo"
             >
               Apagar

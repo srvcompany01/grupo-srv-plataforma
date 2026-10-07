@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Pencil, Play, Square, Trash2 } from 'lucide-react'
 import { useEffect, useState, useTransition } from 'react'
 import { apagarTempoAcao, editarTempoAcao, iniciarCronometroAcao, lancarTempoAcao, pararCronometroAcao } from '@/app/(app)/tarefas/acoes'
@@ -26,6 +27,7 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
   const [minutos, setMinutos] = useState(String(Math.max(1, Math.round((r.segundos ?? 0) / 60))))
   const [nota, setNota] = useState(r.nota ?? '')
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const rodando = r.fim === null
   const segundos = r.segundos ?? segundosDecorridos(r.inicio, agora)
 
@@ -72,7 +74,7 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
           </button>
           <button
             disabled={pendente}
-            onClick={() => confirm('Apagar este registro de tempo?') && iniciar(async () => void avisar(await apagarTempoAcao(r.id), true))}
+            onClick={async () => (await confirmar({ titulo: 'Apagar este registro de tempo?', confirmar: 'Apagar', perigo: true })) && iniciar(async () => void avisar(await apagarTempoAcao(r.id), true))}
             aria-label="Apagar registro"
             className="rounded p-1 text-texto-3 hover:bg-hover hover:text-perigo"
           >

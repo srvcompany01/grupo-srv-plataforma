@@ -1,7 +1,9 @@
 'use client'
 
-import { Archive, Pencil, Plus, Search } from 'lucide-react'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { Archive, Pencil, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
+import { EstadoVazio } from '@/componentes/EstadoVazio'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { EditorCampo, RAIZ, type Alvo } from '@/componentes/tarefas/EditorCampo'
@@ -19,6 +21,7 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [alvo, setAlvo] = useState<Alvo | null>(null)
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const caminhos = useMemo(() => new Map(listas.map((l) => [l.id, l.caminho])), [listas])
   const termo = busca.toLocaleLowerCase('pt-BR')
   const visiveis = campos.filter((c) =>
@@ -27,8 +30,8 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
     (filtroEspaco === 'todos' || (filtroEspaco === RAIZ ? c.espacoId === null : c.espacoId === filtroEspaco)),
   )
   const tipos = [...new Set(visiveis.map((c) => c.tipo))]
-  const arquivar = (c: CampoGestao) => {
-    if (!confirm(`Arquivar "${c.nome}"? Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.`)) return
+  const arquivar = async (c: CampoGestao) => {
+    if (!(await confirmar({ titulo: `Arquivar "${c.nome}"?`, descricao: 'Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.', confirmar: 'Arquivar', perigo: true }))) return
     iniciar(async () => void avisar(await arquivarCampoGestaoAcao(c.id), true))
   }
   return (
@@ -68,7 +71,7 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
           </ul>
         </section>
       ))}
-      {visiveis.length === 0 && <p className="rounded-xl border border-dashed border-borda px-4 py-10 text-center text-corpo text-texto-3">{campos.length === 0 ? 'Nenhum campo criado ainda.' : 'Nenhum campo encontrado com esses filtros.'}</p>}
+      {visiveis.length === 0 && <EstadoVazio icone={SlidersHorizontal} titulo={campos.length === 0 ? 'Nenhum campo criado ainda' : 'Nenhum campo encontrado'} descricao={campos.length === 0 ? 'Crie o primeiro campo em "Criar novo".' : 'Ajuste a busca ou os filtros.'} />}
 
       <Dialog open={alvo !== null} onOpenChange={(aberto) => !aberto && setAlvo(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
