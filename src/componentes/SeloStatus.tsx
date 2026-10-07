@@ -7,7 +7,7 @@ export function SeloStatus({ status, contagem }: { status: Status; contagem?: nu
   return (
     <span className="inline-flex items-center gap-2">
       <span
-        className={`inline-flex h-[22px] items-center gap-1.5 rounded-[5px] px-2 text-[11px] font-semibold uppercase tracking-wide text-white ${COR_STATUS[status]}`}
+        className={`inline-flex h-[22px] items-center gap-1.5 rounded-[5px] px-2 text-legenda font-semibold uppercase tracking-wide text-white ${COR_STATUS[status]}`}
       >
         <span className="h-2 w-2 rounded-full border-[1.5px] border-white/90" />
         {ROTULO_STATUS[status]}

@@ -20,8 +20,8 @@ export function IndicadorCronometro({ cronometro }: { cronometro: CronometroAtiv
   }, [ativo])
   if (!cronometro) return null
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-md border border-[#e2e2e4] bg-white px-2 py-1.5 text-[11px]">
-      <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-rose-500" />
+    <div className="mb-2 flex items-center gap-2 rounded-md border border-[#e2e2e4] bg-white px-2 py-1.5 text-legenda">
+      <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-perigo" />
       <Link href={`/tarefas/${cronometro.tarefaId}`} className="min-w-0 flex-1" title={cronometro.tarefaTitulo}>
         <span className="block truncate font-medium text-[#292a2d]">{cronometro.tarefaTitulo || 'Tarefa'}</span>
         <span className="font-mono tabular-nums text-[#65676b]">{formatarRelogio(segundosDecorridos(cronometro.inicio, agora))}</span>
@@ -31,7 +31,7 @@ export function IndicadorCronometro({ cronometro }: { cronometro: CronometroAtiv
         onClick={() => iniciar(async () => void avisar(await pararCronometroAcao(), true))}
         aria-label="Parar cronômetro"
         title="Parar cronômetro"
-        className="rounded p-1.5 text-rose-600 hover:bg-rose-50"
+        className="rounded p-1.5 text-perigo hover:bg-perigo-fundo"
       >
         <Square className="h-3.5 w-3.5 fill-current" />
       </button>

@@ -25,71 +25,28 @@
   --color-sinal: #d11a22;
   --color-carbon: #111111;
 
-  /* Paleta da marca: tudo que era azul/verde-água/violeta/rosa vira o vermelho da marca. */
-  --color-sky-50: #fdf0f0;
-  --color-sky-100: #fbe0e1;
-  --color-sky-200: #f8c4c7;
-  --color-sky-300: #f19a9f;
-  --color-sky-400: #e5636b;
-  --color-sky-500: #d11a22;
-  --color-sky-600: #b8151c;
-  --color-sky-700: #9b1118;
-  --color-sky-800: #7a0f14;
-  --color-sky-900: #5c0b0f;
-  --color-teal-50: var(--color-sky-50);
-  --color-teal-100: var(--color-sky-100);
-  --color-teal-200: var(--color-sky-200);
-  --color-teal-300: var(--color-sky-300);
-  --color-teal-400: var(--color-sky-400);
-  --color-teal-500: var(--color-sky-500);
-  --color-teal-600: var(--color-sky-600);
-  --color-teal-700: var(--color-sky-700);
-  --color-teal-800: var(--color-sky-800);
-  --color-teal-900: var(--color-sky-900);
-  --color-cyan-50: var(--color-sky-50);
-  --color-cyan-100: var(--color-sky-100);
-  --color-cyan-200: var(--color-sky-200);
-  --color-cyan-300: var(--color-sky-300);
-  --color-cyan-400: var(--color-sky-400);
-  --color-cyan-500: var(--color-sky-500);
-  --color-cyan-600: var(--color-sky-600);
-  --color-cyan-700: var(--color-sky-700);
-  --color-cyan-800: var(--color-sky-800);
-  --color-cyan-900: var(--color-sky-900);
-  --color-indigo-50: var(--color-sky-50);
-  --color-indigo-100: var(--color-sky-100);
-  --color-indigo-200: var(--color-sky-200);
-  --color-indigo-300: var(--color-sky-300);
-  --color-indigo-400: var(--color-sky-400);
-  --color-indigo-500: var(--color-sky-500);
-  --color-indigo-600: var(--color-sky-600);
-  --color-indigo-700: var(--color-sky-700);
-  --color-indigo-800: var(--color-sky-800);
-  --color-indigo-900: var(--color-sky-900);
-  --color-violet-50: var(--color-sky-50);
-  --color-violet-100: var(--color-sky-100);
-  --color-violet-200: var(--color-sky-200);
-  --color-violet-300: var(--color-sky-300);
-  --color-violet-400: var(--color-sky-400);
-  --color-violet-500: var(--color-sky-500);
-  --color-violet-600: var(--color-sky-600);
-  --color-violet-700: var(--color-sky-700);
-  --color-violet-800: var(--color-sky-800);
-  --color-violet-900: var(--color-sky-900);
-  --color-pink-50: var(--color-sky-50);
-  --color-pink-100: var(--color-sky-100);
-  --color-pink-200: var(--color-sky-200);
-  --color-pink-300: var(--color-sky-300);
-  --color-pink-400: var(--color-sky-400);
-  --color-pink-500: var(--color-sky-500);
-  --color-pink-600: var(--color-sky-600);
-  --color-pink-700: var(--color-sky-700);
-  --color-pink-800: var(--color-sky-800);
-  --color-pink-900: var(--color-sky-900);
+  /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
+  --text-legenda: 11px;
+  --text-rotulo: 12px;
+  --text-corpo: 13px;
+  --text-destaque: 14px;
+
+  /* Cores semânticas: erro/exclusão, sucesso e aviso, cada uma com tom forte, base, borda e fundo suave. */
+  --color-perigo: #e11d48;
+  --color-perigo-forte: #be123c;
+  --color-perigo-borda: #fda4af;
+  --color-perigo-fundo: #fff1f2;
+  --color-sucesso: #059669;
+  --color-sucesso-forte: #047857;
+  --color-sucesso-fundo: #ecfdf5;
+  --color-aviso: #f97316;
+  --color-aviso-forte: #c2410c;
+  --color-aviso-fundo: #fff7ed;
 
   --color-texto: #111111;
-  --color-texto-2: #646464;
-  --color-texto-3: #838383;
+  /* Contraste sobre branco: texto-2 ~7:1, texto-3 ~5,3:1 (mínimo AA 4,5:1). */
+  --color-texto-2: #555555;
+  --color-texto-3: #6b6b6b;
   --color-borda: #e8e8e8;
   --color-borda-forte: #d4d4d4;
   --color-fundo: #f8f9fa;
@@ -225,7 +182,7 @@ body {
   }
 
   .eyebrow {
-    @apply text-[10px] leading-5 font-medium uppercase text-texto-3;
+    @apply text-legenda leading-5 font-medium uppercase text-texto-3;
     font-family: var(--font-mono);
     letter-spacing: 0.08em;
   }

@@ -58,7 +58,7 @@ export function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: 
         {itens.map((item) => (
           <button key={item.tipo} type="button" onClick={() => onSelect(item)} className="flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-hover">
             <span className="mt-0.5" style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span>
-            <span><span className="block text-sm font-medium">{item.nome}</span><span className="block text-[11px] leading-4 text-texto-3">{item.descricao}</span></span>
+            <span><span className="block text-sm font-medium">{item.nome}</span><span className="block text-legenda leading-4 text-texto-3">{item.descricao}</span></span>
           </button>
         ))}
       </div>
@@ -113,7 +113,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
             <TabsContent value="existente" className="space-y-1 pt-3">
               {camposDoEspaco.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => {
                 const adicionado = vinculados.has(item.id)
-                return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-emerald-600" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
+                return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-sucesso" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
               })}
               {camposDoEspaco.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Ainda não há campos reutilizáveis neste espaço.</p>}
             </TabsContent>
@@ -122,7 +122,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
               {colunasPadrao.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
                 <button key={item.id} type="button" onClick={() => aoAlternarColuna?.(item.id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover">
                   <span className="flex-1 text-sm font-medium">{item.nome}</span>
-                  {item.visivel ? <><Check className="h-4 w-4 text-emerald-600" /><span className="text-xs text-texto-3">Na lista</span></> : <><Plus className="h-4 w-4" /><span className="text-xs text-texto-3">Mostrar</span></>}
+                  {item.visivel ? <><Check className="h-4 w-4 text-sucesso" /><span className="text-xs text-texto-3">Na lista</span></> : <><Plus className="h-4 w-4" /><span className="text-xs text-texto-3">Mostrar</span></>}
                 </button>
               ))}
             </TabsContent>
@@ -130,14 +130,14 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
               {camposDaLista.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
                 <div key={item.id} className="flex items-center gap-3 rounded-xl border border-borda px-3 py-2.5">
                   <span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span>
-                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{item.nome}</span><span className="block text-[11px] text-texto-3">{CATALOGO_CAMPOS.find((catalogo) => catalogo.tipo === item.tipo)?.nome ?? item.tipo}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{item.nome}</span><span className="block text-legenda text-texto-3">{CATALOGO_CAMPOS.find((catalogo) => catalogo.tipo === item.tipo)?.nome ?? item.tipo}</span></span>
                   <button
                     type="button"
                     disabled={pendente}
                     aria-label={`Remover ${item.nome} da lista`}
                     title="Remover da lista"
                     onClick={() => iniciar(async () => void avisar(await removerCampoDaLista(listaId, item.id)))}
-                    className="rounded-lg p-2 text-texto-3 transition hover:bg-rose-50 hover:text-rose-600"
+                    className="rounded-lg p-2 text-texto-3 transition hover:bg-perigo-fundo hover:text-perigo"
                   >
                     <X className="h-4 w-4" />
                   </button>

@@ -31,13 +31,13 @@ export function AlternadorVisao({
       key={visao}
       href={href(visao)}
       scroll={false}
-      className={`inline-flex items-center gap-1.5 text-[12px] font-semibold transition ${
+      className={`inline-flex items-center gap-1.5 text-rotulo font-semibold transition ${
         abas
           ? `-mb-px border-b-2 px-2 py-3 ${filtros.visao === visao ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
           : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-texto text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
-      <Icone className={`h-4 w-4 ${visao === 'calendario' ? 'text-orange-500' : ''}`} />
+      <Icone className={`h-4 w-4 ${visao === 'calendario' ? 'text-aviso' : ''}`} />
       {rotulo}
     </Link>
     )
@@ -47,7 +47,7 @@ export function AlternadorVisao({
       {visoes.map(aba)}
       {abas && (
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-3 text-[12px] font-medium text-texto-3 transition hover:text-texto">
+          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-3 text-rotulo font-medium text-texto-3 transition hover:text-texto">
             <Plus className="h-4 w-4" /> Visualização
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">

@@ -64,7 +64,7 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda bg-white px-3 text-[12px] font-semibold transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25">
+      <DialogTrigger className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda bg-white px-3 text-rotulo font-semibold transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25">
         <ImageIcon className="h-4 w-4" aria-hidden="true" /> {temCapa ? 'Alterar capa' : 'Escolher capa'}
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
@@ -88,16 +88,16 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar foto, ex.: clínica, restaurante…"
               autoComplete="off"
-              className="h-9 w-full rounded-lg border border-borda bg-white pl-9 pr-3 text-[12px] outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20"
+              className="h-9 w-full rounded-lg border border-borda bg-white pl-9 pr-3 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20"
             />
           </label>
-          <button disabled={buscando || !busca.trim()} className="h-9 rounded-lg bg-texto px-4 text-[12px] font-semibold text-white transition-colors hover:bg-carbon disabled:opacity-40">
+          <button disabled={buscando || !busca.trim()} className="h-9 rounded-lg bg-texto px-4 text-rotulo font-semibold text-white transition-colors hover:bg-carbon disabled:opacity-40">
             {buscando ? 'Buscando…' : 'Buscar'}
           </button>
         </form>
 
-        {erroBusca && <p role="alert" className="text-[12px] text-rose-600">{erroBusca}</p>}
-        {fotos && fotos.length === 0 && !erroBusca && <p className="text-[12px] text-texto-3">Nenhuma foto encontrada. Tente outra palavra.</p>}
+        {erroBusca && <p role="alert" className="text-rotulo text-perigo">{erroBusca}</p>}
+        {fotos && fotos.length === 0 && !erroBusca && <p className="text-rotulo text-texto-3">Nenhuma foto encontrada. Tente outra palavra.</p>}
         {fotos && fotos.length > 0 && (
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {fotos.map((foto) => (
@@ -110,7 +110,7 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- miniatura externa do Unsplash */}
                   <img src={foto.miniatura} alt={foto.descricao} width={400} height={250} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]" />
-                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-left text-[9px] text-white">{foto.credito}</span>
+                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-left text-legenda text-white">{foto.credito}</span>
                 </button>
               </li>
             ))}
@@ -129,11 +129,11 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
               if (f) enviar(f)
             }}
           />
-          <button type="button" disabled={pendente} onClick={() => arquivo.current?.click()} className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda px-3 text-[12px] font-semibold transition-colors hover:bg-hover disabled:opacity-50">
+          <button type="button" disabled={pendente} onClick={() => arquivo.current?.click()} className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda px-3 text-rotulo font-semibold transition-colors hover:bg-hover disabled:opacity-50">
             <Upload className="h-4 w-4" aria-hidden="true" /> {pendente ? 'Enviando…' : 'Enviar imagem'}
           </button>
           {temCapa && (
-            <button type="button" disabled={pendente} onClick={remover} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-[12px] font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:opacity-50">
+            <button type="button" disabled={pendente} onClick={remover} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-rotulo font-semibold text-perigo-forte transition-colors hover:bg-perigo-fundo disabled:opacity-50">
               <Trash2 className="h-4 w-4" aria-hidden="true" /> Remover capa
             </button>
           )}

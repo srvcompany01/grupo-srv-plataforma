@@ -109,10 +109,10 @@ function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; ta
   return (
     <section ref={setNodeRef} className={`flex w-72 shrink-0 flex-col rounded-xl border border-borda bg-fundo p-2.5 transition ${isOver ? 'ring-2 ring-marca/20' : ''}`}>
       <header className="mb-2.5 flex items-center gap-2 px-1">
-        <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-white" style={{ background: coluna.cor }}>
+        <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-[0.04em] text-white" style={{ background: coluna.cor }}>
           {coluna.nome}
         </span>
-        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-texto-3 ring-1 ring-borda">{tarefas.length}</span>
+        <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{tarefas.length}</span>
       </header>
       <SortableContext items={tarefas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-h-16 flex-col gap-2">
@@ -136,9 +136,9 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-[13px] transition hover:border-borda-forte">
+    <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-corpo transition hover:border-borda-forte">
       {ctx.mostrarLista && (
-        <p className="truncate text-[11px] text-texto-3">
+        <p className="truncate text-legenda text-texto-3">
           {tarefa.listaNome} · @{tarefa.clienteNome}
         </p>
       )}
@@ -148,13 +148,13 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
       {tarefa.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {tarefa.tags.map((t) => (
-            <span key={t.id} className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ background: t.cor }}>
+            <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-white" style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 text-[12px]">
+      <div className="flex items-center gap-2 text-rotulo">
         <Pessoas pessoas={tarefa.responsaveis} />
         <span className="ml-auto">
           <Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />

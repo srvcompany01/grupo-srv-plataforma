@@ -4,7 +4,7 @@ import { Marca } from '@/componentes/Marca'
 import { exigirAdmin } from '@/infra/admin'
 import { sair } from './acoes'
 
-const itemTrilho = 'flex w-12 flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white'
+const itemTrilho = 'flex w-12 flex-col items-center gap-1 rounded-lg py-2 text-legenda font-medium text-white/60 transition hover:bg-white/10 hover:text-white'
 
 export default async function LayoutAdmin({ children }: LayoutProps<'/admin'>) {
   await exigirAdmin()

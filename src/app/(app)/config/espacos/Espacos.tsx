@@ -35,7 +35,7 @@ export function FormNovoEspaco({ pais }: { pais: Pessoa[] }) {
       <button disabled={enviando} className={`${botaoPrimario} h-9`}>
         Criar
       </button>
-      {estado?.erro && <p className="w-full text-sm text-rose-600">{estado.erro}</p>}
+      {estado?.erro && <p className="w-full text-sm text-perigo">{estado.erro}</p>}
     </form>
   )
 }
@@ -85,9 +85,9 @@ export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: Espaco
   return (
     <>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {espaco.membros.length === 0 && <span className="text-[13px] text-texto-3">Sem membros.</span>}
+        {espaco.membros.length === 0 && <span className="text-corpo text-texto-3">Sem membros.</span>}
         {espaco.membros.map((m) => (
-          <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-hover px-2 py-0.5 text-[12px]">
+          <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-hover px-2 py-0.5 text-rotulo">
             {m.nome}
             {m.papel === 'gestor' && <span className="text-marca">· gestor</span>}
             {(podePromover || m.papel === 'membro') && (
@@ -105,7 +105,7 @@ export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: Espaco
       </div>
       {fora.length > 0 && (
         <div className="mt-2 flex items-center gap-2">
-          <select value={novo} onChange={(e) => setNovo(e.target.value)} aria-label="Pessoa" className={`${campo} h-8 py-0 text-[13px]`}>
+          <select value={novo} onChange={(e) => setNovo(e.target.value)} aria-label="Pessoa" className={`${campo} h-8 py-0 text-corpo`}>
             <option value="">Adicionar pessoa…</option>
             {fora.map((p) => (
               <option key={p.id} value={p.id}>
@@ -118,7 +118,7 @@ export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: Espaco
               value={papelNovo}
               onChange={(e) => setPapelNovo(e.target.value as 'membro' | 'gestor')}
               aria-label="Papel no departamento"
-              className={`${campo} h-8 w-28 py-0 text-[13px]`}
+              className={`${campo} h-8 w-28 py-0 text-corpo`}
             >
               <option value="membro">Membro</option>
               <option value="gestor">Gestor</option>

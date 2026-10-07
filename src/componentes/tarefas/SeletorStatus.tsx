@@ -24,7 +24,7 @@ export function SeletorStatus({
       <DropdownMenuTrigger
         disabled={pendente || opcoes.length === 0}
         aria-label={`Status: ${atual?.nome ?? ''}`}
-        className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-[12px] font-medium hover:bg-hover"
+        className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-rotulo font-medium hover:bg-hover"
       >
         <span className="h-3 w-3 shrink-0 rounded-full border-2" style={{ borderColor: atual?.cor ?? '#87909e', background: atual?.categoria === 'done' ? atual.cor : 'transparent' }} />
         {comNome && <span>{atual?.nome ?? '—'}</span>}

@@ -19,7 +19,7 @@ export function AbasConfig() {
         <Link
           key={href}
           href={href}
-          className={`-mb-px border-b-2 pb-2.5 text-[13px] font-semibold ${caminho === href ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
+          className={`-mb-px border-b-2 pb-2.5 text-corpo font-semibold ${caminho === href ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
         >
           {rotulo}
         </Link>

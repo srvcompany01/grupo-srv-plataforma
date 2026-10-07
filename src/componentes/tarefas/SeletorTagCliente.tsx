@@ -14,7 +14,7 @@ const COR_HEX = /^#[0-9a-f]{6}$/i
 function Chip({ tag }: { tag: TagCliente }) {
   return (
     <span
-      className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
+      className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-legenda font-semibold"
       style={{ color: tag.cor, borderColor: `${tag.cor}55`, backgroundColor: `${tag.cor}14` }}
     >
       <Tag className="h-3 w-3 shrink-0" />
@@ -72,16 +72,16 @@ export function SeletorTagCliente({ listaId, atual, opcoes = [], podeGerir = fal
           <div>
             <div className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
               <button type="button" onClick={() => setConfigurando(false)} aria-label="Voltar para as tags" className="rounded-md p-1 text-texto-3 hover:bg-hover hover:text-texto"><ChevronLeft className="h-4 w-4" /></button>
-              <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-texto">Configurar tag</p><p className="truncate text-[10px] text-texto-3">A alteração vale em toda a plataforma</p></div>
+              <div className="min-w-0 flex-1"><p className="text-corpo font-semibold text-texto">Configurar tag</p><p className="truncate text-legenda text-texto-3">A alteração vale em toda a plataforma</p></div>
               <Chip tag={{ ...atual, nome: nome || atual.nome, cor: COR_HEX.test(cor) ? cor : atual.cor }} />
             </div>
             <div className="space-y-4 p-3">
-              <label className="block space-y-1.5 text-[11px] font-semibold text-texto-2">
+              <label className="block space-y-1.5 text-legenda font-semibold text-texto-2">
                 Nome da tag
-                <input value={nome} onChange={(evento) => setNome(evento.target.value)} maxLength={80} className="h-9 w-full rounded-lg border border-borda px-3 text-[13px] font-normal text-texto outline-none focus:border-marca focus:ring-2 focus:ring-marca/15" />
+                <input value={nome} onChange={(evento) => setNome(evento.target.value)} maxLength={80} className="h-9 w-full rounded-lg border border-borda px-3 text-corpo font-normal text-texto outline-none focus:border-marca focus:ring-2 focus:ring-marca/15" />
               </label>
               <fieldset className="space-y-2">
-                <legend className="text-[11px] font-semibold text-texto-2">Cor</legend>
+                <legend className="text-legenda font-semibold text-texto-2">Cor</legend>
                 <div className="grid grid-cols-7 gap-2">
                   {CORES_PERSONALIZACAO.map((item) => (
                     <button key={item} type="button" onClick={() => setCor(item)} aria-label={`Usar cor ${item}`} className="flex h-7 w-7 items-center justify-center rounded-full border-2 transition hover:scale-110" style={{ backgroundColor: item, borderColor: cor.toLowerCase() === item ? '#202020' : 'transparent' }}>
@@ -92,22 +92,22 @@ export function SeletorTagCliente({ listaId, atual, opcoes = [], podeGerir = fal
               </fieldset>
               <div className="grid grid-cols-[40px_1fr] gap-2">
                 <input type="color" value={COR_HEX.test(cor) ? cor : atual.cor} onChange={(evento) => setCor(evento.target.value)} aria-label="Selecionar cor personalizada" className="h-9 w-10 cursor-pointer rounded-lg border border-borda bg-white p-1" />
-                <input value={cor} onChange={(evento) => setCor(evento.target.value.startsWith('#') ? evento.target.value : `#${evento.target.value}`)} maxLength={7} aria-label="Cor hexadecimal" placeholder="#3b82f6" className={`h-9 rounded-lg border px-3 font-mono text-[13px] uppercase outline-none focus:ring-2 ${COR_HEX.test(cor) ? 'border-borda focus:border-marca focus:ring-marca/15' : 'border-rose-300 focus:ring-rose-100'}`} />
+                <input value={cor} onChange={(evento) => setCor(evento.target.value.startsWith('#') ? evento.target.value : `#${evento.target.value}`)} maxLength={7} aria-label="Cor hexadecimal" placeholder="#3b82f6" className={`h-9 rounded-lg border px-3 font-mono text-corpo uppercase outline-none focus:ring-2 ${COR_HEX.test(cor) ? 'border-borda focus:border-marca focus:ring-marca/15' : 'border-perigo-borda focus:ring-perigo-fundo'}`} />
               </div>
-              <button type="button" onClick={salvar} disabled={pendente || !nome.trim() || !COR_HEX.test(cor)} className="h-9 w-full rounded-lg bg-marca px-3 text-[12px] font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-45">{pendente ? 'Salvando…' : 'Salvar configuração'}</button>
+              <button type="button" onClick={salvar} disabled={pendente || !nome.trim() || !COR_HEX.test(cor)} className="h-9 w-full rounded-lg bg-marca px-3 text-rotulo font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-45">{pendente ? 'Salvando…' : 'Salvar configuração'}</button>
             </div>
           </div>
         ) : (
           <div>
             <div className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
-              <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-texto">Tag obrigatória do cliente</p><p className="text-[10px] text-texto-3">Atualiza a tarefa-mãe e todas as subtarefas</p></div>
+              <div className="min-w-0 flex-1"><p className="text-corpo font-semibold text-texto">Tag obrigatória do cliente</p><p className="text-legenda text-texto-3">Atualiza a tarefa-mãe e todas as subtarefas</p></div>
               <button type="button" onClick={abrirConfiguracao} aria-label="Configurar nome e cor da tag" title="Configurar tag" className="rounded-lg border border-borda p-1.5 text-texto-3 hover:bg-hover hover:text-texto"><Settings2 className="h-4 w-4" /></button>
             </div>
             <div className="max-h-64 space-y-1 overflow-y-auto p-2">
               {opcoes.map((tag) => (
                 <button key={tag.id} type="button" disabled={pendente} onClick={() => selecionar(tag.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-hover disabled:opacity-50">
                   <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: tag.cor, boxShadow: `0 0 0 1px ${tag.cor}55` }} />
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-texto">{tag.nome}</span>
+                  <span className="min-w-0 flex-1 truncate text-corpo text-texto">{tag.nome}</span>
                   {tag.id === atual.id && <Check className="h-4 w-4 shrink-0" style={{ color: tag.cor }} />}
                 </button>
               ))}

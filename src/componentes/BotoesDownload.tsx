@@ -72,7 +72,7 @@ export function BotoesDownload({ midias, atual, nomeZip }: { midias: MidiaParaVe
         </button>
       </div>
       {estado === 'erro' && (
-        <p className="text-center text-xs text-rose-600">Não foi possível montar o zip. Baixe as imagens uma a uma.</p>
+        <p className="text-center text-xs text-perigo">Não foi possível montar o zip. Baixe as imagens uma a uma.</p>
       )}
     </div>
   )

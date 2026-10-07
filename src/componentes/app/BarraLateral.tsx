@@ -37,7 +37,7 @@ type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
-  'flex h-8 items-center gap-2 rounded-md px-2 text-[11px] tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
+  'flex h-8 items-center gap-2 rounded-md px-2 text-legenda tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
@@ -90,7 +90,7 @@ function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto
 function ZonaRaiz({ visivel }: { visivel: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
   if (!visivel) return null
-  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
+  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-legenda transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
 }
 
 function idsDaNavegacao(navegacao: Navegacao): string[] {
@@ -145,7 +145,7 @@ function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrast
           <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         </IconeAlternavel>
         <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-[9px] tabular-nums text-lat-3">{pasta.listas.length}</span>
+        <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
       </LinhaArrastavel>
@@ -227,14 +227,14 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-lat-borda px-4">
-        <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
+        <p className="min-w-0 flex-1 truncate text-corpo font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
         {acaoTopo}
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         <div className="flex h-8 items-center px-2">
-          <h2 className="text-[10px] font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
+          <h2 className="text-legenda font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
         </div>
         <nav className="space-y-0.5">
           {link('/inicio', 'Minhas tarefas', CheckSquare)}
@@ -247,25 +247,25 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
             </div>
 
             <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-lat-3">Você ainda não faz parte de nenhum departamento.</p>}
+              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Você ainda não faz parte de nenhum departamento.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
 
             {(papel === 'admin' || navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
               <div className="mt-3 border-t border-lat-borda pt-2">
                 <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
+                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
                   {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
                 </div>
                 <nav className="space-y-0.5">
                   {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                   {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-lat-3">Pastas e listas sem espaço aparecem aqui.</p>}
+                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-legenda text-lat-3">Pastas e listas sem espaço aparecem aqui.</p>}
                 </nav>
               </div>
             )}
@@ -277,10 +277,10 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
       <div className="shrink-0 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
         <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-lat-hover">
-          <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-[9px]" />
+          <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-legenda" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-semibold text-lat-fg">{nome}</p>
-            <p className="truncate text-[9px] text-lat-3">{papel}</p>
+            <p className="truncate text-legenda font-semibold text-lat-fg">{nome}</p>
+            <p className="truncate text-legenda text-lat-3">{papel}</p>
           </div>
           <form action={sair}>
             <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-lat-3 transition hover:bg-lat-hover hover:text-lat-fg">
@@ -414,7 +414,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
             <Painel {...props} />
           </SheetContent>
         </Sheet>
-        <span className="text-[13px] font-bold tracking-[0.22em]">Grupo SRV</span>
+        <span className="text-corpo font-bold tracking-[0.22em]">Grupo SRV</span>
       </div>
     </>
   )

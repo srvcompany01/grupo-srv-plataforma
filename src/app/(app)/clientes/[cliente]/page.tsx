@@ -25,7 +25,7 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
 
   return (
     <div className="page-shell max-w-5xl">
-      <Link href="/clientes" className="text-[13px] text-texto-2 hover:text-marca">
+      <Link href="/clientes" className="text-corpo text-texto-2 hover:text-marca">
         ← Clientes
       </Link>
       <h1 className="page-title">{cliente.nome}</h1>
@@ -37,7 +37,7 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
           ) : (
             <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-[0.08em] text-white/90">{iniciais(cliente.nome)}</span>
           )}
-          {capa?.credito && <span className="absolute bottom-1.5 right-2 rounded bg-black/50 px-1.5 py-0.5 text-[9px] text-white/90">{capa.credito}</span>}
+          {capa?.credito && <span className="absolute bottom-1.5 right-2 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
         </div>
         {podeGerir && <SeletorCapa clienteId={id} temCapa={!!capa?.url} />}
       </section>
@@ -50,9 +50,9 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
         <section className="space-y-3">
           <h2 className="text-sm font-semibold">Acesso ao portal</h2>
           <div className="rounded-xl border border-borda bg-white">
-            {usuarios.length === 0 && <p className="px-3 py-2.5 text-[13px] text-texto-3">Nenhum usuário com acesso ao portal.</p>}
+            {usuarios.length === 0 && <p className="px-3 py-2.5 text-corpo text-texto-3">Nenhum usuário com acesso ao portal.</p>}
             {usuarios.map((u) => (
-              <div key={u.id} className={`flex items-center gap-3 border-t border-borda px-3 py-2 text-[13px] first:border-t-0 ${u.ativo ? '' : 'opacity-50'}`}>
+              <div key={u.id} className={`flex items-center gap-3 border-t border-borda px-3 py-2 text-corpo first:border-t-0 ${u.ativo ? '' : 'opacity-50'}`}>
                 <span className="font-medium">{u.nome}</span>
                 <span className="text-texto-3">{u.email}</span>
               </div>

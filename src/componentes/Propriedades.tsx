@@ -4,7 +4,7 @@ import { Icone, type NomeIcone } from './Icone'
 /** Linhas de propriedade no topo da tarefa: ícone + rótulo cinza à esquerda, valor à direita. */
 export function Propriedades({ itens }: { itens: Array<{ icone: NomeIcone; rotulo: string; valor: ReactNode }> }) {
   return (
-    <dl className="grid gap-y-2 text-[13px]">
+    <dl className="grid gap-y-2 text-corpo">
       {itens.map((i) => (
         <div key={i.rotulo} className="grid grid-cols-[130px_minmax(0,1fr)] items-center">
           <dt className="flex items-center gap-2 text-texto-2">

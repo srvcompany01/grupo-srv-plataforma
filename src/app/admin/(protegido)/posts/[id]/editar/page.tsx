@@ -33,7 +33,7 @@ export default async function EditarPost({ params }: PageProps<'/admin/posts/[id
         <div className="mx-auto max-w-3xl space-y-6 px-4 pt-6 sm:px-8">
           <h1 className="text-2xl font-semibold">Editar post</h1>
           {post.status === 'ajuste' && atual.resposta && (
-            <div className="rounded-lg border border-st-ajuste/30 bg-orange-50 p-3 text-[14px]">
+            <div className="rounded-lg border border-st-ajuste/30 bg-aviso-fundo p-3 text-destaque">
               <p className="font-medium text-st-ajuste">{atual.resposta.nomeRespondente} pediu ajuste</p>
               <p className="mt-1 whitespace-pre-wrap">{atual.resposta.comentario}</p>
             </div>

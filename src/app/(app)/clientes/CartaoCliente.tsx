@@ -18,18 +18,18 @@ export function CartaoCliente({ cliente: c, capa, info }: { cliente: Pick<Client
         ) : (
           <span className="flex h-full w-full items-center justify-center text-[32px] font-bold tracking-[0.08em] text-white/90">{iniciais(c.nome)}</span>
         )}
-        {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-[8px] text-white/90">{capa.credito}</span>}
+        {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div className="flex items-start gap-2">
-          <h2 className="min-w-0 flex-1 break-words text-[13px] font-semibold leading-snug">{c.nome}</h2>
-          {c.interno && <span className="shrink-0 rounded-full bg-marca-fundo px-2 py-0.5 text-[9px] font-semibold text-marca">Interno</span>}
+          <h2 className="min-w-0 flex-1 break-words text-corpo font-semibold leading-snug">{c.nome}</h2>
+          {c.interno && <span className="shrink-0 rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Interno</span>}
         </div>
-        <p className="text-[10px] text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</p>
+        <p className="text-legenda text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</p>
         {info.length > 0 && (
           <dl className="mt-1 space-y-1.5 border-t border-borda pt-2.5">
             {info.map((i) => (
-              <div key={i.id} className="flex items-baseline justify-between gap-3 text-[11px]">
+              <div key={i.id} className="flex items-baseline justify-between gap-3 text-legenda">
                 <dt className="shrink-0 text-texto-3">{i.nome}</dt>
                 <dd className="min-w-0 truncate text-right font-medium" title={i.texto}>{i.texto}</dd>
               </div>

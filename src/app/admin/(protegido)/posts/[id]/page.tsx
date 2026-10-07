@@ -60,7 +60,7 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
           <ol className="space-y-4 p-5">
             {cronologia.map((v, i) => (
               <li key={v.id} className="space-y-3">
-                <div className="flex items-start gap-2 text-[13px] text-texto-2">
+                <div className="flex items-start gap-2 text-corpo text-texto-2">
                   <Icone nome={v.numero === 1 ? 'mais' : 'atualizar'} className="mt-0.5 h-3.5 w-3.5 shrink-0 text-texto-3" />
                   <div className="min-w-0 flex-1">
                     <p>
@@ -82,7 +82,7 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
               </li>
             ))}
             {post.status === 'aguardando' && (
-              <li className="flex items-center gap-2 text-[13px] text-texto-3">
+              <li className="flex items-center gap-2 text-corpo text-texto-3">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-st-aguardando" /> Aguardando resposta do cliente
               </li>
             )}

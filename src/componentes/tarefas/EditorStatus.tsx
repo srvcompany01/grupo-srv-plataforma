@@ -52,7 +52,7 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
                 defaultValue={s.categoria}
                 aria-label="Categoria"
                 onChange={(e) => rodar(() => atualizarStatusAcao(s.id, { categoria: e.target.value as Categoria }))}
-                className={`${campo} h-8 w-36 py-0 text-[13px]`}
+                className={`${campo} h-8 w-36 py-0 text-corpo`}
               >
                 {(Object.keys(ROTULO_CATEGORIA) as Categoria[]).map((c) => (
                   <option key={c} value={c}>
@@ -99,7 +99,7 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
             value={novo.categoria}
             onChange={(e) => setNovo({ ...novo, categoria: e.target.value as Categoria })}
             aria-label="Categoria"
-            className={`${campo} h-8 w-36 py-0 text-[13px]`}
+            className={`${campo} h-8 w-36 py-0 text-corpo`}
           >
             {(Object.keys(ROTULO_CATEGORIA) as Categoria[]).map((c) => (
               <option key={c} value={c}>

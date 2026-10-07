@@ -37,7 +37,7 @@ export function EditorOpcoes({ config, onChange }: { config: ConfigCampo; onChan
               <PopoverContent align="start" className="w-64 p-3"><SeletorCor cor={cor} onChange={(nova) => corar(opcao, nova)} /></PopoverContent>
             </Popover>
             <input value={opcao} onChange={(e) => trocar(indice, e.target.value)} maxLength={60} placeholder={`Opção ${indice + 1}`} aria-label={`Nome da opção ${indice + 1}`} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-texto-3" />
-            <button type="button" aria-label={`Remover opção ${opcao || indice + 1}`} onClick={() => remover(indice)} className="rounded-lg p-1.5 text-texto-3 transition hover:bg-rose-50 hover:text-rose-600"><X className="h-4 w-4" /></button>
+            <button type="button" aria-label={`Remover opção ${opcao || indice + 1}`} onClick={() => remover(indice)} className="rounded-lg p-1.5 text-texto-3 transition hover:bg-perigo-fundo hover:text-perigo"><X className="h-4 w-4" /></button>
           </div>
         )
       })}

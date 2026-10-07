@@ -69,22 +69,22 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
           style={{ background: `linear-gradient(100deg, ${lista.espaco.cor}12, #ffffff 42%, ${lista.cor}0d)` }}
         >
           <div className="min-w-0">
-            <nav className="flex min-w-0 items-center gap-1.5 text-[12px] text-texto-2" aria-label="Localização da lista">
+            <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">
               {lista.espaco.id ? (
                 <Link href={`/espacos/${lista.espaco.id}`} className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 hover:bg-white/80 hover:text-texto">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-white" style={{ background: lista.espaco.cor }}><IconeVisual icone={lista.espaco.icone} emoji={lista.espaco.emoji} className="h-3 w-3" /></span>
                   <span className="truncate">{lista.espaco.nome}</span>
                 </Link>
               ) : (
-                <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-teal-500 text-white"><IconeVisual icone="layers-3" className="h-3 w-3" /></span>Itens soltos</span>
+                <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-marca text-white"><IconeVisual icone="layers-3" className="h-3 w-3" /></span>Itens soltos</span>
               )}
               {lista.pasta && <><ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" /><span className="flex min-w-0 items-center gap-1.5"><span style={{ color: lista.pasta.cor }}><IconeVisual icone={lista.pasta.icone} emoji={lista.pasta.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.pasta.nome}</span></span></>}
               <ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" />
               <h1 className="flex min-w-0 items-center gap-1.5 font-bold text-texto"><span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.nome}</span></h1>
             </nav>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-[10px]">
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-legenda">
               <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold" style={{ color: lista.cliente.cor, borderColor: `${lista.cliente.cor}50`, backgroundColor: `${lista.cliente.cor}12` }}><span>#</span>{lista.cliente.nome}</span>
-              {lista.mes && <span className="rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">{rotuloMes(lista.mes)}</span>}
+              {lista.mes && <span className="rounded-full bg-aviso-fundo px-2 py-0.5 font-medium text-aviso-forte">{rotuloMes(lista.mes)}</span>}
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">

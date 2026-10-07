@@ -60,7 +60,7 @@ export function PainelAtividade({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-1 border-b border-borda px-4 py-2.5">
-        <h2 className="flex-1 text-[14px] font-semibold">Atividade</h2>
+        <h2 className="flex-1 text-destaque font-semibold">Atividade</h2>
         <button
           onClick={() => {
             if (buscando) setBusca('')
@@ -87,23 +87,23 @@ export function PainelAtividade({
       </div>
       {buscando && (
         <div className="shrink-0 border-b border-borda px-4 py-2">
-          <input autoFocus value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar na atividade…" aria-label="Buscar na atividade" className="w-full rounded-md border border-borda px-2 py-1 text-[13px] outline-none focus:border-marca/40" />
+          <input autoFocus value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar na atividade…" aria-label="Buscar na atividade" className="w-full rounded-md border border-borda px-2 py-1 text-corpo outline-none focus:border-marca/40" />
         </div>
       )}
 
       <div ref={rolagem} className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
-        {itens.length === 0 && <p className="text-[13px] text-texto-3">{busca || filtro !== 'tudo' ? 'Nada encontrado.' : 'Nenhuma atividade ainda.'}</p>}
+        {itens.length === 0 && <p className="text-corpo text-texto-3">{busca || filtro !== 'tudo' ? 'Nada encontrado.' : 'Nenhuma atividade ainda.'}</p>}
         {visiveis.map((i, n) => (
           <div key={i.chave}>
             {ocultos > 0 && n === 1 && (
-              <button onClick={() => setExpandido(true)} className="mb-2 w-full rounded-md py-1 text-center text-[12px] font-medium text-marca hover:bg-hover">
+              <button onClick={() => setExpandido(true)} className="mb-2 w-full rounded-md py-1 text-center text-rotulo font-medium text-marca hover:bg-hover">
                 Mostrar mais ({ocultos})
               </button>
             )}
             {i.tipo === 'comentario' ? (
               <ItemComentario c={i.item} meu={i.item.autorId === euId} />
             ) : (
-              <div className="flex gap-2 text-[12px] text-texto-2">
+              <div className="flex gap-2 text-rotulo text-texto-2">
                 <span className="flex-1">• {descreverAtividade(i.item, nomes)}</span>
                 <span className="shrink-0 text-texto-3">{formatarDataAtividade(new Date(i.em))}</span>
               </div>

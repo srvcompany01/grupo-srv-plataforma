@@ -10,9 +10,9 @@ import { Icone } from './Icone'
 import { SeloStatus } from './SeloStatus'
 
 const campoLinha =
-  'h-8 rounded-md border border-transparent bg-transparent px-2 text-[13px] outline-none hover:border-borda focus:border-marca'
+  'h-8 rounded-md border border-transparent bg-transparent px-2 text-corpo outline-none hover:border-borda focus:border-marca'
 const areaTexto =
-  'w-full resize-y rounded-lg border border-borda bg-white px-3 py-2.5 text-[14px] leading-relaxed outline-none transition placeholder:text-texto-3 hover:border-borda-forte focus:border-marca focus:ring-3 focus:ring-marca/15'
+  'w-full resize-y rounded-lg border border-borda bg-white px-3 py-2.5 text-destaque leading-relaxed outline-none transition placeholder:text-texto-3 hover:border-borda-forte focus:border-marca focus:ring-3 focus:ring-marca/15'
 
 export function EditorPost({
   postId,
@@ -53,7 +53,7 @@ export function EditorPost({
 
   return (
     <div className="space-y-6">
-      <dl className="grid gap-y-1.5 text-[13px]">
+      <dl className="grid gap-y-1.5 text-corpo">
         <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center">
           <dt className="flex items-center gap-2 text-texto-2">
             <Icone nome="status" className="h-4 w-4 text-texto-3" /> Status
@@ -103,12 +103,12 @@ export function EditorPost({
 
       <div className="sticky bottom-0 -mx-4 space-y-2 border-t border-borda bg-white/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
         {respondido && (
-          <p className="flex items-center gap-2 text-[13px] text-texto-2">
+          <p className="flex items-center gap-2 text-corpo text-texto-2">
             <Icone nome="atualizar" className="h-3.5 w-3.5 text-marca" />
             Salvar cria a <strong className="text-texto">versão {proximaVersao}</strong> e envia de novo para o cliente.
           </p>
         )}
-        {erro && <p className="text-[13px] text-rose-600">{erro}</p>}
+        {erro && <p className="text-corpo text-perigo">{erro}</p>}
         <div className="flex flex-wrap items-center gap-2">
           {status === 'rascunho' ? (
             <>
@@ -124,7 +124,7 @@ export function EditorPost({
               {respondido ? `Salvar versão ${proximaVersao}` : 'Salvar'}
             </button>
           )}
-          {pendentes && <span className="text-[13px] text-texto-3">Aguardando envio das mídias…</span>}
+          {pendentes && <span className="text-corpo text-texto-3">Aguardando envio das mídias…</span>}
         </div>
       </div>
     </div>

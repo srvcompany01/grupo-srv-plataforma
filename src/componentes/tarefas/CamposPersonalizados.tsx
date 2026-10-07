@@ -17,7 +17,7 @@ function paraTexto(valor: Json | null | undefined) {
 }
 
 function Pilula({ nome, cor }: { nome: string; cor: string }) {
-  return <span className="inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-texto" style={{ background: `${cor}22` }}><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cor }} /><span className="truncate">{nome}</span></span>
+  return <span className="inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-legenda font-medium text-texto" style={{ background: `${cor}22` }}><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cor }} /><span className="truncate">{nome}</span></span>
 }
 
 /** Escolha de opções coloridas: uma (lista suspensa) ou várias (rótulos). */
@@ -30,7 +30,7 @@ function SeletorOpcoes({ definicao, valor, multiplo, compacto, pendente, onChang
   }
   return (
     <Popover>
-      <PopoverTrigger disabled={pendente} className={`flex min-h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-[12px] hover:bg-white hover:ring-1 hover:ring-borda ${compacto ? '' : 'border border-borda bg-white'}`}>
+      <PopoverTrigger disabled={pendente} className={`flex min-h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-rotulo hover:bg-white hover:ring-1 hover:ring-borda ${compacto ? '' : 'border border-borda bg-white'}`}>
         <span className="flex min-w-0 flex-1 flex-wrap gap-1 py-1">{atuais.length ? atuais.map((o) => <Pilula key={o} nome={o} cor={corDaOpcao(definicao.configuracao, o)} />) : <span className="text-texto-3">{compacto ? '—' : 'Sem seleção'}</span>}</span>
         <ChevronDown className="h-3 w-3 shrink-0 text-texto-3" />
       </PopoverTrigger>
@@ -52,19 +52,19 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
   const [pendente, iniciar] = useTransition()
   const salvar = (novo: Json | null = valor) => iniciar(async () => void avisar(await salvarValorCampo(tarefaId, definicao.id, novo)))
   const classe = compacto
-    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-2 text-[12px] outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
-    : `${campo} h-8 py-1.5 text-[13px]`
+    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-2 text-rotulo outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
+    : `${campo} h-8 py-1.5 text-corpo`
   const somenteLeitura = definicao.tipo === 'formula' || definicao.tipo === 'progress_auto'
 
   if (somenteLeitura) {
-    return <div className={`flex h-8 items-center rounded-lg bg-fundo px-3 font-medium ${compacto ? 'text-[12px]' : 'text-[13px]'}`}>{formatarValorCampo(definicao, valor)}</div>
+    return <div className={`flex h-8 items-center rounded-lg bg-fundo px-3 font-medium ${compacto ? 'text-rotulo' : 'text-corpo'}`}>{formatarValorCampo(definicao, valor)}</div>
   }
   if (definicao.tipo === 'button') {
     const href = definicao.configuracao.buttonUrl
     return href ? <a href={href} target="_blank" rel="noreferrer" className={botaoSecundario}>{definicao.configuracao.buttonLabel ?? 'Abrir'} <ExternalLink className="h-3.5 w-3.5" /></a> : <span className="text-xs text-texto-3">Configure uma URL para este botão.</span>
   }
   if (definicao.tipo === 'checkbox') {
-    return <label className="inline-flex items-center gap-2 text-[13px]"><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
+    return <label className="inline-flex items-center gap-2 text-corpo"><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
   }
   if (definicao.tipo === 'dropdown' || definicao.tipo === 'labels') {
     return <SeletorOpcoes definicao={definicao} valor={valor} multiplo={definicao.tipo === 'labels'} compacto={compacto} pendente={pendente} onChange={(novo) => { setValor(novo); salvar(novo) }} />
@@ -75,7 +75,7 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
     if (compacto) {
       return (
         <Popover>
-          <PopoverTrigger className="flex h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-[12px] hover:bg-white hover:ring-1 hover:ring-borda">
+          <PopoverTrigger className="flex h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-rotulo hover:bg-white hover:ring-1 hover:ring-borda">
             <span className="min-w-0 flex-1 truncate">{atuais.length ? itens.filter((item) => atuais.includes(item.valor)).map((item) => item.nome).join(', ') : '—'}</span>
             <ChevronDown className="h-3 w-3 shrink-0 text-texto-3" />
           </PopoverTrigger>
@@ -88,7 +88,7 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
                   const novo = marcada ? atuais.filter((id) => id !== item.valor) : [...atuais, item.valor]
                   setValor(novo)
                   salvar(novo)
-                }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] hover:bg-hover">
+                }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo hover:bg-hover">
                   <span className="flex h-4 w-4 items-center justify-center rounded border border-borda">{marcada && <Check className="h-3 w-3 text-marca" />}</span>
                   <span className="truncate">{item.nome}</span>
                 </button>
@@ -98,15 +98,15 @@ function CampoEditavel({ tarefaId, definicao, equipe, compacto = false }: { tare
         </Popover>
       )
     }
-    return <select multiple className={`${campo} min-h-20 py-1.5 text-[13px]`} value={atuais} disabled={pendente} onChange={(e) => { const novo = Array.from(e.target.selectedOptions, (o) => o.value); setValor(novo); salvar(novo) }}>{itens.map((item) => <option key={item.valor} value={item.valor}>{item.nome}</option>)}</select>
+    return <select multiple className={`${campo} min-h-20 py-1.5 text-corpo`} value={atuais} disabled={pendente} onChange={(e) => { const novo = Array.from(e.target.selectedOptions, (o) => o.value); setValor(novo); salvar(novo) }}>{itens.map((item) => <option key={item.valor} value={item.valor}>{item.nome}</option>)}</select>
   }
   if (['files', 'relationship', 'tasks'].includes(definicao.tipo)) {
     if (compacto) return <input className={classe} value={Array.isArray(valor) ? valor.map(String).join(', ') : ''} placeholder="Adicionar referências…" onChange={(e) => setValor(e.target.value.split(',').map((x) => x.trim()).filter(Boolean))} onBlur={() => salvar()} />
-    return <div className="flex gap-2"><textarea className={`${campo} min-h-16 py-2 text-[13px]`} value={paraTexto(valor)} placeholder={definicao.tipo === 'files' ? 'Uma URL de arquivo por linha' : 'Um identificador ou referência por linha'} onChange={(e) => setValor(e.target.value.split('\n').map((x) => x.trim()).filter(Boolean))} /><button type="button" aria-label={`Salvar ${definicao.nome}`} disabled={pendente} className={`${botaoSecundario} self-end px-3`} onClick={() => salvar()}><Save className="h-3.5 w-3.5" /></button></div>
+    return <div className="flex gap-2"><textarea className={`${campo} min-h-16 py-2 text-corpo`} value={paraTexto(valor)} placeholder={definicao.tipo === 'files' ? 'Uma URL de arquivo por linha' : 'Um identificador ou referência por linha'} onChange={(e) => setValor(e.target.value.split('\n').map((x) => x.trim()).filter(Boolean))} /><button type="button" aria-label={`Salvar ${definicao.nome}`} disabled={pendente} className={`${botaoSecundario} self-end px-3`} onClick={() => salvar()}><Save className="h-3.5 w-3.5" /></button></div>
   }
   if (definicao.tipo === 'long_text') {
     if (compacto) return <input className={classe} value={paraTexto(valor)} placeholder={definicao.configuracao.placeholder} onChange={(e) => setValor(e.target.value)} onBlur={() => salvar()} />
-    return <textarea className={`${campo} min-h-20 py-2 text-[13px]`} value={paraTexto(valor)} placeholder={definicao.configuracao.placeholder} onChange={(e) => setValor(e.target.value)} onBlur={() => salvar()} />
+    return <textarea className={`${campo} min-h-20 py-2 text-corpo`} value={paraTexto(valor)} placeholder={definicao.configuracao.placeholder} onChange={(e) => setValor(e.target.value)} onBlur={() => salvar()} />
   }
   if (['number', 'money', 'rating', 'progress_manual', 'vote'].includes(definicao.tipo)) {
     const max = definicao.tipo === 'rating' ? definicao.configuracao.max ?? 5 : definicao.tipo === 'progress_manual' ? 100 : undefined
@@ -130,7 +130,7 @@ export function CamposPersonalizados({ tarefaId, campos, equipe }: { tarefaId: s
     <div className="divide-y divide-borda rounded-xl border border-borda bg-white">
       {campos.map((item) => (
         <div key={item.id} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[150px_1fr] sm:items-center">
-          <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-4 w-4" /></span><span className="truncate">{item.nome}</span></div>
+          <div className="flex min-w-0 items-center gap-2 text-corpo font-medium"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-4 w-4" /></span><span className="truncate">{item.nome}</span></div>
           <CampoEditavel tarefaId={tarefaId} definicao={item} equipe={equipe} />
         </div>
       ))}

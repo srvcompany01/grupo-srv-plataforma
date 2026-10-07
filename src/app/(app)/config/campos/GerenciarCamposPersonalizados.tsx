@@ -48,27 +48,27 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
 
       {tipos.map((tipo) => (
         <section key={tipo} className="overflow-hidden rounded-xl border border-borda bg-white">
-          <h2 className="border-b border-borda bg-fundo px-3 py-2 text-[12px] font-semibold">{nomeDoTipo(tipo)} <span className="font-normal text-texto-3">{visiveis.filter((c) => c.tipo === tipo).length}</span></h2>
+          <h2 className="border-b border-borda bg-fundo px-3 py-2 text-rotulo font-semibold">{nomeDoTipo(tipo)} <span className="font-normal text-texto-3">{visiveis.filter((c) => c.tipo === tipo).length}</span></h2>
           <ul>
             {visiveis.filter((c) => c.tipo === tipo).map((c) => (
               <li key={c.id} className="flex flex-wrap items-start gap-3 border-t border-borda px-3 py-2.5 first:border-t-0">
                 <span className="mt-0.5" style={{ color: c.cor }}><IconeVisual icone={c.icone} className="h-4 w-4" /></span>
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-[13px] font-medium">{c.nome} <span className="font-normal text-texto-3">· {c.espaco}</span></p>
+                  <p className="text-corpo font-medium">{c.nome} <span className="font-normal text-texto-3">· {c.espaco}</span></p>
                   <div className="flex flex-wrap gap-1">
-                    {c.listaIds.length === 0 && <span className="text-[11px] text-texto-3">Não está em nenhuma lista</span>}
-                    {c.listaIds.map((id) => <span key={id} className="rounded-full bg-hover px-2 py-0.5 text-[11px] text-texto-2">{caminhos.get(id) ?? 'Lista removida'}</span>)}
+                    {c.listaIds.length === 0 && <span className="text-legenda text-texto-3">Não está em nenhuma lista</span>}
+                    {c.listaIds.map((id) => <span key={id} className="rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2">{caminhos.get(id) ?? 'Lista removida'}</span>)}
                   </div>
                 </div>
                 <span className="h-4 w-4 rounded-full ring-1 ring-borda" style={{ background: c.cor }} title={c.cor} />
                 <button type="button" aria-label={`Editar ${c.nome}`} title="Editar" onClick={() => setAlvo({ tipo: 'editar', campo: c })} className="rounded-lg p-2 text-texto-3 transition hover:bg-hover hover:text-texto"><Pencil className="h-4 w-4" /></button>
-                <button type="button" disabled={pendente} aria-label={`Arquivar ${c.nome}`} title="Arquivar" onClick={() => arquivar(c)} className="rounded-lg p-2 text-texto-3 transition hover:bg-rose-50 hover:text-rose-600"><Archive className="h-4 w-4" /></button>
+                <button type="button" disabled={pendente} aria-label={`Arquivar ${c.nome}`} title="Arquivar" onClick={() => arquivar(c)} className="rounded-lg p-2 text-texto-3 transition hover:bg-perigo-fundo hover:text-perigo"><Archive className="h-4 w-4" /></button>
               </li>
             ))}
           </ul>
         </section>
       ))}
-      {visiveis.length === 0 && <p className="rounded-xl border border-dashed border-borda px-4 py-10 text-center text-[13px] text-texto-3">{campos.length === 0 ? 'Nenhum campo criado ainda.' : 'Nenhum campo encontrado com esses filtros.'}</p>}
+      {visiveis.length === 0 && <p className="rounded-xl border border-dashed border-borda px-4 py-10 text-center text-corpo text-texto-3">{campos.length === 0 ? 'Nenhum campo criado ainda.' : 'Nenhum campo encontrado com esses filtros.'}</p>}
 
       <Dialog open={alvo !== null} onOpenChange={(aberto) => !aberto && setAlvo(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">

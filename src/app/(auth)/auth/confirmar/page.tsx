@@ -46,7 +46,7 @@ export default function Confirmar() {
     <main className="flex min-h-screen items-center justify-center p-4 text-center">
       {erro ? (
         <div className="space-y-3">
-          <p className="text-sm text-rose-600">{erro}</p>
+          <p className="text-sm text-perigo">{erro}</p>
           <Link href="/login" className="text-sm text-marca hover:underline">
             Ir para o login
           </Link>

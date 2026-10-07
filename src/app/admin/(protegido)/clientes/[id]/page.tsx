@@ -64,11 +64,11 @@ export default async function PostsDoCliente({ params }: PageProps<'/admin/clien
                         <span>
                           <EtiquetaFormato formato={p.formato} />
                         </span>
-                        <span className="flex items-center gap-1.5 text-[13px] text-texto-2">
+                        <span className="flex items-center gap-1.5 text-corpo text-texto-2">
                           <Icone nome="calendario" className="h-3.5 w-3.5 text-texto-3" />
                           {formatarData(p.dataPrevista)}
                         </span>
-                        <span className="hidden text-[13px] text-texto-2 sm:inline">v{p.versaoAtual}</span>
+                        <span className="hidden text-corpo text-texto-2 sm:inline">v{p.versaoAtual}</span>
                       </Link>
                     </li>
                   ))}

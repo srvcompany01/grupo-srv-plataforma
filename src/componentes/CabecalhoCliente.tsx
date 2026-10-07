@@ -9,7 +9,7 @@ export function CabecalhoCliente({ nome, token }: { nome: string; token: string 
           <Marca />
         </Link>
         <div className="min-w-0 leading-tight">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-texto-3">Aprovação de conteúdo</p>
+          <p className="text-legenda font-medium uppercase tracking-wide text-texto-3">Aprovação de conteúdo</p>
           <p className="truncate font-semibold">{nome}</p>
         </div>
       </div>

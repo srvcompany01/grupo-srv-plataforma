@@ -56,7 +56,7 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
     )
   }
   return (
-    <li className="flex items-start gap-2 py-2 text-[12px]">
+    <li className="flex items-start gap-2 py-2 text-rotulo">
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{r.usuarioNome}</p>
         <p className="text-texto-3">
@@ -74,7 +74,7 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
             disabled={pendente}
             onClick={() => confirm('Apagar este registro de tempo?') && iniciar(async () => void avisar(await apagarTempoAcao(r.id), true))}
             aria-label="Apagar registro"
-            className="rounded p-1 text-texto-3 hover:bg-hover hover:text-rose-600"
+            className="rounded p-1 text-texto-3 hover:bg-hover hover:text-perigo"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -105,9 +105,9 @@ function FormularioLancar({ tarefaId }: { tarefaId: string }) {
       }}
       className="space-y-1.5"
     >
-      <p className="text-[12px] font-semibold">Lançar tempo</p>
+      <p className="text-rotulo font-semibold">Lançar tempo</p>
       <input type="date" value={data} max={hojeLocal()} onChange={(e) => setData(e.target.value)} aria-label="Data" className={campo} />
-      <div className="flex items-center gap-1 text-[12px]">
+      <div className="flex items-center gap-1 text-rotulo">
         <input type="number" min={0} max={24} value={horas} onChange={(e) => setHoras(e.target.value)} placeholder="0" aria-label="Horas" className={`${campo} w-16`} />
         <span>h</span>
         <input type="number" min={0} max={59} value={minutos} onChange={(e) => setMinutos(e.target.value)} placeholder="0" aria-label="Minutos" className={`${campo} w-16`} />
@@ -153,7 +153,7 @@ export function RastrearTempo({
         <button
           disabled={pendente}
           onClick={() => iniciar(async () => void avisar(await pararCronometroAcao(), true))}
-          className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1 text-[12px] font-medium text-rose-700 hover:bg-rose-100"
+          className="inline-flex items-center gap-1.5 rounded-md bg-perigo-fundo px-2 py-1 text-rotulo font-medium text-perigo-forte hover:bg-perigo-fundo"
           aria-label="Parar cronômetro"
         >
           <Square className="h-3.5 w-3.5 fill-current" />
@@ -163,21 +163,21 @@ export function RastrearTempo({
         <button
           disabled={pendente}
           onClick={() => iniciar(async () => void avisar(await iniciarCronometroAcao(tarefaId), true))}
-          className="inline-flex items-center gap-1.5 rounded-md bg-hover px-2 py-1 text-[12px] font-medium hover:bg-borda"
+          className="inline-flex items-center gap-1.5 rounded-md bg-hover px-2 py-1 text-rotulo font-medium hover:bg-borda"
         >
           <Play className="h-3.5 w-3.5 fill-current" /> Start
         </button>
       )}
       <Popover>
-        <PopoverTrigger className="rounded-md px-1.5 py-1 text-[12px] text-texto-2 hover:bg-hover" aria-label="Ver registros de tempo">
+        <PopoverTrigger className="rounded-md px-1.5 py-1 text-rotulo text-texto-2 hover:bg-hover" aria-label="Ver registros de tempo">
           {total > 0 ? formatarDuracao(total) : 'Sem tempo'}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-80 gap-3">
           <FormularioLancar tarefaId={tarefaId} />
           <div>
-            <p className="text-[12px] font-semibold">Registros</p>
+            <p className="text-rotulo font-semibold">Registros</p>
             {registros.length === 0 ? (
-              <p className="py-2 text-[12px] text-texto-3">Nenhum registro ainda.</p>
+              <p className="py-2 text-rotulo text-texto-3">Nenhum registro ainda.</p>
             ) : (
               <ul className="max-h-60 divide-y divide-borda overflow-y-auto">
                 {registros.map((r) => (

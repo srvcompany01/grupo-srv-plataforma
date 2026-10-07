@@ -32,8 +32,8 @@ export function FormCliente({ acao, cliente, podeEditar }: { acao: Acao; cliente
           </select>
         </label>
       </div>
-      {estado?.erro && <p className="text-sm text-rose-600">{estado.erro}</p>}
-      {estado?.ok && <p className="text-sm text-emerald-700">{estado.ok}</p>}
+      {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
+      {estado?.ok && <p className="text-sm text-sucesso-forte">{estado.ok}</p>}
       {podeEditar && (
         <button disabled={enviando} className={botaoPrimario}>
           {cliente ? 'Salvar' : 'Cadastrar cliente'}

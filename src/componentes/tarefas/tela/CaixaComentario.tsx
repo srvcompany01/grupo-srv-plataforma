@@ -182,16 +182,16 @@ export function CaixaComentario({ tarefaId, pessoas }: { tarefaId: string; pesso
               enviar()
             }
           }}
-          className="max-h-40 w-full resize-none bg-transparent text-[13px] outline-none"
+          className="max-h-40 w-full resize-none bg-transparent text-corpo outline-none"
         />
         {anexos.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
             {anexos.map((a) => (
-              <li key={a.chave} className="flex max-w-full items-center gap-1.5 rounded-md border border-borda bg-fundo px-2 py-1 text-[12px]">
+              <li key={a.chave} className="flex max-w-full items-center gap-1.5 rounded-md border border-borda bg-fundo px-2 py-1 text-rotulo">
                 <FileText className="h-3.5 w-3.5 shrink-0 text-texto-3" />
                 <span className="max-w-[160px] truncate">{a.nome}</span>
                 {!a.anexo && <span className="text-texto-3">{a.pct}%</span>}
-                <button type="button" onClick={() => remover(a.chave)} aria-label={`Remover ${a.nome}`} className="text-texto-3 hover:text-rose-600">
+                <button type="button" onClick={() => remover(a.chave)} aria-label={`Remover ${a.nome}`} className="text-texto-3 hover:text-perigo">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </li>
@@ -214,11 +214,11 @@ export function CaixaComentario({ tarefaId, pessoas }: { tarefaId: string; pesso
           <BotaoIcone rotulo="Gravar áudio" onClick={() => setGravando('audio')} icone={Mic} />
           <BotaoIcone rotulo="Gravar vídeo ou tela" onClick={() => setGravando('video')} icone={Video} />
           <div className="ml-auto flex items-center gap-2">
-            <div className="flex rounded-md bg-hover p-0.5 text-[12px]">
+            <div className="flex rounded-md bg-hover p-0.5 text-rotulo">
               <button type="button" onClick={() => setInterno(true)} className={`rounded px-2 py-0.5 ${interno ? 'bg-white shadow-sm' : 'text-texto-2'}`}>
                 Interno
               </button>
-              <button type="button" onClick={() => setInterno(false)} className={`rounded px-2 py-0.5 ${!interno ? 'bg-white text-emerald-700 shadow-sm' : 'text-texto-2'}`}>
+              <button type="button" onClick={() => setInterno(false)} className={`rounded px-2 py-0.5 ${!interno ? 'bg-white text-sucesso-forte shadow-sm' : 'text-texto-2'}`}>
                 Visível ao cliente
               </button>
             </div>

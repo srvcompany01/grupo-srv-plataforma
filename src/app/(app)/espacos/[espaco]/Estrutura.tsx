@@ -45,14 +45,14 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
   const [pendente, iniciar] = useTransition()
 
   const linhaLista = (l: Dados['listas'][number]) => (
-    <div key={l.id} className="flex items-center gap-2 border-t border-borda px-3 py-1.5 text-[13px]">
+    <div key={l.id} className="flex items-center gap-2 border-t border-borda px-3 py-1.5 text-corpo">
       <List className="h-3.5 w-3.5 text-texto-3" />
       <Nome tabela="lists" id={l.id} nome={l.nome} />
-      <span className="text-[12px] text-texto-3">
+      <span className="text-rotulo text-texto-3">
         {l.clienteNome}
         {l.mes && ` · ${rotuloMes(l.mes)}`}
       </span>
-      <Link href={`/listas/${l.id}`} className="text-[12px] text-marca hover:underline">
+      <Link href={`/listas/${l.id}`} className="text-rotulo text-marca hover:underline">
         abrir
       </Link>
       <Arquivar tabela="lists" id={l.id} nome={l.nome} />
@@ -98,7 +98,7 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
           <button disabled={criando} className={botaoPrimario}>
             Criar lista
           </button>
-          {estado?.erro && <p className="text-sm text-rose-600">{estado.erro}</p>}
+          {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
         </div>
       </form>
 
@@ -120,7 +120,7 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
       <div className="overflow-hidden rounded-lg border border-borda bg-white">
         {dados.pastas.map((p) => (
           <div key={p.id}>
-            <div className="flex items-center gap-2 border-t border-borda bg-hover px-3 py-1.5 text-[13px] font-medium first:border-t-0">
+            <div className="flex items-center gap-2 border-t border-borda bg-hover px-3 py-1.5 text-corpo font-medium first:border-t-0">
               <Folder className="h-3.5 w-3.5 text-texto-3" />
               <Nome tabela="folders" id={p.id} nome={p.nome} />
               <Arquivar tabela="folders" id={p.id} nome={p.nome} />
@@ -129,7 +129,7 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
           </div>
         ))}
         {dados.listas.filter((l) => !l.pastaId).map(linhaLista)}
-        {!dados.pastas.length && !dados.listas.length && <p className="px-3 py-2.5 text-[13px] text-texto-3">Nenhuma pasta ou lista ainda.</p>}
+        {!dados.pastas.length && !dados.listas.length && <p className="px-3 py-2.5 text-corpo text-texto-3">Nenhuma pasta ou lista ainda.</p>}
       </div>
     </div>
   )

@@ -42,7 +42,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[12px] text-texto-3">
+      <div className="flex items-center gap-2 text-rotulo text-texto-3">
         <span className="inline-flex items-center gap-1 rounded-md bg-hover px-2 py-1 font-medium text-texto-2">
           <CircleDot className="h-3.5 w-3.5" /> {ehSubtarefa ? 'Subtarefa' : 'Tarefa'}
         </span>
@@ -80,13 +80,13 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
       </div>
 
       {t.pai ? (
-        <Link href={`/tarefas/${t.pai.id}`} className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-texto-2 hover:text-marca">
+        <Link href={`/tarefas/${t.pai.id}`} className="inline-flex max-w-full items-center gap-1.5 text-rotulo text-texto-2 hover:text-marca">
           Subtarefa de <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-texto-3" />
           <span className="truncate font-medium">{t.pai.titulo}</span>
         </Link>
       ) : (
         t.paiId && (
-          <Link href={`/tarefas/${t.paiId}`} className="text-[12px] text-texto-2 hover:text-marca">
+          <Link href={`/tarefas/${t.paiId}`} className="text-rotulo text-texto-2 hover:text-marca">
             Subtarefa de uma tarefa mãe
           </Link>
         )
@@ -102,7 +102,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         className="w-full rounded px-1 text-2xl font-semibold outline-none hover:bg-hover focus:bg-hover"
       />
 
-      <div className="text-[12px] text-texto-3">
+      <div className="text-rotulo text-texto-3">
         <Link href={`/listas/${t.lista.id}`} className="hover:text-marca">
           {t.lista.nome}
         </Link>
@@ -114,7 +114,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         <DialogContent className="sm:max-w-md">
           <DialogTitle>Mover para lista</DialogTitle>
           <DialogDescription>A tarefa e as subtarefas vão para a lista escolhida.</DialogDescription>
-          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-[13px]`}>
+          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-corpo`}>
             {listas.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.espacoNome} › {l.nome} · @{l.clienteNome}

@@ -61,8 +61,8 @@ export function FormConvite({ clientes, espacos, clienteFixo }: { clientes: Opca
           <legend className={rotulo}>Departamentos</legend>
           <div className="grid gap-1 md:grid-cols-2">
             {espacos.map((e) => (
-              <label key={e.id} className="flex items-center gap-2 text-[13px]">
-                <select name="espaco" defaultValue="" className={`${campo} h-8 w-32 py-0 text-[13px]`}>
+              <label key={e.id} className="flex items-center gap-2 text-corpo">
+                <select name="espaco" defaultValue="" className={`${campo} h-8 w-32 py-0 text-corpo`}>
                   <option value="">—</option>
                   <option value={`${e.id}:membro`}>Membro</option>
                   <option value={`${e.id}:gestor`}>Gestor</option>
@@ -74,8 +74,8 @@ export function FormConvite({ clientes, espacos, clienteFixo }: { clientes: Opca
         </fieldset>
       )}
 
-      {estado?.erro && <p className="text-sm text-rose-600">{estado.erro}</p>}
-      {estado?.ok && <p className="text-sm text-emerald-700">{estado.ok}</p>}
+      {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
+      {estado?.ok && <p className="text-sm text-sucesso-forte">{estado.ok}</p>}
       <button disabled={enviando} className={botaoPrimario}>
         {enviando ? 'Enviando…' : 'Enviar convite'}
       </button>

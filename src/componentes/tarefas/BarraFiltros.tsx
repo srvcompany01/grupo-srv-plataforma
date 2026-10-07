@@ -25,7 +25,7 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   'sem-prazo': 'Sem prazo',
 }
 
-const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
+const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-rotulo font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
 const TOM = {
   violeta: 'border-marca-clara bg-marca-fundo text-marca-escura',
   azul: 'border-marca-clara bg-marca-fundo text-marca-escura',
@@ -120,7 +120,7 @@ export function BarraFiltros({
     <div className="flex flex-wrap items-center gap-2">
       {comAgrupamento && (
         <DropdownMenu>
-          <DropdownMenuTrigger className={`${botao} border-teal-200 bg-teal-50 text-teal-700`}>
+          <DropdownMenuTrigger className={`${botao} border-marca-clara bg-marca-fundo text-marca-escura`}>
             <Layers3 className="h-3.5 w-3.5" /> Agrupar: {rotuloAgrupamento}
             <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
@@ -175,14 +175,14 @@ export function BarraFiltros({
         }}
         className="relative ml-auto min-w-44 flex-1 sm:max-w-64"
       >
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-sky-500" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-marca" />
         <input
           key={filtros.busca}
           name="busca"
           defaultValue={filtros.busca}
           aria-label="Pesquisar tarefas"
           placeholder="Pesquisar tarefas…" autoComplete="off"
-          className="h-8 w-full rounded-full border border-borda bg-white pl-8 pr-8 text-[12px] outline-none transition focus-visible:border-sky-300 focus-visible:ring-3 focus-visible:ring-sky-100"
+          className="h-8 w-full rounded-full border border-borda bg-white pl-8 pr-8 text-rotulo outline-none transition focus-visible:border-marca-clara focus-visible:ring-3 focus-visible:ring-marca-fundo"
         />
         {filtros.busca && <button type="button" aria-label="Limpar pesquisa" onClick={() => aplicar({ busca: '' })} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-texto-3 hover:bg-hover"><X className="h-3 w-3" /></button>}
       </form>

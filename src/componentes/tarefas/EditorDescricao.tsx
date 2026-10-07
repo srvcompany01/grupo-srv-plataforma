@@ -16,7 +16,7 @@ export function EditorDescricao({ tarefaId, inicial }: { tarefaId: string; inici
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: 'prose-sm min-h-24 rounded-md px-2 py-1.5 text-[13px] outline-none focus:bg-hover [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
+        class: 'prose-sm min-h-24 rounded-md px-2 py-1.5 text-corpo outline-none focus:bg-hover [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
       },
     },
     onBlur: ({ editor: e }) => {

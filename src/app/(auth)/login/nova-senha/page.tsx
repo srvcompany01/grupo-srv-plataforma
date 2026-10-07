@@ -16,7 +16,7 @@ export default function NovaSenha() {
         <h1 className="text-xl font-semibold">Defina sua senha</h1>
         <input name="senha" type="password" placeholder="Nova senha (mínimo 8 caracteres)" autoComplete="new-password" required className={campo} />
         <input name="confirmacao" type="password" placeholder="Repita a senha" autoComplete="new-password" required className={campo} />
-        {estado?.erro && <p className="text-sm text-rose-600">{estado.erro}</p>}
+        {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
         <button disabled={salvando} className={`${botaoPrimario} h-10 w-full text-sm`}>
           {salvando ? 'Salvando…' : 'Salvar e entrar'}
         </button>

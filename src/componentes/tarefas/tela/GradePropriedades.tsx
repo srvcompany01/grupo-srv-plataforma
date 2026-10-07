@@ -16,7 +16,7 @@ import type { Opcao } from './TelaTarefa'
 
 function Linha({ icone: Icone, titulo, children }: { icone: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
   return (
-    <div className="grid min-h-9 grid-cols-[130px_1fr] items-center gap-2 text-[13px]">
+    <div className="grid min-h-9 grid-cols-[130px_1fr] items-center gap-2 text-corpo">
       <span className="flex items-center gap-2 text-texto-2">
         <Icone className="h-4 w-4 shrink-0 text-texto-3" />
         {titulo}
@@ -93,7 +93,7 @@ export function GradePropriedades({
                 onClick={() => salvar({ statusId: concluido.id })}
                 aria-label={`Marcar como ${concluido.nome}`}
                 title={`Marcar como ${concluido.nome}`}
-                className="rounded p-1 text-texto-3 hover:bg-hover hover:text-emerald-600"
+                className="rounded p-1 text-texto-3 hover:bg-hover hover:text-sucesso"
               >
                 <Check className="h-4 w-4" />
               </button>
@@ -118,7 +118,7 @@ export function GradePropriedades({
                 aria-label="Prazo"
                 defaultValue={t.prazo ?? ''}
                 onBlur={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null })}
-                className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-rose-300 text-rose-600' : ''}`}
+                className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
               />
             </span>
           ) : (
@@ -131,7 +131,7 @@ export function GradePropriedades({
             <form onBlur={(e) => salvarEstimativa(e.currentTarget)} onSubmit={(e) => e.preventDefault()} className="flex flex-wrap items-center gap-1">
               <input name="h" type="number" min={0} autoFocus={editandoEstimativa} defaultValue={horas} aria-label="Horas" className={`${campo} h-8 w-16 py-0`} /> h
               <input name="m" type="number" min={0} max={59} defaultValue={minutos} aria-label="Minutos" className={`${campo} h-8 w-16 py-0`} /> min
-              {t.estimativaMin != null && <span className="ml-1 text-[12px] text-texto-3">({formatarDuracao(t.estimativaMin * 60)})</span>}
+              {t.estimativaMin != null && <span className="ml-1 text-rotulo text-texto-3">({formatarDuracao(t.estimativaMin * 60)})</span>}
             </form>
           ) : (
             <Vazio onClick={() => setEditandoEstimativa(true)} />
@@ -141,7 +141,7 @@ export function GradePropriedades({
         <Linha icone={Tag} titulo="Etiquetas">
           <div className="flex flex-wrap items-center gap-1">
             {t.tags.map((g) => (
-              <span key={g.id} className="rounded px-1.5 py-0.5 text-[11px] text-white" style={{ background: g.cor }}>
+              <span key={g.id} className="rounded px-1.5 py-0.5 text-legenda text-white" style={{ background: g.cor }}>
                 {g.nome}
               </span>
             ))}
@@ -150,14 +150,14 @@ export function GradePropriedades({
                 {t.tags.length === 0 ? 'Vazio' : <Tag className="h-3.5 w-3.5" />}
               </PopoverTrigger>
               <PopoverContent className="w-56 space-y-1 p-2" align="start">
-                {tags.length === 0 && <p className="text-[12px] text-texto-3">Nenhuma etiqueta neste departamento.</p>}
+                {tags.length === 0 && <p className="text-rotulo text-texto-3">Nenhuma etiqueta neste departamento.</p>}
                 {tags.map((g) => {
                   const marcada = t.tags.some((x) => x.id === g.id)
                   return (
                     <button
                       key={g.id}
                       onClick={() => iniciar(async () => void avisar(await definirEtiquetaAcao(t.id, g.id, !marcada)))}
-                      className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-hover"
+                      className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-corpo hover:bg-hover"
                     >
                       <span className="h-2.5 w-2.5 rounded-sm" style={{ background: g.cor }} />
                       <span className="flex-1 text-left">{g.nome}</span>
@@ -175,7 +175,7 @@ export function GradePropriedades({
                     }}
                     className="border-t border-borda pt-1"
                   >
-                    <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" className="w-full px-1.5 py-1 text-[13px] outline-none" />
+                    <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" className="w-full px-1.5 py-1 text-corpo outline-none" />
                   </form>
                 )}
               </PopoverContent>
@@ -189,7 +189,7 @@ export function GradePropriedades({
           <SeletorResponsaveis tarefaId={t.id} atuais={t.responsaveis} equipe={equipe} />
         </Linha>
         <Linha icone={Flag} titulo="Prioridade">
-          <select value={t.prioridade} disabled={pendente} onChange={(e) => salvar({ prioridade: e.target.value as Prioridade })} className={`${campo} h-8 w-40 py-0 text-[13px]`}>
+          <select value={t.prioridade} disabled={pendente} onChange={(e) => salvar({ prioridade: e.target.value as Prioridade })} className={`${campo} h-8 w-40 py-0 text-corpo`}>
             {PRIORIDADES.map((x) => (
               <option key={x} value={x}>
                 {ROTULO_PRIORIDADE[x]}
@@ -201,7 +201,7 @@ export function GradePropriedades({
           {children ?? <span className="text-texto-3">—</span>}
         </Linha>
         <Linha icone={t.visivelCliente ? Eye : EyeOff} titulo="Cliente vê?">
-          <button onClick={() => salvar({ visivelCliente: !t.visivelCliente })} disabled={pendente} className={`${botaoFantasma} ${t.visivelCliente ? 'text-emerald-700' : ''}`}>
+          <button onClick={() => salvar({ visivelCliente: !t.visivelCliente })} disabled={pendente} className={`${botaoFantasma} ${t.visivelCliente ? 'text-sucesso-forte' : ''}`}>
             {t.visivelCliente ? 'Visível no portal' : 'Só a equipe vê'}
           </button>
         </Linha>
