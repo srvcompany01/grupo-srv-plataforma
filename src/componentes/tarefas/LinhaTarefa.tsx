@@ -41,7 +41,8 @@ export function larguraDaColuna(id: string, larguras: Record<string, number> = {
 }
 
 export function gradeDaLista(campos: DefinicaoCampo[], larguras: Record<string, number> = {}) {
-  const fixas = COLUNAS_BASE.map((coluna) => `${larguraDaColuna(coluna.id, larguras)}px`)
+  // A coluna de nome ocupa o espaço que sobra; a largura salva vira o mínimo.
+  const fixas = COLUNAS_BASE.map((coluna) => (coluna.id === 'nome' ? `minmax(${larguraDaColuna(coluna.id, larguras)}px, 1fr)` : `${larguraDaColuna(coluna.id, larguras)}px`))
   const personalizadas = campos.map((campo) => `${larguraDaColuna(`campo:${campo.id}`, larguras)}px`)
   return [...fixas, ...personalizadas].join(' ')
 }
@@ -79,7 +80,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           <SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} />
           <div className="min-w-0 flex-1">
             <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block truncate font-medium hover:text-marca">
-              {tarefa.titulo}
+              {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
               {tarefa.filhos.length > 0 && <span className="ml-1.5 text-[11px] text-texto-3">{tarefa.filhos.length}</span>}
             </Link>
             {ctx.mostrarLista && <span className="block truncate text-[10px] text-texto-3" title={`${tarefa.listaNome} · @${tarefa.clienteNome}`}>{tarefa.listaNome} · @{tarefa.clienteNome}</span>}
@@ -112,7 +113,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         <span className="px-2">
           <SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} />
         </span>
-        <span className="px-2 text-[12px]">
+        <span className="px-2 text-[12px] tabular-nums">
           <Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
         <span className="px-2" title={ROTULO_PRIORIDADE[tarefa.prioridade]}>

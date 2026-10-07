@@ -187,7 +187,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
         </div>
       )}
       <div className="overflow-x-auto pb-2">
-        <div className="space-y-5" style={{ width: gradeDaLista(campos, larguras).split(' ').reduce((total, parte) => total + Number.parseInt(parte, 10), 0) }}>
+        <div className="space-y-5" style={{ minWidth: gradeDaLista(campos, larguras).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g) => (
         <section key={g.id} className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_6px_24px_rgba(32,32,32,0.035)]" style={{ boxShadow: `inset 3px 0 0 ${g.cor}, 0 6px 24px rgba(32,32,32,0.035)` }}>
           <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>

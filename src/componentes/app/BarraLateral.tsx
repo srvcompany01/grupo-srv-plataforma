@@ -120,10 +120,9 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       className={`${item} group ${caminho === href ? ativo : ''}`}
       style={{ paddingLeft: 10 + nivel * 14 }}
     >
-      <Link href={href} className="flex min-w-0 flex-1 items-center gap-2">
+      <Link href={href} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
         <span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
         <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
-        {detalhe && <span className="max-w-16 truncate text-[9px] text-[#a1a2a6]">{detalhe}</span>}
       </Link>
       {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
     </LinhaArrastavel>

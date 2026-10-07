@@ -22,7 +22,7 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   'sem-prazo': 'Sem prazo',
 }
 
-const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
+const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/15'
 const TOM = {
   violeta: 'border-violet-200 bg-violet-50 text-violet-700',
   azul: 'border-sky-200 bg-sky-50 text-sky-700',
@@ -117,7 +117,7 @@ export function BarraFiltros({
       {comAgrupamento && (
         <DropdownMenu>
           <DropdownMenuTrigger className={`${botao} border-teal-200 bg-teal-50 text-teal-700`}>
-            <Layers3 className="h-3.5 w-3.5" /> {ROTULO_AGRUPAMENTO[filtros.agrupamento]}
+            <Layers3 className="h-3.5 w-3.5" /> Agrupar: {ROTULO_AGRUPAMENTO[filtros.agrupamento]}
             <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -172,8 +172,8 @@ export function BarraFiltros({
           name="busca"
           defaultValue={filtros.busca}
           aria-label="Pesquisar tarefas"
-          placeholder="Pesquisar tarefas"
-          className="h-8 w-full rounded-full border border-borda bg-white pl-8 pr-8 text-[12px] outline-none transition focus:border-sky-300 focus:ring-3 focus:ring-sky-100"
+          placeholder="Pesquisar tarefas…" autoComplete="off"
+          className="h-8 w-full rounded-full border border-borda bg-white pl-8 pr-8 text-[12px] outline-none transition focus-visible:border-sky-300 focus-visible:ring-3 focus-visible:ring-sky-100"
         />
         {filtros.busca && <button type="button" aria-label="Limpar pesquisa" onClick={() => aplicar({ busca: '' })} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-texto-3 hover:bg-hover"><X className="h-3 w-3" /></button>}
       </form>
