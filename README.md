@@ -237,3 +237,18 @@ atualize o `.env.local`.
 ### ☐ 9. Limpeza — (Claude)
 
 - `npx vercel logout` se você não quiser deixar o terminal conectado.
+
+## Anexos dos comentários (R2)
+
+Os anexos das tarefas usam o mesmo bucket R2 do app antigo (variáveis `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY`, `R2_BUCKET`), com chaves `tarefas/<task_id>/<uuid>.<ext>`. O navegador envia direto
+ao R2, então o bucket precisa desta política de CORS (Cloudflare → R2 → bucket → Settings → CORS policy),
+mantendo as origens que já existirem:
+
+```json
+[{ "AllowedOrigins": ["https://app.gruposrv.com.br", "http://localhost:3000"],
+   "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+```
+
+O sino de avisos usa Supabase Realtime: a tabela `notifications` precisa estar na publicação
+`supabase_realtime` (a migração `…0012` a adiciona quando a publicação existe).
