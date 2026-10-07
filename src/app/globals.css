@@ -15,7 +15,13 @@
   --color-marca-escura: #a8131a;
   --color-marca-clara: #f8c4c7;
   --color-marca-fundo: #fdf0f0;
-  --color-lateral: #7a0f14;
+  --color-lat-bg: var(--lat-bg);
+  --color-lat-fg: var(--lat-fg);
+  --color-lat-2: var(--lat-2);
+  --color-lat-3: var(--lat-3);
+  --color-lat-hover: var(--lat-hover);
+  --color-lat-ativo: var(--lat-ativo);
+  --color-lat-borda: var(--lat-borda);
   --color-sinal: #d11a22;
   --color-carbon: #111111;
 
@@ -147,6 +153,14 @@ body {
 }
 
 :root {
+  /* Barra lateral: valores padrão; o layout sobrescreve conforme a preferência salva. */
+  --lat-bg: #f6f6f7;
+  --lat-fg: #111111;
+  --lat-2: rgba(17, 17, 17, 0.72);
+  --lat-3: rgba(17, 17, 17, 0.52);
+  --lat-hover: rgba(0, 0, 0, 0.05);
+  --lat-ativo: rgba(0, 0, 0, 0.09);
+  --lat-borda: rgba(0, 0, 0, 0.1);
   --background: #ffffff;
   --foreground: #111111;
   --card: oklch(1 0 0);

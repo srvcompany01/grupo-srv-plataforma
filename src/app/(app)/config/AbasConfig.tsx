@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const ABAS = [
   ['/config/usuarios', 'Usuários'],
   ['/config/espacos', 'Departamentos'],
+  ['/config/aparencia', 'Aparência'],
 ] as const
 
 export function AbasConfig() {

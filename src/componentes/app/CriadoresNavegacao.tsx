@@ -63,7 +63,7 @@ const GatilhoPadrao = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
   ref,
 ) {
   return (
-    <button ref={ref} type="button" aria-label={aria} title={aria} className="rounded-[5px] p-1 text-white/60 opacity-0 transition hover:bg-white/10 hover:text-white group-hover:opacity-100 focus:opacity-100" {...props}>
+    <button ref={ref} type="button" aria-label={aria} title={aria} className="rounded-[5px] p-1 text-lat-3 opacity-0 transition hover:bg-lat-hover hover:text-lat-fg group-hover:opacity-100 focus:opacity-100" {...props}>
       {children}
     </button>
   )

@@ -35,8 +35,8 @@ type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
-  'flex h-8 items-center gap-2 rounded-md px-2 text-[11px] tracking-[0.04em] text-white/75 transition-colors hover:bg-white/10 hover:text-white'
-const ativo = 'bg-white/15 font-semibold text-white hover:bg-white/20 hover:text-white'
+  'flex h-8 items-center gap-2 rounded-md px-2 text-[11px] tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
+const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
@@ -62,7 +62,7 @@ function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
       style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
     >
       {habilitado && (
-        <button ref={setActivatorNodeRef} type="button" aria-label="Arrastar para organizar" className="-ml-1 cursor-grab touch-none rounded p-0.5 text-white/40 opacity-0 hover:bg-white/10 hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca group-hover:opacity-100 active:cursor-grabbing" {...attributes} {...listeners}>
+        <button ref={setActivatorNodeRef} type="button" aria-label="Arrastar para organizar" className="-ml-1 cursor-grab touch-none rounded p-0.5 text-lat-3 opacity-0 hover:bg-lat-hover hover:text-lat-fg focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca group-hover:opacity-100 active:cursor-grabbing" {...attributes} {...listeners}>
           <GripVertical className="h-3 w-3" />
         </button>
       )}
@@ -74,7 +74,7 @@ function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
 function ZonaRaiz({ visivel }: { visivel: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
   if (!visivel) return null
-  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-white bg-white/10 text-white' : 'border-white/25 text-white/60'}`}>Solte aqui para deixar sem espaço</div>
+  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
 }
 
 function idsDaNavegacao(navegacao: Navegacao): string[] {
@@ -125,12 +125,12 @@ function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrast
   return (
     <div>
       <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 6 + nivel * 14 }}>
-        <button type="button" onClick={() => setAberta(!aberta)} aria-label={aberta ? `Recolher ${pasta.nome}` : `Expandir ${pasta.nome}`} aria-expanded={aberta} className="rounded p-0.5 hover:bg-white/10">
-          <ChevronRight className={`h-3 w-3 shrink-0 text-white/50 transition-transform ${aberta ? 'rotate-90' : ''}`} />
+        <button type="button" onClick={() => setAberta(!aberta)} aria-label={aberta ? `Recolher ${pasta.nome}` : `Expandir ${pasta.nome}`} aria-expanded={aberta} className="rounded p-0.5 hover:bg-lat-hover">
+          <ChevronRight className={`h-3 w-3 shrink-0 text-lat-3 transition-transform ${aberta ? 'rotate-90' : ''}`} />
         </button>
         <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-[9px] tabular-nums text-white/50">{pasta.listas.length}</span>
+        <span className="ml-auto text-[9px] tabular-nums text-lat-3">{pasta.listas.length}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
       </LinhaArrastavel>
@@ -153,11 +153,11 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
           onClick={() => temConteudo && setAberto(!aberto)}
           aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'}
           aria-expanded={aberto}
-          className={`rounded p-0.5 hover:bg-white/10 ${temConteudo ? '' : 'invisible'}`}
+          className={`rounded p-0.5 hover:bg-lat-hover ${temConteudo ? '' : 'invisible'}`}
         >
           <ChevronRight className={`h-3 w-3 transition-transform ${aberto ? 'rotate-90' : ''}`} />
         </button>
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-lat-fg" style={{ background: espaco.cor }}>
           <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
         </span>
         <Link href={href} className="min-w-0 flex-1 truncate">
@@ -211,21 +211,21 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
   const link = (href: string, rotulo: string, Icone: IconeLucide) => (
     <Link href={href} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
-      <Icone className="h-3.5 w-3.5 text-white/70" />
+      <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
     </Link>
   )
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col bg-lateral text-white">
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-4">
-        <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-white">Grupo SRV</p>
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-lat-borda px-4">
+        <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         <div className="flex h-8 items-center px-2">
-          <h2 className="text-[10px] font-semibold tracking-[0.18em] text-white/55">Navegação</h2>
+          <h2 className="text-[10px] font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
         </div>
         <nav className="space-y-0.5">
           {link('/inicio', 'Minhas tarefas', CheckSquare)}
@@ -233,30 +233,30 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
           {papel === 'admin' && link('/config', 'Configurações', Settings)}
         </nav>
 
-        <div className="mx-2 my-3 border-t border-white/10" />
+        <div className="mx-2 my-3 border-t border-lat-borda" />
 
         <DndContext sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-white/55">Espaços</h2>
+              <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
             </div>
 
             <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-white/50">Você ainda não faz parte de nenhum departamento.</p>}
+              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-lat-3">Você ainda não faz parte de nenhum departamento.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
 
             {(papel === 'admin' || navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
-              <div className="mt-3 border-t border-white/10 pt-2">
+              <div className="mt-3 border-t border-lat-borda pt-2">
                 <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-white/55">Itens soltos</h2>
+                  <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
                   {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
                 </div>
                 <nav className="space-y-0.5">
                   {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                   {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-white/45">Pastas e listas sem espaço aparecem aqui.</p>}
+                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-lat-3">Pastas e listas sem espaço aparecem aqui.</p>}
                 </nav>
               </div>
             )}
@@ -265,16 +265,16 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
         </DndContext>
       </div>
 
-      <div className="shrink-0 border-t border-white/10 p-2">
+      <div className="shrink-0 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/10">
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-lat-hover">
           <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-[9px]" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-semibold text-white">{nome}</p>
-            <p className="truncate text-[9px] text-white/55">{papel}</p>
+            <p className="truncate text-[11px] font-semibold text-lat-fg">{nome}</p>
+            <p className="truncate text-[9px] text-lat-3">{papel}</p>
           </div>
           <form action={sair}>
-            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white">
+            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-lat-3 transition hover:bg-lat-hover hover:text-lat-fg">
               <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </form>
@@ -287,7 +287,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 export function BarraLateral(props: Props) {
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 border-r border-lat-borda md:flex">
         <Painel {...props} />
       </aside>
 
@@ -296,7 +296,7 @@ export function BarraLateral(props: Props) {
           <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] border-r-0 bg-lateral p-0 text-white">
+          <SheetContent side="left" className="w-[280px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
             <SheetTitle className="sr-only">Menu</SheetTitle>
             <Painel {...props} />
           </SheetContent>
