@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_media: {
+        Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
+        Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
+        Update: { id?: string; kind?: string; original_name?: string; position?: number; r2_key?: string; size_bytes?: number; task_id?: string; version_id?: string }
+        Relationships: []
+      }
+      content_posts: {
+        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string }
+        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string }
+        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string }
+        Relationships: []
+      }
+      content_responses: {
+        Row: { comment: string; created_at: string; decision: string; id: string; responder_name: string; task_id: string; version_id: string }
+        Insert: { comment?: string; created_at?: string; decision: string; id?: string; responder_name: string; task_id: string; version_id: string }
+        Update: { comment?: string; created_at?: string; decision?: string; id?: string; responder_name?: string; task_id?: string; version_id?: string }
+        Relationships: []
+      }
+      content_versions: {
+        Row: { caption: string; created_at: string; id: string; idea: string; number: number; objective: string; task_id: string }
+        Insert: { caption?: string; created_at?: string; id?: string; idea?: string; number: number; objective?: string; task_id: string }
+        Update: { caption?: string; created_at?: string; id?: string; idea?: string; number?: number; objective?: string; task_id?: string }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -130,6 +154,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          approval_token: string
           color: string
           cover_credit: string | null
           cover_url: string | null
@@ -145,6 +170,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_token?: string
           color?: string
           cover_credit?: string | null
           cover_url?: string | null
@@ -160,6 +186,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_token?: string
           color?: string
           cover_credit?: string | null
           cover_url?: string | null
@@ -493,6 +520,7 @@ export type Database = {
           folder_id: string | null
           icon: string
           id: string
+          kind: string
           name: string
           position: string
           reference_month: string | null
@@ -508,6 +536,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string
           id?: string
+          kind?: string
           name: string
           position: string
           reference_month?: string | null
@@ -523,6 +552,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string
           id?: string
+          kind?: string
           name?: string
           position?: string
           reference_month?: string | null
@@ -1083,6 +1113,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_post_conteudo: { Args: { p_client: string; p_date: string; p_format: string; p_list: string; p_title: string }; Returns: string }
       can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
       can_manage_list: { Args: { list: string }; Returns: boolean }
