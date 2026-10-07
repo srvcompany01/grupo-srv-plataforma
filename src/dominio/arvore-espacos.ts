@@ -1,5 +1,5 @@
 export type Visual = { cor: string; icone: string; emoji: string | null }
-export type EspacoPlano = Visual & { id: string; nome: string; descricao: string | null; posicao: string; paiId: string | null }
+export type EspacoPlano = Visual & { id: string; nome: string; slug?: string | null; descricao: string | null; posicao: string; paiId: string | null }
 export type PastaPlana = Visual & { id: string; nome: string; espacoId: string | null; posicao: string }
 export type ItemLista = {
   id: string

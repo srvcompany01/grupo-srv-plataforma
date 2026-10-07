@@ -41,7 +41,8 @@ export function FormNovoEspaco({ pais }: { pais: Pessoa[] }) {
   )
 }
 
-export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equipe: Pessoa[] }) {
+/** `fixo`: área fixa da plataforma (não renomeia, não reordena, não arquiva). */
+export function CartaoEspaco({ espaco, equipe, fixo = false }: { espaco: EspacoComMembros; equipe: Pessoa[]; fixo?: boolean }) {
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   const [nome, setNome] = useState(espaco.nome)
@@ -51,28 +52,33 @@ export function CartaoEspaco({ espaco, equipe }: { espaco: EspacoComMembros; equ
     <div className="rounded-lg border border-borda bg-white p-3">
       <div className="flex items-center gap-2">
         <span className="h-3 w-3 rounded-sm" style={{ background: espaco.cor }} />
-        <input
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          onBlur={() => nome !== espaco.nome && rodar(() => renomearEspaco(espaco.id, nome))}
-          aria-label="Nome do departamento"
-          className="flex-1 rounded px-1 py-0.5 text-sm font-semibold outline-none hover:bg-hover focus:bg-hover"
-        />
-        <button aria-label="Subir" disabled={pendente} onClick={() => rodar(() => moverEspaco(espaco.id, -1))} className={botaoFantasma}>
+        {fixo ? (
+          <p className="flex-1 px-1 py-0.5 text-sm font-semibold">{espaco.nome}</p>
+        ) : (
+          <input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            onBlur={() => nome !== espaco.nome && rodar(() => renomearEspaco(espaco.id, nome))}
+            aria-label="Nome do departamento"
+            className="flex-1 rounded px-1 py-0.5 text-sm font-semibold outline-none hover:bg-hover focus:bg-hover"
+          />
+        )}
+        {!fixo && <button aria-label="Subir" disabled={pendente} onClick={() => rodar(() => moverEspaco(espaco.id, -1))} className={botaoFantasma}>
           <ArrowUp className="h-4 w-4" />
-        </button>
-        <button aria-label="Descer" disabled={pendente} onClick={() => rodar(() => moverEspaco(espaco.id, 1))} className={botaoFantasma}>
+        </button>}
+        {!fixo && <button aria-label="Descer" disabled={pendente} onClick={() => rodar(() => moverEspaco(espaco.id, 1))} className={botaoFantasma}>
           <ArrowDown className="h-4 w-4" />
-        </button>
-        <button
+        </button>}
+        {!fixo && <button
           aria-label="Arquivar"
           disabled={pendente}
           onClick={async () => (await confirmar({ titulo: `Arquivar "${espaco.nome}"?`, descricao: 'Ele some da navegação.', confirmar: 'Arquivar', perigo: true })) && rodar(() => arquivarEspaco(espaco.id))}
           className={botaoFantasma}
         >
           <Archive className="h-4 w-4" />
-        </button>
+        </button>}
       </div>
+      {fixo && <p className="mt-1 text-rotulo text-texto-3">Área fixa, aberta a toda a equipe. Gestores (papel) já gerenciam; use os membros abaixo para promover mais alguém a gestor desta área.</p>}
       <MembrosEspaco espaco={espaco} equipe={equipe} podePromover />
     </div>
   )

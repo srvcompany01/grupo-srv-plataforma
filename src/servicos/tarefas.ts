@@ -5,7 +5,8 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { dados } from './resultado'
 
-export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string }
+/** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
+export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
 const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
   clients(id, name, color),

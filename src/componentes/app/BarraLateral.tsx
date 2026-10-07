@@ -1,11 +1,12 @@
 'use client'
 
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
   CheckSquare,
   ChevronDown,
+  LayoutDashboard,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -25,7 +26,7 @@ import { IndicadorCronometro } from './IndicadorCronometro'
 import { SinoAvisos } from './SinoAvisos'
 import type { Aviso } from '@/servicos/avisos'
 import type { CronometroAtivo } from '@/servicos/tempo'
-import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
+import { CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
@@ -85,12 +86,6 @@ function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto
       <ChevronDown aria-hidden="true" className={`absolute h-3.5 w-3.5 text-lat-fg opacity-0 transition group-hover/seta:opacity-100 group-focus-visible/seta:opacity-100 ${aberto ? '' : '-rotate-90'}`} />
     </button>
   )
-}
-
-function ZonaRaiz({ visivel }: { visivel: boolean }) {
-  const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
-  if (!visivel) return null
-  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-legenda transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
 }
 
 function idsDaNavegacao(navegacao: Navegacao): string[] {
@@ -157,7 +152,7 @@ function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrast
 function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; clientes: Opcao[]; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
   const [aberto, setAberto] = useState(true)
-  const href = `/espacos/${espaco.id}`
+  const href = `/${espaco.slug}`
   const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
 
   return (
@@ -189,18 +184,17 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
 function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
   const caminho = usePathname()
   const router = useRouter()
-  const [arrastando, setArrastando] = useState(false)
   const [movendo, iniciarMovimento] = useTransition()
   const podeArrastar = papel === 'admin'
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
-  const arvore = navegacao.espacos
+  // Só as áreas fixas aparecem; espaços antigos (sem slug) ficam fora da navegação.
+  const arvore = navegacao.espacos.filter((espaco) => espaco.slug)
   const itensOrdenaveis = useMemo(() => idsDaNavegacao(navegacao), [navegacao])
 
   const concluirMovimento = (evento: DragEndEvent) => {
-    setArrastando(false)
     if (!evento.over) return
     const origem = evento.active.data.current as { tipo?: TipoArrastavel; id?: string } | undefined
     const destino = evento.over.data.current as { tipo?: TipoArrastavel | 'root'; id?: string } | undefined
@@ -238,38 +232,24 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
         </div>
         <nav className="space-y-0.5">
           {link('/inicio', 'Minhas tarefas', CheckSquare)}
+          {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
           {link('/clientes', 'Clientes', Users)}
           {papel === 'admin' && link('/config', 'Configurações', Settings)}
         </nav>
 
         <div className="mx-2 my-3 border-t border-lat-borda" />
 
-        <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
+        <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
-              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Áreas</h2>
             </div>
 
             <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Você ainda não faz parte de nenhum departamento.</p>}
-              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
+              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhuma área disponível.</p>}
+              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={false} podeArrastar={podeArrastar} />)}
             </nav>
 
-            {(papel === 'admin' || navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
-              <div className="mt-3 border-t border-lat-borda pt-2">
-                <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
-                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
-                </div>
-                <nav className="space-y-0.5">
-                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-legenda text-lat-3">Pastas e listas sem espaço aparecem aqui.</p>}
-                </nav>
-              </div>
-            )}
-            <ZonaRaiz visivel={arrastando} />
           </SortableContext>
         </DndContext>
       </div>

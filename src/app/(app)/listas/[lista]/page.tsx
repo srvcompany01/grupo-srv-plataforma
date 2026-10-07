@@ -71,7 +71,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
           <div className="min-w-0">
             <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">
               {lista.espaco.id ? (
-                <Link href={`/espacos/${lista.espaco.id}`} className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 hover:bg-white/80 hover:text-texto">
+                <Link href={lista.espaco.slug ? `/${lista.espaco.slug}` : '/inicio'} className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 hover:bg-white/80 hover:text-texto">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-white" style={{ background: lista.espaco.cor }}><IconeVisual icone={lista.espaco.icone} emoji={lista.espaco.emoji} className="h-3 w-3" /></span>
                   <span className="truncate">{lista.espaco.nome}</span>
                 </Link>

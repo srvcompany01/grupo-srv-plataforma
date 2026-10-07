@@ -16,7 +16,7 @@ describe('dados iniciais', () => {
     const { rows } = await db.query<{ name: string; pai: string | null }>(
       `select s.name, p.name as pai from spaces s left join spaces p on p.id = s.parent_id`,
     )
-    expect(nomes(rows)).toEqual(['Comercial', 'Conteúdo', 'Financeiro', 'Onboarding', 'Operacional', 'Tráfego'])
+    expect(nomes(rows)).toEqual(['Comercial', 'Conteúdo', 'Financeiro', 'Onboarding', 'Operacional', 'Social & Conteúdo', 'Tráfego', 'Tráfego & Performance'])
     for (const filho of ['Conteúdo', 'Tráfego', 'Onboarding']) {
       expect(rows.find((r) => r.name === filho)?.pai).toBe('Operacional')
     }
@@ -132,7 +132,8 @@ describe('spaces e space_members', () => {
     const db = await criarBanco()
     const m = await criarUsuario(db, { role: 'membro' })
     await adicionarMembro(db, await idEspaco(db, 'Conteúdo'), m, 'membro')
-    expect(nomes(await ler(db, m, `select name from spaces`))).toEqual(['Conteúdo', 'Operacional'])
+    // As áreas fixas (team_open) são visíveis a toda a equipe, além dos espaços de que a pessoa é membro.
+    expect(nomes(await ler(db, m, `select name from spaces`))).toEqual(['Conteúdo', 'Operacional', 'Social & Conteúdo', 'Tráfego & Performance'])
   })
 
   it('membro do espaço-pai vê os filhos', async () => {
@@ -143,14 +144,29 @@ describe('spaces e space_members', () => {
       'Conteúdo',
       'Onboarding',
       'Operacional',
+      'Social & Conteúdo',
       'Tráfego',
+      'Tráfego & Performance',
     ])
   })
 
   it('admin vê todos os espaços', async () => {
     const db = await criarBanco()
     const a = await criarUsuario(db, { role: 'admin' })
-    expect(await ler(db, a, `select id from spaces`)).toHaveLength(6)
+    expect(await ler(db, a, `select id from spaces`)).toHaveLength(8)
+  })
+
+  it('áreas fixas: equipe acessa sem ser membro, e só gestor (papel) gerencia', async () => {
+    const db = await criarBanco()
+    const m = await criarUsuario(db, { role: 'membro' })
+    const g = await criarUsuario(db, { role: 'gestor' })
+    const [{ id: area }] = await ler<{ id: string }>(db, m, `select id from spaces where slug = 'social-conteudo'`)
+    expect(await ler(db, m, `select is_space_member('${area}') as ok`)).toEqual([{ ok: true }])
+    expect(await ler(db, m, `select is_space_manager('${area}') as ok`)).toEqual([{ ok: false }])
+    expect(await ler(db, g, `select is_space_manager('${area}') as ok`)).toEqual([{ ok: true }])
+    // Espaço comum continua exigindo ser membro.
+    const comum = await idEspaco(db, 'Comercial')
+    expect(await ler(db, m, `select is_space_member('${comum}') as ok`)).toEqual([{ ok: false }])
   })
 
   it('só admin cria espaço', async () => {

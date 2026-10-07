@@ -693,6 +693,8 @@ export type Database = {
           name: string
           parent_id: string | null
           position: string
+          slug: string | null
+          team_open: boolean
         }
         Insert: {
           archived_at?: string | null
@@ -705,6 +707,8 @@ export type Database = {
           name: string
           parent_id?: string | null
           position: string
+          slug?: string | null
+          team_open?: boolean
         }
         Update: {
           archived_at?: string | null
@@ -717,6 +721,8 @@ export type Database = {
           name?: string
           parent_id?: string | null
           position?: string
+          slug?: string | null
+          team_open?: boolean
         }
         Relationships: [
           {
