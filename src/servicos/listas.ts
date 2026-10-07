@@ -5,9 +5,13 @@ import { dados } from './resultado'
 export type Lista = {
   id: string
   nome: string
+  cor: string
+  icone: string
+  emoji: string | null
   mes: string | null
   cliente: { id: string; nome: string }
-  espaco: { id: string | null; nome: string }
+  espaco: { id: string | null; nome: string; cor: string; icone: string; emoji: string | null }
+  pasta: { id: string; nome: string; cor: string; icone: string; emoji: string | null } | null
   status: (StatusLista & { posicao: string })[]
   /** Gestor do espaço (ou admin): cria/edita status, arquiva tarefas. */
   podeGerir: boolean
@@ -17,7 +21,7 @@ export type Lista = {
 export async function buscarLista(sb: Supabase, id: string): Promise<Lista | null> {
   const { data: l, error } = await sb
     .from('lists')
-    .select('id, name, reference_month, space_id, clients(id, name), spaces(id, name), list_statuses(id, name, color, category, position)')
+    .select('id, name, color, icon, emoji, reference_month, space_id, clients(id, name), spaces(id, name, color, icon, emoji), folders(id, name, color, icon, emoji), list_statuses(id, name, color, category, position)')
     .eq('id', id)
     .is('archived_at', null)
     .maybeSingle()
@@ -27,10 +31,22 @@ export async function buscarLista(sb: Supabase, id: string): Promise<Lista | nul
   return {
     id: l.id,
     nome: l.name,
+    cor: l.color,
+    icone: l.icon,
+    emoji: l.emoji,
     mes: l.reference_month,
     cliente: { id: l.clients?.id ?? '', nome: l.clients?.name ?? '' },
     // Responsável de fora do espaço lê a lista mas não o espaço.
-    espaco: { id: l.space_id, nome: l.spaces?.name ?? 'Itens soltos' },
+    espaco: {
+      id: l.space_id,
+      nome: l.spaces?.name ?? 'Itens soltos',
+      cor: l.spaces?.color ?? '#0d9488',
+      icone: l.spaces?.icon ?? 'layers-3',
+      emoji: l.spaces?.emoji ?? null,
+    },
+    pasta: l.folders
+      ? { id: l.folders.id, nome: l.folders.name, cor: l.folders.color, icone: l.folders.icon, emoji: l.folders.emoji }
+      : null,
     status: l.list_statuses
       .map((s) => ({ id: s.id, nome: s.name, cor: s.color, categoria: s.category as Categoria, posicao: s.position }))
       .sort((a, b) => (a.posicao < b.posicao ? -1 : 1)),

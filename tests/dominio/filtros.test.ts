@@ -19,12 +19,14 @@ describe('filtros', () => {
       prazo: null,
       clientes: [],
       mes: null,
+      busca: '',
       visao: 'lista',
+      agrupamento: 'status',
     })
   })
 
   it('ida e volta pela URL', () => {
-    const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', visao: 'kanban' })
+    const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', busca: 'roteiro', visao: 'calendario', grupo: 'mes' })
     const sp = Object.fromEntries(escreverFiltros(f))
     expect(lerFiltros(sp)).toEqual(f)
   })

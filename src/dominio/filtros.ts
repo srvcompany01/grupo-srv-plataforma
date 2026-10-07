@@ -2,6 +2,10 @@ import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
+export const VISOES = ['lista', 'kanban', 'calendario'] as const
+export type VisaoTarefas = (typeof VISOES)[number]
+export const AGRUPAMENTOS = ['status', 'prioridade', 'mes'] as const
+export type AgrupamentoTarefas = (typeof AGRUPAMENTOS)[number]
 
 export type Filtros = {
   responsaveis: string[]
@@ -12,7 +16,9 @@ export type Filtros = {
   clientes: string[]
   /** YYYY-MM-01 */
   mes: string | null
-  visao: 'lista' | 'kanban'
+  busca: string
+  visao: VisaoTarefas
+  agrupamento: AgrupamentoTarefas
 }
 
 type Params = Record<string, string | string[] | undefined>
@@ -35,7 +41,9 @@ export function lerFiltros(sp: Params): Filtros {
     prazo: de(PRAZOS, prazo) ? prazo : null,
     clientes: lista(sp, 'cliente'),
     mes: /^\d{4}-(0[1-9]|1[0-2])-01$/.test(mes) ? mes : null,
-    visao: valor(sp, 'visao') === 'kanban' ? 'kanban' : 'lista',
+    busca: valor(sp, 'busca').trim().slice(0, 120),
+    visao: de(VISOES, valor(sp, 'visao')) ? (valor(sp, 'visao') as VisaoTarefas) : 'lista',
+    agrupamento: de(AGRUPAMENTOS, valor(sp, 'grupo')) ? (valor(sp, 'grupo') as AgrupamentoTarefas) : 'status',
   }
 }
 
@@ -49,7 +57,9 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   por('cliente', f.clientes)
   if (f.prazo) sp.set('prazo', f.prazo)
   if (f.mes) sp.set('mes', f.mes)
+  if (f.busca) sp.set('busca', f.busca)
   if (f.visao !== 'lista') sp.set('visao', f.visao)
+  if (f.agrupamento !== 'status') sp.set('grupo', f.agrupamento)
   return sp
 }
 

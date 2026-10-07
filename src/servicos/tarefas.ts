@@ -34,6 +34,7 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtr
   if (filtros.prioridades.length) q = q.in('priority', filtros.prioridades)
   if (filtros.clientes.length) q = q.in('client_id', filtros.clientes)
   if (filtros.mes) q = q.eq('lists.reference_month', filtros.mes)
+  if (filtros.busca) q = q.ilike('title', `%${filtros.busca}%`)
 
   const prazo = prazoEm(filtros.prazo, hoje)
   if (prazo.semPrazo) q = q.is('due_date', null)
