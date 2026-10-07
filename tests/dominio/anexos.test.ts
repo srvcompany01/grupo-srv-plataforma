@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   EXTENSAO_ANEXO,
+  validarAnexosComentario,
   LIMITE_ARQUIVO,
   LIMITE_VIDEO,
   normalizarMime,
@@ -49,5 +50,19 @@ describe('gerarChaveTarefa', () => {
   it('mime desconhecido lança erro', async () => {
     const { gerarChaveTarefa } = await import('@/infra/r2')
     expect(() => gerarChaveTarefa('t1', 'application/x-msdownload')).toThrow()
+  })
+})
+
+describe('chaves do protótipo e anexos do comentário', () => {
+  it('recusa nomes do protótipo como tipo', () => {
+    expect(validarAnexo({ mime: 'constructor', tamanho: 10 })).toBe('Tipo de arquivo não permitido')
+    expect(validarAnexo({ mime: '__proto__', tamanho: 10 })).toBe('Tipo de arquivo não permitido')
+  })
+  it('validarAnexosComentario exige chave da própria tarefa e tipo válido', () => {
+    const t = '11111111-1111-1111-1111-111111111111'
+    const ok = { chave: `tarefas/${t}/22222222-2222-2222-2222-222222222222.png`, nome: 'a.png', mime: 'image/png', tamanho: 10 }
+    expect(validarAnexosComentario(t, [ok])).toBeNull()
+    expect(validarAnexosComentario(t, [{ ...ok, chave: `tarefas/outra/x.png` }])).toBe('Anexo inválido')
+    expect(validarAnexosComentario(t, [{ ...ok, mime: 'text/html' }])).toBe('Tipo de arquivo não permitido')
   })
 })

@@ -1,7 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { MAX_ANEXOS, normalizarMime, validarAnexo } from '@/dominio/anexos'
+import { normalizarMime, validarAnexo, validarAnexosComentario } from '@/dominio/anexos'
+import { extrairMencoes } from '@/dominio/mencoes'
 import type { Categoria } from '@/dominio/tarefas'
 import { gerarChaveTarefa, urlUpload } from '@/infra/r2'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -92,13 +93,16 @@ export async function comentarAcao(
   anexos: comentarios.NovoAnexo[],
 ): Promise<Resultado> {
   if (!texto.trim() && !anexos.length) return { erro: 'Escreva o comentário ou anexe um arquivo.' }
-  if (anexos.length > MAX_ANEXOS) return { erro: `Máximo de ${MAX_ANEXOS} anexos por comentário.` }
+  const anexoInvalido = validarAnexosComentario(tarefaId, anexos)
+  if (anexoInvalido) return { erro: anexoInvalido }
+  // Menções saem do próprio texto: ninguém é avisado sem aparecer no comentário.
+  const mencoesDoTexto = extrairMencoes(texto).filter((id) => mencoes.includes(id))
   return executar((sb) =>
     comentarios.criarComentario(sb, {
       tarefaId,
       texto: texto.trim(),
       interno,
-      mencoes,
+      mencoes: mencoesDoTexto,
       anexos: anexos.map((a) => ({ ...a, mime: normalizarMime(a.mime) })),
     }),
   )

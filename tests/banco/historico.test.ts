@@ -155,3 +155,16 @@ describe('histórico de campos personalizados', () => {
     expect((await deCampos(db, t))[1]).toEqual({ action: 'field_set', field: campo, old_value: 'Desejo', new_value: null, actor_id: ana })
   })
 })
+
+describe('apagar campo personalizado', () => {
+  it('não grava histórico em todas as tarefas', async () => {
+    const db = await criarBanco()
+    const s = await base(db)
+    const { rows } = await db.query<{ id: string }>(
+      `insert into custom_fields (space_id, name, type, position) values ($1, 'X', 'text', 'a0') returning id`, [s.conteudo])
+    await db.query(`insert into list_custom_fields (list_id, field_id, position) values ($1, $2, 'a0')`, [s.lista, rows[0].id])
+    await db.query(`insert into task_custom_field_values (task_id, field_id, value) values ($1, $2, '"a"')`, [s.t, rows[0].id])
+    await db.query(`delete from custom_fields where id = $1`, [rows[0].id])
+    expect((await historico(db, s.t)).filter((l) => l.action === 'field_set')).toHaveLength(1)
+  })
+})

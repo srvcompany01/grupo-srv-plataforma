@@ -35,7 +35,8 @@ export function gerarChave(postId: string, tipoMime: string): string {
 
 /** Anexos de comentário: `tarefas/<id>/<uuid>.<ext>`; a extensão vem do mime já validado. */
 export function gerarChaveTarefa(tarefaId: string, mime: string): string {
-  const ext = EXTENSAO_ANEXO[normalizarMime(mime)]
+  const m = normalizarMime(mime)
+  const ext = Object.hasOwn(EXTENSAO_ANEXO, m) ? EXTENSAO_ANEXO[m] : undefined
   if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
   return `tarefas/${tarefaId}/${crypto.randomUUID()}.${ext}`
 }

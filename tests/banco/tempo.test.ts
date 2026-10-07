@@ -165,3 +165,19 @@ describe('cronômetro', () => {
     await expect(chamar(db, estranho, `select lancar_tempo($1, '2026-10-07', 10)`, [t1])).rejects.toThrow()
   })
 })
+
+describe('cronômetro após perder acesso', () => {
+  it('quem perde acesso à tarefa ainda para o cronômetro e inicia outro', async () => {
+    const db = await criarBanco()
+    const { a, ana, bruno, t2 } = await base(db)
+    const comercial = await idEspaco(db, 'Comercial')
+    const listaCom = await criarLista(db, { spaceId: comercial, clientId: a })
+    const tc = await criarTarefa(db, { listId: listaCom, responsaveis: [ana, bruno] })
+    await chamar(db, ana, `select iniciar_cronometro($1)`, [tc])
+    await db.query(`delete from task_assignees where task_id = $1 and user_id = $2`, [tc, ana])
+    expect(await chamar(db, ana, `select parar_cronometro() is not null as parou`)).toEqual([{ parou: true }])
+    await chamar(db, ana, `select iniciar_cronometro($1)`, [tc]).catch(() => null)
+    await chamar(db, ana, `select iniciar_cronometro($1)`, [t2])
+    expect(await ler(db, ana, `select task_id from time_entries where ended_at is null`)).toEqual([{ task_id: t2 }])
+  })
+})

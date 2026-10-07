@@ -45,8 +45,24 @@ export function tipoDoAnexo(mime: string): TipoAnexo {
 
 export function validarAnexo(a: { mime: string; tamanho: number }): string | null {
   const mime = normalizarMime(a.mime)
-  if (!(mime in EXTENSAO_ANEXO)) return 'Tipo de arquivo não permitido'
+  if (!Object.hasOwn(EXTENSAO_ANEXO, mime)) return 'Tipo de arquivo não permitido'
   if (a.tamanho <= 0) return 'Arquivo vazio'
   if (tipoDoAnexo(mime) === 'video') return a.tamanho > LIMITE_VIDEO ? 'Vídeo maior que 500 MB' : null
   return a.tamanho > LIMITE_ARQUIVO ? 'Arquivo maior que 100 MB' : null
+}
+
+/** Revalida no servidor o que o navegador mandou: tipo, tamanho e chave da própria tarefa. */
+export function validarAnexosComentario(
+  tarefaId: string,
+  anexos: { chave: string; mime: string; tamanho: number }[],
+): string | null {
+  if (anexos.length > MAX_ANEXOS) return `Máximo de ${MAX_ANEXOS} anexos por comentário`
+  const prefixo = `tarefas/${tarefaId}/`
+  for (const a of anexos) {
+    const resto = a.chave.startsWith(prefixo) ? a.chave.slice(prefixo.length) : ''
+    if (!/^[0-9a-f-]{36}\.[a-z0-9]+$/.test(resto)) return 'Anexo inválido'
+    const erro = validarAnexo(a)
+    if (erro) return erro
+  }
+  return null
 }

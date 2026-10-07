@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronsRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/componentes/ui/dialog'
 
@@ -14,6 +15,15 @@ export function JanelaTarefa({ children }: { children: React.ReactNode }) {
       >
         <DialogTitle className="sr-only">Tarefa</DialogTitle>
         <DialogDescription className="sr-only">Detalhes e atividade da tarefa</DialogDescription>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Fechar tarefa"
+          title="Fechar (Esc)"
+          className="absolute top-3 right-3 z-10 rounded-md p-1.5 text-texto-3 hover:bg-hover hover:text-texto"
+        >
+          <ChevronsRight className="size-4" />
+        </button>
         {children}
       </DialogContent>
     </Dialog>
