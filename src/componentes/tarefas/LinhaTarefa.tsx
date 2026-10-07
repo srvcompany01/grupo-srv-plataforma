@@ -21,6 +21,8 @@ export type Contexto = {
   mostrarLista: boolean
   camposPersonalizados?: DefinicaoCampo[]
   largurasColunas?: Record<string, number>
+  selecionadas?: ReadonlySet<string>
+  alternarSelecao?: (id: string, selecionada: boolean) => void
 }
 
 export const COLUNAS_BASE = [
@@ -52,10 +54,18 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   const [criandoSubtarefa, setCriandoSubtarefa] = useState(false)
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   const campos = ctx.camposPersonalizados ?? []
+  const selecionada = ctx.selecionadas?.has(tarefa.id) ?? false
   return (
     <>
-      <div className="group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors hover:bg-hover/80" style={{ gridTemplateColumns: gradeDaLista(campos, ctx.largurasColunas) }}>
+      <div className={`group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors ${selecionada ? 'bg-sky-50/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(campos, ctx.largurasColunas) }}>
         <div className="flex min-w-0 items-center gap-2 px-3" style={{ paddingLeft: 12 + nivel * 20 }}>
+          <input
+            type="checkbox"
+            checked={selecionada}
+            onChange={(evento) => ctx.alternarSelecao?.(tarefa.id, evento.target.checked)}
+            aria-label={`Selecionar ${tarefa.titulo}`}
+            className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-sky-600"
+          />
           <button
             aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
             onClick={() => setAberta(!aberta)}

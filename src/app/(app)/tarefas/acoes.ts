@@ -56,6 +56,12 @@ export async function arquivarTarefaAcao(id: string): Promise<Resultado> {
   return executar((sb) => tarefas.arquivarTarefa(sb, id), 'Tarefa arquivada.')
 }
 
+export async function arquivarTarefasAcao(ids: string[]): Promise<Resultado> {
+  const unicos = [...new Set(ids)].slice(0, 200)
+  if (!unicos.length) return { erro: 'Selecione ao menos uma tarefa.' }
+  return executar((sb) => tarefas.arquivarTarefas(sb, unicos), `${unicos.length} ${unicos.length === 1 ? 'tarefa excluída' : 'tarefas excluídas'}.`)
+}
+
 export async function criarStatusAcao(listaId: string, nome: string, cor: string, categoria: Categoria): Promise<Resultado> {
   if (!nome.trim()) return { erro: 'Informe o nome do status.' }
   return executar((sb) => status.criarStatus(sb, listaId, nome.trim(), cor, categoria), 'Status criado.')

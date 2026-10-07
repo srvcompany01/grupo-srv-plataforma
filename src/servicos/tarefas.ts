@@ -154,6 +154,17 @@ export async function arquivarTarefa(sb: Supabase, id: string) {
   if (!count) throw { code: '42501' }
 }
 
+/** Arquiva várias tarefas-raiz; o gatilho do banco inclui todas as subtarefas. */
+export async function arquivarTarefas(sb: Supabase, ids: string[]) {
+  const { error, count } = await sb
+    .from('tasks')
+    .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
+    .in('id', ids)
+    .is('archived_at', null)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+}
+
 export type TarefaCompleta = {
   id: string
   titulo: string
