@@ -115,7 +115,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
         <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
       </div>
       <main className="p-4 md:p-5">
-        {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={filtros.agrupamento === 'status' ? id : undefined} euId={eu.id} />}
+        {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={filtros.agrupamento === 'status' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} />}
         {filtros.visao === 'kanban' && (
           <VisaoKanban

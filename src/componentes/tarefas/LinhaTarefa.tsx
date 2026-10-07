@@ -19,10 +19,25 @@ export type Contexto = {
   statusPorLista: Record<string, StatusLista[]>
   mostrarLista: boolean
   camposPersonalizados?: DefinicaoCampo[]
+  largurasColunas?: Record<string, number>
 }
 
-export function gradeDaLista(quantidadeCampos: number) {
-  return `minmax(300px, 1fr) 96px 72px 38px${quantidadeCampos ? ` repeat(${quantidadeCampos}, minmax(160px, 190px))` : ''}`
+export const COLUNAS_BASE = [
+  { id: 'nome', largura: 360, minima: 220, maxima: 800 },
+  { id: 'responsavel', largura: 110, minima: 80, maxima: 320 },
+  { id: 'prazo', largura: 78, minima: 62, maxima: 240 },
+  { id: 'prioridade', largura: 44, minima: 36, maxima: 120 },
+] as const
+
+export function larguraDaColuna(id: string, larguras: Record<string, number> = {}) {
+  const base = COLUNAS_BASE.find((coluna) => coluna.id === id)
+  return larguras[id] ?? base?.largura ?? 180
+}
+
+export function gradeDaLista(campos: DefinicaoCampo[], larguras: Record<string, number> = {}) {
+  const fixas = COLUNAS_BASE.map((coluna) => `${larguraDaColuna(coluna.id, larguras)}px`)
+  const personalizadas = campos.map((campo) => `${larguraDaColuna(`campo:${campo.id}`, larguras)}px`)
+  return [...fixas, ...personalizadas].join(' ')
 }
 
 export function Prazo({ prazo, concluida, hoje }: { prazo: string | null; concluida: boolean; hoje: string }) {
@@ -37,7 +52,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx }: { tarefa: No<TarefaResumo>; 
   const campos = ctx.camposPersonalizados ?? []
   return (
     <>
-      <div className="group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors hover:bg-hover/80" style={{ gridTemplateColumns: gradeDaLista(campos.length) }}>
+      <div className="group grid min-h-10 items-center border-t border-borda text-[13px] transition-colors hover:bg-hover/80" style={{ gridTemplateColumns: gradeDaLista(campos, ctx.largurasColunas) }}>
         <div className="flex min-w-0 items-center gap-2 px-3" style={{ paddingLeft: 12 + nivel * 20 }}>
           <button
             aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
