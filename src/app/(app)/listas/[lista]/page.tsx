@@ -29,7 +29,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
     listarEquipe(sb),
     listarTags(sb, lista.espaco.id),
     listarCamposDaLista(sb, id),
-    listarCamposDoEspaco(sb, lista.espaco.id),
+    lista.espaco.id ? listarCamposDoEspaco(sb, lista.espaco.id) : Promise.resolve([]),
   ])
   const arvore = montarArvore(tarefas)
   const ctx = { equipe, hoje, statusPorLista: { [id]: lista.status }, mostrarLista: false }
@@ -45,7 +45,7 @@ export default async function PaginaLista({ params, searchParams }: PageProps<'/
             {lista.mes && ` · ${rotuloMes(lista.mes)}`}
           </p>
         </div>
-        {lista.podeGerir && <div className="flex flex-wrap items-center gap-2"><GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} /><EditorStatus listaId={id} status={lista.status} /></div>}
+        {lista.podeGerir && <div className="flex flex-wrap items-center gap-2">{lista.espaco.id && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}<EditorStatus listaId={id} status={lista.status} /></div>}
       </header>
       <AlternadorVisao caminho={`/listas/${id}`} filtros={filtros} />
       <BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} />

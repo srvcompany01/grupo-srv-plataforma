@@ -30,13 +30,15 @@ export async function buscarEstrutura(sb: Supabase, espacoId: string): Promise<E
   }
 }
 
-async function ultimaPosicao(sb: Supabase, tabela: 'folders' | 'lists', espacoId: string) {
-  const r = await sb.from(tabela).select('position').eq('space_id', espacoId).order('position', { ascending: false }).limit(1)
+async function ultimaPosicao(sb: Supabase, tabela: 'folders' | 'lists', espacoId: string | null) {
+  let consulta = sb.from(tabela).select('position').order('position', { ascending: false }).limit(1)
+  consulta = espacoId ? consulta.eq('space_id', espacoId) : consulta.is('space_id', null)
+  const r = await consulta
   if (r.error) throw r.error
   return posicaoEntre(r.data[0]?.position ?? null, null)
 }
 
-export async function criarPasta(sb: Supabase, espacoId: string, nome: string, visual?: { cor?: string; icone?: string; emoji?: string | null }) {
+export async function criarPasta(sb: Supabase, espacoId: string | null, nome: string, visual?: { cor?: string; icone?: string; emoji?: string | null }) {
   const { error } = await sb.from('folders').insert({
     space_id: espacoId,
     name: nome,
@@ -50,7 +52,7 @@ export async function criarPasta(sb: Supabase, espacoId: string, nome: string, v
 
 export async function criarLista(
   sb: Supabase,
-  d: { espacoId: string; pastaId: string | null; clienteId: string; nome: string; mes: string | null; cor?: string; icone?: string; emoji?: string | null },
+  d: { espacoId: string | null; pastaId: string | null; clienteId: string; nome: string; mes: string | null; cor?: string; icone?: string; emoji?: string | null },
 ): Promise<string> {
   const { data, error } = await sb
     .from('lists')

@@ -191,7 +191,7 @@ export type Database = {
           icon: string
           name: string
           position: string
-          space_id: string
+          space_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -202,7 +202,7 @@ export type Database = {
           icon?: string
           name: string
           position: string
-          space_id: string
+          space_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -213,7 +213,7 @@ export type Database = {
           icon?: string
           name?: string
           position?: string
-          space_id?: string
+          space_id?: string | null
         }
         Relationships: [
           {
@@ -315,7 +315,7 @@ export type Database = {
           name: string
           position: string
           reference_month: string | null
-          space_id: string
+          space_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -329,7 +329,7 @@ export type Database = {
           name: string
           position: string
           reference_month?: string | null
-          space_id: string
+          space_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -343,7 +343,7 @@ export type Database = {
           name?: string
           position?: string
           reference_month?: string | null
-          space_id?: string
+          space_id?: string | null
         }
         Relationships: [
           {
@@ -780,7 +780,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
+      can_manage_list: { Args: { list: string }; Returns: boolean }
+      can_manage_space_target: { Args: { space: string | null }; Returns: boolean }
       can_read_list: { Args: { list: string }; Returns: boolean }
       can_read_task: { Args: { task: string }; Returns: boolean }
       can_see_space: { Args: { space: string }; Returns: boolean }
@@ -804,7 +807,7 @@ export type Database = {
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
-      list_space: { Args: { list: string }; Returns: string }
+      list_space: { Args: { list: string }; Returns: string | null }
       mover_tarefa: {
         Args: { p_position: string; p_status: string; p_task: string }
         Returns: undefined

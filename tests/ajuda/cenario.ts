@@ -58,7 +58,7 @@ export function idInterno(db: Banco): Promise<string> {
   return inserir(db, `select id from public.clients where is_internal`, [])
 }
 
-export function criarPasta(db: Banco, spaceId: string, nome = 'Pasta'): Promise<string> {
+export function criarPasta(db: Banco, spaceId: string | null, nome = 'Pasta'): Promise<string> {
   return inserir(db, `insert into public.folders (space_id, name, position) values ($1, $2, 'a0') returning id`, [
     spaceId,
     nome,
@@ -67,7 +67,7 @@ export function criarPasta(db: Banco, spaceId: string, nome = 'Pasta'): Promise<
 
 export function criarLista(
   db: Banco,
-  opts: { spaceId: string; clientId: string; folderId?: string; nome?: string; mes?: string },
+  opts: { spaceId: string | null; clientId: string; folderId?: string; nome?: string; mes?: string },
 ): Promise<string> {
   return inserir(
     db,

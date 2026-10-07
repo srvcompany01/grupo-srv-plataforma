@@ -164,7 +164,7 @@ export type TarefaCompleta = {
   visivelCliente: boolean
   concluidaEm: string | null
   paiId: string | null
-  lista: { id: string; nome: string; espacoId: string; mes: string | null; clienteId: string; clienteNome: string }
+  lista: { id: string; nome: string; espacoId: string | null; mes: string | null; clienteId: string; clienteNome: string }
   responsaveis: { id: string; nome: string; avatar: string | null }[]
   tags: { id: string; nome: string; cor: string }[]
   subtarefas: TarefaResumo[]
@@ -201,7 +201,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     lista: {
       id: t.lists?.id ?? '',
       nome: t.lists?.name ?? '',
-      espacoId: t.lists?.space_id ?? '',
+      espacoId: t.lists?.space_id ?? null,
       mes: t.lists?.reference_month ?? null,
       clienteId: t.lists?.client_id ?? '',
       clienteNome: t.lists?.clients?.name ?? '',

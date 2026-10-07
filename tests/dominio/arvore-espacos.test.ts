@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { montarArvoreEspacos } from '@/dominio/arvore-espacos'
+import { montarArvoreEspacos, montarNavegacao } from '@/dominio/arvore-espacos'
 
 const esp = (id: string, posicao: string, paiId: string | null = null) => ({ id, nome: id, descricao: null, cor: '#000000', icone: 'layers-3', emoji: null, posicao, paiId })
-const pasta = (id: string, espacoId: string, posicao: string) => ({ id, nome: id, espacoId, cor: '#646464', icone: 'folder', emoji: null, posicao })
-const lista = (id: string, espacoId: string, posicao: string, pastaId: string | null = null, mes: string | null = null) => ({
+const pasta = (id: string, espacoId: string | null, posicao: string) => ({ id, nome: id, espacoId, cor: '#646464', icone: 'folder', emoji: null, posicao })
+const lista = (id: string, espacoId: string | null, posicao: string, pastaId: string | null = null, mes: string | null = null) => ({
   id,
   nome: id,
   espacoId,
@@ -40,5 +40,17 @@ describe('montarArvoreEspacos', () => {
   it('lista em pasta que não veio aparece solta no espaço', () => {
     const [e] = montarArvoreEspacos([esp('E', 'a0')], [], [lista('L', 'E', 'a0', 'pasta-invisivel')])
     expect(e.listas.map((l) => l.id)).toEqual(['L'])
+  })
+
+  it('organiza pastas e listas que não pertencem a um espaço', () => {
+    const navegacao = montarNavegacao(
+      [esp('E', 'a0')],
+      [pasta('Raiz 2', null, 'a2'), pasta('Raiz 1', null, 'a1')],
+      [lista('Na pasta', null, 'a0', 'Raiz 1'), lista('Solta 2', null, 'a2'), lista('Solta 1', null, 'a1')],
+    )
+
+    expect(navegacao.pastasRaiz.map((p) => p.id)).toEqual(['Raiz 1', 'Raiz 2'])
+    expect(navegacao.pastasRaiz[0].listas.map((l) => l.id)).toEqual(['Na pasta'])
+    expect(navegacao.listasRaiz.map((l) => l.id)).toEqual(['Solta 1', 'Solta 2'])
   })
 })

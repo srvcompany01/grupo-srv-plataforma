@@ -12,8 +12,8 @@ const ROTULO_PAPEL = { admin: 'Admin', gestor: 'Gestor', membro: 'Membro', clien
 export default async function Usuarios() {
   const eu = await exigirAdmin()
   const sb = await criarClienteServidor()
-  const [usuarios, clientes, arvore] = await Promise.all([listarUsuarios(sb), listarClientes(sb), listarArvore(sb)])
-  const espacos = arvore.flatMap((e) => [{ id: e.id, nome: e.nome }, ...e.filhos.map((f) => ({ id: f.id, nome: `${e.nome} › ${f.nome}` }))])
+  const [usuarios, clientes, navegacao] = await Promise.all([listarUsuarios(sb), listarClientes(sb), listarArvore(sb)])
+  const espacos = navegacao.espacos.flatMap((e) => [{ id: e.id, nome: e.nome }, ...e.filhos.map((f) => ({ id: f.id, nome: `${e.nome} › ${f.nome}` }))])
 
   return (
     <div className="space-y-6">

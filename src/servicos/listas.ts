@@ -7,7 +7,7 @@ export type Lista = {
   nome: string
   mes: string | null
   cliente: { id: string; nome: string }
-  espaco: { id: string; nome: string }
+  espaco: { id: string | null; nome: string }
   status: (StatusLista & { posicao: string })[]
   /** Gestor do espaço (ou admin): cria/edita status, arquiva tarefas. */
   podeGerir: boolean
@@ -23,14 +23,14 @@ export async function buscarLista(sb: Supabase, id: string): Promise<Lista | nul
     .maybeSingle()
   if (error) throw error
   if (!l) return null
-  const { data: podeGerir } = await sb.rpc('is_space_manager', { space: l.space_id })
+  const { data: podeGerir } = await sb.rpc('can_manage_space_target', { space: l.space_id })
   return {
     id: l.id,
     nome: l.name,
     mes: l.reference_month,
     cliente: { id: l.clients?.id ?? '', nome: l.clients?.name ?? '' },
     // Responsável de fora do espaço lê a lista mas não o espaço.
-    espaco: { id: l.space_id, nome: l.spaces?.name ?? '' },
+    espaco: { id: l.space_id, nome: l.spaces?.name ?? 'Itens soltos' },
     status: l.list_statuses
       .map((s) => ({ id: s.id, nome: s.name, cor: s.color, categoria: s.category as Categoria, posicao: s.position }))
       .sort((a, b) => (a.posicao < b.posicao ? -1 : 1)),
@@ -54,7 +54,8 @@ export async function listarListasVisiveis(sb: Supabase) {
 }
 
 /** Etiquetas disponíveis num espaço (as do próprio espaço e as do espaço-pai). */
-export async function listarTags(sb: Supabase, espacoId: string) {
+export async function listarTags(sb: Supabase, espacoId: string | null) {
+  if (!espacoId) return []
   const { data: e } = await sb.from('spaces').select('parent_id').eq('id', espacoId).maybeSingle()
   const ids = [espacoId, e?.parent_id].filter((x): x is string => !!x)
   const linhas = dados(await sb.from('tags').select('id, name, color').in('space_id', ids).order('name'))

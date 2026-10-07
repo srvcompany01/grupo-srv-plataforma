@@ -58,6 +58,7 @@ function Campo({ titulo, children }: { titulo: string; children: React.ReactNode
 
 export function DetalheTarefa(p: PropsDetalhe) {
   const t = p.tarefa
+  const espacoId = t.lista.espacoId
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
   const [titulo, setTitulo] = useState(t.titulo)
@@ -168,12 +169,12 @@ export function DetalheTarefa(p: PropsDetalhe) {
                     </button>
                   )
                 })}
-                {p.podeGerir && (
+                {p.podeGerir && espacoId && (
                   <form
                     onSubmit={(e) => {
                       e.preventDefault()
                       iniciar(async () => {
-                        if (avisar(await criarEtiquetaAcao(t.id, t.lista.espacoId, novaTag, '#7b68ee'))) setNovaTag('')
+                        if (avisar(await criarEtiquetaAcao(t.id, espacoId, novaTag, '#7b68ee'))) setNovaTag('')
                       })
                     }}
                     className="border-t border-borda pt-1"

@@ -1,15 +1,15 @@
-import { montarArvoreEspacos, type NoEspaco } from '@/dominio/arvore-espacos'
+import { montarNavegacao, type Navegacao } from '@/dominio/arvore-espacos'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
 /** Árvore da barra lateral. A RLS já filtra o que o usuário pode ver. */
-export async function listarArvore(sb: Supabase): Promise<NoEspaco[]> {
+export async function listarArvore(sb: Supabase): Promise<Navegacao> {
   const [espacos, pastas, listas] = await Promise.all([
     sb.from('spaces').select('id, name, description, color, icon, emoji, position, parent_id').is('archived_at', null),
     sb.from('folders').select('id, name, color, icon, emoji, space_id, position').is('archived_at', null),
     sb.from('lists').select('id, name, color, icon, emoji, space_id, folder_id, position, reference_month, clients(name)').is('archived_at', null),
   ])
-  return montarArvoreEspacos(
+  return montarNavegacao(
     dados(espacos).map((e) => ({ id: e.id, nome: e.name, descricao: e.description, cor: e.color, icone: e.icon, emoji: e.emoji, posicao: e.position, paiId: e.parent_id })),
     dados(pastas).map((p) => ({ id: p.id, nome: p.name, cor: p.color, icone: p.icon, emoji: p.emoji, espacoId: p.space_id, posicao: p.position })),
     dados(listas).map((l) => ({

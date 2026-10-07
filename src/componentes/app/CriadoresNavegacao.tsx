@@ -126,7 +126,7 @@ export function CriarEstruturaDialog({
   modoInicial = 'pasta',
   trigger,
 }: {
-  espaco: Opcao
+  espaco: Opcao | null
   pastas: Opcao[]
   clientes: Opcao[]
   pastaInicial?: string | null
@@ -158,9 +158,9 @@ export function CriarEstruturaDialog({
   return (
     <>
       <Popover open={menuAberto} onOpenChange={setMenuAberto}>
-        <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco.nome}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
+        <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
         <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-2xl border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
-          <div className="px-4 pb-2 pt-4"><p className="text-[12px] font-medium text-[#77787d]">Criar em {espaco.nome}</p></div>
+          <div className="px-4 pb-2 pt-4"><p className="text-[12px] font-medium text-[#77787d]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
           <div className="px-2 pb-2">
             <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="#5f6368" onClick={() => abrirCriador('lista')} />
             <OpcaoCriacao icone={FolderPlus} nome="Pasta" descricao="Agrupe listas, documentos e muito mais" cor="#5f6368" onClick={() => abrirCriador('pasta')} />
@@ -179,7 +179,7 @@ export function CriarEstruturaDialog({
       </Popover>
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader><DialogTitle>Adicionar em {espaco.nome}</DialogTitle><DialogDescription>Crie a estrutura sem sair da navegação lateral.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Adicionar em {espaco?.nome ?? 'Itens soltos'}</DialogTitle><DialogDescription>Crie a estrutura sem sair da navegação lateral.</DialogDescription></DialogHeader>
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-fundo p-1">
           <button type="button" onClick={() => trocarModo('pasta')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'pasta' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><FolderPlus className="h-4 w-4" /> Pasta</button>
           <button type="button" onClick={() => trocarModo('lista')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'lista' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><ListPlus className="h-4 w-4" /> Lista</button>
@@ -189,8 +189,8 @@ export function CriarEstruturaDialog({
             e.preventDefault()
             iniciar(async () => {
               const resultado = modo === 'pasta'
-                ? await criarPastaNavegacao({ espacoId: espaco.id, nome, visual })
-                : await criarListaNavegacao({ espacoId: espaco.id, pastaId: pastaId || null, clienteId, nome, mes, visual })
+                ? await criarPastaNavegacao({ espacoId: espaco?.id ?? null, nome, visual })
+                : await criarListaNavegacao({ espacoId: espaco?.id ?? null, pastaId: pastaId || null, clienteId, nome, mes, visual })
               if (!avisar(resultado)) return
               setAberto(false)
               setNome('')
