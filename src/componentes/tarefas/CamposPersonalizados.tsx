@@ -93,19 +93,17 @@ export function CelulaCampoPersonalizado({ tarefaId, definicao, equipe }: { tare
   return <CampoEditavel tarefaId={tarefaId} definicao={definicao} equipe={equipe} compacto />
 }
 
+/** Recebe a lista já filtrada (a SecaoCampos decide quais mostrar). */
 export function CamposPersonalizados({ tarefaId, campos, equipe }: { tarefaId: string; campos: DefinicaoCampo[]; equipe: Pessoa[] }) {
   if (campos.length === 0) return null
   return (
-    <section className="space-y-2">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-3">Campos personalizados</h2>
-      <div className="divide-y divide-borda rounded-xl border border-borda bg-white">
-        {campos.map((item) => (
-          <div key={item.id} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[150px_1fr] sm:items-center">
-            <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-4 w-4" /></span><span className="truncate">{item.nome}</span></div>
-            <CampoEditavel tarefaId={tarefaId} definicao={item} equipe={equipe} />
-          </div>
-        ))}
-      </div>
-    </section>
+    <div className="divide-y divide-borda rounded-xl border border-borda bg-white">
+      {campos.map((item) => (
+        <div key={item.id} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[150px_1fr] sm:items-center">
+          <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-4 w-4" /></span><span className="truncate">{item.nome}</span></div>
+          <CampoEditavel tarefaId={tarefaId} definicao={item} equipe={equipe} />
+        </div>
+      ))}
+    </div>
   )
 }

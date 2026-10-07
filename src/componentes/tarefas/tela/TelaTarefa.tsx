@@ -2,21 +2,42 @@
 
 import { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/tabs'
+import type { DefinicaoCampo } from '@/dominio/personalizacao'
+import type { Pessoa, StatusLista } from '@/dominio/tarefas'
+import { rotulo } from '@/lib/ui'
+import type { Comentario } from '@/servicos/comentarios'
+import type { ItemAtividade, TarefaCompleta } from '@/servicos/tarefas'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
-import { DetalheTarefa, type PropsDetalhe } from '../DetalheTarefa'
+import { EditorDescricao } from '../EditorDescricao'
+import { CabecalhoTarefa } from './CabecalhoTarefa'
+import { GradePropriedades } from './GradePropriedades'
+import { SecaoCampos } from './SecaoCampos'
+import { SecaoSubtarefas } from './SecaoSubtarefas'
 
-export type PropsTela = Omit<PropsDetalhe, 'noPainel'> & {
+export type Opcao = { id: string; nome: string; cor: string }
+export type ListaOpcao = { id: string; nome: string; mes: string | null; clienteId: string; clienteNome: string; espacoNome: string }
+
+export type PropsTela = {
+  tarefa: TarefaCompleta
+  status: StatusLista[]
+  equipe: Pessoa[]
+  tags: Opcao[]
+  listas: ListaOpcao[]
+  comentarios: Comentario[]
+  atividade: ItemAtividade[]
+  camposPersonalizados: DefinicaoCampo[]
+  euId: string
+  podeGerir: boolean
+  hoje: string
   tempo: RegistroTempo[]
   cronometro: CronometroAtivo | null
   pessoas: { id: string; nome: string; avatar: string | null }[]
   emJanela: boolean
 }
 
-/** Esqueleto da tela: coluna principal rolável + coluna Atividade (400px; aba abaixo de lg). */
-export function TelaTarefa({ tempo, cronometro, pessoas, emJanela, ...detalhe }: PropsTela) {
-  void tempo
-  void cronometro
-  void pessoas
+/** Tela da tarefa: coluna principal rolável + coluna Atividade (400px; aba abaixo de lg). */
+export function TelaTarefa(p: PropsTela) {
+  const t = p.tarefa
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-white">
@@ -27,8 +48,15 @@ export function TelaTarefa({ tempo, cronometro, pessoas, emJanela, ...detalhe }:
         </TabsList>
       </Tabs>
       <div className="grid min-h-0 flex-1 lg:grid-cols-[1fr_400px]">
-        <div className={`min-h-0 overflow-y-auto p-5 md:px-8 ${aba === 'detalhes' ? '' : 'hidden lg:block'}`}>
-          <DetalheTarefa {...detalhe} noPainel={emJanela} />
+        <div className={`min-h-0 space-y-6 overflow-y-auto p-5 md:px-8 ${aba === 'detalhes' ? '' : 'hidden lg:block'}`}>
+          <CabecalhoTarefa tarefa={t} listas={p.listas} podeGerir={p.podeGerir} emJanela={p.emJanela} />
+          <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} podeGerir={p.podeGerir} hoje={p.hoje} />
+          <div className="space-y-1">
+            <span className={rotulo}>Descrição</span>
+            <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />
+          </div>
+          <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
+          <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
         <aside className={`min-h-0 flex-col overflow-y-auto border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden lg:flex'}`}>
           <h2 className="border-b border-borda px-4 py-3 text-[14px] font-semibold">Atividade</h2>

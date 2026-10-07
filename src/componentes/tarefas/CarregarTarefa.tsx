@@ -30,6 +30,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
   ])
   return (
     <TelaTarefa
+      key={tarefa.id}
       tarefa={tarefa}
       status={lista?.status ?? []}
       equipe={equipe}
