@@ -1,9 +1,10 @@
 'use client'
 
-import { ChevronRight, Flag, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
 import { IconeVisual } from '@/componentes/IconeVisual'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { No, TarefaResumo } from '@/dominio/tarefas'
 import { avisar } from './avisar'
@@ -13,6 +14,7 @@ import { NovaTarefa } from './NovaTarefa'
 export type Grupo = { id: string; nome: string; cor: string; tarefas: No<TarefaResumo>[]; statusId?: string }
 
 type LimiteColuna = { minima: number; maxima: number; largura: number }
+type ConfigCampos = { ocultas: string[]; ordem: string[] }
 type Arraste = { id: string; inicioX: number; larguraInicial: number; minima: number; maxima: number; pointerId: number }
 
 const limitar = (valor: number, minima: number, maxima: number) => Math.min(maxima, Math.max(minima, Math.round(valor)))
@@ -67,8 +69,16 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const [larguras, setLarguras] = useState<Record<string, number>>({})
   const largurasRef = useRef(larguras)
   const arrasteRef = useRef<Arraste | null>(null)
-  const campos = ctx.camposPersonalizados ?? []
+  const [config, setConfig] = useState<ConfigCampos>({ ocultas: [], ordem: [] })
+  const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
+  const chaveCampos = chaveLarguras ? `srv:list-fields:v1:${chaveLarguras}` : null
+  // A visibilidade na lista é independente da tarefa: ocultar aqui não remove o campo da tarefa.
+  const camposVisiveis = useMemo(() => {
+    const posicao = (id: string) => { const i = config.ordem.indexOf(id); return i < 0 ? config.ordem.length : i }
+    return campos.filter((campo) => !config.ocultas.includes(campo.id)).sort((a, b) => posicao(a.id) - posicao(b.id))
+  }, [campos, config])
+  const camposOcultos = campos.filter((campo) => config.ocultas.includes(campo.id))
   const tarefas = useMemo(() => grupos.flatMap((grupo) => tarefasEmProfundidade(grupo.tarefas)), [grupos])
   const idsTarefas = useMemo(() => tarefas.map((tarefa) => tarefa.id), [tarefas])
   const todasSelecionadas = idsTarefas.length > 0 && idsTarefas.every((id) => selecionadas.has(id))
@@ -88,6 +98,32 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     }
     return () => cancelAnimationFrame(quadro)
   }, [chaveStorage])
+
+  useEffect(() => {
+    if (!chaveCampos) return
+    let quadro = 0
+    try {
+      const salva = JSON.parse(localStorage.getItem(chaveCampos) ?? 'null') as Partial<ConfigCampos> | null
+      const lista = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+      if (salva) quadro = requestAnimationFrame(() => setConfig({ ocultas: lista(salva.ocultas), ordem: lista(salva.ordem) }))
+    } catch {
+      localStorage.removeItem(chaveCampos)
+    }
+    return () => cancelAnimationFrame(quadro)
+  }, [chaveCampos])
+
+  const atualizarCampos = (mudar: (atual: ConfigCampos) => ConfigCampos) => {
+    const proxima = mudar(config)
+    setConfig(proxima)
+    if (chaveCampos) localStorage.setItem(chaveCampos, JSON.stringify(proxima))
+  }
+  const ocultarCampo = (id: string) => atualizarCampos((c) => ({ ...c, ocultas: [...c.ocultas, id] }))
+  const mostrarCampo = (id: string) => atualizarCampos((c) => ({ ...c, ocultas: c.ocultas.filter((x) => x !== id) }))
+  const moverCampo = (id: string, para: 'inicio' | 'final') =>
+    atualizarCampos((c) => {
+      const ids = camposVisiveis.map((campo) => campo.id).filter((x) => x !== id)
+      return { ...c, ordem: para === 'inicio' ? [id, ...ids] : [...ids, id] }
+    })
 
   const aplicarLargura = (id: string, largura: number) => {
     const limite = limiteDaColuna(id, campos)
@@ -169,7 +205,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       setSelecionadas(new Set())
     })
   }
-  const contexto = { ...ctx, largurasColunas: larguras, selecionadas, alternarSelecao }
+  const contexto = { ...ctx, camposPersonalizados: camposVisiveis, largurasColunas: larguras, selecionadas, alternarSelecao }
   const propsRedimensionamento = {
     onPointerDown: iniciarRedimensionamento,
     onPointerMove: moverRedimensionamento,
@@ -186,8 +222,18 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
+      {camposOcultos.length > 0 && (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-texto-3 outline-none transition hover:bg-hover hover:text-texto"><EyeOff className="h-3.5 w-3.5" />{camposOcultos.length} {camposOcultos.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {camposOcultos.map((campo) => <DropdownMenuItem key={campo.id} onSelect={() => mostrarCampo(campo.id)}><span style={{ color: campo.cor }}><IconeVisual icone={campo.icone} className="h-4 w-4" /></span>Mostrar {campo.nome}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       <div className="overflow-x-auto pb-2">
-        <div className="space-y-5" style={{ minWidth: gradeDaLista(campos, larguras).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+        <div className="space-y-5" style={{ minWidth: gradeDaLista(camposVisiveis, larguras).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g) => (
         <section key={g.id} className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_6px_24px_rgba(32,32,32,0.035)]" style={{ boxShadow: `inset 3px 0 0 ${g.cor}, 0 6px 24px rgba(32,32,32,0.035)` }}>
           <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>
@@ -199,14 +245,24 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           </button>
           {!fechados.has(g.id) && (
             <>
-              <div className="grid min-h-8 items-center border-t border-borda bg-[#fbfbfc] text-[10px] font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(campos, larguras) }}>
+              <div className="grid min-h-8 items-center border-t border-borda bg-[#fbfbfc] text-[10px] font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(camposVisiveis, larguras) }}>
                 <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-sky-600" /> Nome</span></CabecalhoColuna>
                 <CabecalhoColuna colunaId="responsavel" {...propsRedimensionamento}><span className="flex items-center gap-1"><UserRound className="h-3 w-3" /> Responsável</span></CabecalhoColuna>
                 <CabecalhoColuna colunaId="prazo" {...propsRedimensionamento}>Prazo</CabecalhoColuna>
                 <CabecalhoColuna colunaId="prioridade" {...propsRedimensionamento}><Flag className="h-3 w-3" /></CabecalhoColuna>
-                {campos.map((definicao) => (
+                {camposVisiveis.map((definicao) => (
                   <CabecalhoColuna key={definicao.id} colunaId={`campo:${definicao.id}`} className="border-l border-borda/70" {...propsRedimensionamento}>
-                    <span className="flex min-w-0 items-center gap-1.5" title={definicao.nome}><span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span></span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 text-left uppercase outline-none transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30" title={definicao.nome}>
+                        <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-52 normal-case">
+                        <DropdownMenuItem onSelect={() => ocultarCampo(definicao.id)}><EyeOff className="h-4 w-4" />Ocultar coluna</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => moverCampo(definicao.id, 'inicio')}><ArrowLeftToLine className="h-4 w-4" />Mover para o início</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => moverCampo(definicao.id, 'final')}><ArrowRightToLine className="h-4 w-4" />Mover para o final</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => restaurarLargura(`campo:${definicao.id}`)}><MoveHorizontal className="h-4 w-4" />Restaurar largura</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CabecalhoColuna>
                 ))}
               </div>
