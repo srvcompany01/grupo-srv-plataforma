@@ -2,7 +2,7 @@
 
 import { Check, ChevronLeft, Settings2, Tag } from 'lucide-react'
 import { useState, useTransition } from 'react'
-import { atualizarTagCliente, definirTagClienteDaLista } from '@/app/(app)/acoes-tags-clientes'
+import { atualizarTagCliente, definirTagClienteDaTarefa } from '@/app/(app)/acoes-tags-clientes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { CORES_PERSONALIZACAO } from '@/dominio/personalizacao'
 import { avisar } from './avisar'
@@ -24,8 +24,8 @@ function Chip({ tag }: { tag: TagCliente }) {
 }
 
 /** Tag obrigatoria da lista. Alterar em qualquer linha atualiza a mae e todas as subtarefas. */
-export function SeletorTagCliente({ listaId, atual, opcoes = [], podeGerir = false }: {
-  listaId: string
+export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = false }: {
+  tarefaId: string
   atual: TagCliente
   opcoes?: TagCliente[]
   podeGerir?: boolean
@@ -48,7 +48,7 @@ export function SeletorTagCliente({ listaId, atual, opcoes = [], podeGerir = fal
   const selecionar = (clienteId: string) => {
     if (clienteId === atual.id) return
     iniciar(async () => {
-      if (avisar(await definirTagClienteDaLista(listaId, clienteId), true)) setAberto(false)
+      if (avisar(await definirTagClienteDaTarefa(tarefaId, clienteId), true)) setAberto(false)
     })
   }
 

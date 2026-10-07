@@ -92,7 +92,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'tagcliente':
         return (
           <span key={colunaId} className="min-w-0 px-2">
-            <SeletorTagCliente listaId={tarefa.listaId} atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
+            <SeletorTagCliente tarefaId={tarefa.id} atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
           </span>
         )
       case 'etiquetas':
@@ -133,7 +133,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           </div>
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente
-              listaId={tarefa.listaId}
+              tarefaId={tarefa.id}
               atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }}
               opcoes={ctx.tagsCliente}
               podeGerir={ctx.podeGerirTagCliente}
