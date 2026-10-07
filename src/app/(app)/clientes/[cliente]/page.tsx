@@ -2,9 +2,16 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
+import { CATEGORIAS } from '@/componentes/tarefas/categorias'
+import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { iniciais } from '@/dominio/clientes-galeria'
+import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
+import { montarArvore, type Categoria } from '@/dominio/tarefas'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
 import { buscarCliente, usuariosDoCliente } from '@/servicos/clientes-plataforma'
+import { statusDasListas } from '@/servicos/listas'
+import { listarTarefas } from '@/servicos/tarefas'
+import { listarEquipe } from '@/servicos/usuarios'
 import { FormConvite } from '../../config/usuarios/FormConvite'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
@@ -23,6 +30,15 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
   const capa = capas[id]
   const usuarios = admin && !cliente.interno ? await usuariosDoCliente(sb, id) : []
 
+  // Visão por cliente: o trabalho dele em todos os departamentos, uma seção por departamento (lista).
+  const hoje = dataDeHoje(new Date())
+  const [tarefas, equipe] = await Promise.all([listarTarefas(sb, { todas: true }, { ...lerFiltros({}), clientes: [id] }, hoje), listarEquipe(sb)])
+  const statusPorLista = await statusDasListas(sb, [...new Set(tarefas.map((t) => t.listaId))])
+  const categoria = (t: { listaId: string; statusId: string }): Categoria => statusPorLista[t.listaId]?.find((s) => s.id === t.statusId)?.categoria ?? 'todo'
+  const arvore = montarArvore(tarefas)
+  const departamentos = [...new Map(tarefas.map((t) => [t.listaId, t.listaNome])).entries()]
+  const ctx = { equipe, hoje, statusPorLista, mostrarLista: false }
+
   return (
     <div className="page-shell max-w-5xl">
       <Link href="/clientes" className="text-corpo text-texto-2 hover:text-marca">
@@ -40,6 +56,22 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
           {capa?.credito && <span className="absolute bottom-1.5 right-2 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
         </div>
         {podeGerir && <SeletorCapa clienteId={id} temCapa={!!capa?.url} />}
+      </section>
+      <section className="space-y-4" aria-label="Trabalho do cliente">
+        <h2 className="text-sm font-semibold">Trabalho por departamento</h2>
+        {departamentos.length === 0 && <p className="text-corpo text-texto-3">Nenhuma tarefa com a tag deste cliente ainda.</p>}
+        {departamentos.map(([listaId, listaNome]) => {
+          const raizes = arvore.filter((t) => t.listaId === listaId)
+          return (
+            <div key={listaId} className="space-y-2">
+              <h3 className="flex items-center gap-2 text-corpo font-semibold">
+                <Link href={`/listas/${listaId}`} className="hover:text-marca">{listaNome}</Link>
+                <span className="rounded-full bg-hover px-2 py-0.5 text-legenda font-normal text-texto-3">{raizes.length}</span>
+              </h3>
+              <VisaoLista grupos={CATEGORIAS.map((c) => ({ ...c, id: `${listaId}-${c.id}`, tarefas: raizes.filter((t) => categoria(t) === c.id) })).filter((g) => g.tarefas.length)} ctx={ctx} euId={eu.id} />
+            </div>
+          )
+        })}
       </section>
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">Informações da galeria</h2>

@@ -5,7 +5,9 @@ import { CATEGORIAS } from '@/componentes/tarefas/categorias'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
+import { TabelaResumo } from '@/componentes/TabelaResumo'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
+import { resumirPor } from '@/dominio/resumo'
 import { montarArvore, type Categoria } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -44,6 +46,10 @@ export default async function PainelDeGestao({ searchParams }: PageProps<'/paine
   const emAndamento = arvore.filter((t) => categoria(t) === 'in_progress').length
   const concluidas = arvore.filter((t) => categoria(t) === 'done').length
   const ctx = { equipe, hoje, statusPorLista, mostrarLista: true }
+  // Visão geral: o mesmo núcleo (etapa, prazo, conclusão) cortado por departamento e por cliente.
+  const raizes = tarefas.filter((t) => !t.paiId)
+  const porDepartamento = resumirPor(raizes, (t) => ({ id: t.listaId, nome: t.listaNome }), categoria, hoje)
+  const porCliente = resumirPor(raizes, (t) => ({ id: t.clienteId, nome: t.clienteNome }), categoria, hoje)
   const dataExtenso = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Belem', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
   return (
@@ -58,6 +64,11 @@ export default async function PainelDeGestao({ searchParams }: PageProps<'/paine
         <Metrica icone={ClipboardList} rotulo="Tarefas no quadro" valor={arvore.length} tom="bg-marca-fundo text-marca" />
         <Metrica icone={Loader} rotulo="Em andamento" valor={emAndamento} detalhe={`${pct(emAndamento, arvore.length)}% do total`} tom="bg-azul-fundo text-azul" />
         <Metrica icone={CircleCheck} rotulo="Concluídas" valor={concluidas} detalhe={`${pct(concluidas, arvore.length)}% do total`} tom="bg-sucesso-fundo text-sucesso" />
+      </section>
+
+      <section aria-label="Resumo" className="grid gap-3 lg:grid-cols-2">
+        <TabelaResumo titulo="Por departamento" descricao="Onde o trabalho está concentrado" linhas={porDepartamento} href={(l) => `/listas/${l.id}`} />
+        <TabelaResumo titulo="Por cliente" descricao="Quanto cada cliente tem em andamento" linhas={porCliente} href={(l) => `/clientes/${l.id}`} />
       </section>
 
       <div className="space-y-4">
