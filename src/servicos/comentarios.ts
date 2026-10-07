@@ -23,7 +23,7 @@ export async function listarComentarios(sb: Supabase, tarefaId: string): Promise
     await sb
       .from('comments')
       .select(
-        `id, author_id, body, is_internal, created_at, edited_at, profiles(full_name),
+        `id, author_id, body, is_internal, created_at, edited_at, profiles!comments_author_id_fkey(full_name),
          comment_mentions(user_id),
          comment_attachments(id, r2_key, file_name, mime_type, size_bytes, kind, created_at)`,
       )
