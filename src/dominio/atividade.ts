@@ -1,4 +1,6 @@
-import { formatarData } from './formatar'
+import { formatarData, formatarDuracao } from './formatar'
+import { formatarValorCampo, type DefinicaoCampo } from './personalizacao'
+import type { Json } from '@/infra/supabase/tipos'
 import { ROTULO_PRIORIDADE, type Prioridade } from './tarefas'
 
 export type Atividade = {
@@ -14,6 +16,7 @@ export type NomesAtividade = {
   status: Record<string, string>
   usuarios: Record<string, string>
   tags: Record<string, string>
+  campos?: Record<string, Pick<DefinicaoCampo, 'nome' | 'tipo' | 'configuracao'>>
 }
 
 const CAMPOS: Record<string, string> = {
@@ -71,6 +74,14 @@ export function descreverAtividade(a: Atividade, nomes: NomesAtividade): string 
       return `${quem} adicionou a etiqueta ${tag(a.new_value)}`
     case 'tag_removed':
       return `${quem} removeu a etiqueta ${tag(a.old_value)}`
+    case 'time_logged':
+      return `${quem} registrou ${formatarDuracao(Number(chave(a.new_value, 'seconds')) || 0)}`
+    case 'field_set': {
+      const campo = nomes.campos?.[a.field ?? '']
+      if (!campo) return `${quem} alterou um campo`
+      if (a.new_value === null || a.new_value === undefined) return `${quem} limpou ${campo.nome}`
+      return `${quem} definiu ${campo.nome} como ${formatarValorCampo(campo, a.new_value as Json)}`
+    }
   }
   const campo = a.field ?? ''
   if (campo === 'description') return `${quem} editou a descrição`

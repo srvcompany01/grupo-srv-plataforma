@@ -44,3 +44,20 @@ describe('descreverAtividade', () => {
     )
   })
 })
+
+describe('descreverAtividade: tempo e campos', () => {
+  const nomes2 = {
+    ...nomes,
+    campos: { f1: { nome: 'Gatilho', tipo: 'dropdown' as const, configuracao: {} } },
+  }
+  const d2 = (a: Partial<Parameters<typeof descreverAtividade>[0]>) =>
+    descreverAtividade({ action: 'field_set', field: 'f1', old_value: null, new_value: null, ator: 'Ana', ...a }, nomes2)
+  it('time_logged', () => {
+    expect(d2({ action: 'time_logged', field: null, new_value: { seconds: 4800 } })).toBe('Ana registrou 1h 20min')
+  })
+  it('field_set', () => {
+    expect(d2({ new_value: 'Desejo' })).toBe('Ana definiu Gatilho como Desejo')
+    expect(d2({ new_value: null })).toBe('Ana limpou Gatilho')
+    expect(d2({ field: 'zzz', new_value: 'x' })).toBe('Ana alterou um campo')
+  })
+})

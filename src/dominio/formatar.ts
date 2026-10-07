@@ -41,3 +41,19 @@ export function rotuloMes(iso: string): string {
   const [ano, mes] = iso.split('-')
   return `${MESES[Number(mes) - 1]}/${ano.slice(2)}`
 }
+
+/** Duração em minutos inteiros: '45min', '1h 20min', '2h'. */
+export function formatarDuracao(segundos: number): string {
+  const min = Math.floor(segundos / 60)
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  if (!h) return `${m}min`
+  return m ? `${h}h ${m}min` : `${h}h`
+}
+
+/** Relógio do cronômetro: '1:02:03'. */
+export function formatarRelogio(segundos: number): string {
+  const s = Math.max(0, Math.floor(segundos))
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${Math.floor(s / 3600)}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}`
+}

@@ -31,3 +31,17 @@ describe('personalização de campos', () => {
     expect(calcularFormula({ operation: 'sum', sourceFields: ['x'] }, new Map())).toBeNull()
   })
 })
+
+describe('campos vazios', () => {
+  it('campoVazio e separarCamposVazios', async () => {
+    const { campoVazio, separarCamposVazios } = await import('@/dominio/personalizacao')
+    const campo = (tipo: string, valor?: unknown) =>
+      ({ id: tipo, espacoId: null, nome: tipo, tipo, configuracao: {}, cor: '', icone: '', valor }) as never
+    for (const v of [undefined, null, '', []]) expect(campoVazio(campo('text', v))).toBe(true)
+    for (const v of [0, false, 'x']) expect(campoVazio(campo('text', v))).toBe(false)
+    expect(campoVazio(campo('formula', null))).toBe(false)
+    const cheio = campo('text', 'x')
+    const vazio = campo('number', null)
+    expect(separarCamposVazios([cheio, vazio])).toEqual({ preenchidos: [cheio], vazios: [vazio] })
+  })
+})

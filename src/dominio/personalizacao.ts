@@ -146,3 +146,13 @@ export function calcularFormula(configuracao: ConfigCampo, valores: Map<string, 
   if (configuracao.operation === 'product') return numeros.reduce((total, valor) => total * valor, 1)
   return numeros.reduce((soma, valor) => soma + valor, 0)
 }
+
+export function campoVazio(c: DefinicaoCampo): boolean {
+  if (c.tipo === 'formula') return false
+  const v = c.valor
+  return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)
+}
+
+export function separarCamposVazios(campos: DefinicaoCampo[]): { preenchidos: DefinicaoCampo[]; vazios: DefinicaoCampo[] } {
+  return { preenchidos: campos.filter((c) => !campoVazio(c)), vazios: campos.filter(campoVazio) }
+}

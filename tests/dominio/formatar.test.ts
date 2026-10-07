@@ -23,3 +23,19 @@ describe('rotuloMes', () => {
     expect(rotuloMes('2027-01-01')).toBe('jan/27')
   })
 })
+
+describe('duração', () => {
+  it('formatarDuracao', async () => {
+    const { formatarDuracao } = await import('@/dominio/formatar')
+    expect(formatarDuracao(0)).toBe('0min')
+    expect(formatarDuracao(2700)).toBe('45min')
+    expect(formatarDuracao(4800)).toBe('1h 20min')
+    expect(formatarDuracao(7200)).toBe('2h')
+    expect(formatarDuracao(59)).toBe('0min')
+  })
+  it('formatarRelogio', async () => {
+    const { formatarRelogio } = await import('@/dominio/formatar')
+    expect(formatarRelogio(3723)).toBe('1:02:03')
+    expect(formatarRelogio(65)).toBe('0:01:05')
+  })
+})
