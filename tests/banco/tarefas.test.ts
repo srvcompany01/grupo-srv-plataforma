@@ -238,6 +238,8 @@ describe('arquivamento em cascata', () => {
     expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [naPasta])).rows).toEqual([{ arq: true }])
     const comercial = await idEspaco(db, 'Comercial')
     const lc = await criarLista(db, { spaceId: comercial, clientId: a })
+    // A migração de estrutura já arquivou os espaços antigos: reativa para testar a transição ativo → arquivado.
+    await db.query(`update spaces set archived_at = null where id = $1`, [comercial])
     await db.query(`update spaces set archived_at = now() where id = $1`, [comercial])
     expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [lc])).rows).toEqual([{ arq: true }])
   })

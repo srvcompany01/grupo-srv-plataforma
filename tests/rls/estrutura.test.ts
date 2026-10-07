@@ -131,7 +131,7 @@ describe('RLS', () => {
     expect(await ler(db, m, `select id from lists where slug is null`)).toEqual([{ id: lc }])
     expect(await ler(db, m, `select id from folders`)).toEqual([{ id: pc }])
     expect(await ler(db, m, `select id from list_statuses where list_id = '${lc}'`)).toHaveLength(3)
-    expect((await ler<{ slug: string }>(db, m, `select slug from lists where slug is not null order by slug`)).map((l) => l.slug)).toEqual(['social-conteudo', 'trafego-performance'])
+    expect((await ler<{ slug: string }>(db, m, `select slug from lists where slug is not null order by slug`)).map((l) => l.slug)).toEqual(['crm', 'jornada-de-compra', 'playbooks', 'social-conteudo', 'trafego-performance'])
   })
 
   it('cliente não lê folders, lists nem list_statuses', async () => {
