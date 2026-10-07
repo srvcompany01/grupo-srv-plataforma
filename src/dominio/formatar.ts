@@ -72,3 +72,18 @@ export function formatarRelogio(segundos: number): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${Math.floor(s / 3600)}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}`
 }
+
+/** Selo do sino: vazio para 0, '9+' acima de 9. */
+export function rotuloContagem(n: number): string {
+  if (n <= 0) return ''
+  return n > 9 ? '9+' : String(n)
+}
+
+/** 'agora', 'há 5 min', 'há 3 h', 'há 2 d'. */
+export function tempoRelativo(iso: string, agoraMs: number): string {
+  const s = Math.floor((agoraMs - Date.parse(iso)) / 1000)
+  if (s < 60) return 'agora'
+  if (s < 3600) return `há ${Math.floor(s / 60)} min`
+  if (s < 86400) return `há ${Math.floor(s / 3600)} h`
+  return `há ${Math.floor(s / 86400)} d`
+}

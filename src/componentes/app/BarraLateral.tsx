@@ -5,7 +5,6 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities'
 import {
   CheckSquare,
-  ChevronDown,
   ChevronRight,
   Home,
   GripVertical,
@@ -24,6 +23,8 @@ import { Avatar } from '@/componentes/Avatar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import { IndicadorCronometro } from './IndicadorCronometro'
+import { SinoAvisos } from './SinoAvisos'
+import type { Aviso } from '@/servicos/avisos'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
@@ -31,7 +32,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { sair } from '@/app/(auth)/login/acoes'
 
 type Opcao = { id: string; nome: string }
-type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null }
+type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null; avisos: Aviso[]; naoLidos: number; euId: string }
 type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
@@ -250,7 +251,7 @@ function Trilho({ navegacao, papel }: Pick<Props, 'navegacao' | 'papel'>) {
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel, cronometro }: Props) {
+function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId }: Props) {
   const caminho = usePathname()
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
@@ -293,7 +294,7 @@ function Painel({ navegacao, clientes, nome, papel, cronometro }: Props) {
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-[#e2e2e4] px-3">
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-marca text-[9px] font-extrabold text-white">S</span>
         <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[#303136]">Grupo SRV</p>
-        <ChevronDown className="h-3.5 w-3.5 text-[#8d8e93]" />
+        <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>

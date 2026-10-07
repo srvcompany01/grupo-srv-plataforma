@@ -48,3 +48,23 @@ describe('formatarDataAtividade', () => {
     expect(formatarDataAtividade(new Date('2026-10-07T02:30:00Z'))).toBe('out 6 às 23:30')
   })
 })
+
+import { rotuloContagem, tempoRelativo } from '@/dominio/formatar'
+
+describe('avisos', () => {
+  it('rotuloContagem', () => {
+    expect(rotuloContagem(0)).toBe('')
+    expect(rotuloContagem(1)).toBe('1')
+    expect(rotuloContagem(9)).toBe('9')
+    expect(rotuloContagem(10)).toBe('9+')
+  })
+  it('tempoRelativo', () => {
+    const agora = Date.parse('2026-10-07T12:00:00Z')
+    const h = (s: number) => new Date(agora - s * 1000).toISOString()
+    expect(tempoRelativo(h(20), agora)).toBe('agora')
+    expect(tempoRelativo(h(5 * 60), agora)).toBe('há 5 min')
+    expect(tempoRelativo(h(3 * 3600), agora)).toBe('há 3 h')
+    expect(tempoRelativo(h(2 * 86400), agora)).toBe('há 2 d')
+    expect(tempoRelativo(h(-30), agora)).toBe('agora')
+  })
+})
