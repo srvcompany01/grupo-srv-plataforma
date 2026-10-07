@@ -118,3 +118,40 @@ describe('histórico', () => {
     ).rejects.toThrow(/row-level security/)
   })
 })
+
+describe('histórico de campos personalizados', () => {
+  async function comCampo(db: Banco) {
+    const s = await base(db)
+    const { rows } = await db.query<{ id: string }>(
+      `insert into custom_fields (space_id, name, type, config, position)
+       values ($1, 'Gatilho', 'dropdown', '{"options":["Desejo","Medo"]}'::jsonb, 'a0') returning id`,
+      [s.conteudo],
+    )
+    await db.query(`insert into list_custom_fields (list_id, field_id, position) values ($1, $2, 'a0')`, [s.lista, rows[0].id])
+    return { ...s, campo: rows[0].id }
+  }
+  const deCampos = async (db: Banco, t: string) => (await historico(db, t)).filter((l) => l.action === 'field_set')
+
+  it('definir campo grava field_set', async () => {
+    const db = await criarBanco()
+    const { ana, t, campo } = await comCampo(db)
+    await executar(db, ana, `insert into task_custom_field_values (task_id, field_id, value) values ($1, $2, '"Desejo"')`, [t, campo])
+    expect(await deCampos(db, t)).toEqual([{ action: 'field_set', field: campo, old_value: null, new_value: 'Desejo', actor_id: ana }])
+  })
+
+  it('mesmo valor não gera histórico', async () => {
+    const db = await criarBanco()
+    const { ana, t, campo } = await comCampo(db)
+    await executar(db, ana, `insert into task_custom_field_values (task_id, field_id, value) values ($1, $2, '"Desejo"')`, [t, campo])
+    await executar(db, ana, `update task_custom_field_values set value = '"Desejo"' where task_id = $1`, [t])
+    expect(await deCampos(db, t)).toHaveLength(1)
+  })
+
+  it('limpar campo grava new_value nulo', async () => {
+    const db = await criarBanco()
+    const { ana, t, campo } = await comCampo(db)
+    await executar(db, ana, `insert into task_custom_field_values (task_id, field_id, value) values ($1, $2, '"Desejo"')`, [t, campo])
+    await executar(db, ana, `delete from task_custom_field_values where task_id = $1`, [t])
+    expect((await deCampos(db, t))[1]).toEqual({ action: 'field_set', field: campo, old_value: 'Desejo', new_value: null, actor_id: ana })
+  })
+})

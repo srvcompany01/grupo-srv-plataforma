@@ -86,6 +86,97 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_attachments: {
+        Row: {
+          comment_id: string
+          created_at: string
+          file_name: string
+          id: string
+          kind: string
+          mime_type: string
+          r2_key: string
+          size_bytes: number
+          task_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          kind: string
+          mime_type: string
+          r2_key: string
+          size_bytes: number
+          task_id: string
+          uploaded_by?: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          r2_key?: string
+          size_bytes?: number
+          task_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_attachments_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_mentions: {
+        Row: {
+          comment_id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_mentions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_mentions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_id: string
@@ -98,7 +189,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string
-          body: string
+          body?: string
           created_at?: string
           edited_at?: string | null
           id?: string
@@ -187,8 +278,8 @@ export type Database = {
           color: string
           created_at: string
           emoji: string | null
-          id: string
           icon: string
+          id: string
           name: string
           position: string
           space_id: string | null
@@ -198,8 +289,8 @@ export type Database = {
           color?: string
           created_at?: string
           emoji?: string | null
-          id?: string
           icon?: string
+          id?: string
           name: string
           position: string
           space_id?: string | null
@@ -209,8 +300,8 @@ export type Database = {
           color?: string
           created_at?: string
           emoji?: string | null
-          id?: string
           icon?: string
+          id?: string
           name?: string
           position?: string
           space_id?: string | null
@@ -310,8 +401,8 @@ export type Database = {
           created_at: string
           emoji: string | null
           folder_id: string | null
-          id: string
           icon: string
+          id: string
           name: string
           position: string
           reference_month: string | null
@@ -324,8 +415,8 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           folder_id?: string | null
-          id?: string
           icon?: string
+          id?: string
           name: string
           position: string
           reference_month?: string | null
@@ -338,8 +429,8 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           folder_id?: string | null
-          id?: string
           icon?: string
+          id?: string
           name?: string
           position?: string
           reference_month?: string | null
@@ -365,6 +456,68 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          comment_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -445,8 +598,8 @@ export type Database = {
           created_at: string
           description: string | null
           emoji: string | null
-          id: string
           icon: string
+          id: string
           name: string
           parent_id: string | null
           position: string
@@ -457,8 +610,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           emoji?: string | null
-          id?: string
           icon?: string
+          id?: string
           name: string
           parent_id?: string | null
           position: string
@@ -469,8 +622,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           emoji?: string | null
-          id?: string
           icon?: string
+          id?: string
           name?: string
           parent_id?: string | null
           position?: string
@@ -775,18 +928,79 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          note: string | null
+          source: string
+          started_at: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          note?: string | null
+          source?: string
+          started_at?: string
+          task_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          note?: string | null
+          source?: string
+          started_at?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      can_access_space_target: { Args: { space: string | null }; Returns: boolean }
+      can_access_space_target: { Args: { space: string }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
       can_manage_list: { Args: { list: string }; Returns: boolean }
-      can_manage_space_target: { Args: { space: string | null }; Returns: boolean }
+      can_manage_space_target: { Args: { space: string }; Returns: boolean }
       can_read_list: { Args: { list: string }; Returns: boolean }
       can_read_task: { Args: { task: string }; Returns: boolean }
       can_see_space: { Args: { space: string }; Returns: boolean }
+      criar_comentario: {
+        Args: {
+          p_anexos?: Json
+          p_body: string
+          p_internal: boolean
+          p_mencoes?: string[]
+          p_task: string
+        }
+        Returns: string
+      }
       criar_tarefa: {
         Args: {
           p_assignees: string[]
@@ -802,19 +1016,42 @@ export type Database = {
         Args: { p_assignees: string[]; p_task: string }
         Returns: undefined
       }
+      iniciar_cronometro: { Args: { p_task: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_assignee: { Args: { task: string }; Returns: boolean }
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
-      list_space: { Args: { list: string }; Returns: string | null }
+      lancar_tempo: {
+        Args: {
+          p_data: string
+          p_minutos: number
+          p_nota?: string
+          p_task: string
+        }
+        Returns: string
+      }
+      list_space: { Args: { list: string }; Returns: string }
       mover_tarefa: {
         Args: { p_position: string; p_status: string; p_task: string }
         Returns: undefined
       }
       my_client_id: { Args: never; Returns: string }
       my_role: { Args: never; Returns: string }
+      parar_cronometro: { Args: never; Returns: string }
+      pessoas_da_tarefa: {
+        Args: { p_task: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       primeiro_status_a_fazer: { Args: { list: string }; Returns: string }
+      usuario_le_tarefa: {
+        Args: { p_task: string; p_user: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
