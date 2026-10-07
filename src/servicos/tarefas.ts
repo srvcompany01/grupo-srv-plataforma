@@ -166,6 +166,7 @@ export type TarefaCompleta = {
   visivelCliente: boolean
   concluidaEm: string | null
   paiId: string | null
+  pai: { id: string; titulo: string } | null
   lista: { id: string; nome: string; espacoId: string | null; mes: string | null; clienteId: string; clienteNome: string }
   responsaveis: { id: string; nome: string; avatar: string | null }[]
   tags: { id: string; nome: string; cor: string }[]
@@ -187,6 +188,11 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     .maybeSingle()
   if (error) throw error
   if (!t) return null
+  // A RLS pode esconder a tarefa-mãe: nesse caso `pai` fica null.
+  const { data: pai, error: erroPai } = t.parent_task_id
+    ? await sb.from('tasks').select('id, title').eq('id', t.parent_task_id).maybeSingle()
+    : { data: null, error: null }
+  if (erroPai) throw erroPai
   const filhas = dados(await sb.from('tasks').select(CAMPOS_RESUMO).eq('parent_task_id', id).is('archived_at', null).order('position'))
   return {
     id: t.id,
@@ -200,6 +206,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     visivelCliente: t.visible_to_client,
     concluidaEm: t.completed_at,
     paiId: t.parent_task_id,
+    pai: pai ? { id: pai.id, titulo: pai.title } : null,
     lista: {
       id: t.lists?.id ?? '',
       nome: t.lists?.name ?? '',

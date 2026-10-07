@@ -1,13 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { MAX_ANEXOS, normalizarMime, validarAnexo } from '@/dominio/anexos'
 import type { Categoria } from '@/dominio/tarefas'
+import { gerarChaveTarefa, urlUpload } from '@/infra/r2'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as comentarios from '@/servicos/comentarios'
 import * as status from '@/servicos/status'
 import * as tarefas from '@/servicos/tarefas'
+import * as tempo from '@/servicos/tempo'
 
 // Ações de tarefa usadas pela lista, pelo Kanban, pelo departamento e pelo painel da tarefa.
 // Tudo pelo cliente do usuário: a RLS e as regras do banco decidem.
@@ -81,9 +84,74 @@ export async function criarEtiquetaAcao(tarefaId: string, espacoId: string, nome
   })
 }
 
-export async function comentarAcao(tarefaId: string, texto: string, interno: boolean): Promise<Resultado> {
-  if (!texto.trim()) return { erro: 'Escreva o comentário.' }
-  return executar((sb) => comentarios.comentar(sb, tarefaId, texto.trim(), interno))
+/** `mencoes` e `anexos` são opcionais enquanto a UI antiga (Comentarios.tsx) chama só com texto. */
+export async function comentarAcao(
+  tarefaId: string,
+  texto: string,
+  interno: boolean,
+  mencoes: string[] = [],
+  anexos: comentarios.NovoAnexo[] = [],
+): Promise<Resultado> {
+  if (!texto.trim() && !anexos.length) return { erro: 'Escreva o comentário ou anexe um arquivo.' }
+  if (anexos.length > MAX_ANEXOS) return { erro: `Máximo de ${MAX_ANEXOS} anexos por comentário.` }
+  return executar((sb) =>
+    comentarios.criarComentario(sb, {
+      tarefaId,
+      texto: texto.trim(),
+      interno,
+      mencoes,
+      anexos: anexos.map((a) => ({ ...a, mime: normalizarMime(a.mime) })),
+    }),
+  )
+}
+
+export async function prepararEnvioAnexoAcao(
+  tarefaId: string,
+  a: { nome: string; mime: string; tamanho: number },
+): Promise<{ chave: string; url: string } | { erro: string }> {
+  await exigirEquipe()
+  const mime = normalizarMime(a.mime)
+  const invalido = validarAnexo({ mime, tamanho: a.tamanho })
+  if (invalido) return { erro: invalido }
+  try {
+    const sb = await criarClienteServidor()
+    if (!(await tarefas.buscarTarefa(sb, tarefaId))) return { erro: 'Você não tem permissão para isso.' }
+    const chave = gerarChaveTarefa(tarefaId, mime)
+    return { chave, url: await urlUpload(chave, mime, a.tamanho) }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível preparar o envio. Tente de novo.' }
+  }
+}
+
+export async function iniciarCronometroAcao(tarefaId: string): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  const sb = await criarClienteServidor()
+  let parado: string | null = null
+  const r = await tentar(async () => {
+    const anterior = await tempo.cronometroAtivo(sb, eu.id)
+    await tempo.iniciarCronometro(sb, tarefaId)
+    if (anterior && anterior.tarefaId !== tarefaId) parado = anterior.tarefaTitulo
+  }, 'Cronômetro iniciado.')
+  revalidatePath('/', 'layout')
+  return r?.ok && parado ? { ok: `Parou o cronômetro de ${parado}` } : r
+}
+
+export async function pararCronometroAcao(): Promise<Resultado> {
+  return executar((sb) => tempo.pararCronometro(sb), 'Cronômetro parado.')
+}
+
+export async function lancarTempoAcao(tarefaId: string, data: string, minutos: number, nota: string): Promise<Resultado> {
+  return executar((sb) => tempo.lancarTempo(sb, tarefaId, data, minutos, nota.trim() || null), 'Tempo lançado.')
+}
+
+export async function editarTempoAcao(id: string, minutos: number, nota: string): Promise<Resultado> {
+  if (!Number.isInteger(minutos) || minutos < 1 || minutos > 1440) return { erro: 'O tempo deve ficar entre 1 e 1440 minutos.' }
+  return executar((sb) => tempo.editarTempo(sb, id, minutos, nota.trim() || null))
+}
+
+export async function apagarTempoAcao(id: string): Promise<Resultado> {
+  return executar((sb) => tempo.apagarTempo(sb, id), 'Registro apagado.')
 }
 
 export async function editarComentarioAcao(id: string, texto: string): Promise<Resultado> {

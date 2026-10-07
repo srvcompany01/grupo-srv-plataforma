@@ -39,3 +39,15 @@ describe('anexos', () => {
     }
   })
 })
+
+describe('gerarChaveTarefa', () => {
+  it('monta tarefas/<id>/<uuid>.<ext>', async () => {
+    const { gerarChaveTarefa } = await import('@/infra/r2')
+    expect(gerarChaveTarefa('t1', 'audio/webm')).toMatch(/^tarefas\/t1\/[0-9a-f-]{36}\.webm$/)
+    expect(gerarChaveTarefa('t1', 'audio/webm;codecs=opus')).toMatch(/\.webm$/)
+  })
+  it('mime desconhecido lança erro', async () => {
+    const { gerarChaveTarefa } = await import('@/infra/r2')
+    expect(() => gerarChaveTarefa('t1', 'application/x-msdownload')).toThrow()
+  })
+})
