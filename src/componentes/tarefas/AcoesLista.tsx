@@ -42,7 +42,7 @@ export function CriarTarefaTopo({ listaId, euId, status }: { listaId: string; eu
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <button className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-marca to-marca px-3.5 text-rotulo font-bold text-white shadow-sm transition hover:from-marca hover:to-marca focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca-clara">
+        <button className="inline-flex h-9 items-center gap-2 rounded-lg bg-petroleo px-3.5 text-rotulo font-bold text-white shadow-cartao transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
           <Plus className="h-4 w-4" /> Tarefa <ChevronDown className="h-3 w-3 opacity-80" />
         </button>
       </PopoverTrigger>

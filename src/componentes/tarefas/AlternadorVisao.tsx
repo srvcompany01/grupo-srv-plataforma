@@ -31,13 +31,14 @@ export function AlternadorVisao({
       key={visao}
       href={href(visao)}
       scroll={false}
+      aria-current={filtros.visao === visao ? 'page' : undefined}
       className={`inline-flex items-center gap-1.5 text-rotulo font-semibold transition ${
         abas
-          ? `-mb-px border-b-2 px-2 py-3 ${filtros.visao === visao ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
-          : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-texto text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
+          ? `-mb-px border-b-2 px-2 py-3 ${filtros.visao === visao ? 'border-petroleo text-petroleo' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
+          : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
-      <Icone className={`h-4 w-4 ${visao === 'calendario' ? 'text-aviso' : ''}`} />
+      <Icone className="h-4 w-4" aria-hidden="true" />
       {rotulo}
     </Link>
     )

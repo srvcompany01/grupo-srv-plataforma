@@ -12,7 +12,8 @@ const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date,
   clients(id, name, color),
   lists!inner(name, space_id, reference_month, archived_at),
   task_assignees(profiles(id, full_name, avatar_url)),
-  task_tags(tags(id, name, color))`
+  task_tags(tags(id, name, color)),
+  comments(count)`
 
 /** Tarefas não arquivadas do escopo, com os filtros aplicados no banco. A RLS esconde o resto. */
 export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtros, hoje: string): Promise<TarefaResumo[]> {
@@ -64,6 +65,7 @@ type LinhaResumo = {
   lists: { name: string } | null
   task_assignees: { profiles: { id: string; full_name: string; avatar_url: string | null } | null }[]
   task_tags: { tags: { id: string; name: string; color: string } | null }[]
+  comments: { count: number }[]
 }
 
 function paraResumo(t: LinhaResumo): TarefaResumo {
@@ -76,6 +78,7 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     prazo: t.due_date,
     posicao: t.position,
     concluidaEm: t.completed_at,
+    comentarios: t.comments?.[0]?.count ?? 0,
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',
     clienteId: t.clients?.id ?? '',
