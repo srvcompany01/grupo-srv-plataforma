@@ -7,8 +7,6 @@ import {
   CheckSquare,
   ChevronDown,
   LayoutDashboard,
-  LogOut,
-  Menu,
   PanelLeftClose,
   Pin,
   Settings,
@@ -19,21 +17,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { Avatar } from '@/componentes/Avatar'
 import { IconeVisual } from '@/componentes/IconeVisual'
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import { IndicadorCronometro } from './IndicadorCronometro'
-import { SinoAvisos } from './SinoAvisos'
-import type { Aviso } from '@/servicos/avisos'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
-import { sair } from '@/app/(auth)/login/acoes'
 
 type Opcao = { id: string; nome: string }
-type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null; avisos: Aviso[]; naoLidos: number; euId: string }
+export type PropsPainel = { navegacao: Navegacao; clientes: Opcao[]; papel: string; cronometro: CronometroAtivo | null }
 type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
@@ -195,7 +188,8 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
+/** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
+export function PainelEspacos({ navegacao, clientes, papel, cronometro, acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
   const caminho = usePathname()
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
@@ -235,29 +229,25 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-lat-borda px-4">
-        <p className="min-w-0 flex-1 truncate text-corpo font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
-        <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
-        {acaoTopo}
-      </div>
-
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
-        <div className="flex h-8 items-center px-2">
-          <h2 className="text-legenda font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
-        </div>
-        <nav className="space-y-0.5">
-          {link('/inicio', 'Minhas tarefas', CheckSquare)}
-          {link('/clientes', 'Clientes', Users)}
-          {papel === 'admin' && link('/config', 'Configurações', Settings)}
-        </nav>
-
-        <div className="mx-2 my-3 border-t border-lat-borda" />
+        {mobile && (
+          <>
+            <nav className="space-y-0.5">
+              {link('/inicio', 'Minhas tarefas', CheckSquare)}
+              {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
+              {link('/clientes', 'Clientes', Users)}
+              {papel === 'admin' && link('/config', 'Configurações', Settings)}
+            </nav>
+            <div className="mx-2 my-3 border-t border-lat-borda" />
+          </>
+        )}
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-8 items-center px-2">
               <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
+              {acaoTopo}
             </div>
 
             <nav className="space-y-0.5">
@@ -284,18 +274,6 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
 
       <div className="shrink-0 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-lat-hover">
-          <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-legenda" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-legenda font-semibold text-lat-fg">{nome}</p>
-            <p className="truncate text-legenda text-lat-3">{papel}</p>
-          </div>
-          <form action={sair}>
-            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-lat-3 transition hover:bg-lat-hover hover:text-lat-fg">
-              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </form>
-        </div>
       </div>
     </div>
   )
@@ -307,7 +285,8 @@ function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
 
-export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & { modoInicial: ModoLateral; larguraInicial: number }) {
+/** Camada 2 no desktop: a barra de espaços, abaixo do cabeçalho, recolhível e redimensionável. */
+export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPainel & { modoInicial: ModoLateral; larguraInicial: number }) {
   const [modo, setModo] = useState(modoInicial)
   const [largura, setLargura] = useState(larguraInicial)
   const [aberta, setAberta] = useState(false)
@@ -363,7 +342,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed inset-y-0 left-0 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -371,13 +350,13 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-screen w-[var(--lat-w)] border-r border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-3.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
           recolhida
-            ? `fixed inset-y-0 left-0 z-40 shadow-2xl transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-full'}`
-            : 'sticky top-0 shrink-0'
+            ? `fixed bottom-0 left-[72px] top-14 z-40 shadow-flutuante transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-[calc(100%+72px)]'}`
+            : 'sticky top-14 z-20 shrink-0'
         }`}
       >
-        <Painel
+        <PainelEspacos
           {...props}
           acaoTopo={
             recolhida ? (
@@ -407,23 +386,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
             onPointerCancel={soltarArrasto}
             onDoubleClick={() => aplicarLargura(LARGURA_LATERAL.padrao)}
             onKeyDown={redimensionarComTeclado}
-            className="absolute -right-1 top-0 z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-transparent hover:after:bg-marca focus-visible:after:w-0.5 focus-visible:after:bg-marca"
+            className="absolute right-0 top-0 z-30 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-transparent hover:after:bg-marca focus-visible:after:w-0.5 focus-visible:after:bg-marca"
           />
         )}
       </aside>
-
-      <div className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-borda bg-white/95 px-3 backdrop-blur md:hidden">
-        <Sheet>
-          <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover">
-            <Menu className="h-5 w-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <Painel {...props} />
-          </SheetContent>
-        </Sheet>
-        <span className="text-corpo font-bold tracking-[0.22em]">Grupo SRV</span>
-      </div>
     </>
   )
 }

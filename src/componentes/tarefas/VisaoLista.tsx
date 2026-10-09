@@ -259,7 +259,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   return (
     <div className="space-y-2">
       {selecionadas.size > 0 && (
-        <div className="sticky top-0 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
+        <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
           <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-perigo-fundo px-3 text-rotulo font-semibold text-perigo-forte transition hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
