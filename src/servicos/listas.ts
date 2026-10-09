@@ -92,3 +92,9 @@ export async function statusDasListas(sb: Supabase, ids: string[]): Promise<Reco
   for (const s of linhas) (mapa[s.list_id] ??= []).push({ id: s.id, nome: s.name, cor: s.color, categoria: s.category as Categoria })
   return mapa
 }
+
+/** 'conteudo' = lista de posts (Novo post em vez de Nova tarefa). Sem a coluna (migration pendente), vale 'tarefas'. */
+export async function tipoDaLista(sb: Supabase, id: string): Promise<'tarefas' | 'conteudo'> {
+  const { data, error } = await sb.from('lists').select('kind').eq('id', id).maybeSingle()
+  return !error && data?.kind === 'conteudo' ? 'conteudo' : 'tarefas'
+}

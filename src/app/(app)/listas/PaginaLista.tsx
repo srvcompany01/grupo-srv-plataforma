@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { IconeVisual } from '@/componentes/IconeVisual'
+import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
 import { CompartilharLista, CriarTarefaTopo } from '@/componentes/tarefas/AcoesLista'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
@@ -16,7 +17,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { montarArvore } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { buscarLista, listarTags } from '@/servicos/listas'
+import { buscarLista, listarTags, tipoDaLista } from '@/servicos/listas'
 import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
@@ -28,6 +29,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
   const sb = await criarClienteServidor()
   const lista = await buscarLista(sb, id)
   if (!lista) notFound()
+  const tipo = await tipoDaLista(sb, id)
 
   const filtros = lerFiltros(sp)
   const hoje = dataDeHoje(new Date())
@@ -98,7 +100,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
       </header>
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
-        <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
+        {tipo === 'conteudo' ? <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} /> : <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />}
       </div>
       <main className="p-4 md:p-5">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
