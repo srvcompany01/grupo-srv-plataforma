@@ -9,6 +9,8 @@ describe('rotaPublica', () => {
     ['/admin', true],
     ['/admin/posts/1', true],
     ['/c/abc', true],
+    ['/f/abc', true],
+    ['/api/cron/recorrencias', true],
     ['/api/dev-arquivos/x', true],
     ['/robots.txt', true],
     ['/', false],

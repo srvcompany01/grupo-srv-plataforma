@@ -3,6 +3,7 @@ import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarComentarios, pessoasDaTarefa } from '@/servicos/comentarios'
+import { buscarRecorrencia } from '@/servicos/recorrencias'
 import { buscarConteudo } from '@/servicos/conteudo'
 import { buscarLista, listarListasVisiveis, listarTags } from '@/servicos/listas'
 import { buscarTarefa, listarAtividade } from '@/servicos/tarefas'
@@ -18,7 +19,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
   const sb = await criarClienteServidor()
   const tarefa = await buscarTarefa(sb, id)
   if (!tarefa) notFound()
-  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo] = await Promise.all([
+  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo, recorrencia] = await Promise.all([
     buscarLista(sb, tarefa.lista.id),
     listarEquipe(sb),
     listarTags(sb, tarefa.lista.espacoId),
@@ -31,6 +32,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
     pessoasDaTarefa(sb, id),
     listarClientes(sb),
     buscarConteudo(sb, id).catch(() => null), // sem a migration de conteúdo a tarefa abre normalmente
+    buscarRecorrencia(sb, id).catch(() => null), // idem para a migration de recorrências
   ])
   return (
     <TelaTarefa
@@ -54,6 +56,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       pessoas={pessoas}
       emJanela={emJanela}
       conteudo={conteudo}
+      recorrencia={recorrencia}
     />
   )
 }

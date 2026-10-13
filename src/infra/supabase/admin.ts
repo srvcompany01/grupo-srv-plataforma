@@ -7,6 +7,7 @@ import type { Database } from './tipos'
  * Cliente com a chave mestra: IGNORA a RLS. Usos permitidos (e só estes):
  * - convidar usuários e definir papel/ativo (config/usuarios/acoes.ts), sempre após exigirAdmin();
  * - scripts/criar-admin.ts;
+ * - formulário público (app/f/[token]): só a RPC enviar_formulario e a leitura do formulário ativo;
  * - Fase 2: endpoint público de leads.
  */
 export function criarClienteAdmin() {

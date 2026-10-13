@@ -435,6 +435,20 @@ export type Database = {
           },
         ]
       }
+      forms: {
+        Row: { active: boolean; archived_at: string | null; assignee_id: string; client_id: string | null; created_at: string; created_by: string | null; description: string | null; fields: Json; id: string; list_id: string; name: string; token: string; updated_at: string }
+        Insert: { active?: boolean; archived_at?: string | null; assignee_id: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; list_id: string; name: string; token: string; updated_at?: string }
+        Update: { active?: boolean; archived_at?: string | null; assignee_id?: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; list_id?: string; name?: string; token?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "forms_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           archived_at: string | null
@@ -974,6 +988,20 @@ export type Database = {
           },
         ]
       }
+      task_recurrences: {
+        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string }
+        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string }
+        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "task_recurrences_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_tags: {
         Row: {
           tag_id: string
@@ -1161,6 +1189,8 @@ export type Database = {
     Functions: {
       registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
       salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }
+      gerar_recorrencias: { Args: { p_hoje: string }; Returns: number }
+      enviar_formulario: { Args: { p_respostas: Json; p_token: string }; Returns: string }
       criar_post_conteudo: { Args: { p_client: string; p_date: string; p_format: string; p_list: string; p_title: string }; Returns: string }
       can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
