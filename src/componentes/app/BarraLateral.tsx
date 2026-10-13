@@ -1,8 +1,7 @@
 'use client'
 
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
   AtSign,
   CheckSquare,
@@ -26,6 +25,7 @@ import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
+import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
@@ -33,9 +33,8 @@ import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; clientes: Opcao[]; papel: string; cronometro: CronometroAtivo | null }
+export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null }
 type IconeLucide = ComponentType<{ className?: string }>
-type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
   'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
@@ -62,32 +61,6 @@ function TituloSecao({ children }: { children: ReactNode }) {
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
-}
-
-function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
-  tipo: TipoArrastavel
-  id: string
-  habilitado: boolean
-  className: string
-  style?: CSSProperties
-  children: ReactNode
-}) {
-  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: idArrastavel(tipo, id),
-    data: { tipo, id },
-    disabled: !habilitado,
-  })
-  // Segurar e arrastar a linha inteira (o PointerSensor só ativa após 6px, então cliques seguem funcionando).
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      className={`${className} ${isDragging ? 'z-20 cursor-grabbing opacity-45 ring-1 ring-marca/40' : ''}`}
-      style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
-    >
-      {children}
-    </div>
-  )
 }
 
 /** Ícone do item; ao passar o mouse vira a seta de abrir/recolher (quando há o que abrir). */
@@ -139,42 +112,45 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
   const detalhe = lista.mes ? rotuloMes(lista.mes) : ''
 
   return (
-    <LinhaArrastavel
+    <LinhaNavegacao
       tipo="list"
       id={lista.id}
+      nome={lista.nome}
       habilitado={podeArrastar}
+      podeEditar={podeGerir}
+      podeExcluir={podeGerir && !lista.slug}
       className={`${item} group ${caminho === href ? ativo : ''}`}
       style={{ paddingLeft: 8 + nivel * 14 }}
     >
-      <Link href={href} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
+      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
         <span className="flex h-4 w-4 shrink-0 items-center justify-center" style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
         <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
       </Link>
       {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
-    </LinhaArrastavel>
+    </LinhaNavegacao>
   )
 }
 
-function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; clientes: Opcao[]; podeGerir: boolean; podeArrastar: boolean }) {
+function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; podeGerir: boolean; podeArrastar: boolean }) {
   const [aberta, setAberta] = useState(true)
 
   return (
     <div>
-      <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
+      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
         <IconeAlternavel aberto={aberta} alternar={() => setAberta(!aberta)} rotulo={pasta.nome} ativo>
           <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         </IconeAlternavel>
         <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
         <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
-        {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
+        {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
-      </LinhaArrastavel>
+      </LinhaNavegacao>
       {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
     </div>
   )
 }
 
-function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; clientes: Opcao[]; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
+function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
   const [aberto, setAberto] = useState(true)
   const href = `/espacos/${espaco.id}`
@@ -184,18 +160,18 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
 
   return (
     <div>
-      <LinhaArrastavel tipo="space" id={espaco.id} habilitado={podeArrastar} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
+      <LinhaNavegacao tipo="space" id={espaco.id} nome={espaco.nome} habilitado={podeArrastar} podeEditar={podeEditarEspaco} podeExcluir={podeEditarEspaco && !espaco.slug} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
         <IconeAlternavel aberto={aberto} alternar={() => setAberto(!aberto)} rotulo={espaco.nome} ativo={temConteudo}>
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
             <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
           </span>
         </IconeAlternavel>
-        <Link href={href} className="min-w-0 flex-1 truncate">
+        <Link href={href} draggable={false} className="min-w-0 flex-1 truncate">
           {espaco.nome}
         </Link>
-        {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} />}
+        {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
-      </LinhaArrastavel>
+      </LinhaNavegacao>
 
       {aberto && (
         <div>
@@ -205,8 +181,8 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
               <span className="min-w-0 flex-1 truncate">Painel de Gestão</span>
             </Link>
           )}
-          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} clientes={clientes} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
-          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
+          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
           {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
         </div>
       )}
@@ -215,7 +191,7 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
 }
 
 /** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
-export function PainelEspacos({ navegacao, clientes, papel, cronometro, acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
+export function PainelEspacos({ navegacao, papel, cronometro, acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
   const caminho = usePathname()
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
@@ -293,17 +269,17 @@ export function PainelEspacos({ navegacao, clientes, papel, cronometro, acaoTopo
 
             <nav className="space-y-0.5">
               {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
-              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
+              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
 
             {(navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
               <div className="mt-3 border-t border-lat-borda pt-2">
                 <div className="flex h-7 items-center px-2">
                   <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Itens soltos</h2>
-                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
+                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} />}
                 </div>
                 <nav className="space-y-0.5">
-                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
+                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                   {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                 </nav>
               </div>

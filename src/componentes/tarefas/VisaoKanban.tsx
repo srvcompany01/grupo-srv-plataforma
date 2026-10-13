@@ -140,7 +140,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
     <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-corpo shadow-cartao transition hover:-translate-y-px hover:border-borda-forte hover:shadow-flutuante focus-within:border-petroleo">
       <div className="flex flex-wrap items-center gap-1.5">
         <SeloPrioridade prioridade={tarefa.prioridade} />
-        {ctx.mostrarLista && <span className="max-w-full truncate rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2" title={`${tarefa.listaNome} · @${tarefa.clienteNome}`}>{tarefa.listaNome}</span>}
+        {ctx.mostrarLista && <span className="max-w-full truncate rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
       </div>
       <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium leading-snug outline-none hover:text-marca focus-visible:underline">
         {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}

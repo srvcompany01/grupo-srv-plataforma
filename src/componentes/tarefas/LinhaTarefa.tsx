@@ -93,7 +93,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'tagcliente':
         return (
           <span key={colunaId} className="min-w-0 px-2">
-            <SeletorTagCliente tarefaId={tarefa.id} atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
+            <SeletorTagCliente tarefaId={tarefa.id} atual={tarefa.clienteId ? { id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor } : null} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
           </span>
         )
       case 'etiquetas':
@@ -130,12 +130,12 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
               {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
               {tarefa.filhos.length > 0 && <span className="ml-1.5 text-legenda text-texto-3">{tarefa.filhos.length}</span>}
             </Link>
-            {ctx.mostrarLista && <span className="block truncate text-legenda text-texto-3" title={`${tarefa.listaNome} · @${tarefa.clienteNome}`}>{tarefa.listaNome} · @{tarefa.clienteNome}</span>}
+            {ctx.mostrarLista && <span className="block truncate text-legenda text-texto-3" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}{tarefa.clienteNome && ` · @${tarefa.clienteNome}`}</span>}
           </div>
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente
               tarefaId={tarefa.id}
-              atual={{ id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor }}
+              atual={tarefa.clienteId ? { id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor } : null}
               opcoes={ctx.tagsCliente}
               podeGerir={ctx.podeGerirTagCliente}
             />

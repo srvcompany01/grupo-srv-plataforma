@@ -79,7 +79,7 @@ export function GradePropriedades({
         <Linha icone={Tag} titulo="Cliente">
           <SeletorTagCliente
             tarefaId={t.id}
-            atual={{ id: t.lista.clienteId, nome: t.lista.clienteNome, cor: t.lista.clienteCor }}
+            atual={t.lista.clienteId ? { id: t.lista.clienteId, nome: t.lista.clienteNome, cor: t.lista.clienteCor } : null}
             opcoes={tagsCliente}
             podeGerir={podeGerir}
           />

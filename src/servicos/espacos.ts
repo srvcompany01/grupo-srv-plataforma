@@ -7,7 +7,7 @@ export async function listarArvore(sb: Supabase): Promise<Navegacao> {
   const [espacos, pastas, listas] = await Promise.all([
     sb.from('spaces').select('id, name, slug, description, color, icon, emoji, position, parent_id').is('archived_at', null),
     sb.from('folders').select('id, name, color, icon, emoji, space_id, position').is('archived_at', null),
-    sb.from('lists').select('id, name, color, icon, emoji, space_id, folder_id, position, reference_month, clients(name)').is('archived_at', null),
+    sb.from('lists').select('id, name, color, icon, emoji, space_id, folder_id, position, reference_month, slug, clients(name)').is('archived_at', null),
   ])
   return montarNavegacao(
     dados(espacos).map((e) => ({ id: e.id, nome: e.name, slug: e.slug, descricao: e.description, cor: e.color, icone: e.icon, emoji: e.emoji, posicao: e.position, paiId: e.parent_id })),
@@ -19,6 +19,7 @@ export async function listarArvore(sb: Supabase): Promise<Navegacao> {
       pastaId: l.folder_id,
       posicao: l.position,
       clienteNome: l.clients?.name ?? '',
+      slug: l.slug,
       mes: l.reference_month,
       cor: l.color,
       icone: l.icon,

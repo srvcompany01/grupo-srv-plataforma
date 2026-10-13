@@ -23,13 +23,14 @@ function Chip({ tag }: { tag: TagCliente }) {
   )
 }
 
-/** Tag obrigatoria da lista. Alterar em qualquer linha atualiza a mae e todas as subtarefas. */
-export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = false }: {
+/** Tag de cliente da tarefa (opcional). Alterar em qualquer linha atualiza a mãe e todas as subtarefas. */
+export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], podeGerir = false }: {
   tarefaId: string
-  atual: TagCliente
+  atual: TagCliente | null
   opcoes?: TagCliente[]
   podeGerir?: boolean
 }) {
+  const atual: TagCliente = atualOuNulo ?? { id: '', nome: 'Sem cliente', cor: '#87909e' }
   const [aberto, setAberto] = useState(false)
   const [configurando, setConfigurando] = useState(false)
   const [nome, setNome] = useState(atual.nome)
@@ -37,7 +38,7 @@ export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = fa
   const [pendente, iniciar] = useTransition()
   const editavel = podeGerir && opcoes.length > 0
 
-  if (!editavel) return <Chip tag={atual} />
+  if (!editavel) return atualOuNulo ? <Chip tag={atual} /> : <span className="text-texto-3">—</span>
 
   const abrirConfiguracao = () => {
     setNome(atual.nome)
@@ -45,8 +46,8 @@ export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = fa
     setConfigurando(true)
   }
 
-  const selecionar = (clienteId: string) => {
-    if (clienteId === atual.id) return
+  const selecionar = (clienteId: string | null) => {
+    if ((clienteId ?? '') === atual.id) return
     iniciar(async () => {
       if (avisar(await definirTagClienteDaTarefa(tarefaId, clienteId), true)) setAberto(false)
     })
@@ -64,7 +65,7 @@ export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = fa
     <Popover open={aberto} onOpenChange={(valor) => { setAberto(valor); if (!valor) setConfigurando(false) }}>
       <PopoverTrigger asChild>
         <button type="button" aria-label={`Tag do cliente: ${atual.nome}`} title="Alterar tag de cliente" className="shrink-0 rounded-md outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-marca">
-          <Chip tag={atual} />
+          {atualOuNulo ? <Chip tag={atual} /> : <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={7} className="w-80 gap-0 overflow-hidden rounded-xl border border-borda bg-white p-0 shadow-xl">
@@ -100,10 +101,15 @@ export function SeletorTagCliente({ tarefaId, atual, opcoes = [], podeGerir = fa
         ) : (
           <div>
             <div className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
-              <div className="min-w-0 flex-1"><p className="text-corpo font-semibold text-texto">Tag obrigatória do cliente</p><p className="text-legenda text-texto-3">Atualiza a tarefa-mãe e todas as subtarefas</p></div>
-              <button type="button" onClick={abrirConfiguracao} aria-label="Configurar nome e cor da tag" title="Configurar tag" className="rounded-lg border border-borda p-1.5 text-texto-3 hover:bg-hover hover:text-texto"><Settings2 className="h-4 w-4" /></button>
+              <div className="min-w-0 flex-1"><p className="text-corpo font-semibold text-texto">Tag do cliente</p><p className="text-legenda text-texto-3">Atualiza a tarefa-mãe e todas as subtarefas</p></div>
+              {atualOuNulo && <button type="button" onClick={abrirConfiguracao} aria-label="Configurar nome e cor da tag" title="Configurar tag" className="rounded-lg border border-borda p-1.5 text-texto-3 hover:bg-hover hover:text-texto"><Settings2 className="h-4 w-4" /></button>}
             </div>
             <div className="max-h-64 space-y-1 overflow-y-auto p-2">
+              <button type="button" disabled={pendente || !atualOuNulo} onClick={() => selecionar(null)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-hover disabled:opacity-50">
+                <span className="h-3 w-3 shrink-0 rounded-full border border-dashed border-borda-forte" />
+                <span className="min-w-0 flex-1 truncate text-corpo text-texto-2">Sem cliente</span>
+                {!atualOuNulo && <Check className="h-4 w-4 shrink-0 text-texto-3" />}
+              </button>
               {opcoes.map((tag) => (
                 <button key={tag.id} type="button" disabled={pendente} onClick={() => selecionar(tag.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-hover disabled:opacity-50">
                   <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: tag.cor, boxShadow: `0 0 0 1px ${tag.cor}55` }} />

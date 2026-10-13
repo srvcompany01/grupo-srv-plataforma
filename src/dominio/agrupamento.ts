@@ -82,7 +82,7 @@ function regraDe(agrupamento: string, campos: DefinicaoCampo[], equipe: Pessoa[]
     case 'mes':
       return { chaves: (t) => porMes(t.prazo) }
     case 'cliente':
-      return { chaves: (t) => [{ id: t.clienteId, nome: `@${t.clienteNome}`, cor: t.clienteCor }] }
+      return { chaves: (t) => [t.clienteId ? { id: t.clienteId, nome: `@${t.clienteNome}`, cor: t.clienteCor } : { id: 'sem-cliente', nome: 'Sem cliente', cor: '#87909e' }] }
     case 'responsavel':
       return { chaves: (t) => t.responsaveis.map((p, i) => ({ id: p.id, nome: p.nome, cor: corDaPaleta(i) })) }
     case 'etiqueta':

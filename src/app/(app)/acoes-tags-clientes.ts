@@ -11,9 +11,9 @@ const COR_HEX = /^#[0-9a-f]{6}$/i
  * Troca a tag de cliente de UMA tarefa e de toda a sua árvore (a mãe de origem e todas as subtarefas),
  * sem mexer nas outras tarefas da lista. Sobe até a raiz e desce de volta para manter a árvore coerente.
  */
-export async function definirTagClienteDaTarefa(tarefaId: string, clienteId: string): Promise<Resultado> {
+export async function definirTagClienteDaTarefa(tarefaId: string, clienteId: string | null): Promise<Resultado> {
   await exigirEquipe()
-  if (!tarefaId || !clienteId) return { erro: 'Selecione uma tag de cliente.' }
+  if (!tarefaId) return { erro: 'Tarefa inválida.' }
   const sb = await criarClienteServidor()
   const resultado = await tentar(async () => {
     const { data: tarefa, error } = await sb.from('tasks').select('id, parent_task_id, list_id').eq('id', tarefaId).single()
@@ -32,7 +32,7 @@ export async function definirTagClienteDaTarefa(tarefaId: string, clienteId: str
     const { error: erroUpdate, count } = await sb.from('tasks').update({ client_id: clienteId }, { count: 'exact' }).in('id', [...ids])
     if (erroUpdate) throw erroUpdate
     if (!count) throw { code: '42501' }
-  }, 'Tag de cliente atualizada nesta tarefa e nas subtarefas.')
+  }, clienteId ? 'Tag de cliente atualizada nesta tarefa e nas subtarefas.' : 'Tag de cliente removida desta tarefa e das subtarefas.')
   revalidatePath('/', 'layout')
   return resultado
 }

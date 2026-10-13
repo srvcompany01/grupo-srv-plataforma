@@ -82,7 +82,6 @@ export async function criarPastaNavegacao(dados: {
 export async function criarListaNavegacao(dados: {
   espacoId: string | null
   pastaId: string | null
-  clienteId: string
   nome: string
   mes: string
   visual: Visual
@@ -90,7 +89,6 @@ export async function criarListaNavegacao(dados: {
   await exigirEquipe()
   const nome = dados.nome.trim()
   if (!nome) return { erro: 'Informe o nome da lista.' }
-  if (!dados.clienteId) return { erro: 'Escolha o cliente da lista.' }
   if (dados.mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(dados.mes)) return { erro: 'Mês inválido.' }
   const sb = await criarClienteServidor()
   let id = ''
@@ -99,7 +97,6 @@ export async function criarListaNavegacao(dados: {
     id = await estrutura.criarLista(sb, {
       espacoId: dados.espacoId,
       pastaId: dados.pastaId,
-      clienteId: dados.clienteId,
       nome,
       mes: dados.mes ? `${dados.mes}-01` : null,
       ...visual,
@@ -217,4 +214,74 @@ export async function moverItemNavegacao(dados: {
   }, 'Organização atualizada.')
   revalidatePath('/', 'layout')
   return resultado
+}
+
+type TipoItem = 'space' | 'folder' | 'list'
+const TABELA = { space: 'spaces', folder: 'folders', list: 'lists' } as const
+
+export async function renomearItemNavegacao(dados: { tipo: TipoItem; id: string; nome: string }): Promise<Resultado> {
+  await exigirEquipe()
+  const nome = dados.nome.trim()
+  if (!nome || nome.length > 120) return { erro: 'O nome deve ter de 1 a 120 caracteres.' }
+  const sb = await criarClienteServidor()
+  const resultado = await tentar(async () => {
+    const { error, count } = await sb.from(TABELA[dados.tipo]).update({ name: nome }, { count: 'exact' }).eq('id', dados.id)
+    if (error) throw error
+    if (!count) throw { code: '42501' }
+  }, 'Nome atualizado.')
+  revalidatePath('/', 'layout')
+  return resultado
+}
+
+/** "Excluir" = arquivar (os dados continuam no banco). Pasta e espaço levam as listas junto, senão elas "subiriam" para a raiz. */
+export async function excluirItemNavegacao(dados: { tipo: TipoItem; id: string }): Promise<Resultado> {
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const agora = new Date().toISOString()
+  const resultado = await tentar(async () => {
+    const tabela = TABELA[dados.tipo]
+    if (dados.tipo !== 'folder') {
+      const { data: alvo, error: e0 } = await sb.from(dados.tipo === 'space' ? 'spaces' : 'lists').select('slug').eq('id', dados.id).maybeSingle()
+      if (e0) throw e0
+      if (!alvo) throw { code: '42501' }
+      if (alvo.slug) throw { code: 'P0001', message: 'Esta é uma área fixa da plataforma e não pode ser excluída.' }
+    }
+
+    if (dados.tipo === 'space') {
+      await exigirAdmin()
+      const { data: filhos, error: e1 } = await sb.from('spaces').select('id').eq('parent_id', dados.id)
+      if (e1) throw e1
+      const ids = [dados.id, ...filhos.map((f) => f.id)]
+      for (const t of ['lists', 'folders'] as const) {
+        const { error } = await sb.from(t).update({ archived_at: agora }).in('space_id', ids).is('archived_at', null)
+        if (error) throw error
+      }
+      const { error, count } = await sb.from('spaces').update({ archived_at: agora }, { count: 'exact' }).in('id', ids)
+      if (error) throw error
+      if (!count) throw { code: '42501' }
+      return
+    }
+    if (dados.tipo === 'folder') {
+      const { error: e2 } = await sb.from('lists').update({ archived_at: agora }).eq('folder_id', dados.id).is('archived_at', null)
+      if (e2) throw e2
+    }
+    const { error, count } = await sb.from(tabela).update({ archived_at: agora }, { count: 'exact' }).eq('id', dados.id)
+    if (error) throw error
+    if (!count) throw { code: '42501' }
+  }, dados.tipo === 'list' ? 'Lista excluída.' : dados.tipo === 'folder' ? 'Pasta excluída.' : 'Espaço excluído.')
+  revalidatePath('/', 'layout')
+  return resultado
+}
+
+export async function duplicarListaNavegacao(id: string): Promise<ResultadoCriacao> {
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  let novo = ''
+  const resultado = await tentar(async () => {
+    const { data, error } = await sb.rpc('duplicar_lista', { p_list: id })
+    if (error) throw error
+    novo = data
+  }, 'Lista duplicada (sem as tarefas).')
+  revalidatePath('/', 'layout')
+  return { ...(resultado ?? {}), id: resultado?.erro ? undefined : novo }
 }

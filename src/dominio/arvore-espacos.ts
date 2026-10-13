@@ -8,6 +8,8 @@ export type ItemLista = {
   pastaId: string | null
   posicao: string
   clienteNome: string
+  /** Área fixa da plataforma (não pode ser excluída). */
+  slug?: string | null
   /** YYYY-MM-01 */
   mes: string | null
 } & Visual

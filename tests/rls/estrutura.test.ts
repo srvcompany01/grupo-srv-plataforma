@@ -36,12 +36,11 @@ describe('regras', () => {
     await criarLista(db, { spaceId: conteudo, clientId: cliente, mes: '2026-10-01' })
   })
 
-  it('lista sem cliente é rejeitada', async () => {
+  it('lista não precisa de cliente', async () => {
     const db = await criarBanco()
     const { conteudo } = await base(db)
-    await expect(
-      db.query(`insert into lists (space_id, name, position) values ($1, 'L', 'a0')`, [conteudo]),
-    ).rejects.toThrow()
+    const { rows } = await db.query(`insert into lists (space_id, name, position) values ($1, 'L', 'a0') returning client_id`, [conteudo])
+    expect(rows).toEqual([{ client_id: null }])
   })
 
   it('não apaga o último status concluído', async () => {

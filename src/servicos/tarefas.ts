@@ -234,7 +234,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
       espacoId: t.lists?.space_id ?? null,
       mes: t.lists?.reference_month ?? null,
       // Cliente da própria tarefa (o campo mora em `lista` por compatibilidade com quem já lê daí).
-      clienteId: t.client_id,
+      clienteId: t.client_id ?? '',
       clienteNome: t.clients?.name ?? '',
       clienteCor: t.clients?.color ?? '#64748b',
     },

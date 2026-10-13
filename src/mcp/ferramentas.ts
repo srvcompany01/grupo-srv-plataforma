@@ -66,7 +66,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     entrada: {},
     executar: async (ctx) => ({
       voce: { nome: ctx.nome, papel: ctx.papel, permissao: ctx.escopo === 'write' ? 'leitura e escrita' : 'somente leitura' },
-      hierarquia: 'Espaço › (Subárea) › Pasta › Lista › Tarefa › Subtarefa. Pastas e listas também podem ficar soltas na raiz. Toda lista pertence a um cliente (o padrão das tarefas dela).',
+      hierarquia: 'Espaço › (Subárea) › Pasta › Lista › Tarefa › Subtarefa. Pastas e listas também podem ficar soltas na raiz. A lista não precisa de cliente; o cliente é uma tag opcional de cada tarefa (a lista pode ter um cliente padrão).',
       regras: [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
@@ -97,7 +97,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_clientes',
-    descricao: 'Clientes cadastrados (toda lista pertence a um cliente).',
+    descricao: 'Clientes cadastrados (usados como tag opcional nas tarefas).',
     escrita: false,
     entrada: {},
     executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status })),
@@ -182,17 +182,17 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_lista',
-    descricao: 'Cria uma lista (já vem com os status padrão). Exige ser gestor do espaço. mes opcional no formato AAAA-MM-01.',
+    descricao: 'Cria uma lista (já vem com os status padrão). Cliente é opcional. Exige ser gestor do espaço. mes opcional no formato AAAA-MM-01.',
     escrita: true,
     entrada: {
       espacoId: id('Id do espaço').nullable().optional(),
       pastaId: id('Id da pasta').nullable().optional(),
-      clienteId: id('Id do cliente dono da lista'),
+      clienteId: id('Id do cliente padrão das tarefas (opcional)').nullable().optional(),
       nome: z.string().min(1).max(80),
       mes: z.string().regex(/^\d{4}-\d{2}-01$/).nullable().optional(),
     },
     executar: async ({ sb }, a) => ({
-      listaId: await estrutura.criarLista(sb, { espacoId: a.espacoId ?? null, pastaId: a.pastaId ?? null, clienteId: a.clienteId, nome: a.nome.trim(), mes: a.mes ?? null }),
+      listaId: await estrutura.criarLista(sb, { espacoId: a.espacoId ?? null, pastaId: a.pastaId ?? null, clienteId: a.clienteId ?? null, nome: a.nome.trim(), mes: a.mes ?? null }),
     }),
   }),
 

@@ -587,7 +587,7 @@ export type Database = {
       lists: {
         Row: {
           archived_at: string | null
-          client_id: string
+          client_id: string | null
           color: string
           created_at: string
           emoji: string | null
@@ -603,7 +603,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
-          client_id: string
+          client_id?: string | null
           color?: string
           created_at?: string
           emoji?: string | null
@@ -619,7 +619,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
-          client_id?: string
+          client_id?: string | null
           color?: string
           created_at?: string
           emoji?: string | null
@@ -1049,7 +1049,7 @@ export type Database = {
       tasks: {
         Row: {
           archived_at: string | null
-          client_id: string
+          client_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -1069,7 +1069,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
-          client_id: string
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1089,7 +1089,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
-          client_id?: string
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1203,6 +1203,7 @@ export type Database = {
     Functions: {
       registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
       salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }
+      duplicar_lista: { Args: { p_list: string }; Returns: string }
       gerar_recorrencias: { Args: { p_hoje: string }; Returns: number }
       enviar_formulario: { Args: { p_respostas: Json; p_token: string }; Returns: string }
       criar_post_conteudo: { Args: { p_client: string; p_date: string; p_format: string; p_list: string; p_title: string }; Returns: string }

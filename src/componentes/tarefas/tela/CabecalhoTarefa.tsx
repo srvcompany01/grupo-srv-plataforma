@@ -35,7 +35,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
   async function mover(destinoId: string) {
     const destino = listas.find((l) => l.id === destinoId)
     if (!destino || destino.id === t.lista.id) return
-    const aviso = destino.clienteId !== t.lista.clienteId ? `Atenção: a tag do cliente muda para @${destino.clienteNome}.` : undefined
+    const aviso = destino.clienteId !== t.lista.clienteId ? (destino.clienteNome ? `Atenção: a tag do cliente muda para @${destino.clienteNome}.` : 'Atenção: a tag do cliente será removida (a lista de destino não tem cliente).') : undefined
     if (!(await confirmar({ titulo: `Mover a tarefa (e as subtarefas) para "${destino.nome}"?`, descricao: aviso, confirmar: 'Mover' }))) return
     iniciar(async () => {
       if (avisar(await moverParaListaAcao(t.id, destino.id), true)) setMovendo(false)
@@ -108,7 +108,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         <Link href={`/listas/${t.lista.id}`} className="hover:text-marca">
           {t.lista.nome}
         </Link>
-        {' · '}@{t.lista.clienteNome}
+        {t.lista.clienteNome && ` · @${t.lista.clienteNome}`}
         {t.lista.mes && ` · ${rotuloMes(t.lista.mes)}`}
       </div>
 
@@ -119,7 +119,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
           <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-corpo`}>
             {listas.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.espacoNome} › {l.nome} · @{l.clienteNome}
+                {l.espacoNome} › {l.nome}{l.clienteNome ? ` · @${l.clienteNome}` : ''}
                 {l.mes ? ` · ${rotuloMes(l.mes)}` : ''}
               </option>
             ))}
