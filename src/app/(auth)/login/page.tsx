@@ -37,12 +37,12 @@ export default function Login() {
             <Marca tamanho="h-9 w-9 text-sm" />
             <div>
               <p className="font-sans text-sm font-bold tracking-[-0.025em]">Grupo SRV</p>
-              <p className="font-mono text-legenda uppercase tracking-[0.08em] text-texto-3">Plataforma da agência</p>
+              <p className="font-mono text-legenda uppercase tracking-rotulo text-texto-3">Plataforma da agência</p>
             </div>
           </div>
 
           <div className="max-w-lg">
-            <span className="inline-flex rounded-full border border-borda bg-white px-3 py-1.5 font-mono text-legenda uppercase tracking-[0.08em] text-texto-2">
+            <span className="inline-flex rounded-full border border-borda bg-white px-3 py-1.5 font-mono text-legenda uppercase tracking-rotulo text-texto-2">
               Trabalho em um só lugar
             </span>
             <h1 className="mt-5 text-[48px] leading-[1.05] font-extrabold tracking-[-0.045em] text-texto lg:text-[58px]">
@@ -61,13 +61,13 @@ export default function Login() {
                 <div key={status} className={`flex items-center gap-3 px-4 py-3.5 ${i ? 'border-t border-borda' : ''}`}>
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: cor }} />
                   <span className="min-w-0 flex-1 truncate text-corpo font-medium">{titulo}</span>
-                  <span className="rounded-full bg-fundo px-2 py-1 font-mono text-legenda tracking-[0.05em] text-texto-2">{status}</span>
+                  <span className="rounded-full bg-fundo px-2 py-1 font-mono text-legenda tracking-rotulo text-texto-2">{status}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <p className="font-mono text-legenda uppercase tracking-[0.08em] text-texto-3">Conteúdo · Operação · Clientes</p>
+          <p className="font-mono text-legenda uppercase tracking-rotulo text-texto-3">Conteúdo · Operação · Clientes</p>
         </section>
 
         <section className="flex items-center justify-center p-6 sm:p-10 lg:p-14">

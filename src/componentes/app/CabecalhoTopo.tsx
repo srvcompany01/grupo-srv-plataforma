@@ -42,7 +42,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: P
         </SheetContent>
       </Sheet>
 
-      <Link href="/inicio" className="min-w-0 truncate text-[15px] font-semibold tracking-tight text-texto">Srv Company</Link>
+      <Link href="/inicio" className="min-w-0 truncate text-destaque font-semibold text-texto">Srv Company</Link>
 
       <form action="/painel-de-gestao" method="get" role="search" className="relative mx-auto hidden w-full max-w-md sm:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" aria-hidden="true" />

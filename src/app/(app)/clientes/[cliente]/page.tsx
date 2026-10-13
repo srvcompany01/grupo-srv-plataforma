@@ -51,7 +51,7 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
             // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
             <img src={capa.url} alt="" width={1200} height={375} className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-[0.08em] text-white/90">{iniciais(cliente.nome)}</span>
+            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-rotulo text-white/90">{iniciais(cliente.nome)}</span>
           )}
           {capa?.credito && <span className="absolute bottom-1.5 right-2 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
         </div>

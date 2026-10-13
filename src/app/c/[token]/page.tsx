@@ -15,7 +15,7 @@ function Linha({ token, post, mostrarStatus }: { token: string; post: PostResumo
     <li>
       <Link href={`/c/${token}/p/${post.id}`} className="flex items-center gap-3 px-4 py-3 transition active:bg-hover">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <p className="truncate text-[15px] font-medium">{post.ideia || 'Post'}</p>
+          <p className="truncate text-destaque font-medium">{post.ideia || 'Post'}</p>
           <div className="flex flex-wrap items-center gap-2 text-corpo text-texto-2">
             <EtiquetaFormato formato={post.formato} />
             <span className="flex items-center gap-1">

@@ -37,12 +37,16 @@
   --color-carbon: #261b19;
 
   /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
+  --text-micro: 10px;
   --text-legenda: 11px;
   --text-rotulo: 12px;
   --text-corpo: 13px;
   --text-destaque: 14px;
 
   /* Cores semânticas: erro/exclusão, sucesso e aviso, cada uma com tom forte, base, borda e fundo suave. */
+  /* Espaçamento entre letras: um só padrão para rótulos em caixa-alta. */
+  --tracking-rotulo: 0.06em;
+
   --color-perigo: #c64343;
   --color-perigo-forte: #a92727;
   --color-perigo-borda: #edb4b0;
@@ -206,7 +210,7 @@ body {
   .eyebrow {
     @apply text-legenda leading-5 font-medium uppercase text-texto-3;
     font-family: var(--font-mono);
-    letter-spacing: 0.08em;
+    letter-spacing: var(--tracking-rotulo);
   }
 
   .surface-card {

@@ -50,7 +50,7 @@ function OpcaoCriacao({ icone: Icone, nome, descricao, cor, onClick, seta = fals
     >
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center" style={{ color: cor }}><Icone className="h-[18px] w-[18px]" /></span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 text-destaque font-medium text-[#292a2d]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-wide text-[#8b8c91]">Em breve</span>}</span>
+        <span className="flex items-center gap-2 text-destaque font-medium text-[#292a2d]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-rotulo text-[#8b8c91]">Em breve</span>}</span>
         {descricao && <span className="mt-0.5 block text-legenda leading-[1.45] text-[#77787d]">{descricao}</span>}
       </span>
       {seta && <ChevronRight className="mt-0.5 h-4 w-4 text-[#98999d]" />}

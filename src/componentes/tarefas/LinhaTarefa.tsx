@@ -49,8 +49,9 @@ export const colunasDoContexto = (ctx: Pick<Contexto, 'colunas' | 'camposPersona
 
 /** `colunas` = ids após Nome, na ordem de exibição. `comMais` reserva a coluna final do "+" (só o cabeçalho usa). */
 export function gradeDaLista(colunas: string[], larguras: Record<string, number> = {}, comMais = false) {
-  // A coluna de nome ocupa o espaço que sobra; a largura salva vira o mínimo.
-  const nome = `minmax(${larguraDaColuna('nome', larguras)}px, 1fr)`
+  // A coluna de nome ocupa o espaço que sobra, até o usuário arrastar a borda: aí a largura escolhida vale
+  // (encolher a coluna só funciona se ela deixar de ser flexível).
+  const nome = larguras.nome ? `${larguras.nome}px` : `minmax(${larguraDaColuna('nome', larguras)}px, 1fr)`
   return [nome, ...colunas.map((id) => `${larguraDaColuna(id, larguras)}px`), ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
 }
 
@@ -119,7 +120,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           <button
             aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
             onClick={() => setAberta(!aberta)}
-            className={`rounded p-0.5 hover:bg-black/5 ${tarefa.filhos.length ? '' : 'invisible'}`}
+            className="rounded p-0.5 text-texto-3 hover:bg-black/5 hover:text-texto"
           >
             <ChevronRight className={`h-3.5 w-3.5 transition ${aberta ? 'rotate-90' : ''}`} />
           </button>
@@ -161,6 +162,16 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         {colunas.map(celula)}
       </div>
       {aberta && tarefa.filhos.map((f) => <LinhaTarefa key={f.id} tarefa={f} nivel={nivel + 1} ctx={ctx} euId={euId} />)}
+      {aberta && !criandoSubtarefa && (
+        <button
+          type="button"
+          onClick={() => setCriandoSubtarefa(true)}
+          className="flex min-h-8 w-full items-center gap-2 border-t border-borda py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-hover/80 hover:text-marca"
+          style={{ paddingLeft: 52 + nivel * 20 }}
+        >
+          <CornerDownRight className="h-3.5 w-3.5" /> Adicionar subtarefa
+        </button>
+      )}
       {criandoSubtarefa && (
         <NovaTarefa
           listaId={tarefa.listaId}

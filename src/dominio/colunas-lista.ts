@@ -10,7 +10,7 @@ export const COLUNAS_PADRAO = [
   { id: 'etiquetas', nome: 'Etiquetas', padrao: false, largura: 180, minima: 100, maxima: 480 },
 ] as const
 
-export const COLUNA_NOME = { id: 'nome', largura: 360, minima: 220, maxima: 800 } as const
+export const COLUNA_NOME = { id: 'nome', largura: 360, minima: 160, maxima: 800 } as const
 export const COLUNAS_BASE: readonly ({ id: string } & LimiteColuna)[] = [COLUNA_NOME, ...COLUNAS_PADRAO]
 
 export const LIMITE_CAMPO: LimiteColuna = { largura: 180, minima: 120, maxima: 600 }

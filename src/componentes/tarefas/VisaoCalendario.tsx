@@ -78,7 +78,7 @@ export function VisaoCalendario({
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
           <div className="grid grid-cols-7 border-b border-borda bg-fundo/70">
-            {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-bold uppercase tracking-wide text-texto-3">{dia}</div>)}
+            {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3">{dia}</div>)}
           </div>
           <div className="grid grid-cols-7">
             {dias.map((dia) => {
@@ -110,7 +110,7 @@ export function VisaoCalendario({
 
       {semData.length > 0 && (
         <div className="border-t border-borda bg-fundo/50 px-4 py-3">
-          <p className="mb-2 text-legenda font-bold uppercase tracking-wide text-texto-3">Sem data definida · {semData.length}</p>
+          <p className="mb-2 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Sem data definida · {semData.length}</p>
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Link key={tarefa.id} href={`/tarefas/${tarefa.id}`} scroll={false} className="rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>

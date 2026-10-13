@@ -150,7 +150,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
 
   const iniciarRedimensionamento = (id: string, evento: PointerEvent<HTMLButtonElement>) => {
     const limite = limiteDaColuna(id, campos)
-    arrasteRef.current = { id, inicioX: evento.clientX, larguraInicial: larguraDaColuna(id, largurasRef.current), minima: limite.minima, maxima: limite.maxima, pointerId: evento.pointerId }
+    // Nome começa flexível: o ponto de partida do arrasto é a largura que ele tem na tela agora.
+    const medida = id === 'nome' && largurasRef.current.nome == null ? evento.currentTarget.parentElement?.getBoundingClientRect().width : undefined
+    arrasteRef.current = { id, inicioX: evento.clientX, larguraInicial: medida ? Math.round(medida) : larguraDaColuna(id, largurasRef.current), minima: limite.minima, maxima: limite.maxima, pointerId: evento.pointerId }
     evento.currentTarget.setPointerCapture(evento.pointerId)
     evento.preventDefault()
   }
@@ -289,7 +291,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           {!g.semCabecalho && (
             <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition hover:bg-hover">
               <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
-              <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-[0.04em] text-white" style={{ background: g.cor }}>
+              <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-rotulo text-white" style={{ background: g.cor }}>
                 {g.nome}
               </span>
               <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
@@ -297,7 +299,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-8 items-center border-y border-borda bg-white text-legenda font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+              <div className="grid min-h-8 items-center border-y border-borda bg-white text-legenda font-semibold uppercase tracking-rotulo text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
                 <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)

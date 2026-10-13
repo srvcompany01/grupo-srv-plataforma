@@ -44,7 +44,7 @@ const ITENS: Item[] = [
   { rotulo: 'Mais', icone: Ellipsis },
 ]
 
-const base = 'flex w-full flex-col items-center gap-1 rounded-xl px-0 py-2 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70'
+const base = 'flex w-full flex-col items-center gap-0.5 rounded-lg px-0 py-1.5 text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70'
 
 /** Primeira camada da navegação: faixa fixa de 64px na cor de ação do tema, só ícones e rótulos curtos. */
 export function NavegacaoGlobal({ admin }: { admin: boolean }) {
@@ -54,15 +54,15 @@ export function NavegacaoGlobal({ admin }: { admin: boolean }) {
   const ativo = (i: Item) => (i.ativoEm ?? (i.href ? [i.href] : [])).some((p) => caminho === p || caminho.startsWith(`${p}/`))
 
   return (
-    <nav aria-label="Navegação principal" className="sticky top-0 z-30 hidden h-dvh w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto bg-petroleo px-1 py-3 text-white md:flex">
-      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="mb-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-        <Marca tamanho="h-10 w-10 text-lg" />
+    <nav aria-label="Navegação principal" className="sticky top-0 z-30 hidden h-dvh w-16 shrink-0 flex-col items-center gap-0.5 overflow-y-auto bg-petroleo px-1 py-2 text-white md:flex">
+      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="mb-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+        <Marca tamanho="h-8 w-8 text-base" />
       </Link>
       {itens.map((i) => {
         const Icone = i.icone
         const conteudo = (
           <>
-            <Icone className="h-5 w-5" aria-hidden />
+            <Icone className="h-4 w-4" aria-hidden />
             <span className="max-w-full truncate">{i.rotulo}</span>
           </>
         )
@@ -81,7 +81,7 @@ export function NavegacaoGlobal({ admin }: { admin: boolean }) {
       })}
       {admin && (
         <Link href="/config" aria-current={caminho.startsWith('/config') ? 'page' : undefined} className={`${base} mt-auto ${caminho.startsWith('/config') ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'}`}>
-          <Settings className="h-5 w-5" aria-hidden />
+          <Settings className="h-4 w-4" aria-hidden />
           <span>Config.</span>
         </Link>
       )}

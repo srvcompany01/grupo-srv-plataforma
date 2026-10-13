@@ -38,24 +38,24 @@ type IconeLucide = ComponentType<{ className?: string }>
 type TipoArrastavel = 'space' | 'folder' | 'list'
 
 const item =
-  'flex h-8 items-center gap-2 rounded-md px-2 text-legenda tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
+  'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
 
 /** Módulo que ainda não existe: aparece como no ClickUp, desabilitado e com a etiqueta "Em breve". */
 function ItemEmBreve({ rotulo, Icone }: { rotulo: string; Icone: IconeLucide }) {
   return (
-    <span role="link" aria-disabled="true" title={`${rotulo}: em breve`} className="flex h-8 cursor-not-allowed items-center gap-2 rounded-md px-2 text-legenda tracking-[0.04em] text-lat-3">
+    <span role="link" aria-disabled="true" title={`${rotulo}: em breve`} className="flex h-7 cursor-not-allowed items-center gap-2 rounded-md px-2 text-legenda text-lat-3">
       <Icone className="h-3.5 w-3.5" />
       <span className="min-w-0 flex-1 truncate">{rotulo}</span>
-      <span className="shrink-0 rounded-full bg-lat-hover px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-lat-2">Em breve</span>
+      <span className="shrink-0 rounded-full bg-lat-hover px-1.5 py-0.5 text-micro font-medium tracking-normal text-lat-2">Em breve</span>
     </span>
   )
 }
 
 function TituloSecao({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-8 items-center px-2">
-      <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">{children}</h2>
+    <div className="flex h-7 items-center px-2">
+      <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">{children}</h2>
     </div>
   )
 }
@@ -285,8 +285,8 @@ export function PainelEspacos({ navegacao, clientes, papel, cronometro, acaoTopo
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
-            <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
+            <div className="flex h-7 items-center px-2">
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
               {acaoTopo}
             </div>
@@ -298,8 +298,8 @@ export function PainelEspacos({ navegacao, clientes, papel, cronometro, acaoTopo
 
             {(navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
               <div className="mt-3 border-t border-lat-borda pt-2">
-                <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
+                <div className="flex h-7 items-center px-2">
+                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Itens soltos</h2>
                   {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
                 </div>
                 <nav className="space-y-0.5">

@@ -63,7 +63,7 @@ export function GerenciarCamposCliente({ campos }: { campos: CampoCliente[] }) {
   return (
     <section className="max-w-3xl space-y-5">
       <div>
-        <h2 className="text-[15px] font-semibold">Campos de cliente</h2>
+        <h2 className="text-destaque font-semibold">Campos de cliente</h2>
         <p className="mt-1 text-rotulo text-texto-2">Crie os campos que quiser (por exemplo, Plano, Responsável ou Início do contrato). Os marcados aparecem no cartão de cada cliente na galeria. Os valores são preenchidos na página do cliente.</p>
       </div>
 
