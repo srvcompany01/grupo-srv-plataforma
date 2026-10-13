@@ -28,15 +28,17 @@ function nascidoEmCampo(evento: SyntheticEvent): boolean {
  * Linha da navegação: arrastável (segurar e mover) e com menu de contexto (botão direito).
  * O menu e o diálogo de renomear ficam FORA da linha na árvore do React: o espaço digitado nunca chega ao arrastar.
  */
-export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExcluir, className, style, children }: {
+export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExcluir, fixa = false, className, style, children }: {
   tipo: TipoArrastavel
   id: string
   nome: string
   habilitado: boolean
   /** Renomear e duplicar. */
   podeEditar: boolean
-  /** Excluir (já descontadas as áreas fixas). */
+  /** Excluir. */
   podeExcluir: boolean
+  /** Área que a plataforma criou (tem funções ligadas a ela): o aviso de exclusão é mais forte. */
+  fixa?: boolean
   className: string
   style?: CSSProperties
   children: ReactNode
@@ -70,7 +72,8 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
     }
   }
   const excluir = async () => {
-    const aviso = tipo === 'list' ? 'As tarefas dela deixam de aparecer.' : tipo === 'folder' ? 'As listas dentro dela também serão excluídas.' : 'As pastas e listas dentro dele também serão excluídas.'
+    const base = tipo === 'list' ? 'As tarefas dela deixam de aparecer.' : tipo === 'folder' ? 'As listas dentro dela também serão excluídas.' : 'As pastas e listas dentro dele também serão excluídas.'
+    const aviso = fixa ? `${base} Esta é uma área criada pela plataforma: o que depende dela (como o módulo de Conteúdo) deixa de funcionar.` : base
     if (!(await confirmar({ titulo: `Excluir ${ROTULO[tipo]} "${nome}"?`, descricao: aviso, confirmar: 'Excluir', perigo: true }))) return
     iniciar(async () => {
       if (avisar(await excluirItemNavegacao({ tipo, id }), true)) router.refresh()

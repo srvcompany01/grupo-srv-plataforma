@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
@@ -30,11 +30,14 @@ import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null }
+export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[] }
 type IconeLucide = ComponentType<{ className?: string }>
+
+/** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
+const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (id: string) => void; admin: boolean }>({ fechado: () => false, alternar: () => {}, admin: false })
 
 const item =
   'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
@@ -108,6 +111,7 @@ function idsDaNavegacao(navegacao: Navegacao): string[] {
 
 function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista; nivel: number; podeGerir: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
+  const { admin } = useContext(Recolhidos)
   const href = `/listas/${lista.id}`
   const detalhe = lista.mes ? rotuloMes(lista.mes) : ''
 
@@ -118,7 +122,8 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       nome={lista.nome}
       habilitado={podeArrastar}
       podeEditar={podeGerir}
-      podeExcluir={podeGerir && !lista.slug}
+      podeExcluir={podeGerir && (!lista.slug || admin)}
+      fixa={!!lista.slug}
       className={`${item} group ${caminho === href ? ativo : ''}`}
       style={{ paddingLeft: 8 + nivel * 14 }}
     >
@@ -132,15 +137,17 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
 }
 
 function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; podeGerir: boolean; podeArrastar: boolean }) {
-  const [aberta, setAberta] = useState(true)
+  const { fechado, alternar } = useContext(Recolhidos)
+  const aberta = !fechado(pasta.id)
+  const setAberta = () => alternar(pasta.id)
 
   return (
     <div>
       <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberta} alternar={() => setAberta(!aberta)} rotulo={pasta.nome} ativo>
+        <IconeAlternavel aberto={aberta} alternar={setAberta} rotulo={pasta.nome} ativo>
           <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         </IconeAlternavel>
-        <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
+        <button type="button" onClick={setAberta} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
         <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
@@ -152,7 +159,8 @@ function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pa
 
 function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
-  const [aberto, setAberto] = useState(true)
+  const { fechado, alternar } = useContext(Recolhidos)
+  const aberto = !fechado(espaco.id)
   const href = `/espacos/${espaco.id}`
   // Administração abre o Painel de Gestão (visão geral): ele aparece como item dentro dela.
   const comPainel = espaco.slug === 'administracao'
@@ -160,8 +168,8 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 
   return (
     <div>
-      <LinhaNavegacao tipo="space" id={espaco.id} nome={espaco.nome} habilitado={podeArrastar} podeEditar={podeEditarEspaco} podeExcluir={podeEditarEspaco && !espaco.slug} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberto} alternar={() => setAberto(!aberto)} rotulo={espaco.nome} ativo={temConteudo}>
+      <LinhaNavegacao tipo="space" id={espaco.id} nome={espaco.nome} habilitado={podeArrastar} podeEditar={podeEditarEspaco} podeExcluir={podeEditarEspaco} fixa={!!espaco.slug} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
+        <IconeAlternavel aberto={aberto} alternar={() => alternar(espaco.id)} rotulo={espaco.nome} ativo={temConteudo}>
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
             <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
           </span>
@@ -191,8 +199,23 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 }
 
 /** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
-export function PainelEspacos({ navegacao, papel, cronometro, acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
   const caminho = usePathname()
+  const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
+  const recolhimento = useMemo(
+    () => ({
+      admin: papel === 'admin',
+      fechado: (id: string) => fechados.has(id),
+      alternar: (id: string) =>
+        setFechados((atual) => {
+          const proximo = new Set(atual)
+          if (!proximo.delete(id)) proximo.add(id)
+          gravarPreferencia(COOKIE_NAV_FECHADOS, escreverFechados(proximo))
+          return proximo
+        }),
+    }),
+    [fechados, papel],
+  )
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
   const [movendo, iniciarMovimento] = useTransition()
@@ -230,6 +253,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, acaoTopo, mobile =
   )
 
   return (
+    <Recolhidos.Provider value={recolhimento}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         {mobile && (
@@ -300,6 +324,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, acaoTopo, mobile =
         <IndicadorCronometro cronometro={cronometro} />
       </div>
     </div>
+    </Recolhidos.Provider>
   )
 }
 

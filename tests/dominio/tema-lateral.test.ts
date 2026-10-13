@@ -10,3 +10,13 @@ it('lê modo e largura da barra com fallback seguro', async () => {
   expect(lerLarguraLateral('9999')).toBe(440)
   expect(limitarLargura(10)).toBe(208)
 })
+
+it('lembra quais espaços e pastas estão recolhidos', async () => {
+  const { escreverFechados, lerFechados } = await import('@/dominio/tema-lateral')
+  const a = '11111111-1111-1111-1111-111111111111'
+  const b = '22222222-2222-2222-2222-222222222222'
+  expect(lerFechados(undefined)).toEqual([])
+  expect(lerFechados(`${a}.lixo.${b}.${a}`)).toEqual([a, b])
+  expect(lerFechados(escreverFechados([a, b]))).toEqual([a, b])
+  expect(lerFechados(Array.from({ length: 100 }, (_, i) => `00000000-0000-0000-0000-${String(i).padStart(12, '0')}`).join('.'))).toHaveLength(60)
+})

@@ -244,7 +244,8 @@ export async function excluirItemNavegacao(dados: { tipo: TipoItem; id: string }
       const { data: alvo, error: e0 } = await sb.from(dados.tipo === 'space' ? 'spaces' : 'lists').select('slug').eq('id', dados.id).maybeSingle()
       if (e0) throw e0
       if (!alvo) throw { code: '42501' }
-      if (alvo.slug) throw { code: 'P0001', message: 'Esta é uma área fixa da plataforma e não pode ser excluída.' }
+      // Áreas criadas pela plataforma (têm slug) só o admin exclui.
+      if (alvo.slug) await exigirAdmin()
     }
 
     if (dados.tipo === 'space') {

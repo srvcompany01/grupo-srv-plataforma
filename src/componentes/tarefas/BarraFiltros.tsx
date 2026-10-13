@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, CircleDot, Flag, Layers3, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
+import { ChevronDown, CircleDot, Flag, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   DropdownMenu,
@@ -116,8 +116,12 @@ export function BarraFiltros({
     <div className="flex flex-wrap items-center gap-2">
       {comAgrupamento && (
         <DropdownMenu>
-          <DropdownMenuTrigger className={`${botao} border-borda bg-white text-texto-2 hover:bg-hover`}>
-            <Layers3 className="h-3.5 w-3.5" /> Agrupar: {rotuloAgrupamento}
+          <DropdownMenuTrigger
+            aria-label={`Agrupar por: ${rotuloAgrupamento}`}
+            title="Agrupar por"
+            className="inline-flex h-6 items-center gap-1 rounded-full border border-sucesso/30 bg-sucesso/15 px-2.5 text-legenda font-semibold text-sucesso-forte transition-colors hover:bg-sucesso/25 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-sucesso/30"
+          >
+            {rotuloAgrupamento}
             <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">

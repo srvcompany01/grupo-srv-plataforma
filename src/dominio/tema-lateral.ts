@@ -15,3 +15,14 @@ export function limitarLargura(valor: number): number {
 export function lerLarguraLateral(valor: string | undefined): number {
   return valor ? limitarLargura(Number(valor)) : LARGURA_LATERAL.padrao
 }
+
+export const COOKIE_NAV_FECHADOS = 'srv-nav-fechados'
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const MAX_FECHADOS = 60
+
+/** Ids de espaços e pastas recolhidos na barra (separados por "."), sem repetidos nem valores inválidos. */
+export function lerFechados(valor: string | undefined): string[] {
+  return [...new Set((valor ?? '').split('.').filter((id) => ID.test(id)))].slice(0, MAX_FECHADOS)
+}
+
+export const escreverFechados = (ids: Iterable<string>): string => [...ids].slice(-MAX_FECHADOS).join('.')

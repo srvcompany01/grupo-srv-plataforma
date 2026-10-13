@@ -4,7 +4,7 @@ import { CabecalhoTopo } from '@/componentes/app/CabecalhoTopo'
 import { NavegacaoGlobal } from '@/componentes/app/NavegacaoGlobal'
 import { Toaster } from '@/componentes/ui/sonner'
 import { cssTema } from '@/dominio/tema'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, lerLarguraLateral, lerModoLateral } from '@/dominio/tema-lateral'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, lerFechados, lerLarguraLateral, lerModoLateral } from '@/dominio/tema-lateral'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarArvore } from '@/servicos/espacos'
@@ -18,7 +18,7 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
   const jar = await cookies()
   const sb = await criarClienteServidor()
   const [navegacao, cronometro, avisos, naoLidos, tema] = await Promise.all([listarArvore(sb), cronometroAtivo(sb, eu.id), listarAvisos(sb), contarNaoLidos(sb), temaAtual(sb)])
-  const painel = { navegacao, papel: eu.papel, cronometro }
+  const painel = { navegacao, papel: eu.papel, cronometro, fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value) }
   // Três camadas: faixa global (64px), cabeçalho do topo e, abaixo dele, a barra de espaços + o conteúdo.
   return (
     <div className="flex min-h-dvh bg-fundo">

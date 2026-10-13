@@ -1,14 +1,15 @@
-import { CalendarDays, Columns3, List, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { type Filtros, type VisaoTarefas } from '@/dominio/filtros'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
+import { IconeVisao } from './IconesVisao'
 
-const OPCOES = {
-  lista: { rotulo: 'Lista', Icone: List },
-  calendario: { rotulo: 'Calendário', Icone: CalendarDays },
-  kanban: { rotulo: 'Quadro', Icone: Columns3 },
-} satisfies Record<VisaoTarefas, { rotulo: string; Icone: typeof List }>
+const OPCOES: Record<VisaoTarefas, { rotulo: string }> = {
+  lista: { rotulo: 'Lista' },
+  calendario: { rotulo: 'Calendário' },
+  kanban: { rotulo: 'Quadro' },
+}
 
 export function AlternadorVisao({
   caminho,
@@ -23,7 +24,7 @@ export function AlternadorVisao({
 }) {
   const href = (visao: VisaoTarefas) => enderecoDaVisao(caminho, { ...filtros, visao })
   const aba = (visao: VisaoTarefas) => {
-    const { rotulo, Icone } = OPCOES[visao]
+    const { rotulo } = OPCOES[visao]
     return (
     <Link
       key={visao}
@@ -36,7 +37,7 @@ export function AlternadorVisao({
           : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
-      <Icone className="h-4 w-4" aria-hidden="true" />
+      <IconeVisao visao={visao} />
       {rotulo}
     </Link>
     )
@@ -51,8 +52,8 @@ export function AlternadorVisao({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
             {(Object.keys(OPCOES) as VisaoTarefas[]).map((visao) => {
-              const { rotulo, Icone } = OPCOES[visao]
-              return <DropdownMenuItem key={visao} asChild><Link href={href(visao)} scroll={false}><Icone className="h-4 w-4" />{rotulo}</Link></DropdownMenuItem>
+              const { rotulo } = OPCOES[visao]
+              return <DropdownMenuItem key={visao} asChild><Link href={href(visao)} scroll={false}><IconeVisao visao={visao} />{rotulo}</Link></DropdownMenuItem>
             })}
           </DropdownMenuContent>
         </DropdownMenu>
