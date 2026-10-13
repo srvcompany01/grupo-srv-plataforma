@@ -54,9 +54,9 @@ export function NavegacaoGlobal({ admin }: { admin: boolean }) {
   const ativo = (i: Item) => (i.ativoEm ?? (i.href ? [i.href] : [])).some((p) => caminho === p || caminho.startsWith(`${p}/`))
 
   return (
-    <nav aria-label="Navegação principal" className="sticky top-0 z-30 hidden h-dvh w-16 shrink-0 flex-col items-center gap-0.5 overflow-y-auto bg-petroleo px-1 py-2 text-white md:flex">
-      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="mb-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-        <Marca tamanho="h-8 w-8 text-base" />
+    <nav aria-label="Navegação principal" className="sticky top-0 z-30 hidden h-dvh w-16 shrink-0 flex-col items-center gap-0.5 overflow-y-auto bg-petroleo px-1 pb-2 text-white md:flex">
+      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="mb-1 flex h-14 w-full shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+        <Marca tamanho="h-8 w-8" />
       </Link>
       {itens.map((i) => {
         const Icone = i.icone

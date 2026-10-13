@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
 import { Avatar } from '@/componentes/Avatar'
+import { LogoGrupo } from '@/componentes/Marca'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import type { Aviso } from '@/servicos/avisos'
@@ -42,7 +43,9 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: P
         </SheetContent>
       </Sheet>
 
-      <Link href="/inicio" className="min-w-0 truncate text-destaque font-semibold text-texto">Srv Company</Link>
+      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="flex shrink-0 items-center">
+        <LogoGrupo altura="h-4" />
+      </Link>
 
       <form action="/painel-de-gestao" method="get" role="search" className="relative mx-auto hidden w-full max-w-md sm:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" aria-hidden="true" />
