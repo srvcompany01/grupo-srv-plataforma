@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/componentes/ui/dropdown-menu'
 import { AGRUPAMENTOS_BASICOS, ROTULO_AGRUPAMENTO } from '@/dominio/agrupamento'
-import { escreverFiltros, type FiltroPrazo, type Filtros } from '@/dominio/filtros'
+import { type FiltroPrazo, type Filtros } from '@/dominio/filtros'
+import { enderecoDaVisao } from '@/dominio/visao-salva'
 import { PRIORIDADES, ROTULO_PRIORIDADE } from '@/dominio/tarefas'
 
 type Opcao = { id: string; nome: string }
@@ -98,8 +99,7 @@ export function BarraFiltros({
   const router = useRouter()
   const caminho = usePathname()
   const aplicar = (mudanca: Partial<Filtros>) => {
-    const qs = escreverFiltros({ ...filtros, ...mudanca }).toString()
-    router.replace(qs ? `${caminho}?${qs}` : caminho, { scroll: false })
+    router.replace(enderecoDaVisao(caminho, { ...filtros, ...mudanca }), { scroll: false })
   }
 
   const rotuloAgrupamento = filtros.agrupamento.startsWith('campo:')

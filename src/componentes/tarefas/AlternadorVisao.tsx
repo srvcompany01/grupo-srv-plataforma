@@ -1,7 +1,8 @@
 import { CalendarDays, Columns3, List, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
-import { escreverFiltros, type Filtros, type VisaoTarefas } from '@/dominio/filtros'
+import { type Filtros, type VisaoTarefas } from '@/dominio/filtros'
+import { enderecoDaVisao } from '@/dominio/visao-salva'
 
 const OPCOES = {
   lista: { rotulo: 'Lista', Icone: List },
@@ -20,10 +21,7 @@ export function AlternadorVisao({
   visoes?: VisaoTarefas[]
   abas?: boolean
 }) {
-  const href = (visao: VisaoTarefas) => {
-    const qs = escreverFiltros({ ...filtros, visao }).toString()
-    return qs ? `${caminho}?${qs}` : caminho
-  }
+  const href = (visao: VisaoTarefas) => enderecoDaVisao(caminho, { ...filtros, visao })
   const aba = (visao: VisaoTarefas) => {
     const { rotulo, Icone } = OPCOES[visao]
     return (

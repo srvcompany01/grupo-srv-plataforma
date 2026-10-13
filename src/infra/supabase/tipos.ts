@@ -752,6 +752,20 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_views: {
+        Row: { list_id: string; params: string; updated_at: string; user_id: string }
+        Insert: { list_id: string; params: string; updated_at?: string; user_id?: string }
+        Update: { list_id?: string; params?: string; updated_at?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "saved_views_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_members: {
         Row: {
           created_at: string
