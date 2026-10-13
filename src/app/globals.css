@@ -195,13 +195,12 @@ body {
     @apply w-full space-y-5 px-4 py-5 md:px-6 md:py-6;
   }
 
-  /* Título editorial da página (serifado). */
+  /* Título da página: compacto, como o cabeçalho das telas do ClickUp. */
   .page-title {
     @apply font-semibold text-texto;
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 3.6vw, 3rem);
-    line-height: 1.05;
-    letter-spacing: -0.01em;
+    font-family: var(--font-sans);
+    font-size: 1.125rem;
+    line-height: 1.4;
   }
 
   .eyebrow {

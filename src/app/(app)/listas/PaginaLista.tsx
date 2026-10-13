@@ -67,8 +67,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
     <div className="min-h-full bg-white">
       <header className="border-b border-borda bg-white">
         <div
-          className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-2.5 md:px-5"
-          style={{ background: `linear-gradient(100deg, ${lista.espaco.cor}12, #fffcf8 42%, ${lista.cor}0d)` }}
+          className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-5"
         >
           <div className="min-w-0">
             <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">

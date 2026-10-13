@@ -59,8 +59,8 @@ export function VisaoCalendario({
   const [ano, mes] = anoMes.split('-').map(Number)
 
   return (
-    <section className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_8px_30px_rgba(32,32,32,0.04)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda bg-gradient-to-r from-aviso-fundo via-white to-marca-fundo px-4 py-3">
+    <section className="overflow-hidden border border-borda bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda bg-white px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-aviso text-white shadow-sm"><CalendarDays className="h-4 w-4" /></span>
           <div>

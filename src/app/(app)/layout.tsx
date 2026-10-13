@@ -21,7 +21,7 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
   const [navegacao, clientes, cronometro, avisos, naoLidos, tema] = await Promise.all([listarArvore(sb), listarClientes(sb), cronometroAtivo(sb, eu.id), listarAvisos(sb), contarNaoLidos(sb), temaAtual(sb)])
   const clientesAtivos = clientes.filter((cliente) => cliente.status !== 'encerrado').map((cliente) => ({ id: cliente.id, nome: cliente.nome }))
   const painel = { navegacao, clientes: clientesAtivos, papel: eu.papel, cronometro }
-  // Três camadas: faixa global (72px), cabeçalho do topo e, abaixo dele, a barra de espaços + o conteúdo.
+  // Três camadas: faixa global (64px), cabeçalho do topo e, abaixo dele, a barra de espaços + o conteúdo.
   return (
     <div className="flex min-h-dvh bg-fundo">
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
