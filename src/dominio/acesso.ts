@@ -1,6 +1,6 @@
 export type PapelUsuario = 'admin' | 'gestor' | 'membro' | 'cliente'
 
-const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/f', '/api/cron', '/api/dev-arquivos']
+const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/f', '/api/cron', '/api/mcp', '/api/dev-arquivos']
 
 const comecaCom = (caminho: string, prefixo: string) => caminho === prefixo || caminho.startsWith(`${prefixo}/`)
 

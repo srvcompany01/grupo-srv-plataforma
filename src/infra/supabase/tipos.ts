@@ -249,6 +249,20 @@ export type Database = {
         }
         Relationships: []
       }
+      api_tokens: {
+        Row: { created_at: string; expires_at: string; id: string; last_used_at: string | null; name: string; revoked_at: string | null; scope: string; token_hash: string; user_id: string }
+        Insert: { created_at?: string; expires_at: string; id?: string; last_used_at?: string | null; name: string; revoked_at?: string | null; scope: string; token_hash: string; user_id?: string }
+        Update: { created_at?: string; expires_at?: string; id?: string; last_used_at?: string | null; name?: string; revoked_at?: string | null; scope?: string; token_hash?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "api_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comment_attachments: {
         Row: {
           comment_id: string
