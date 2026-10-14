@@ -190,7 +190,8 @@ alter table public.document_views enable row level security;
 alter table public.document_versions enable row level security;
 alter table public.document_comments enable row level security;
 
-create policy documents_select on public.documents for select to authenticated using (can_read_document(id));
+-- owner_id = auth.uid(): no INSERT ... RETURNING a função não enxerga a linha recém-criada, então o dono precisa passar direto.
+create policy documents_select on public.documents for select to authenticated using (can_read_document(id) or (is_team() and owner_id = auth.uid()));
 create policy documents_insert on public.documents for insert to authenticated
   with check (is_team() and owner_id = auth.uid());
 create policy documents_update on public.documents for update to authenticated

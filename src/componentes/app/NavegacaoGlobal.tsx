@@ -33,7 +33,7 @@ const ITENS: Item[] = [
   { rotulo: 'Chat', icone: MessageCircle },
   { rotulo: 'Planejado', icone: CalendarDays },
   { rotulo: 'Equipes', icone: UsersRound },
-  { rotulo: 'Documentos', icone: FileText },
+  { rotulo: 'Documentos', icone: FileText, href: '/documentos' },
   { rotulo: 'Painéis', icone: ChartColumn },
   { rotulo: 'Quadros', icone: PenTool },
   // Formulários já existe, mas a gestão fica em Configurações (só admin).

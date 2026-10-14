@@ -102,6 +102,17 @@ describe('documentos: quem vê', () => {
   })
 })
 
+describe('documentos: criar como usuário', () => {
+  it('quem é da equipe cria e já lê o que criou (insert ... returning)', async () => {
+    const db = await criarBanco()
+    const { dono } = await cenario(db)
+    const criado = await ler<{ id: string }>(db, dono, `insert into documents (title, owner_id) values ('Novo', $1) returning id`, [dono])
+    expect(criado).toHaveLength(1)
+    const privado = await ler<{ id: string }>(db, dono, `insert into documents (title, owner_id, visibility) values ('P', $1, 'private') returning id`, [dono])
+    expect(privado).toHaveLength(1)
+  })
+})
+
 describe('documentos: páginas, listas e favoritos', () => {
   it('página-mãe precisa ser do mesmo documento', async () => {
     const db = await criarBanco()
