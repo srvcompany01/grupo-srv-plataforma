@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from 'react'
 import { avisar } from '@/componentes/tarefas/avisar'
-import type { TipoCampoCliente } from '@/dominio/clientes-galeria'
+import type { OpcaoCampoCliente, TipoCampoCliente } from '@/dominio/clientes-galeria'
 import { salvarCamposClienteAcao } from '../acoes-galeria'
 
-type Campo = { id: string; nome: string; tipo: TipoCampoCliente; naCapa: boolean }
+type Campo = { id: string; nome: string; tipo: TipoCampoCliente; naCapa: boolean; opcoes: OpcaoCampoCliente[] }
 
-const TIPO_INPUT: Record<TipoCampoCliente, string> = { texto: 'text', numero: 'text', data: 'date', link: 'url' }
+const TIPO_INPUT: Record<TipoCampoCliente, string> = { texto: 'text', numero: 'text', data: 'date', link: 'url', selecao: 'text' }
 
 export function CamposCliente({ clienteId, campos, valores, podeEditar }: { clienteId: string; campos: Campo[]; valores: Record<string, string>; podeEditar: boolean }) {
   const [texto, setTexto] = useState(valores)
@@ -29,17 +29,30 @@ export function CamposCliente({ clienteId, campos, valores, podeEditar }: { clie
               {c.nome}
               {c.naCapa && <span className="rounded-full bg-marca-fundo px-1.5 py-0.5 text-legenda font-semibold text-marca">Na galeria</span>}
             </span>
+            {c.tipo === 'selecao' ? (
+              <select
+                value={texto[c.id] ?? ''}
+                onChange={(e) => setTexto({ ...texto, [c.id]: e.target.value })}
+                disabled={!podeEditar}
+                className="h-9 w-full rounded-lg border border-borda bg-white px-2 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20 disabled:bg-hover"
+              >
+                <option value="">— Sem informação</option>
+                {c.opcoes.map((o) => <option key={o.nome} value={o.nome}>{o.nome}</option>)}
+                {texto[c.id] && !c.opcoes.some((o) => o.nome === texto[c.id]) && <option value={texto[c.id]}>{texto[c.id]} (opção removida)</option>}
+              </select>
+            ) : (
             <input
-              type={TIPO_INPUT[c.tipo]}
-              inputMode={c.tipo === 'numero' ? 'decimal' : undefined}
-              value={texto[c.id] ?? ''}
-              onChange={(e) => setTexto({ ...texto, [c.id]: e.target.value })}
-              disabled={!podeEditar}
-              maxLength={500}
-              autoComplete="off"
-              spellCheck={false}
-              className="h-9 w-full rounded-lg border border-borda bg-white px-3 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20 disabled:bg-hover"
+                type={TIPO_INPUT[c.tipo]}
+                inputMode={c.tipo === 'numero' ? 'decimal' : undefined}
+                value={texto[c.id] ?? ''}
+                onChange={(e) => setTexto({ ...texto, [c.id]: e.target.value })}
+                disabled={!podeEditar}
+                maxLength={500}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-9 w-full rounded-lg border border-borda bg-white px-3 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20 disabled:bg-hover"
             />
+            )}
           </label>
         ))}
       </div>

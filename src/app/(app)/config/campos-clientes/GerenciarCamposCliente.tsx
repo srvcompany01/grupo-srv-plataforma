@@ -1,14 +1,39 @@
 'use client'
 
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { TIPOS_CAMPO_CLIENTE } from '@/dominio/clientes-galeria'
+import { COR_OPCAO_PADRAO, TIPOS_CAMPO_CLIENTE, type OpcaoCampoCliente } from '@/dominio/clientes-galeria'
 import type { CampoCliente } from '@/servicos/clientes-galeria'
 import { atualizarCampoClienteAcao, criarCampoClienteAcao, excluirCampoClienteAcao } from './acoes'
 
 const rotuloTipo = (tipo: string) => TIPOS_CAMPO_CLIENTE.find((t) => t.tipo === tipo)?.rotulo ?? tipo
+
+/** Opções de um campo de seleção (por exemplo, os níveis de risco de churn): nome e cor de cada uma. */
+function EditorOpcoes({ campo }: { campo: CampoCliente }) {
+  const [opcoes, setOpcoes] = useState<OpcaoCampoCliente[]>(campo.opcoes)
+  const [pendente, iniciar] = useTransition()
+  const mudou = JSON.stringify(opcoes) !== JSON.stringify(campo.opcoes)
+  const trocar = (i: number, parte: Partial<OpcaoCampoCliente>) => setOpcoes(opcoes.map((o, k) => (k === i ? { ...o, ...parte } : o)))
+  return (
+    <div className="basis-full space-y-2 rounded-lg bg-fundo/60 p-3">
+      <p className="text-legenda font-semibold text-texto-2">Opções que cada cliente pode ter neste campo</p>
+      {opcoes.length === 0 && <p className="text-legenda text-texto-3">Nenhuma opção ainda. Adicione a primeira.</p>}
+      {opcoes.map((o, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input type="color" value={o.cor} onChange={(e) => trocar(i, { cor: e.target.value })} aria-label={`Cor de ${o.nome || 'opção'}`} className="h-8 w-8 cursor-pointer rounded border border-borda bg-white p-0.5" />
+          <input value={o.nome} onChange={(e) => trocar(i, { nome: e.target.value })} maxLength={40} placeholder="Nome da opção" autoComplete="off" className="h-8 min-w-0 flex-1 rounded-md border border-borda bg-white px-2 text-rotulo outline-none focus-visible:border-marca" />
+          <button type="button" aria-label="Remover opção" onClick={() => setOpcoes(opcoes.filter((_, k) => k !== i))} className="rounded-md p-1.5 text-texto-3 hover:bg-perigo-fundo hover:text-perigo"><Trash2 className="h-3.5 w-3.5" /></button>
+        </div>
+      ))}
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setOpcoes([...opcoes, { nome: '', cor: COR_OPCAO_PADRAO }])} disabled={opcoes.length >= 20} className="inline-flex h-8 items-center gap-1 rounded-md border border-borda bg-white px-2.5 text-legenda font-semibold text-texto-2 hover:bg-hover"><Plus className="h-3.5 w-3.5" /> Adicionar opção</button>
+        <button type="button" disabled={!mudou || pendente} onClick={() => iniciar(async () => void avisar(await atualizarCampoClienteAcao(campo.id, { opcoes: opcoes.filter((o) => o.nome.trim()) }), true))} className="h-8 rounded-md bg-marca px-3 text-legenda font-semibold text-white hover:bg-marca-escura disabled:opacity-40">Salvar opções</button>
+      </div>
+    </div>
+  )
+}
 
 function LinhaCampo({ campo }: { campo: CampoCliente }) {
   const [nome, setNome] = useState(campo.nome)
@@ -50,6 +75,7 @@ function LinhaCampo({ campo }: { campo: CampoCliente }) {
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />
       </button>
+      {campo.tipo === 'selecao' && <EditorOpcoes campo={campo} />}
     </li>
   )
 }

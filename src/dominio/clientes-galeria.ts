@@ -1,12 +1,31 @@
 import { formatarData } from './formatar'
 
-export type TipoCampoCliente = 'texto' | 'numero' | 'data' | 'link'
+export type TipoCampoCliente = 'texto' | 'numero' | 'data' | 'link' | 'selecao'
+export type OpcaoCampoCliente = { nome: string; cor: string }
 export const TIPOS_CAMPO_CLIENTE: { tipo: TipoCampoCliente; rotulo: string }[] = [
   { tipo: 'texto', rotulo: 'Texto' },
   { tipo: 'numero', rotulo: 'Número' },
   { tipo: 'data', rotulo: 'Data' },
   { tipo: 'link', rotulo: 'Link' },
+  { tipo: 'selecao', rotulo: 'Seleção (opções)' },
 ]
+
+export const COR_OPCAO_PADRAO = '#87909e'
+const HEX = /^#[0-9a-f]{6}$/i
+
+/** Opções vindas do banco ou da tela: só nome (1–40) e cor #rrggbb, sem repetidas, no máximo 20. */
+export function limparOpcoes(bruto: unknown): OpcaoCampoCliente[] {
+  if (!Array.isArray(bruto)) return []
+  const vistos = new Set<string>()
+  const saida: OpcaoCampoCliente[] = []
+  for (const o of bruto) {
+    const nome = typeof o?.nome === 'string' ? o.nome.trim().slice(0, 40) : ''
+    if (!nome || vistos.has(nome.toLowerCase())) continue
+    vistos.add(nome.toLowerCase())
+    saida.push({ nome, cor: typeof o?.cor === 'string' && HEX.test(o.cor) ? o.cor : COR_OPCAO_PADRAO })
+  }
+  return saida.slice(0, 20)
+}
 
 export const LIMITE_CAPA = 5 * 1024 * 1024
 export const EXTENSAO_CAPA: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }

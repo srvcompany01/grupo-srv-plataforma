@@ -36,7 +36,7 @@ export default async function Clientes() {
         {clientes.map((c) => {
           const info = camposNaCapa.flatMap((campo) => {
             const valor = valores[c.id]?.[campo.id]
-            return valor ? [{ id: campo.id, nome: campo.nome, texto: formatarCampoCliente(campo.tipo, valor) }] : []
+            return valor ? [{ id: campo.id, nome: campo.nome, texto: formatarCampoCliente(campo.tipo, valor), cor: campo.tipo === 'selecao' ? campo.opcoes.find((o) => o.nome === valor)?.cor : undefined }] : []
           })
           return (
             <li key={c.id}>

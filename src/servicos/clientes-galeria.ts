@@ -1,14 +1,14 @@
-import type { TipoCampoCliente } from '@/dominio/clientes-galeria'
+import { limparOpcoes, type OpcaoCampoCliente, type TipoCampoCliente } from '@/dominio/clientes-galeria'
 import { urlLeitura } from '@/infra/r2'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
-export type CampoCliente = { id: string; nome: string; tipo: TipoCampoCliente; naCapa: boolean; posicao: number }
+export type CampoCliente = { id: string; nome: string; tipo: TipoCampoCliente; naCapa: boolean; posicao: number; opcoes: OpcaoCampoCliente[] }
 export type Capa = { url: string | null; credito: string | null }
 
 export async function listarCamposCliente(sb: Supabase): Promise<CampoCliente[]> {
-  const linhas = dados(await sb.from('client_fields').select('id, name, kind, show_on_card, position').order('position').order('created_at'))
-  return linhas.map((c) => ({ id: c.id, nome: c.name, tipo: c.kind as TipoCampoCliente, naCapa: c.show_on_card, posicao: c.position }))
+  const linhas = dados(await sb.from('client_fields').select('id, name, kind, show_on_card, position, options').order('position').order('created_at'))
+  return linhas.map((c) => ({ id: c.id, nome: c.name, tipo: c.kind as TipoCampoCliente, naCapa: c.show_on_card, posicao: c.position, opcoes: limparOpcoes(c.options) }))
 }
 
 /** cliente → (campo → valor). */

@@ -144,6 +144,7 @@ export type Database = {
           id: string
           kind: string
           name: string
+          options: Json | null
           position: number
           show_on_card: boolean
         }
@@ -152,6 +153,7 @@ export type Database = {
           id?: string
           kind?: string
           name: string
+          options?: Json | null
           position?: number
           show_on_card?: boolean
         }
@@ -160,6 +162,7 @@ export type Database = {
           id?: string
           kind?: string
           name?: string
+          options?: Json | null
           position?: number
           show_on_card?: boolean
         }

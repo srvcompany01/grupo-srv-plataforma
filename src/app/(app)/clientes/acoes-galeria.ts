@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { chaveDeCapaValida, ehDownloadUnsplash, ehImagemUnsplash, validarCapa } from '@/dominio/clientes-galeria'
+import { chaveDeCapaValida, limparOpcoes, ehDownloadUnsplash, ehImagemUnsplash, validarCapa } from '@/dominio/clientes-galeria'
 import { gerarChaveCliente, urlUpload } from '@/infra/r2'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -74,6 +74,12 @@ export async function salvarCamposClienteAcao(clienteId: string, valores: Record
   const preenchidos = entradas.filter(([, v]) => v).map(([field_id, value]) => ({ client_id: clienteId, field_id, value }))
   const vazios = entradas.filter(([, v]) => !v).map(([campo]) => campo)
   const sb = await criarClienteServidor()
+  // Campo de seleção só aceita uma das opções cadastradas (o banco também confere).
+  const { data: sel } = await sb.from('client_fields').select('id, name, options').eq('kind', 'selecao')
+  for (const c of sel ?? []) {
+    const valor = valores[c.id]?.trim()
+    if (valor && !limparOpcoes(c.options).some((o) => o.nome === valor)) return { erro: `Escolha uma das opções do campo "${c.name}".` }
+  }
   const r = await tentar(async () => {
     if (preenchidos.length) {
       const { error } = await sb.from('client_field_values').upsert(preenchidos)

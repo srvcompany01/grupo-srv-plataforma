@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { TIPOS_CAMPO_CLIENTE } from '@/dominio/clientes-galeria'
+import { TIPOS_CAMPO_CLIENTE, limparOpcoes } from '@/dominio/clientes-galeria'
 import { exigirAdmin } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
@@ -23,23 +23,24 @@ export async function criarCampoClienteAcao(nome: string, tipo: string, naCapa: 
   const r = await tentar(async () => {
     const { data: ultimo, error: e1 } = await sb.from('client_fields').select('position').order('position', { ascending: false }).limit(1)
     if (e1) throw e1
-    const { error } = await sb.from('client_fields').insert({ name: limpo, kind, show_on_card: naCapa, position: (ultimo[0]?.position ?? 0) + 1 })
+    const { error } = await sb.from('client_fields').insert({ name: limpo, kind, show_on_card: naCapa, position: (ultimo[0]?.position ?? 0) + 1, options: kind === 'selecao' ? [] : null })
     if (error) throw error
   }, 'Campo criado.')
   atualizado()
   return r
 }
 
-export async function atualizarCampoClienteAcao(id: string, mudanca: { nome?: string; naCapa?: boolean }): Promise<Resultado> {
+export async function atualizarCampoClienteAcao(id: string, mudanca: { nome?: string; naCapa?: boolean; opcoes?: { nome: string; cor: string }[] }): Promise<Resultado> {
   await exigirAdmin()
   if (!UUID.test(id)) return { erro: 'Campo inválido.' }
-  const campos: { name?: string; show_on_card?: boolean } = {}
+  const campos: { name?: string; show_on_card?: boolean; options?: { nome: string; cor: string }[] } = {}
   if (mudanca.nome !== undefined) {
     const nome = mudanca.nome.trim()
     if (!nome || nome.length > 60) return { erro: 'O nome deve ter de 1 a 60 caracteres.' }
     campos.name = nome
   }
   if (mudanca.naCapa !== undefined) campos.show_on_card = mudanca.naCapa
+  if (mudanca.opcoes !== undefined) campos.options = limparOpcoes(mudanca.opcoes)
   const sb = await criarClienteServidor()
   const r = await tentar(async () => {
     const { error } = await sb.from('client_fields').update(campos).eq('id', id)
