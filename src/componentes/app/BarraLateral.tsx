@@ -162,9 +162,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
   const { fechado, alternar } = useContext(Recolhidos)
   const aberto = !fechado(espaco.id)
   const href = `/espacos/${espaco.id}`
-  // Administração abre o Painel de Gestão (visão geral): ele aparece como item dentro dela.
-  const comPainel = espaco.slug === 'administracao'
-  const temConteudo = comPainel || espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
+  const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
 
   return (
     <div>
@@ -183,12 +181,6 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 
       {aberto && (
         <div>
-          {comPainel && (
-            <Link href="/painel-de-gestao" className={`${item} ${caminho.startsWith('/painel-de-gestao') ? ativo : ''}`} style={{ paddingLeft: 8 + (nivel + 1) * 14 }}>
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-lat-2"><LayoutDashboard className="h-3.5 w-3.5" /></span>
-              <span className="min-w-0 flex-1 truncate">Painel de Gestão</span>
-            </Link>
-          )}
           {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
           {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
           {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
@@ -260,7 +252,6 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           <>
             <nav className="space-y-0.5">
               {link('/inicio', 'Minhas tarefas', CheckSquare)}
-              {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
               {link('/clientes', 'Clientes', Users)}
               {papel === 'admin' && link('/config', 'Configurações', Settings)}
             </nav>
@@ -270,6 +261,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
 
         <TituloSecao>Início</TituloSecao>
         <nav className="space-y-0.5">
+          {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
           <ItemEmBreve rotulo="Caixa de entrada" Icone={Inbox} />
           <ItemEmBreve rotulo="Respostas" Icone={Reply} />
           <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} />

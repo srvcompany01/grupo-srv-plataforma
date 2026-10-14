@@ -3,7 +3,7 @@
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
+import { Fragment, useMemo, useState, useTransition } from 'react'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { ehSubtarefa, tarefasDoCalendario } from '@/dominio/calendario'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -37,6 +37,16 @@ function gradeDoMes(anoMes: string) {
       atual: data.getUTCMonth() === mes,
     }
   })
+}
+
+/** Número da semana (ISO) da linha que começa neste domingo: usa a segunda-feira dela. */
+function numeroDaSemana(domingo: string) {
+  const d = new Date(`${domingo}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  const quinta = new Date(d)
+  quinta.setUTCDate(d.getUTCDate() + 3)
+  const inicioAno = Date.UTC(quinta.getUTCFullYear(), 0, 1)
+  return Math.floor((quinta.getTime() - inicioAno) / 86400000 / 7) + 1
 }
 
 function moverMes(anoMes: string, quantidade: number) {
@@ -182,13 +192,20 @@ export function VisaoCalendario({
       <DndContext sensors={sensores} onDragEnd={soltar}>
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
-          <div className="grid grid-cols-7 border-b border-borda bg-fundo/70">
+          <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-borda bg-fundo/70">
+            <div className="px-1 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3" title="Semana do ano">Sem</div>
             {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3">{dia}</div>)}
           </div>
-          <div className="grid auto-rows-fr grid-cols-7">
-            {dias.map((dia) => {
+          <div className="grid auto-rows-fr grid-cols-[2.25rem_repeat(7,minmax(0,1fr))]">
+            {dias.map((dia, indice) => {
               const itens = porData.get(dia.iso) ?? []
               return (
+                <Fragment key={dia.iso}>
+                {indice % 7 === 0 && (
+                  <div className="flex items-start justify-center border-b border-r border-borda bg-fundo/70 pt-2" title={`Semana ${numeroDaSemana(dia.iso)} do ano`}>
+                    <span className="rounded-md bg-white px-1 py-0.5 text-legenda font-bold text-texto-2 ring-1 ring-borda">S{numeroDaSemana(dia.iso)}</span>
+                  </div>
+                )}
                 <Dia key={dia.iso} iso={dia.iso} className={`min-h-28 border-b border-r border-borda p-1.5 ${dia.atual ? 'bg-white' : 'bg-fundo/45'}`}>
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-marca text-white' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
                   <div className="mt-1 space-y-1">
@@ -234,6 +251,7 @@ export function VisaoCalendario({
                     )}
                   </div>
                 </Dia>
+                </Fragment>
               )
             })}
           </div>
