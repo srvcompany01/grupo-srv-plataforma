@@ -130,7 +130,7 @@ export function VisaoCalendario({
   const [ano, mes] = anoMes.split('-').map(Number)
 
   return (
-    <section className="overflow-hidden border border-borda bg-white">
+    <section className="area-lista overflow-hidden border border-borda bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda bg-white px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-aviso text-white shadow-sm"><CalendarDays className="h-4 w-4" /></span>
@@ -140,7 +140,7 @@ export function VisaoCalendario({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="O que mostrar no calendário" className="flex items-center gap-0.5 rounded-lg border border-borda bg-white p-0.5 shadow-sm">
+        <div role="group" aria-label="O que mostrar no calendário" className="controle flex items-center gap-0.5 rounded-lg border border-borda bg-white p-0.5 shadow-sm">
           {NIVEIS.map((n) => (
             <Link
               key={n.valor}
@@ -175,7 +175,7 @@ export function VisaoCalendario({
             </PopoverContent>
           </Popover>
         )}
-        <div className="flex items-center gap-1 rounded-lg border border-borda bg-white p-1 shadow-sm">
+        <div className="controle flex items-center gap-1 rounded-lg border border-borda bg-white p-1 shadow-sm">
           <button type="button" aria-label="Mês anterior" onClick={() => setAnoMes(moverMes(anoMes, -1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></button>
           <button type="button" onClick={() => setAnoMes(hoje.slice(0, 7))} className="rounded-md px-2.5 py-1 text-legenda font-semibold text-texto-2 hover:bg-hover">Hoje</button>
           <button type="button" aria-label="Próximo mês" onClick={() => setAnoMes(moverMes(anoMes, 1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></button>
@@ -264,7 +264,7 @@ export function VisaoCalendario({
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
-                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="block rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
               )}</Arrastavel>
             ))}
             {semData.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{semData.length - 12}</span>}

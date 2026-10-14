@@ -37,7 +37,7 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
           <p className="eyebrow">Visão pessoal</p>
           <h1 className="page-title mt-1">Minhas tarefas</h1>
         </div>
-        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="rounded-full border border-borda bg-white px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
+        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="controle rounded-full border border-borda bg-white px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
           {comConcluidas ? 'Ocultar concluídas' : 'Mostrar concluídas'}
         </Link>
       </header>

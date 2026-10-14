@@ -44,7 +44,7 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
         }
         if (a.mime.startsWith('image/')) return null
         return (
-          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-md border border-borda bg-white px-2 py-1.5 text-rotulo hover:bg-hover">
+          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer" className="controle flex items-center gap-2 rounded-md border border-borda bg-white px-2 py-1.5 text-rotulo hover:bg-hover">
             <FileText className="h-4 w-4 shrink-0 text-texto-3" />
             <span className="min-w-0 flex-1 truncate">{a.nome}</span>
             <span className="shrink-0 text-texto-3">{tamanhoLegivel(a.tamanho)}</span>

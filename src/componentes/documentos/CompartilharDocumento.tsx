@@ -60,7 +60,7 @@ export function CompartilharDocumento({ documento, pessoas, equipe, clientes, eu
         <fieldset disabled={!podeGerir} className="space-y-4">
           <div className="space-y-1.5">
             {OPCOES.map(({ valor, titulo, dica, Icone }) => (
-              <label key={valor} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2.5 ${visibilidade === valor ? 'border-marca bg-marca-fundo' : 'border-borda hover:bg-hover'}`}>
+              <label key={valor} className={`controle flex cursor-pointer items-center gap-3 rounded-lg border p-2.5 ${visibilidade === valor ? 'border-marca bg-marca-fundo' : 'border-borda hover:bg-hover'}`}>
                 <input type="radio" name="visibilidade" className="sr-only" checked={visibilidade === valor} onChange={() => setVisibilidade(valor)} />
                 <Icone className="h-4 w-4 text-texto-2" />
                 <span>

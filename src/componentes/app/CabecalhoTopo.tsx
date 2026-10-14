@@ -58,7 +58,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: P
           placeholder="Pesquisar tarefas…"
           className="h-9 w-full rounded-lg border border-borda bg-fundo pl-9 pr-12 text-corpo outline-none transition placeholder:text-texto-3 hover:border-borda-forte focus:border-petroleo focus:bg-white focus:ring-3 focus:ring-petroleo/15"
         />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-borda bg-white px-1.5 text-legenda text-texto-3">⌘ K</kbd>
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 controle rounded border border-borda bg-white px-1.5 text-legenda text-texto-3">⌘ K</kbd>
       </form>
 
       <div className="ml-auto flex items-center gap-1 sm:ml-0">

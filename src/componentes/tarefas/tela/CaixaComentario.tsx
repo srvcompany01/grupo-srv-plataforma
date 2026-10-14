@@ -147,7 +147,7 @@ export function CaixaComentario({ tarefaId, pessoas }: { tarefaId: string; pesso
           }}
         />
       )}
-      <div className="relative space-y-2 rounded-md border border-borda bg-white p-2 focus-within:border-marca/40">
+      <div className="controle relative space-y-2 rounded-md border border-borda bg-white p-2 focus-within:border-marca/40">
         {mencao && <SeletorMencao pessoas={sugestoes} indice={Math.min(indice, Math.max(sugestoes.length - 1, 0))} aoEscolher={escolher} />}
         <textarea
           ref={area}

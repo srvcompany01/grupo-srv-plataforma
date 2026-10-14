@@ -109,7 +109,7 @@ function CampoEditavel({ aoSalvar, definicao, equipe, compacto = false }: { aoSa
                   setValor(novo)
                   salvar(novo)
                 }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo hover:bg-hover">
-                  <span className="flex h-4 w-4 items-center justify-center rounded border border-borda">{marcada && <Check className="h-3 w-3 text-marca" />}</span>
+                  <span className="flex h-4 w-4 items-center justify-center rounded border border-borda controle">{marcada && <Check className="h-3 w-3 text-marca" />}</span>
                   <span className="truncate">{item.nome}</span>
                 </button>
               )

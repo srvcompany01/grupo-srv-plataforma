@@ -65,7 +65,7 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
     <Popover open={aberto} onOpenChange={(valor) => { setAberto(valor); if (!valor) setConfigurando(false) }}>
       <PopoverTrigger asChild>
         <button type="button" aria-label={`Tag do cliente: ${atual.nome}`} title="Alterar tag de cliente" className="shrink-0 rounded-md outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-marca">
-          {atualOuNulo ? <Chip tag={atual} /> : <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
+          {atualOuNulo ? <Chip tag={atual} /> : <span className="controle inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={7} className="w-80 gap-0 overflow-hidden rounded-xl border border-borda bg-white p-0 shadow-xl">

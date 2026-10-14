@@ -31,7 +31,7 @@ export function EditorOpcoes({ config, onChange }: { config: ConfigCampo; onChan
       {opcoes.map((opcao, indice) => {
         const cor = corDaOpcao(config, opcao)
         return (
-          <div key={indice} className="flex items-center gap-2 rounded-[9px] border border-borda bg-white px-2 focus-within:border-marca focus-within:ring-3 focus-within:ring-marca/15">
+          <div key={indice} className="controle flex items-center gap-2 rounded-[9px] border border-borda bg-white px-2 focus-within:border-marca focus-within:ring-3 focus-within:ring-marca/15">
             <Popover>
               <PopoverTrigger type="button" aria-label={`Cor da opção ${opcao || indice + 1}`} className="h-5 w-5 shrink-0 rounded-full ring-1 ring-borda transition hover:scale-110" style={{ background: cor }} />
               <PopoverContent align="start" className="w-64 p-3"><SeletorCor cor={cor} onChange={(nova) => corar(opcao, nova)} /></PopoverContent>

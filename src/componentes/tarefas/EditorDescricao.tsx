@@ -27,7 +27,7 @@ export function EditorDescricao({ tarefaId, inicial }: { tarefaId: string; inici
   })
   const botao = (ativo: boolean) => `rounded p-1 ${ativo ? 'bg-marca-fundo text-marca' : 'text-texto-3 hover:bg-hover'}`
   return (
-    <div className="rounded-md border border-borda">
+    <div className="controle rounded-md border border-borda">
       {editor && (
         <div className="flex gap-0.5 border-b border-borda px-1 py-0.5">
           <button type="button" aria-label="Negrito" onClick={() => editor.chain().focus().toggleBold().run()} className={botao(editor.isActive('bold'))}>

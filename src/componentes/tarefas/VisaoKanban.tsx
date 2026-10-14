@@ -112,7 +112,7 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-72 shrink-0 flex-col rounded-2xl border border-borda p-2.5 transition ${isOver ? 'ring-2 ring-petroleo/25' : ''}`} style={{ background: `color-mix(in oklab, ${coluna.cor} 7%, var(--color-fundo))` }}>
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-72 shrink-0 flex-col rounded-2xl bg-fundo/60 p-2.5 transition ${isOver ? 'ring-2 ring-petroleo/25' : ''}`} style={{ background: `color-mix(in oklab, ${coluna.cor} 7%, var(--color-fundo))` }}>
       <header className="mb-2.5 flex items-center gap-2 px-1">
         <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>

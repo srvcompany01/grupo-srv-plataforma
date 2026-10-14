@@ -286,7 +286,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   ) : null
 
   return (
-    <div ref={raiz} className="space-y-2">
+    <div ref={raiz} className="area-lista space-y-2">
       {selecionadas.size > 0 && (
         <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
           <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>

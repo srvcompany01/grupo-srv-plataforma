@@ -44,7 +44,7 @@ export function AlternadorVisao({
     )
   }
   return (
-    <nav className={abas ? 'flex min-w-0 items-center gap-0.5 overflow-x-auto border-b border-borda px-4 md:px-5' : 'flex w-fit gap-1 rounded-full border border-borda bg-white p-1'}>
+    <nav className={abas ? 'flex min-w-0 items-center gap-0.5 overflow-x-auto border-b border-borda px-4 md:px-5' : 'controle flex w-fit gap-1 rounded-full border border-borda bg-white p-1'}>
       {visoes.map(aba)}
       {abas && (
         <DropdownMenu>

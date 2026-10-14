@@ -83,7 +83,7 @@ export function EditorCampo({ alvo, espacos, listas, campos, aoFechar }: { alvo:
         <legend className={rotulo}>Listas onde o campo aparece ({listaIds.length})</legend>
         <div className="max-h-44 space-y-1 overflow-y-auto">
           {listasDoEspaco.map((l) => (
-            <label key={l.id} className="flex items-center gap-2 rounded-lg border border-borda px-3 py-2 text-sm"><input type="checkbox" checked={listaIds.includes(l.id)} onChange={() => alternarLista(l.id)} className="accent-marca" />{l.caminho}</label>
+            <label key={l.id} className="controle flex items-center gap-2 rounded-lg border border-borda px-3 py-2 text-sm"><input type="checkbox" checked={listaIds.includes(l.id)} onChange={() => alternarLista(l.id)} className="accent-marca" />{l.caminho}</label>
           ))}
           {listasDoEspaco.length === 0 && <p className="rounded-lg bg-fundo p-3 text-xs text-texto-3">Este espaço ainda não tem listas.</p>}
         </div>
