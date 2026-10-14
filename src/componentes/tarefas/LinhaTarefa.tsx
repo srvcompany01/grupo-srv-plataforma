@@ -35,6 +35,8 @@ export type Contexto = {
   selecionadas?: ReadonlySet<string>
   /** `intervalo` = Shift segurado: marca/desmarca tudo entre a última linha clicada e esta. */
   alternarSelecao?: (id: string, selecionada: boolean, intervalo?: boolean) => void
+  /** Células marcadas arrastando o mouse (como numa planilha): linhas × colunas. */
+  faixa?: { linhas: ReadonlySet<string>; colunas: ReadonlySet<string> } | null
 }
 
 export function larguraDaColuna(id: string, larguras: Record<string, number> = {}) {
@@ -64,38 +66,42 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   const colunas = colunasDoContexto(ctx)
   const selecionada = ctx.selecionadas?.has(tarefa.id) ?? false
+  // Cada célula leva `data-celula` (a lista descobre por ele onde o mouse está) e ganha destaque quando está na faixa.
+  const noFaixa = (colunaId: string) => !!ctx.faixa?.linhas.has(tarefa.id) && ctx.faixa.colunas.has(colunaId)
+  const marca = (colunaId: string) => ({ 'data-celula': colunaId })
+  const realce = (colunaId: string) => (noFaixa(colunaId) ? ' bg-marca-fundo ring-1 ring-inset ring-marca/30' : '')
   const celula = (colunaId: string) => {
     if (colunaId.startsWith('campo:')) {
       const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
       if (!definicao) return null
       return (
-        <div key={colunaId} className="min-w-0 border-l border-borda/50 py-1">
+        <div key={colunaId} {...marca(colunaId)} className={`min-w-0 border-l border-borda/50 py-1${realce(colunaId)}`}>
           <CelulaCampoPersonalizado tarefaId={tarefa.id} definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }} equipe={ctx.equipe} />
         </div>
       )
     }
     switch (colunaId) {
       case 'responsavel':
-        return <span key={colunaId} className="px-2"><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
+        return <span key={colunaId} {...marca(colunaId)} className={`px-2${realce(colunaId)}`}><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
       case 'prazo':
-        return <span key={colunaId} className="px-1 text-rotulo"><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
+        return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
         return (
-          <span key={colunaId} className="px-2" title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
+          <span key={colunaId} {...marca(colunaId)} className={`px-2${realce(colunaId)}`} title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
             {tarefa.prioridade !== 'normal' && <Flag className={`h-3.5 w-3.5 ${COR_PRIORIDADE[tarefa.prioridade]}`} />}
           </span>
         )
       case 'status':
-        return <span key={colunaId} className="min-w-0 px-2"><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
+        return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
       case 'tagcliente':
         return (
-          <span key={colunaId} className="min-w-0 px-2">
+          <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}>
             <SeletorTagCliente tarefaId={tarefa.id} atual={tarefa.clienteId ? { id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor } : null} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
           </span>
         )
       case 'etiquetas':
         return (
-          <span key={colunaId} className="flex min-w-0 flex-wrap gap-1 px-2">
+          <span key={colunaId} {...marca(colunaId)} className={`flex min-w-0 flex-wrap gap-1 px-2${realce(colunaId)}`}>
             {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-white" style={{ background: t.cor }}>{t.nome}</span>)}
           </span>
         )
@@ -105,8 +111,8 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div className={`group grid min-h-10 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
-        <div className="flex min-w-0 items-center gap-2 px-3" style={{ paddingLeft: 12 + nivel * 20 }}>
+      <div data-linha={tarefa.id} className={`group grid min-h-10 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+        <div {...marca('nome')} className={`flex min-w-0 items-center gap-2 px-3${realce('nome')}`} style={{ paddingLeft: 12 + nivel * 20 }}>
           <input
             type="checkbox"
             checked={selecionada}
@@ -124,7 +130,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           </button>
           {!colunas.includes('status') && <SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} />}
           <div className="min-w-0 flex-1">
-            <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block truncate font-medium hover:text-marca">
+            <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="block truncate font-medium hover:text-marca">
               {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
               {tarefa.filhos.length > 0 && <span className="ml-1.5 text-legenda text-texto-3">{tarefa.filhos.length}</span>}
             </Link>

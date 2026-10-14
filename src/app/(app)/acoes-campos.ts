@@ -79,3 +79,25 @@ export async function salvarValorCampoEmLote(tarefaIds: string[], campoId: strin
   revalidatePath('/', 'layout')
   return resultado
 }
+
+/**
+ * Grava vários valores de uma vez (colar ou limpar uma faixa de células). Cada item é uma tarefa + campo + valor (null limpa).
+ * Itens com o mesmo campo e valor viram uma gravação só. Máx. 500 itens.
+ */
+export async function salvarCelulasAcao(itens: { tarefaId: string; campoId: string; valor: Json | null }[], textoOk = 'Células atualizadas.'): Promise<Resultado> {
+  await exigirEquipe()
+  if (!Array.isArray(itens) || itens.length < 1 || itens.length > 500 || !itens.every((i) => UUID.test(i.tarefaId) && UUID.test(i.campoId))) return { erro: 'Seleção inválida (de 1 a 500 células).' }
+  const grupos = new Map<string, { campoId: string; valor: Json | null; tarefas: Set<string> }>()
+  for (const i of itens) {
+    const chave = `${i.campoId}|${JSON.stringify(i.valor ?? null)}`
+    const g = grupos.get(chave) ?? { campoId: i.campoId, valor: i.valor ?? null, tarefas: new Set<string>() }
+    g.tarefas.add(i.tarefaId)
+    grupos.set(chave, g)
+  }
+  const sb = await criarClienteServidor()
+  const resultado = await tentar(async () => {
+    for (const g of grupos.values()) await campos.salvarValorEmLote(sb, [...g.tarefas], g.campoId, g.valor)
+  }, textoOk)
+  revalidatePath('/', 'layout')
+  return resultado
+}

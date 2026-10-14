@@ -13,8 +13,12 @@ import {
   type ConfigColunas, type LimiteColuna,
 } from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
-import type { No, TarefaResumo } from '@/dominio/tarefas'
+import { campoDaFaixa, interpretarColagem, planejarColagem, textoParaValor, valorParaTexto } from '@/dominio/faixa-celulas'
+import { ROTULO_PRIORIDADE, type No, type TarefaResumo } from '@/dominio/tarefas'
+import { salvarCelulasAcao } from '@/app/(app)/acoes-campos'
+import { AlterarColunaEmLote } from './AlterarColunaEmLote'
 import { avisar } from './avisar'
+import { linhasVisiveis, useFaixaDeCelulas } from './usarFaixaDeCelulas'
 import { ConfigurarCampo } from './ConfigurarCampo'
 import { EditarCamposEmLote } from './EditarCamposEmLote'
 import { GerenciarCampos } from './GerenciarCampos'
@@ -232,7 +236,95 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       setSelecionadas(new Set())
     })
   }
-  const contexto = { ...ctx, camposPersonalizados: campos, colunas, largurasColunas: larguras, selecionadas, alternarSelecao }
+  // ---- Seleção de células por arrasto (como planilha) ----
+  const colunasDaFaixa = useMemo(() => ['nome', ...colunas], [colunas])
+  const { definirRaiz, faixa, setFaixa } = useFaixaDeCelulas(colunasDaFaixa)
+  const [alterandoColuna, setAlterandoColuna] = useState(false)
+  const [gravandoFaixa, iniciarFaixa] = useTransition()
+  const tarefaPorId = useMemo(() => new Map(tarefas.map((t) => [t.id, t])), [tarefas])
+  const faixaSets = useMemo(() => (faixa ? { linhas: new Set(faixa.linhas), colunas: new Set(faixa.colunas) } : null), [faixa])
+  const campoDaColuna = (coluna: string) => camposPorColuna.get(coluna)
+  const uniaColuna = faixa && faixa.colunas.length === 1 ? campoDaColuna(faixa.colunas[0]) : undefined
+  const camposNaFaixa = faixa ? faixa.colunas.filter((c) => { const d = campoDaColuna(c); return d && campoDaFaixa(d) }) : []
+
+  const textoDaCelula = (tarefaId: string, coluna: string): string => {
+    const t = tarefaPorId.get(tarefaId)
+    if (!t) return ''
+    const def = campoDaColuna(coluna)
+    if (def) return valorParaTexto(def, t.camposPersonalizados?.[def.id], ctx.equipe)
+    switch (coluna) {
+      case 'nome': return t.titulo
+      case 'prazo': return t.prazo ? t.prazo.split('-').reverse().join('/') : ''
+      case 'prioridade': return ROTULO_PRIORIDADE[t.prioridade]
+      case 'responsavel': return t.responsaveis.map((p) => p.nome).join(', ')
+      case 'status': return ctx.statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.nome ?? ''
+      case 'tagcliente': return t.clienteNome ?? ''
+      case 'etiquetas': return t.tags.map((x) => x.nome).join(', ')
+      default: return ''
+    }
+  }
+  const copiarFaixa = (evento?: ClipboardEvent) => {
+    if (!faixa) return
+    const texto = faixa.linhas.map((l) => faixa.colunas.map((c) => textoDaCelula(l, c).replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\n')
+    if (evento?.clipboardData) {
+      evento.clipboardData.setData('text/plain', texto)
+      evento.preventDefault()
+    } else void navigator.clipboard?.writeText(texto)
+    avisar({ ok: 'Células copiadas.' }, true)
+  }
+  const limparFaixa = async () => {
+    if (!faixa) return
+    const itens = faixa.linhas.flatMap((tarefaId) => camposNaFaixa.map((c) => ({ tarefaId, campoId: campoDaColuna(c)!.id, valor: null })))
+    if (itens.length === 0) return void avisar({ erro: 'Selecione células de campos personalizados para limpar.' })
+    if (!(await confirmar({ titulo: `Limpar ${itens.length} ${itens.length === 1 ? 'célula' : 'células'}?`, descricao: 'Os valores dos campos selecionados são apagados. A tarefa e o nome dela continuam.', confirmar: 'Limpar', perigo: true }))) return
+    iniciarFaixa(async () => void avisar(await salvarCelulasAcao(itens, 'Células limpas.'), true))
+  }
+  const colarNaFaixa = (texto: string) => {
+    if (!faixa || !raiz.current) return
+    const plano = planejarColagem(faixa, interpretarColagem(texto), linhasVisiveis(raiz.current), colunasDaFaixa)
+    const itens: { tarefaId: string; campoId: string; valor: import('@/infra/supabase/tipos').Json | null }[] = []
+    let ignoradas = 0
+    for (const p of plano) {
+      const def = campoDaColuna(p.coluna)
+      const r = def && campoDaFaixa(def) ? textoParaValor(def, p.texto, ctx.equipe) : null
+      if (def && r?.ok) itens.push({ tarefaId: p.linha, campoId: def.id, valor: r.valor })
+      else ignoradas++
+    }
+    if (itens.length === 0) return void avisar({ erro: 'Nada para colar: o texto não combina com os campos selecionados.' })
+    iniciarFaixa(async () => {
+      const r = await salvarCelulasAcao(itens, ignoradas ? `${itens.length} coladas; ${ignoradas} ignoradas (valor que o campo não aceita).` : `${itens.length} ${itens.length === 1 ? 'célula colada' : 'células coladas'}.`)
+      avisar(r, true)
+    })
+  }
+
+  useEffect(() => {
+    if (!faixa) return
+    const emCampo = (alvo: EventTarget | null) => !!(alvo as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"], [role="listbox"]')
+    const teclado = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape' && !emCampo(e.target)) setFaixa(null)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !emCampo(e.target)) {
+        e.preventDefault()
+        void limparFaixa()
+      }
+    }
+    const copiar = (e: ClipboardEvent) => { if (!emCampo(e.target)) copiarFaixa(e) }
+    const colar = (e: ClipboardEvent) => {
+      if (emCampo(e.target)) return
+      e.preventDefault()
+      colarNaFaixa(e.clipboardData?.getData('text/plain') ?? '')
+    }
+    document.addEventListener('keydown', teclado)
+    document.addEventListener('copy', copiar)
+    document.addEventListener('paste', colar)
+    return () => {
+      document.removeEventListener('keydown', teclado)
+      document.removeEventListener('copy', copiar)
+      document.removeEventListener('paste', colar)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- os tratadores leem a faixa e os dados atuais a cada render
+  }, [faixa, tarefaPorId, camposPorColuna, ctx.equipe])
+
+  const contexto = { ...ctx, camposPersonalizados: campos, colunas, largurasColunas: larguras, selecionadas, alternarSelecao, faixa: faixaSets }
   const colunasPadrao = COLUNAS_PADRAO.map((c) => ({ id: c.id, nome: c.nome, visivel: visivel(c.id, config) }))
 
   const menuDaColuna = (colunaId: string, gatilho: ReactNode, titulo: string) => {
@@ -286,7 +378,24 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   ) : null
 
   return (
-    <div ref={raiz} className="area-lista space-y-2">
+    <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="area-lista space-y-2">
+      {faixa && !selecionadas.size && (
+        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
+          <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
+            {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
+          </span>
+          {uniaColuna && campoDaFaixa(uniaColuna) && (
+            <button type="button" onClick={() => setAlterandoColuna(true)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white hover:bg-petroleo-700">Alterar valor…</button>
+          )}
+          <button type="button" onClick={() => copiarFaixa()} className="inline-flex h-8 items-center rounded-lg px-2.5 text-rotulo font-medium text-texto-2 hover:bg-hover">Copiar</button>
+          {camposNaFaixa.length > 0 && (
+            <button type="button" disabled={gravandoFaixa} onClick={() => void limparFaixa()} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-rotulo font-medium text-perigo hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Limpar</button>
+          )}
+          <span className="hidden text-legenda text-texto-3 md:inline">Ctrl+V cola · Delete limpa · Esc sai</span>
+          <button type="button" aria-label="Fechar seleção" onClick={() => setFaixa(null)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+      {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
         <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
           <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
