@@ -1,5 +1,6 @@
 import { rotuloMes } from './formatar'
 import { corDaOpcao, CORES_PERSONALIZACAO, type DefinicaoCampo, type TipoCampoPersonalizado } from './personalizacao'
+import { iconeDoStatus, type IconeStatusInfo } from './status-icone'
 import { PRIORIDADES, ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from './tarefas'
 
 export const AGRUPAMENTOS_BASICOS = ['nenhum', 'status', 'prioridade', 'mes', 'cliente', 'responsavel', 'etiqueta'] as const
@@ -23,7 +24,7 @@ export function lerAgrupamento(valor: string): string {
   return (AGRUPAMENTOS_BASICOS as readonly string[]).includes(valor) || CAMPO.test(valor) ? valor : 'status'
 }
 
-export type GrupoTarefas = { id: string; nome: string; cor: string; tarefas: No<TarefaResumo>[]; statusId?: string; semCabecalho?: boolean }
+export type GrupoTarefas = { id: string; nome: string; cor: string; tarefas: No<TarefaResumo>[]; statusId?: string; semCabecalho?: boolean; icone?: IconeStatusInfo }
 
 type Chave = { id: string; nome: string; cor: string }
 type Regra = { chaves: (tarefa: TarefaResumo) => Chave[]; ordem?: string[]; semValor?: boolean }
@@ -100,7 +101,7 @@ export function agruparTarefas(raizes: No<TarefaResumo>[], agrupamento: string, 
   if (agrupamento === 'nenhum') return [{ id: 'todas', nome: 'Todas as tarefas', cor: COR_NEUTRA, tarefas: raizes, semCabecalho: true }]
   const regra = regraDe(agrupamento, ctx.campos, ctx.equipe)
   if (!regra) {
-    return ctx.status.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor, tarefas: raizes.filter((t) => t.statusId === s.id), statusId: s.id }))
+    return ctx.status.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor, tarefas: raizes.filter((t) => t.statusId === s.id), statusId: s.id, icone: iconeDoStatus(ctx.status, s.id) }))
   }
   const grupos = new Map<string, GrupoTarefas>()
   const semValor: No<TarefaResumo>[] = []

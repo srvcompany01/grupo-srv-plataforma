@@ -2,9 +2,11 @@
 
 import { useTransition } from 'react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import { iconeDoStatus } from '@/dominio/status-icone'
 import type { StatusLista } from '@/dominio/tarefas'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
+import { IconeStatus } from './IconeStatus'
 
 export function SeletorStatus({
   tarefaId,
@@ -26,7 +28,7 @@ export function SeletorStatus({
         aria-label={`Status: ${atual?.nome ?? ''}`}
         className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-rotulo font-medium hover:bg-hover"
       >
-        <span className="h-3 w-3 shrink-0 rounded-full border-2" style={{ borderColor: atual?.cor ?? '#87909e', background: atual?.categoria === 'done' ? atual.cor : 'transparent' }} />
+        <IconeStatus info={iconeDoStatus(opcoes, statusId)} cor={atual?.cor ?? '#87909e'} />
         {comNome && <span>{atual?.nome ?? '—'}</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -35,7 +37,7 @@ export function SeletorStatus({
             key={s.id}
             onSelect={() => s.id !== statusId && iniciar(async () => void avisar(await atualizarTarefaAcao(tarefaId, { statusId: s.id })))}
           >
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.cor }} />
+            <IconeStatus info={iconeDoStatus(opcoes, s.id)} cor={s.cor} className="h-3.5 w-3.5" />
             {s.nome}
           </DropdownMenuItem>
         ))}

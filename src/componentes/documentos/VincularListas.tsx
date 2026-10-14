@@ -31,7 +31,7 @@ export function VincularListas({ documentoId, vinculadas, todas, podeEditar }: {
         <ListChecks className="h-3.5 w-3.5" /> {vinculadas.length ? `${vinculadas.length} ${vinculadas.length === 1 ? 'lista' : 'listas'}` : 'Vincular a listas'}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-2 p-3">
-        <p className="text-legenda font-bold uppercase tracking-rotulo text-texto-3">Listas vinculadas</p>
+        <p className="text-legenda font-medium text-texto-3">Listas vinculadas</p>
         {vinculadas.length === 0 && <p className="text-legenda text-texto-3">Em nenhuma lista ainda.</p>}
         <div className="flex flex-wrap gap-1">
           {vinculadas.map((l) => (

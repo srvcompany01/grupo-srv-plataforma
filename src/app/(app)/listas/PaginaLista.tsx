@@ -16,6 +16,7 @@ import { SalvarVisao } from '@/componentes/tarefas/SalvarVisao'
 import { agruparTarefas, TIPOS_AGRUPAVEIS } from '@/dominio/agrupamento'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { rotuloMes } from '@/dominio/formatar'
+import { iconeDoStatus } from '@/dominio/status-icone'
 import { resolverVisao } from '@/dominio/visao-salva'
 import { montarArvore } from '@/dominio/tarefas'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -131,7 +132,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
         {filtros.visao === 'kanban' && (
           <VisaoKanban
             modo="status"
-            colunas={lista.status.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor }))}
+            colunas={lista.status.map((s) => ({ id: s.id, nome: s.nome, cor: s.cor, icone: iconeDoStatus(lista.status, s.id) }))}
             tarefas={Object.fromEntries(lista.status.map((s) => [s.id, arvore.filter((t) => t.statusId === s.id)]))}
             subtarefas={Object.fromEntries(arvore.map((t) => [t.id, t.filhos.length]))}
             ctx={ctx}

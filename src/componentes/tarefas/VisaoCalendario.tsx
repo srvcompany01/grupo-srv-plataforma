@@ -161,7 +161,7 @@ export function VisaoCalendario({
               <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-full bg-petroleo px-1.5 text-micro text-white">{camposVisiveis.length}</span>}
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-0.5 p-2">
-              <p className="px-2 pb-1 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Mostrar nos itens</p>
+              <p className="px-2 pb-1 text-legenda font-medium text-texto-3">Mostrar nos itens</p>
               {campos.map((c) => {
                 const marcado = filtros.campos.includes(c.id)
                 const novos = marcado ? filtros.campos.filter((id) => id !== c.id) : [...filtros.campos, c.id]
@@ -193,8 +193,8 @@ export function VisaoCalendario({
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
           <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-borda bg-fundo/70">
-            <div className="px-1 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3" title="Semana do ano">Sem</div>
-            {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3">{dia}</div>)}
+            <div className="px-1 py-2 text-center text-legenda font-medium text-texto-3" title="Semana do ano">Sem</div>
+            {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-medium text-texto-3">{dia}</div>)}
           </div>
           <div className="grid auto-rows-fr grid-cols-[2.25rem_repeat(7,minmax(0,1fr))]">
             {dias.map((dia, indice) => {
@@ -260,7 +260,7 @@ export function VisaoCalendario({
 
       {semData.length > 0 && (
         <div className="border-t border-borda bg-fundo/50 px-4 py-3">
-          <p className="mb-2 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Sem vencimento · {semData.length} <span className="font-medium normal-case tracking-normal">(arraste para um dia)</span></p>
+          <p className="mb-2 text-legenda font-medium text-texto-3">Sem vencimento · {semData.length} <span className="font-medium">(arraste para um dia)</span></p>
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (

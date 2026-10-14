@@ -22,7 +22,7 @@ export default async function Portal() {
         <BotaoSair />
       </div>
       <section className="space-y-2">
-        <h2 className="text-rotulo font-bold uppercase tracking-rotulo text-texto-3">Documentos para você</h2>
+        <h2 className="text-rotulo font-semibold text-texto-3">Documentos para você</h2>
         {docs.length === 0 ? (
           <p className="rounded-lg border border-dashed border-borda p-6 text-center text-corpo text-texto-3">Nenhum documento disponível por enquanto.</p>
         ) : (

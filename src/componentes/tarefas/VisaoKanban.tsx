@@ -1,5 +1,7 @@
 'use client'
 
+import { EtiquetaGrupo } from './EtiquetaGrupo'
+import type { IconeStatusInfo } from '@/dominio/status-icone'
 import {
   DndContext,
   DragOverlay,
@@ -25,7 +27,7 @@ import { type Contexto } from './LinhaTarefa'
 import { Pessoas } from './Pessoas'
 import { SeloPrioridade } from './SeloPrioridade'
 
-export type Coluna = { id: string; nome: string; cor: string }
+export type Coluna = { id: string; nome: string; cor: string; icone?: IconeStatusInfo }
 type Itens = Record<string, TarefaResumo[]>
 
 /**
@@ -112,9 +114,7 @@ function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; ta
   return (
     <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-72 shrink-0 flex-col rounded-2xl border border-borda p-2.5 transition ${isOver ? 'ring-2 ring-petroleo/25' : ''}`} style={{ background: `color-mix(in oklab, ${coluna.cor} 7%, var(--color-fundo))` }}>
       <header className="mb-2.5 flex items-center gap-2 px-1">
-        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: coluna.cor }} aria-hidden="true" />
-        <h3 className="min-w-0 truncate text-corpo font-semibold">{coluna.nome}</h3>
-        <span className="rounded-full bg-white/80 px-2 py-0.5 text-legenda tabular-nums text-texto-2 ring-1 ring-borda">{tarefas.length}</span>
+        <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>
       <SortableContext items={tarefas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-h-16 flex-col gap-2">

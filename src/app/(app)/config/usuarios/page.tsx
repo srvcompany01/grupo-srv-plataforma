@@ -20,7 +20,7 @@ export default async function Usuarios() {
       <FormConvite clientes={clientes.filter((c) => !c.interno).map((c) => ({ id: c.id, nome: c.nome }))} espacos={espacos} />
       <div className="overflow-hidden rounded-lg border border-borda bg-white">
         <table className="w-full text-corpo">
-          <thead className="bg-hover text-left text-legenda uppercase tracking-rotulo text-texto-3">
+          <thead className="bg-hover text-left text-legenda font-medium text-texto-3">
             <tr>
               <th className="px-3 py-2">Pessoa</th>
               <th className="hidden px-3 py-2 md:table-cell">Departamentos / cliente</th>

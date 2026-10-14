@@ -23,3 +23,15 @@ describe('campo de seleção do cliente', () => {
     await expect(db.query(`update client_field_values set value = 'Qualquer' where client_id = $1`, [cliente])).rejects.toThrow(/Escolha uma das opções/)
   })
 })
+
+it('churn: Baixo azul, Médio laranja, Alto vermelho; e existe o campo Cidade (texto, na galeria)', async () => {
+  const db = await criarBanco()
+  const { rows } = await db.query<{ options: { nome: string; cor: string }[] }>(`select options from client_fields where name = 'Risco de churn'`)
+  expect(rows[0].options).toEqual([
+    { nome: 'Baixo', cor: '#3b82f6' },
+    { nome: 'Médio', cor: '#f97316' },
+    { nome: 'Alto', cor: '#d64545' },
+  ])
+  const cidade = await db.query(`select kind, show_on_card from client_fields where name = 'Cidade'`)
+  expect(cidade.rows).toEqual([{ kind: 'texto', show_on_card: true }])
+})

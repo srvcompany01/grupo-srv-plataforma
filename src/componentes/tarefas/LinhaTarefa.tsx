@@ -69,7 +69,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
       if (!definicao) return null
       return (
-        <div key={colunaId} className="min-w-0 border-l border-borda/70 px-1.5 py-1">
+        <div key={colunaId} className="min-w-0 border-l border-borda/50 py-1">
           <CelulaCampoPersonalizado tarefaId={tarefa.id} definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }} equipe={ctx.equipe} />
         </div>
       )
@@ -105,7 +105,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div className={`group grid min-h-10 items-center border-t border-borda text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div className={`group grid min-h-10 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div className="flex min-w-0 items-center gap-2 px-3" style={{ paddingLeft: 12 + nivel * 20 }}>
           <input
             type="checkbox"
@@ -164,7 +164,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         <button
           type="button"
           onClick={() => setCriandoSubtarefa(true)}
-          className="flex min-h-8 w-full items-center gap-2 border-t border-borda py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-hover/80 hover:text-marca"
+          className="flex min-h-8 w-full items-center gap-2 border-t border-borda/60 py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-hover/80 hover:text-marca"
           style={{ paddingLeft: 52 + nivel * 20 }}
         >
           <CornerDownRight className="h-3.5 w-3.5" /> Adicionar subtarefa

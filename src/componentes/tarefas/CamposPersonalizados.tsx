@@ -68,19 +68,19 @@ function CampoEditavel({ aoSalvar, definicao, equipe, compacto = false }: { aoSa
   const [pendente, iniciar] = useTransition()
   const salvar = (novo: Json | null = valor) => iniciar(async () => void avisar(await aoSalvar(novo)))
   const classe = compacto
-    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-2 text-rotulo outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
+    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-[7px] text-rotulo outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
     : `${campo} h-8 py-1.5 text-corpo`
   const somenteLeitura = definicao.tipo === 'formula' || definicao.tipo === 'progress_auto'
 
   if (somenteLeitura) {
-    return <div className={`flex h-8 items-center rounded-lg bg-fundo px-3 font-medium ${compacto ? 'text-rotulo' : 'text-corpo'}`}>{formatarValorCampo(definicao, valor)}</div>
+    return <div className={`flex h-8 items-center rounded-lg font-medium ${compacto ? 'px-2 text-rotulo' : 'bg-fundo px-3 text-corpo'}`}>{formatarValorCampo(definicao, valor)}</div>
   }
   if (definicao.tipo === 'button') {
     const href = definicao.configuracao.buttonUrl
-    return href ? <a href={href} target="_blank" rel="noreferrer" className={botaoSecundario}>{definicao.configuracao.buttonLabel ?? 'Abrir'} <ExternalLink className="h-3.5 w-3.5" /></a> : <span className="text-xs text-texto-3">Configure uma URL para este botão.</span>
+    return href ? <a href={href} target="_blank" rel="noreferrer" className={`${botaoSecundario} ${compacto ? 'ml-1.5' : ''}`}>{definicao.configuracao.buttonLabel ?? 'Abrir'} <ExternalLink className="h-3.5 w-3.5" /></a> : <span className={`text-xs text-texto-3 ${compacto ? 'px-2' : ''}`}>Configure uma URL para este botão.</span>
   }
   if (definicao.tipo === 'checkbox') {
-    return <label className="inline-flex items-center gap-2 text-corpo"><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
+    return <label className={`inline-flex items-center gap-2 text-corpo ${compacto ? 'h-8 px-2' : ''}`}><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
   }
   if (definicao.tipo === 'dropdown' || definicao.tipo === 'labels') {
     return <SeletorOpcoes definicao={definicao} valor={valor} multiplo={definicao.tipo === 'labels'} compacto={compacto} pendente={pendente} onChange={(novo) => { setValor(novo); salvar(novo) }} />

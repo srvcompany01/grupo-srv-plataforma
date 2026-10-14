@@ -51,7 +51,7 @@ export default async function PaginaDocumentos({ searchParams }: PageProps<'/doc
         ) : (
           <div className="overflow-x-auto rounded-lg border border-borda">
             <table className="w-full min-w-[760px] text-left text-rotulo">
-              <thead className="bg-fundo/70 text-legenda font-bold uppercase tracking-rotulo text-texto-3">
+              <thead className="bg-fundo/70 text-legenda font-medium text-texto-3">
                 <tr>
                   <th className="w-8 px-2 py-2" />
                   <th className="px-2 py-2">Nome</th>

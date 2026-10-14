@@ -18,6 +18,7 @@ import { avisar } from './avisar'
 import { ConfigurarCampo } from './ConfigurarCampo'
 import { EditarCamposEmLote } from './EditarCamposEmLote'
 import { GerenciarCampos } from './GerenciarCampos'
+import { EtiquetaGrupo } from './EtiquetaGrupo'
 import { LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
 
@@ -239,7 +240,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     const campo = camposPorColuna.get(colunaId)
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 text-left uppercase outline-none transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30" title={titulo}>
+        <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 text-left outline-none transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30" title={titulo}>
           {gatilho}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52 normal-case">
@@ -298,17 +299,14 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
       <div className="overflow-x-auto pb-2">
-        <div className="space-y-3" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+        <div className="space-y-1.5" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
         <section key={g.id} className="bg-white">
           {!g.semCabecalho && (
-            <div className="flex items-center transition hover:bg-hover">
-              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left">
-                <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
-                <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-rotulo text-white" style={{ background: g.cor }}>
-                  {g.nome}
-                </span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
+            <div className="flex items-center">
+              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1.5 text-left">
+                <ChevronRight className={`h-3.5 w-3.5 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+                <EtiquetaGrupo nome={g.nome} cor={g.cor} icone={g.icone} contagem={g.tarefas.length} />
               </button>
               {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
               {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
@@ -316,13 +314,13 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-8 items-center border-y border-borda bg-white text-legenda font-semibold uppercase tracking-rotulo text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+              <div className="grid min-h-7 items-center border-y border-borda/60 bg-white text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
                 <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)
                   if (definicao) {
                     return (
-                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/70" {...propsRedimensionamento}>
+                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/50" {...propsRedimensionamento}>
                         {menuDaColuna(colunaId, <><span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span></>, definicao.nome)}
                       </CabecalhoColuna>
                     )
@@ -334,7 +332,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                   )
                 })}
                 {ctx.gerirCampos && (
-                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/70 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/50 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
                 )}
               </div>
               {g.tarefas.map((t) => (

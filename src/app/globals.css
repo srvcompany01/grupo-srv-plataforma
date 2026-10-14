@@ -66,8 +66,8 @@
   /* Contraste sobre o marfim: texto-2 ~6,9:1, texto-3 ~4,8:1 (mínimo AA 4,5:1). */
   --color-texto-2: #5e5450;
   --color-texto-3: #746a65;
-  --color-borda: #e7ded5;
-  --color-borda-forte: #d6c9bc;
+  --color-borda: #eee7df;
+  --color-borda-forte: #e0d5c9;
   --color-fundo: var(--tema-fundo);
   --color-hover: color-mix(in oklab, var(--tema-fundo), #261b19 3%);
   --color-trilho: #261b19;
@@ -137,7 +137,7 @@ body {
   --lat-3: rgba(38, 27, 25, 0.58);
   --lat-hover: rgba(38, 27, 25, 0.05);
   --lat-ativo: color-mix(in oklab, var(--tema-acento) 10%, white);
-  --lat-borda: #e7ded5;
+  --lat-borda: #ece4dc;
   --background: var(--tema-superficie);
   --foreground: #261b19;
   --card: var(--tema-superficie);
@@ -208,9 +208,8 @@ body {
   }
 
   .eyebrow {
-    @apply text-legenda leading-5 font-medium uppercase text-texto-3;
-    font-family: var(--font-mono);
-    letter-spacing: var(--tracking-rotulo);
+    @apply text-legenda leading-5 font-medium text-texto-3;
+    font-family: var(--font-sans);
   }
 
   .surface-card {

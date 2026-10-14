@@ -8,7 +8,7 @@ export const botaoPerigo = `${botao} bg-perigo text-white hover:bg-perigo-forte`
 export const botaoFantasma = `${botao} text-texto-2 hover:bg-hover hover:text-texto`
 export const campo =
   'w-full rounded-lg border border-borda bg-white px-3 py-2.5 text-sm text-texto outline-none transition placeholder:text-texto-3 hover:border-borda-forte focus:border-marca focus:ring-3 focus:ring-marca/15'
-export const rotulo = 'font-mono text-legenda font-medium uppercase tracking-rotulo text-texto-3'
+export const rotulo = 'text-legenda font-medium text-texto-3'
 
 export const COR_STATUS: Record<Status, string> = {
   rascunho: 'bg-st-rascunho',
