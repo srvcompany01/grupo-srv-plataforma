@@ -36,9 +36,9 @@ function SeletorOpcoes({ definicao, valor, multiplo, compacto, pendente, onChang
   }
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
-      <PopoverTrigger disabled={pendente} className={`flex min-h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-rotulo hover:bg-white hover:ring-1 hover:ring-borda ${compacto ? '' : 'border border-borda bg-white'}`}>
-        <span className="flex min-w-0 flex-1 flex-wrap gap-1 py-1">{atuais.length ? atuais.map((o) => <Pilula key={o} nome={o} cor={corDaOpcao(definicao.configuracao, o)} />) : <span className="text-texto-3">{compacto ? '—' : 'Sem seleção'}</span>}</span>
-        <ChevronDown className="h-3 w-3 shrink-0 text-texto-3" />
+      <PopoverTrigger disabled={pendente} className={`relative flex min-h-8 w-full items-center gap-1 overflow-hidden rounded-lg text-left text-rotulo hover:bg-white hover:ring-1 hover:ring-borda ${compacto ? 'px-5' : 'border border-borda bg-white px-2'}`}>
+        <span className={`flex min-w-0 flex-1 flex-wrap gap-1 py-1 ${compacto ? 'justify-center' : ''}`}>{atuais.length ? atuais.map((o) => <Pilula key={o} nome={o} cor={corDaOpcao(definicao.configuracao, o)} />) : <span className="text-texto-3">{compacto ? '—' : 'Sem seleção'}</span>}</span>
+        <ChevronDown className={`h-3 w-3 shrink-0 text-texto-3 ${compacto ? 'absolute right-1.5' : ''}`} />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 space-y-1 p-2">
         {opcoes.length === 0 && <p className="px-2 py-1 text-xs text-texto-3">Nenhuma opção configurada.</p>}
@@ -68,19 +68,19 @@ function CampoEditavel({ aoSalvar, definicao, equipe, compacto = false }: { aoSa
   const [pendente, iniciar] = useTransition()
   const salvar = (novo: Json | null = valor) => iniciar(async () => void avisar(await aoSalvar(novo)))
   const classe = compacto
-    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-[7px] text-rotulo outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
+    ? 'h-8 w-full rounded-lg border border-transparent bg-transparent px-[7px] text-center text-rotulo outline-none transition hover:border-borda hover:bg-white focus:border-marca/40 focus:bg-white focus:ring-2 focus:ring-marca/10'
     : `${campo} h-8 py-1.5 text-corpo`
   const somenteLeitura = definicao.tipo === 'formula' || definicao.tipo === 'progress_auto'
 
   if (somenteLeitura) {
-    return <div className={`flex h-8 items-center rounded-lg font-medium ${compacto ? 'px-2 text-rotulo' : 'bg-fundo px-3 text-corpo'}`}>{formatarValorCampo(definicao, valor)}</div>
+    return <div className={`flex h-8 items-center rounded-lg font-medium ${compacto ? 'justify-center px-2 text-rotulo' : 'bg-fundo px-3 text-corpo'}`}>{formatarValorCampo(definicao, valor)}</div>
   }
   if (definicao.tipo === 'button') {
     const href = definicao.configuracao.buttonUrl
-    return href ? <a href={href} target="_blank" rel="noreferrer" className={`${botaoSecundario} ${compacto ? 'ml-1.5' : ''}`}>{definicao.configuracao.buttonLabel ?? 'Abrir'} <ExternalLink className="h-3.5 w-3.5" /></a> : <span className={`text-xs text-texto-3 ${compacto ? 'px-2' : ''}`}>Configure uma URL para este botão.</span>
+    return href ? <a href={href} target="_blank" rel="noreferrer" className={`${botaoSecundario} ${compacto ? 'mx-auto flex w-fit' : ''}`}>{definicao.configuracao.buttonLabel ?? 'Abrir'} <ExternalLink className="h-3.5 w-3.5" /></a> : <span className={`text-xs text-texto-3 ${compacto ? 'block px-2 text-center' : ''}`}>Configure uma URL para este botão.</span>
   }
   if (definicao.tipo === 'checkbox') {
-    return <label className={`inline-flex items-center gap-2 text-corpo ${compacto ? 'h-8 px-2' : ''}`}><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
+    return <label className={`inline-flex items-center gap-2 text-corpo ${compacto ? 'h-8 w-full justify-center px-2' : ''}`}><input type="checkbox" checked={valor === true} disabled={pendente} onChange={(e) => { setValor(e.target.checked); salvar(e.target.checked) }} />{valor === true ? 'Sim' : 'Não'}</label>
   }
   if (definicao.tipo === 'dropdown' || definicao.tipo === 'labels') {
     return <SeletorOpcoes definicao={definicao} valor={valor} multiplo={definicao.tipo === 'labels'} compacto={compacto} pendente={pendente} onChange={(novo) => { setValor(novo); salvar(novo) }} />
@@ -91,9 +91,9 @@ function CampoEditavel({ aoSalvar, definicao, equipe, compacto = false }: { aoSa
     if (compacto) {
       return (
         <PopoverPessoas>
-          <PopoverTrigger className="flex h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-2 text-left text-rotulo hover:bg-white hover:ring-1 hover:ring-borda">
-            <span className="min-w-0 flex-1 truncate">{atuais.length ? itens.filter((item) => atuais.includes(item.valor)).map((item) => item.nome).join(', ') : '—'}</span>
-            <ChevronDown className="h-3 w-3 shrink-0 text-texto-3" />
+          <PopoverTrigger className="relative flex h-8 w-full items-center gap-1 overflow-hidden rounded-lg px-5 text-center text-rotulo hover:bg-white hover:ring-1 hover:ring-borda">
+            <span className="min-w-0 flex-1 truncate text-center">{atuais.length ? itens.filter((item) => atuais.includes(item.valor)).map((item) => item.nome).join(', ') : '—'}</span>
+            <ChevronDown className="absolute right-1.5 h-3 w-3 shrink-0 text-texto-3" />
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 space-y-1 p-2">
             <button type="button" disabled={pendente} onClick={() => { setValor([]); salvar([]) }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo text-texto-2 hover:bg-hover">

@@ -92,6 +92,7 @@ const ICONES: Record<string, LucideIcon> = {
 
 export function IconeVisual({ icone, emoji, className = 'h-4 w-4' }: { icone: string; emoji?: string | null; className?: string }) {
   if (emoji) return <span className="leading-none">{emoji}</span>
+  if (icone === 'nenhum') return null
   const Componente = ICONES[icone] ?? Layers3
   return <Componente className={className} />
 }

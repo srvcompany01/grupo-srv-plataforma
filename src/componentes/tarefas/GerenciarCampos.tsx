@@ -14,6 +14,7 @@ import {
   type DefinicaoCampo,
   type ItemCatalogoCampo,
 } from '@/dominio/personalizacao'
+import { AparenciaCampo } from './AparenciaCampo'
 import { EditorOpcoes } from './EditorOpcoes'
 import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
@@ -82,6 +83,8 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
   const [busca, setBusca] = useState('')
   const [selecionado, setSelecionado] = useState<ItemCatalogoCampo | null>(null)
   const [nome, setNome] = useState('')
+  const [corNova, setCorNova] = useState('#70262d')
+  const [iconeNovo, setIconeNovo] = useState('')
   const [config, setConfig] = useState<ConfigCampo>({})
   const [pendente, iniciar] = useTransition()
   const vinculados = useMemo(() => new Set(camposDaLista.map((x) => x.id)), [camposDaLista])
@@ -89,6 +92,8 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
   const escolher = (item: ItemCatalogoCampo) => {
     setSelecionado(item)
     setNome(item.nome)
+    setCorNova(item.cor)
+    setIconeNovo(item.icone)
     setConfig(configuracaoPadrao(item.tipo))
   }
 
@@ -98,11 +103,12 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader><DialogTitle>Campos personalizados</DialogTitle><DialogDescription>Crie dados tipados para tarefas. Números, moedas e datas ficam prontos para filtros, métricas e relatórios.</DialogDescription></DialogHeader>
         {selecionado ? (
-          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await criarCampoPersonalizado({ espacoId, listaId, nome, tipo: selecionado.tipo, configuracao: config, cor: selecionado.cor, icone: selecionado.icone }); if (!avisar(resultado)) return; setSelecionado(null); setAberto(false) }) }}>
+          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await criarCampoPersonalizado({ espacoId, listaId, nome, tipo: selecionado.tipo, configuracao: config, cor: corNova, icone: iconeNovo || selecionado.icone }); if (!avisar(resultado)) return; setSelecionado(null); setAberto(false) }) }}>
             <button type="button" className="text-xs font-semibold text-marca hover:underline" onClick={() => setSelecionado(null)}>← Voltar aos tipos</button>
-            <div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-fundo" style={{ color: selecionado.cor }}><IconeVisual icone={selecionado.icone} className="h-6 w-6" /></span><div><p className="font-semibold">{selecionado.nome}</p><p className="text-xs text-texto-3">{selecionado.descricao}</p></div></div>
+            <div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-fundo" style={{ color: corNova }}>{(iconeNovo || selecionado.icone) === 'nenhum' ? <span className="text-lg font-bold">{nome.trim().charAt(0).toUpperCase() || 'A'}</span> : <IconeVisual icone={iconeNovo || selecionado.icone} className="h-6 w-6" />}</span><div><p className="font-semibold">{selecionado.nome}</p><p className="text-xs text-texto-3">{selecionado.descricao}</p></div></div>
             <label className="block space-y-1"><span className={rotulo}>Nome do campo</span><input autoFocus required className={campo} value={nome} onChange={(e) => setNome(e.target.value)} /></label>
             <ConfiguracaoCampo item={selecionado} config={config} onChange={setConfig} campos={camposDoEspaco} />
+            <AparenciaCampo cor={corNova} aoMudarCor={setCorNova} icone={iconeNovo} aoMudarIcone={setIconeNovo} iconePadrao={selecionado.icone} />
             <div className="flex justify-end gap-2"><button type="button" className={botaoSecundario} onClick={() => setSelecionado(null)}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar e adicionar'}</button></div>
           </form>
         ) : (

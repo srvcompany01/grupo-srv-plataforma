@@ -11,6 +11,9 @@ export function corDaOpcao(config: ConfigCampo, opcao: string): string {
   return config.optionColors?.[opcao] ?? CORES_PERSONALIZACAO[indice % CORES_PERSONALIZACAO.length]
 }
 
+/** Valor de `icone` para "sem ícone": o campo aparece só com o nome (na cor escolhida). */
+export const ICONE_NENHUM = 'nenhum'
+
 export const ICONES_PERSONALIZACAO = [
   'layers-3', 'folder', 'list', 'briefcase', 'building-2', 'megaphone', 'palette',
   'rocket', 'target', 'chart-no-axes-combined', 'users', 'heart', 'star', 'zap',

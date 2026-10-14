@@ -332,7 +332,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     const campo = camposPorColuna.get(colunaId)
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 text-left outline-none transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30" title={titulo}>
+        <DropdownMenuTrigger className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 outline-none ${campo ? 'justify-center text-center' : 'text-left'} transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30`} title={titulo}>
           {gatilho}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52 normal-case">
@@ -369,7 +369,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       <DropdownMenuContent align="end" className="w-56">
         {colunasFora.map((coluna) => (
           <DropdownMenuItem key={coluna.id} onSelect={() => mostrarCampo(coluna.id)}>
-            {coluna.campo && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
+            {coluna.campo && coluna.campo.icone !== 'nenhum' && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
             Mostrar {coluna.nome}
           </DropdownMenuItem>
         ))}
@@ -430,7 +430,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                   if (definicao) {
                     return (
                       <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/50" {...propsRedimensionamento}>
-                        {menuDaColuna(colunaId, <><span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span></>, definicao.nome)}
+                        {menuDaColuna(colunaId, <>{definicao.icone !== 'nenhum' && <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span>}<span className="truncate" style={definicao.icone === 'nenhum' ? { color: definicao.cor } : undefined}>{definicao.nome}</span></>, definicao.nome)}
                       </CabecalhoColuna>
                     )
                   }
