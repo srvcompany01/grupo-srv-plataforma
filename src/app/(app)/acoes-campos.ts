@@ -66,3 +66,16 @@ export async function salvarValorCampo(tarefaId: string, campoId: string, valor:
   if (listaId) revalidatePath(`/listas/${listaId}`)
   return resultado
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Aplica o mesmo valor do campo a todas as tarefas selecionadas (máx. 200). Valor vazio limpa o campo. */
+export async function salvarValorCampoEmLote(tarefaIds: string[], campoId: string, valor: Json | null): Promise<Resultado> {
+  await exigirEquipe()
+  const ids = [...new Set(tarefaIds)]
+  if (ids.length < 1 || ids.length > 200 || !ids.every((id) => UUID.test(id)) || !UUID.test(campoId)) return { erro: 'Seleção inválida (de 1 a 200 tarefas).' }
+  const sb = await criarClienteServidor()
+  const resultado = await tentar(() => campos.salvarValorEmLote(sb, ids, campoId, valor), `${ids.length} ${ids.length === 1 ? 'tarefa atualizada' : 'tarefas atualizadas'}.`)
+  revalidatePath('/', 'layout')
+  return resultado
+}

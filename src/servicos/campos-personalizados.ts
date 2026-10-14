@@ -206,3 +206,12 @@ export async function salvarValorDoCampo(sb: Supabase, tarefaId: string, campoId
   if (error) throw error
   return tarefa.list_id
 }
+
+/** Grava (ou limpa, se vazio) o mesmo valor do campo em várias tarefas de uma vez. A trigger do banco valida cada uma. */
+export async function salvarValorEmLote(sb: Supabase, tarefaIds: string[], campoId: string, valor: Json | null): Promise<void> {
+  const vazio = valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)
+  const { error } = vazio
+    ? await sb.from('task_custom_field_values').delete().in('task_id', tarefaIds).eq('field_id', campoId)
+    : await sb.from('task_custom_field_values').upsert(tarefaIds.map((id) => ({ task_id: id, field_id: campoId, value: valor })))
+  if (error) throw error
+}

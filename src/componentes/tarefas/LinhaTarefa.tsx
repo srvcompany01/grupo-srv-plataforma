@@ -33,7 +33,8 @@ export type Contexto = {
   gerirCampos?: PropsGerenciarCampos
   largurasColunas?: Record<string, number>
   selecionadas?: ReadonlySet<string>
-  alternarSelecao?: (id: string, selecionada: boolean) => void
+  /** `intervalo` = Shift segurado: marca/desmarca tudo entre a última linha clicada e esta. */
+  alternarSelecao?: (id: string, selecionada: boolean, intervalo?: boolean) => void
 }
 
 export function larguraDaColuna(id: string, larguras: Record<string, number> = {}) {
@@ -113,7 +114,8 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           <input
             type="checkbox"
             checked={selecionada}
-            onChange={(evento) => ctx.alternarSelecao?.(tarefa.id, evento.target.checked)}
+            data-tarefa-id={tarefa.id}
+            onChange={(evento) => ctx.alternarSelecao?.(tarefa.id, evento.target.checked, (evento.nativeEvent as MouseEvent).shiftKey === true)}
             aria-label={`Selecionar ${tarefa.titulo}`}
             className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-marca"
           />

@@ -16,6 +16,7 @@ import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { No, TarefaResumo } from '@/dominio/tarefas'
 import { avisar } from './avisar'
 import { ConfigurarCampo } from './ConfigurarCampo'
+import { EditarCamposEmLote } from './EditarCamposEmLote'
 import { GerenciarCampos } from './GerenciarCampos'
 import { LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
@@ -74,6 +75,8 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const confirmar = useConfirmar()
   const [larguras, setLarguras] = useState<Record<string, number>>({})
   const largurasRef = useRef(larguras)
+  const raiz = useRef<HTMLDivElement>(null)
+  const ultimaMarcada = useRef<string | null>(null)
   const arrasteRef = useRef<Arraste | null>(null)
   const [configurando, setConfigurando] = useState<string | null>(null)
   const [novoCampo, setNovoCampo] = useState(false)
@@ -191,11 +194,20 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     else novo.add(id)
     setFechados(novo)
   }
-  const alternarSelecao = (id: string, selecionada: boolean) => {
+  const alternarSelecao = (id: string, selecionada: boolean, intervalo = false) => {
+    const ancora = ultimaMarcada.current
+    ultimaMarcada.current = id
+    // Shift: usa a ordem em que as linhas aparecem na tela (só as visíveis), de um clique ao outro.
+    const visiveis = intervalo && ancora ? [...(raiz.current?.querySelectorAll<HTMLInputElement>('input[data-tarefa-id]') ?? [])].map((c) => c.dataset.tarefaId as string) : []
+    const de = visiveis.indexOf(ancora ?? '')
+    const ate = visiveis.indexOf(id)
+    const afetadas = de >= 0 && ate >= 0 ? visiveis.slice(Math.min(de, ate), Math.max(de, ate) + 1) : [id]
     setSelecionadas((atuais) => {
       const proximas = new Set(atuais)
-      if (selecionada) proximas.add(id)
-      else proximas.delete(id)
+      for (const alvo of afetadas) {
+        if (selecionada) proximas.add(alvo)
+        else proximas.delete(alvo)
+      }
       return proximas
     })
   }
@@ -258,44 +270,49 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     onKeyDown: redimensionarComTeclado,
     onReset: restaurarLargura,
   }
+  const colunasOcultas = colunasFora.length > 0 ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 outline-none transition hover:bg-hover hover:text-texto"><EyeOff className="h-3.5 w-3.5" />{colunasFora.length} {colunasFora.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        {colunasFora.map((coluna) => (
+          <DropdownMenuItem key={coluna.id} onSelect={() => mostrarCampo(coluna.id)}>
+            {coluna.campo && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
+            Mostrar {coluna.nome}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null
+
   return (
-    <div className="space-y-2">
+    <div ref={raiz} className="space-y-2">
       {selecionadas.size > 0 && (
         <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
           <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
+          {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
           <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-perigo-fundo px-3 text-rotulo font-semibold text-perigo-forte transition hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
       {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} colunasPadrao={colunasPadrao} aoAlternarColuna={alternarColuna} />}
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
-      {colunasFora.length > 0 && (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 outline-none transition hover:bg-hover hover:text-texto"><EyeOff className="h-3.5 w-3.5" />{colunasFora.length} {colunasFora.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {colunasFora.map((coluna) => (
-                <DropdownMenuItem key={coluna.id} onSelect={() => mostrarCampo(coluna.id)}>
-                  {coluna.campo && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
-                  Mostrar {coluna.nome}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
+      {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
       <div className="overflow-x-auto pb-2">
         <div className="space-y-3" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
-      {grupos.map((g) => (
+      {grupos.map((g, indice) => (
         <section key={g.id} className="bg-white">
           {!g.semCabecalho && (
-            <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition hover:bg-hover">
-              <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
-              <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-rotulo text-white" style={{ background: g.cor }}>
-                {g.nome}
-              </span>
-              <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
-            </button>
+            <div className="flex items-center transition hover:bg-hover">
+              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left">
+                <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+                <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-rotulo text-white" style={{ background: g.cor }}>
+                  {g.nome}
+                </span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
+              </button>
+              {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
+              {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
+            </div>
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
