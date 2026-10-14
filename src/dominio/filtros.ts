@@ -5,6 +5,9 @@ export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
 export const VISOES = ['lista', 'kanban', 'calendario'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
+/** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
+export const NIVEIS_CALENDARIO = ['ambas', 'maes', 'subtarefas'] as const
+export type NivelCalendario = (typeof NIVEIS_CALENDARIO)[number]
 
 export type Filtros = {
   responsaveis: string[]
@@ -19,6 +22,7 @@ export type Filtros = {
   visao: VisaoTarefas
   /** 'status' | 'nenhum' | 'prioridade' | 'mes' | 'cliente' | 'responsavel' | 'etiqueta' | 'campo:<uuid>' */
   agrupamento: string
+  niveis: NivelCalendario
 }
 
 type Params = Record<string, string | string[] | undefined>
@@ -44,6 +48,7 @@ export function lerFiltros(sp: Params): Filtros {
     busca: valor(sp, 'busca').trim().slice(0, 120),
     visao: de(VISOES, valor(sp, 'visao')) ? (valor(sp, 'visao') as VisaoTarefas) : 'lista',
     agrupamento: lerAgrupamento(valor(sp, 'grupo')),
+    niveis: de(NIVEIS_CALENDARIO, valor(sp, 'niveis')) ? (valor(sp, 'niveis') as NivelCalendario) : 'ambas',
   }
 }
 
@@ -60,6 +65,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   if (f.busca) sp.set('busca', f.busca)
   if (f.visao !== 'lista') sp.set('visao', f.visao)
   if (f.agrupamento !== 'status') sp.set('grupo', f.agrupamento)
+  if (f.niveis !== 'ambas') sp.set('niveis', f.niveis)
   return sp
 }
 
