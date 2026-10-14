@@ -23,6 +23,7 @@ describe('filtros', () => {
       visao: 'lista',
       agrupamento: 'status',
       niveis: 'ambas',
+      campos: [],
     })
   })
 

@@ -6,6 +6,7 @@ import {
   AtSign,
   CheckSquare,
   ChevronDown,
+  FileText,
   Hash,
   Inbox,
   LayoutDashboard,
@@ -25,15 +26,16 @@ import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
+import { ListaOrdenavel } from './ListaOrdenavel'
 import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[] }
+export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[] }
 type IconeLucide = ComponentType<{ className?: string }>
 
 /** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
@@ -162,9 +164,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
   const { fechado, alternar } = useContext(Recolhidos)
   const aberto = !fechado(espaco.id)
   const href = `/espacos/${espaco.id}`
-  // Administração abre o Painel de Gestão (visão geral): ele aparece como item dentro dela.
-  const comPainel = espaco.slug === 'administracao'
-  const temConteudo = comPainel || espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
+  const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
 
   return (
     <div>
@@ -183,12 +183,6 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 
       {aberto && (
         <div>
-          {comPainel && (
-            <Link href="/painel-de-gestao" className={`${item} ${caminho.startsWith('/painel-de-gestao') ? ativo : ''}`} style={{ paddingLeft: 8 + (nivel + 1) * 14 }}>
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-lat-2"><LayoutDashboard className="h-3.5 w-3.5" /></span>
-              <span className="min-w-0 flex-1 truncate">Painel de Gestão</span>
-            </Link>
-          )}
           {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
           {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
           {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
@@ -199,7 +193,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 }
 
 /** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
-export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
   const caminho = usePathname()
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
   const recolhimento = useMemo(
@@ -246,7 +240,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
   }
 
   const link = (href: string, rotulo: string, Icone: IconeLucide) => (
-    <Link href={href} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
+    <Link href={href} draggable={false} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
       <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
     </Link>
@@ -260,7 +254,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           <>
             <nav className="space-y-0.5">
               {link('/inicio', 'Minhas tarefas', CheckSquare)}
-              {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
+              {link('/documentos', 'Documentos', FileText)}
               {link('/clientes', 'Clientes', Users)}
               {papel === 'admin' && link('/config', 'Configurações', Settings)}
             </nav>
@@ -269,13 +263,19 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
         )}
 
         <TituloSecao>Início</TituloSecao>
-        <nav className="space-y-0.5">
-          <ItemEmBreve rotulo="Caixa de entrada" Icone={Inbox} />
-          <ItemEmBreve rotulo="Respostas" Icone={Reply} />
-          <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} />
-          <ItemEmBreve rotulo="Reuniões" Icone={Video} />
-          {link('/inicio', 'Minhas tarefas', CheckSquare)}
-        </nav>
+        <ListaOrdenavel
+          className="space-y-0.5"
+          cookie={COOKIE_ORDEM_INICIO}
+          ordemInicial={ordemInicio}
+          itens={[
+            { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
+            { id: 'caixa', no: <ItemEmBreve rotulo="Caixa de entrada" Icone={Inbox} /> },
+            { id: 'respostas', no: <ItemEmBreve rotulo="Respostas" Icone={Reply} /> },
+            { id: 'comentarios', no: <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} /> },
+            { id: 'reunioes', no: <ItemEmBreve rotulo="Reuniões" Icone={Video} /> },
+            { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
+          ]}
+        />
         <div className="mx-2 my-3 border-t border-lat-borda" />
         <TituloSecao>Favoritos</TituloSecao>
         <nav className="space-y-0.5">

@@ -8,6 +8,7 @@ import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
 import { GerenciarCampos } from '@/componentes/tarefas/GerenciarCampos'
+import { VisaoDocumentos } from '@/componentes/documentos/VisaoDocumentos'
 import { VisaoCalendario } from '@/componentes/tarefas/VisaoCalendario'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
@@ -22,6 +23,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags, tipoDaLista } from '@/servicos/listas'
 import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
 import { listarTarefas } from '@/servicos/tarefas'
+import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
 import { buscarVisaoSalva } from '@/servicos/visoes'
 import { listarClientes } from '@/servicos/clientes-plataforma'
@@ -67,13 +69,17 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
   // Agrupar por um campo que saiu da lista (URL antiga) volta para status.
   const agrupamento = filtros.agrupamento.startsWith('campo:') && !camposAgrupaveis.some((campo) => `campo:${campo.id}` === filtros.agrupamento) ? 'status' : filtros.agrupamento
   const grupos = agruparTarefas(arvore, agrupamento, { status: lista.status, campos: camposAgrupaveis, equipe })
+  // Documentos só são buscados na visualização que os mostra (e a lista abre normalmente sem a migration de documentos).
+  const [documentosDaLista, todosDocumentos] = filtros.visao === 'documentos'
+    ? await Promise.all([listarDocumentosDaLista(sb, id), listarDocumentos(sb)]).catch(() => [[], []] as [Awaited<ReturnType<typeof listarDocumentosDaLista>>, Awaited<ReturnType<typeof listarDocumentos>>])
+    : [[], []]
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
     <div className="min-h-full bg-white">
       <header className="border-b border-borda bg-white">
         <div
-          className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-5"
+          className="flex min-h-10 flex-wrap items-center justify-between gap-3 px-4 py-1 md:px-5"
         >
           <div className="min-w-0">
             <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">
@@ -101,16 +107,27 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
           </div>
         </div>
-        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban']} abas />
+        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'documentos']} abas />
       </header>
+      {filtros.visao !== 'documentos' && (
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
         {tipo === 'conteudo' ? <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} /> : <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />}
       </div>
+      )}
       <main className="p-4 md:p-5">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
-        {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} />}
+        {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
+        {filtros.visao === 'documentos' && (
+          <VisaoDocumentos
+            listaId={id}
+            docs={documentosDaLista}
+            candidatos={todosDocumentos.filter((d) => !d.arquivadoEm && !documentosDaLista.some((x) => x.id === d.id)).map((d) => ({ id: d.id, titulo: d.titulo, donoNome: d.donoNome }))}
+            clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))}
+            clienteDaLista={lista.cliente.id || null}
+          />
+        )}
         {filtros.visao === 'kanban' && (
           <VisaoKanban
             modo="status"
