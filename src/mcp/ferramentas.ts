@@ -247,7 +247,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   definir({
     nome: 'criar_tarefas_em_lote',
     descricao:
-      'Cria várias tarefas de uma vez, cada uma com subtarefas e valores de campos personalizados. Ideal para importar roteiros, calendários e planejamentos. Máximo de 50 tarefas e 300 subtarefas por chamada.',
+      'Cria várias tarefas de uma vez, cada uma com subtarefas (listadas ou em série, como Post 1 a Post 30) e valores de campos personalizados. Ideal para importar roteiros, calendários e planejamentos. Máximo de 50 tarefas e 300 subtarefas por chamada, todas na mesma lista.',
     escrita: true,
     entrada: {
       listaId: id('Id da lista'),
@@ -260,19 +260,27 @@ export const FERRAMENTAS: Ferramenta[] = [
             prioridade: z.enum(PRIORIDADES).optional(),
             valoresCampos: z.record(z.string().uuid(), valorCampo).optional().describe('Objeto { idDoCampo: valor }'),
             subtarefas: z.array(z.object({ titulo: z.string().min(1).max(200), descricao: z.string().max(50000).optional() })).max(100).optional(),
+            serieSubtarefas: z
+              .object({ prefixo: z.string().min(1).max(100), de: z.number().int().min(0).max(1000), ate: z.number().int().min(0).max(1000) })
+              .optional()
+              .describe('Atalho para séries: { prefixo: "Post", de: 1, ate: 30 } cria as subtarefas "Post 1" … "Post 30" (além das de "subtarefas"). Use isto em vez de listar uma a uma.'),
           }),
         )
         .min(1)
         .max(50),
     },
     executar: async (ctx, a) => {
-      if (a.tarefas.reduce((n, t) => n + (t.subtarefas?.length ?? 0), 0) > 300) throw new Error('No máximo 300 subtarefas por chamada.')
+      const lista = (t: (typeof a.tarefas)[number]) => [
+        ...(t.subtarefas ?? []),
+        ...(t.serieSubtarefas ? Array.from({ length: Math.max(0, t.serieSubtarefas.ate - t.serieSubtarefas.de + 1) }, (_, i) => ({ titulo: `${t.serieSubtarefas!.prefixo} ${t.serieSubtarefas!.de + i}`, descricao: undefined as string | undefined })) : []),
+      ]
+      if (a.tarefas.reduce((n, t) => n + lista(t).length, 0) > 300) throw new Error('No máximo 300 subtarefas por chamada.')
       const criadas: { tarefaId: string; titulo: string; subtarefaIds: string[] }[] = []
       for (const t of a.tarefas) {
         const tarefaId = await criarUma(ctx, { listaId: a.listaId, titulo: t.titulo, descricao: t.descricao, prazo: t.prazo, prioridade: t.prioridade })
         for (const [campoId, valor] of Object.entries(t.valoresCampos ?? {})) await campos.salvarValorDoCampo(ctx.sb, tarefaId, campoId, valor as Json)
         const subtarefaIds: string[] = []
-        for (const s of t.subtarefas ?? []) subtarefaIds.push(await criarUma(ctx, { listaId: a.listaId, titulo: s.titulo, descricao: s.descricao, paiId: tarefaId }))
+        for (const s of lista(t)) subtarefaIds.push(await criarUma(ctx, { listaId: a.listaId, titulo: s.titulo, descricao: s.descricao, paiId: tarefaId }))
         criadas.push({ tarefaId, titulo: t.titulo, subtarefaIds })
       }
       return { criadas }

@@ -5,7 +5,7 @@ import type { ChamarModelo } from './agente'
  * `IA_MODELO` aceita vários nomes separados por vírgula, em ordem de preferência: se o primeiro estiver sobrecarregado
  * (muito comum na camada gratuita) ou não existir, tenta o próximo.
  */
-export const PADRAO_IA = { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', modelos: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'] } as const
+export const PADRAO_IA = { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', modelos: ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'] } as const
 
 export function configIA() {
   const chave = process.env.IA_API_KEY
@@ -22,6 +22,7 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms))
 export function chamarProvedor(config: Config): ChamarModelo {
   return async (mensagens, ferramentas) => {
     let ultimo = 0
+    let cota: 'dia' | 'minuto' | 'outra' = 'outra'
     for (const modelo of config.modelos) {
       // Até 2 tentativas por modelo quando está sobrecarregado (429/503); 404/401/outros trocam de modelo ou param.
       for (let tentativa = 0; tentativa < 2; tentativa++) {
@@ -43,15 +44,19 @@ export function chamarProvedor(config: Config): ChamarModelo {
           return { content: m.content ?? null, tool_calls: m.tool_calls?.map((t, i) => ({ ...t, id: t.id || `chamada-${i}`, type: 'function' as const })) }
         }
         ultimo = resposta.status
-        console.error('IA: erro do provedor', modelo, resposta.status, (await resposta.text().catch(() => '')).slice(0, 300))
+        const texto = await resposta.text().catch(() => '')
+        console.error('IA: erro do provedor', modelo, resposta.status, texto.slice(0, 1500))
+        if (resposta.status === 429) cota = /PerDay/i.test(texto) ? 'dia' : /PerMinute/i.test(texto) ? 'minuto' : 'outra'
         if (resposta.status === 401 || resposta.status === 403) throw new Error('A chave da IA (IA_API_KEY) foi recusada. Confira se está correta.')
-        if (resposta.status !== 429 && resposta.status !== 503) break
+        // 429 (cota do modelo): repetir na hora só gasta mais cota, então vai direto para o próximo modelo. 503 (sobrecarga): uma nova tentativa.
+        if (resposta.status !== 503) break
         if (tentativa === 0) await esperar(1200)
       }
     }
     throw new Error(
       ultimo === 404 ? 'Nenhum dos modelos configurados existe para esta chave. Defina IA_MODELO na Vercel com modelos disponíveis no AI Studio.'
-        : ultimo === 429 ? 'Limite de uso da IA atingido por agora. Tente de novo em instantes.'
+        : ultimo === 429 && cota === 'dia' ? 'A cota gratuita diária da IA acabou. Ela volta amanhã; para continuar hoje, ative o faturamento no Google AI Studio.'
+        : ultimo === 429 ? 'Limite por minuto da IA (camada gratuita) atingido. Espere cerca de 1 minuto e tente de novo.'
         : ultimo === 503 || ultimo === 504 ? 'A IA está sobrecarregada agora (camada gratuita). Tente de novo em alguns instantes.'
         : `A IA respondeu com erro (${ultimo}).`,
     )

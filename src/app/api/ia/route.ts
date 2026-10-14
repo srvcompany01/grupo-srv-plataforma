@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { dataDeHoje } from '@/dominio/filtros'
 import { conversar, type Mensagem } from '@/ia/agente'
+import { resumirChamada } from '@/ia/resumo'
 import { chamarProvedor, configIA } from '@/ia/modelo'
 import { papelPodeUsarIA } from '@/ia/acesso'
 import { usuarioAtual } from '@/infra/supabase/sessao'
@@ -23,14 +24,19 @@ export async function POST(req: Request) {
   if (mensagens.length === 0 || mensagens.at(-1)?.role !== 'user') return NextResponse.json({ erro: 'Escreva uma pergunta.' }, { status: 400 })
 
   try {
+    const sb = await criarClienteServidor()
     const resposta = await conversar({
       mensagens,
-      ctx: { sb: await criarClienteServidor(), userId: eu.id, nome: eu.nome, papel: eu.papel, escopo: 'read' },
+      ctx: { sb, userId: eu.id, nome: eu.nome, papel: eu.papel, escopo: 'write' },
       caminho: String(corpo?.caminho ?? '/').slice(0, 200),
       hoje: dataDeHoje(new Date()),
       chamar: chamarProvedor(config),
     })
-    return NextResponse.json({ resposta })
+    if (resposta.tipo === 'resposta') return NextResponse.json({ resposta: resposta.texto })
+    // Proposta: nada foi gravado. A tela mostra o resumo e só executa depois do "Confirmar".
+    const nomear = async (_: 'lists', id: string) => (await sb.from('lists').select('name').eq('id', id).maybeSingle()).data?.name ?? null
+    const propostas = await Promise.all(resposta.propostas.map(async (p) => ({ ...p, resumo: await resumirChamada(p.nome, p.argumentos, nomear) })))
+    return NextResponse.json({ resposta: resposta.texto, propostas })
   } catch (e) {
     console.error('IA', e)
     return NextResponse.json({ erro: e instanceof Error ? e.message : 'Não foi possível consultar a IA.' }, { status: 502 })

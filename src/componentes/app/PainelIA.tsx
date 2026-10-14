@@ -1,20 +1,24 @@
 'use client'
 
 import { Sparkles, Send, X } from 'lucide-react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 type Mensagem = { role: 'user' | 'assistant'; content: string }
+type Proposta = { id: string; nome: string; argumentos: Record<string, unknown>; resumo: string }
 
-const SUGESTOES = ['O que está atrasado esta semana?', 'Resuma as tarefas da lista que estou vendo', 'Quais clientes têm risco de churn alto?']
+const SUGESTOES = ['O que está atrasado esta semana?', 'Crie uma tarefa “Reunião de pauta” para sexta', 'Quais clientes têm risco de churn alto?']
 
 /** Assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Fase 1: só consulta. */
 export function PainelIA() {
   const caminho = usePathname()
+  const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [texto, setTexto] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const [propostas, setPropostas] = useState<Proposta[] | null>(null)
+  const [andamento, setAndamento] = useState<string | null>(null)
   const fim = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -38,13 +42,36 @@ export function PainelIA() {
     setCarregando(true)
     try {
       const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: proximas, caminho }) })
-      const dados = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string }
+      const dados = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; propostas?: Proposta[] }
       setMensagens([...proximas, { role: 'assistant', content: dados.resposta ?? dados.erro ?? 'Não foi possível consultar a IA.' }])
+      setPropostas(dados.propostas?.length ? dados.propostas : null)
     } catch {
       setMensagens([...proximas, { role: 'assistant', content: 'Sem conexão. Tente de novo.' }])
     } finally {
       setCarregando(false)
     }
+  }
+
+  /** Executa as ações confirmadas, uma por vez, mostrando o andamento. Para na primeira que falhar. */
+  const confirmar = async () => {
+    if (!propostas || andamento) return
+    const lista = propostas
+    const feitas: string[] = []
+    let falha: string | null = null
+    for (const [i, p] of lista.entries()) {
+      setAndamento(`Executando ${i + 1} de ${lista.length}…`)
+      const r = await fetch('/api/ia/executar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: p.nome, argumentos: p.argumentos }) })
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; resumo?: string; erro?: string }
+      if (!d.ok) {
+        falha = `“${p.resumo}”: ${d.erro ?? 'não foi possível executar'}`
+        break
+      }
+      feitas.push(`✔ ${p.resumo} (${d.resumo})`)
+    }
+    setAndamento(null)
+    setPropostas(null)
+    setMensagens((m) => [...m, { role: 'assistant', content: [...feitas, ...(falha ? [`✖ Parei em ${falha}`] : [`Pronto: ${feitas.length} ${feitas.length === 1 ? 'ação feita' : 'ações feitas'}.`])].join('\n') }])
+    router.refresh()
   }
 
   if (!aberto) {
@@ -59,13 +86,13 @@ export function PainelIA() {
       <header className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
         <Sparkles className="h-4 w-4 text-petroleo" />
         <h2 className="flex-1 text-corpo font-semibold">Assistente</h2>
-        <span className="rounded-full bg-fundo px-2 py-0.5 text-legenda text-texto-3">só consulta</span>
+        <span className="rounded-full bg-fundo px-2 py-0.5 text-legenda text-texto-3">confirma antes de gravar</span>
         <button type="button" aria-label="Fechar" onClick={() => setAberto(false)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {mensagens.length === 0 && (
           <div className="space-y-2">
-            <p className="text-corpo text-texto-2">Pergunte sobre tarefas, listas, clientes e documentos. Eu só consulto: não altero nada.</p>
+            <p className="text-corpo text-texto-2">Pergunte sobre tarefas, listas, clientes e documentos, ou peça para criar tarefas e documentos. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero você confirmar.</p>
             {SUGESTOES.map((s) => (
               <button key={s} type="button" onClick={() => void enviar(s)} className="block w-full rounded-lg bg-fundo px-3 py-2 text-left text-rotulo text-texto-2 hover:bg-hover">{s}</button>
             ))}
@@ -76,6 +103,16 @@ export function PainelIA() {
             <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'bg-petroleo text-white' : 'bg-fundo text-texto'}`}>{m.content}</p>
           </div>
         ))}
+        {propostas && (
+          <div className="space-y-2 rounded-xl bg-aviso-fundo p-3 text-corpo">
+            <p className="font-semibold text-texto">Confirma estas ações?</p>
+            <ul className="list-disc space-y-1 pl-5 text-rotulo text-texto-2">{propostas.map((p) => <li key={p.id}>{p.resumo}</li>)}</ul>
+            <div className="flex gap-2">
+              <button type="button" disabled={!!andamento} onClick={() => void confirmar()} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white disabled:opacity-50">{andamento ?? 'Confirmar e executar'}</button>
+              <button type="button" disabled={!!andamento} onClick={() => { setPropostas(null); setMensagens((m) => [...m, { role: 'assistant', content: 'Cancelado. Nada foi alterado.' }]) }} className="h-8 rounded-lg px-3 text-rotulo font-medium text-texto-2 hover:bg-white/60 disabled:opacity-50">Cancelar</button>
+            </div>
+          </div>
+        )}
         {carregando && <p className="text-legenda text-texto-3">Consultando a plataforma…</p>}
         <div ref={fim} />
       </div>
