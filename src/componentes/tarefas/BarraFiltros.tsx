@@ -23,7 +23,7 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   atrasadas: 'Atrasadas',
   hoje: 'Hoje',
   semana: 'Próximos 7 dias',
-  'sem-prazo': 'Sem prazo',
+  'sem-prazo': 'Sem vencimento',
 }
 
 const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-rotulo font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/20'
@@ -145,7 +145,7 @@ export function BarraFiltros({
       {clientes && <Multi filtros={filtros} aplicar={aplicar} rotulo="Tag do cliente" chave="clientes" opcoes={clientes.map((cliente) => ({ ...cliente, nome: `@${cliente.nome}` }))} Icone={Tags} tom="verde" />}
       <DropdownMenu>
         <DropdownMenuTrigger className={`${botao} ${filtros.prazo ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
-          {filtros.prazo ? ROTULO_PRAZO[filtros.prazo] : 'Prazo'}
+          {filtros.prazo ? ROTULO_PRAZO[filtros.prazo] : 'Vencimento'}
           <ChevronDown className="h-3 w-3" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">

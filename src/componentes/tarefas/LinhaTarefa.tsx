@@ -4,10 +4,10 @@ import { ChevronRight, CornerDownRight, Flag } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
-import { formatarData } from '@/dominio/formatar'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
 import { CelulaCampoPersonalizado } from './CamposPersonalizados'
+import { EditorVencimento, Prazo } from './EditorVencimento'
 import type { PropsGerenciarCampos } from './GerenciarCampos'
 import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
@@ -56,11 +56,7 @@ export function gradeDaLista(colunas: string[], larguras: Record<string, number>
   return [nome, ...colunas.map((id) => `${larguraDaColuna(id, larguras)}px`), ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
 }
 
-export function Prazo({ prazo, concluida, hoje }: { prazo: string | null; concluida: boolean; hoje: string }) {
-  if (!prazo) return <span className="text-texto-3">—</span>
-  const atrasada = !concluida && prazo < hoje
-  return <span className={atrasada ? 'font-medium text-perigo' : 'text-texto-2'}>{formatarData(prazo).slice(0, 5)}</span>
-}
+export { Prazo }
 
 export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto; euId: string }) {
   const [aberta, setAberta] = useState(false)
@@ -82,7 +78,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'responsavel':
         return <span key={colunaId} className="px-2"><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
       case 'prazo':
-        return <span key={colunaId} className="px-2 text-rotulo tabular-nums"><Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
+        return <span key={colunaId} className="px-1 text-rotulo"><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
         return (
           <span key={colunaId} className="px-2" title={ROTULO_PRIORIDADE[tarefa.prioridade]}>

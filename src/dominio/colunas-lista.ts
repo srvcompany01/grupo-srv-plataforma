@@ -3,7 +3,7 @@ export type LimiteColuna = { largura: number; minima: number; maxima: number }
 /** Colunas nativas da lista (além de Nome). `padrao` = aparece sem configurar; as demais começam ocultas. */
 export const COLUNAS_PADRAO = [
   { id: 'responsavel', nome: 'Responsável', padrao: true, largura: 110, minima: 80, maxima: 320 },
-  { id: 'prazo', nome: 'Prazo', padrao: true, largura: 78, minima: 62, maxima: 240 },
+  { id: 'prazo', nome: 'Vencimento', padrao: true, largura: 104, minima: 84, maxima: 240 },
   { id: 'prioridade', nome: 'Prioridade', padrao: true, largura: 44, minima: 36, maxima: 120 },
   { id: 'status', nome: 'Status', padrao: false, largura: 150, minima: 110, maxima: 320 },
   { id: 'tagcliente', nome: 'Tag do cliente', padrao: false, largura: 150, minima: 100, maxima: 320 },

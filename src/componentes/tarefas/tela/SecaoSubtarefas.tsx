@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { StatusLista } from '@/dominio/tarefas'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { NovaTarefa } from '../NovaTarefa'
-import { Prazo } from '../LinhaTarefa'
+import { EditorVencimento } from '../EditorVencimento'
 import { SeletorStatus } from '../SeletorStatus'
 
 export function SecaoSubtarefas({ tarefa: t, status, euId, hoje }: { tarefa: TarefaCompleta; status: StatusLista[]; euId: string; hoje: string }) {
@@ -18,7 +18,7 @@ export function SecaoSubtarefas({ tarefa: t, status, euId, hoje }: { tarefa: Tar
             <Link href={`/tarefas/${s.id}`} className="flex-1 truncate hover:text-marca">
               {s.titulo}
             </Link>
-            <Prazo prazo={s.prazo} concluida={!!s.concluidaEm} hoje={hoje} />
+            <EditorVencimento tarefaId={s.id} prazo={s.prazo} concluida={!!s.concluidaEm} hoje={hoje} />
           </div>
         ))}
         <NovaTarefa listaId={t.lista.id} euId={euId} paiId={t.id} />

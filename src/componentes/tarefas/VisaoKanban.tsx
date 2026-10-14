@@ -20,7 +20,8 @@ import { indiceAoSoltar, posicaoAoSoltar, statusDaCategoria } from '@/dominio/ka
 import type { Categoria, TarefaResumo } from '@/dominio/tarefas'
 import { moverTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
-import { Prazo, type Contexto } from './LinhaTarefa'
+import { EditorVencimento } from './EditorVencimento'
+import { type Contexto } from './LinhaTarefa'
 import { Pessoas } from './Pessoas'
 import { SeloPrioridade } from './SeloPrioridade'
 
@@ -155,12 +156,10 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
         </div>
       )}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-rotulo text-texto-3">
-        {tarefa.prazo && (
-          <span className="inline-flex items-center gap-1" title="Data de vencimento">
-            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-            <Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
-          </span>
-        )}
+        <span className="inline-flex items-center gap-0.5" title="Vencimento">
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
+        </span>
         {!!tarefa.comentarios && (
           <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>
             <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />

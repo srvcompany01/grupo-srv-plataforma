@@ -161,7 +161,6 @@ export const FERRAMENTAS: Ferramenta[] = [
         descricao: descricaoParaTexto(t.descricao),
         statusId: t.statusId,
         prioridade: t.prioridade,
-        inicio: t.inicio,
         prazo: t.prazo,
         lista: { id: t.lista.id, nome: t.lista.nome },
         pai: t.pai,
@@ -236,8 +235,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       paiId: id('Id da tarefa mãe (para criar subtarefa)').optional(),
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
-      inicio: data('Data de início').optional(),
-      prazo: data('Prazo').optional(),
+      prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
       responsaveis: z.array(id('Id de uma pessoa')).max(10).optional(),
     },
     executar: async (ctx, a) => ({ tarefaId: await criarUma(ctx, a) }),
@@ -255,7 +253,7 @@ export const FERRAMENTAS: Ferramenta[] = [
           z.object({
             titulo: z.string().min(1).max(200),
             descricao: z.string().max(50000).optional(),
-            prazo: data('Prazo').optional(),
+            prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
             prioridade: z.enum(PRIORIDADES).optional(),
             valoresCampos: z.record(z.string().uuid(), valorCampo).optional().describe('Objeto { idDoCampo: valor }'),
             subtarefas: z.array(z.object({ titulo: z.string().min(1).max(200), descricao: z.string().max(50000).optional() })).max(100).optional(),
@@ -288,8 +286,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       descricao: z.string().max(50000).optional(),
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
-      inicio: data('Início').nullable().optional(),
-      prazo: data('Prazo').nullable().optional(),
+      prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').nullable().optional(),
       responsaveis: z.array(id('Id de uma pessoa')).min(1).max(10).optional(),
     },
     executar: async ({ sb }, a) => {
@@ -298,7 +295,6 @@ export const FERRAMENTAS: Ferramenta[] = [
         descricao: a.descricao === undefined ? undefined : textoParaDescricao(a.descricao),
         statusId: a.statusId,
         prioridade: a.prioridade,
-        inicio: a.inicio,
         prazo: a.prazo,
       })
       if (a.responsaveis) await tarefas.definirResponsaveis(sb, a.tarefaId, a.responsaveis)
@@ -331,10 +327,10 @@ export const FERRAMENTAS: Ferramenta[] = [
 
 async function criarUma(
   ctx: Contexto,
-  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; inicio?: string; prazo?: string; responsaveis?: string[] },
+  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; prazo?: string; responsaveis?: string[] },
 ): Promise<string> {
   const tarefaId = await tarefas.criarTarefa(ctx.sb, { listaId: a.listaId, titulo: a.titulo.trim(), responsaveis: a.responsaveis?.length ? a.responsaveis : [ctx.userId], paiId: a.paiId, statusId: a.statusId })
-  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, inicio: a.inicio, prazo: a.prazo }
+  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, prazo: a.prazo }
   if (Object.values(extras).some((v) => v !== undefined)) await tarefas.atualizarTarefa(ctx.sb, tarefaId, extras)
   return tarefaId
 }

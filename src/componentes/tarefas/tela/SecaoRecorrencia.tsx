@@ -53,7 +53,7 @@ export function SecaoRecorrencia({ tarefaId, prazo, hoje, regra }: { tarefaId: s
           </label>
           {!regra && (
             <label className="space-y-1">
-              <span className="block text-texto-2">Primeiro prazo</span>
+              <span className="block text-texto-2">Primeiro vencimento</span>
               <input type="date" value={primeiroPrazo} onChange={(e) => setPrimeiroPrazo(e.target.value)} className={`${campo} h-8 w-36 py-0`} />
             </label>
           )}

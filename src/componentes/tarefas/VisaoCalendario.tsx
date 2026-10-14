@@ -1,12 +1,15 @@
 'use client'
 
+import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
+import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { ehSubtarefa, tarefasDoCalendario } from '@/dominio/calendario'
 import { type Filtros, type NivelCalendario } from '@/dominio/filtros'
 import type { TarefaResumo } from '@/dominio/tarefas'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
+import { avisar } from './avisar'
 
 const NIVEIS: { valor: NivelCalendario; rotulo: string; dica: string }[] = [
   { valor: 'maes', rotulo: 'Tarefas-mãe', dica: 'Só as entregas (prazo da tarefa-mãe)' },
@@ -40,6 +43,21 @@ function moverMes(anoMes: string, quantidade: number) {
   return `${data.getUTCFullYear()}-${String(data.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
+/** Qualquer item do calendário pode ser arrastado para outro dia (muda o vencimento). */
+function Arrastavel({ id, children }: { id: string; children: (a: { arrastando: boolean }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id })
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners} tabIndex={-1} className={isDragging ? 'opacity-40' : undefined}>
+      {children({ arrastando: isDragging })}
+    </div>
+  )
+}
+
+function Dia({ iso, className, children }: { iso: string; className: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: iso })
+  return <div ref={setNodeRef} className={`${className} ${isOver ? 'bg-marca/10' : ''}`}>{children}</div>
+}
+
 export function VisaoCalendario({
   tarefas: todas,
   hoje,
@@ -56,7 +74,25 @@ export function VisaoCalendario({
   filtros: Filtros
 }) {
   const niveis = filtros.niveis
-  const tarefas = useMemo(() => tarefasDoCalendario(todas, niveis), [todas, niveis])
+  // Vencimento escolhido por arrasto, mostrado na hora até o servidor responder (null = sem data).
+  const [movidas, setMovidas] = useState<Map<string, string | null>>(new Map())
+  const [, iniciar] = useTransition()
+  const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+  const comMovidas = useMemo(() => todas.map((t) => (movidas.has(t.id) ? { ...t, prazo: movidas.get(t.id) ?? null } : t)), [todas, movidas])
+  const tarefas = useMemo(() => tarefasDoCalendario(comMovidas, niveis), [comMovidas, niveis])
+  const soltar = ({ active, over }: DragEndEvent) => {
+    const id = String(active.id)
+    const novo = over ? String(over.id) : null
+    const atual = comMovidas.find((t) => t.id === id)?.prazo ?? null
+    if (!novo || novo === atual) return
+    const anterior = todas.find((t) => t.id === id)?.prazo ?? null
+    setMovidas((m) => new Map(m).set(id, novo))
+    iniciar(async () => {
+      const resultado = await atualizarTarefaAcao(id, { prazo: novo })
+      if (resultado?.erro) setMovidas((m) => new Map(m).set(id, anterior))
+      avisar(resultado)
+    })
+  }
   const tituloPai = useMemo(() => new Map(todas.map((t) => [t.id, t.titulo])), [todas])
   const [diasAbertos, setDiasAbertos] = useState<Set<string>>(new Set())
   const alternarDia = (iso: string) => setDiasAbertos((atual) => { const novo = new Set(atual); if (!novo.delete(iso)) novo.add(iso); return novo })
@@ -115,6 +151,7 @@ export function VisaoCalendario({
           <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-texto-3" /> Subtarefa</span>
         </div>
       )}
+      <DndContext sensors={sensores} onDragEnd={soltar}>
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
           <div className="grid grid-cols-7 border-b border-borda bg-fundo/70">
@@ -124,14 +161,15 @@ export function VisaoCalendario({
             {dias.map((dia) => {
               const itens = porData.get(dia.iso) ?? []
               return (
-                <div key={dia.iso} className={`min-h-28 border-b border-r border-borda p-1.5 ${dia.atual ? 'bg-white' : 'bg-fundo/45'}`}>
+                <Dia key={dia.iso} iso={dia.iso} className={`min-h-28 border-b border-r border-borda p-1.5 ${dia.atual ? 'bg-white' : 'bg-fundo/45'}`}>
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-marca text-white' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
                   <div className="mt-1 space-y-1">
                     {(diasAbertos.has(dia.iso) ? itens : itens.slice(0, 4)).map((tarefa) => {
                       const sub = ehSubtarefa(tarefa)
                       return (
+                        <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
                         <Link
-                          key={tarefa.id}
+                          draggable={false}
                           href={`/tarefas/${tarefa.id}`}
                           scroll={false}
                           title={sub ? `${tarefa.titulo} · subtarefa de ${tituloPai.get(tarefa.paiId ?? '') ?? 'tarefa-mãe'}` : `${tarefa.titulo} · tarefa-mãe (entrega)`}
@@ -143,6 +181,7 @@ export function VisaoCalendario({
                           {sub ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-texto-3" aria-hidden="true" /> : <PackageCheck className="h-3 w-3 shrink-0 text-petroleo" aria-hidden="true" />}
                           <span className="truncate">{tarefa.titulo}</span>
                         </Link>
+                        )}</Arrastavel>
                       )
                     })}
                     {itens.length > 4 && (
@@ -151,7 +190,7 @@ export function VisaoCalendario({
                       </button>
                     )}
                   </div>
-                </div>
+                </Dia>
               )
             })}
           </div>
@@ -160,15 +199,18 @@ export function VisaoCalendario({
 
       {semData.length > 0 && (
         <div className="border-t border-borda bg-fundo/50 px-4 py-3">
-          <p className="mb-2 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Sem data definida · {semData.length}</p>
+          <p className="mb-2 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Sem vencimento · {semData.length} <span className="font-medium normal-case tracking-normal">(arraste para um dia)</span></p>
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
-              <Link key={tarefa.id} href={`/tarefas/${tarefa.id}`} scroll={false} className="rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+              <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="block rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+              )}</Arrastavel>
             ))}
             {semData.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{semData.length - 12}</span>}
           </div>
         </div>
       )}
+      </DndContext>
     </section>
   )
 }

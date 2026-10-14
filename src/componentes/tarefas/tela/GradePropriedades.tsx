@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Check, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
+import { Calendar, Check, X, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -57,7 +57,6 @@ export function GradePropriedades({
   const espacoId = t.lista.espacoId
   const [pendente, iniciar] = useTransition()
   const [novaTag, setNovaTag] = useState('')
-  const [editandoDatas, setEditandoDatas] = useState(false)
   const [editandoEstimativa, setEditandoEstimativa] = useState(false)
   const salvar = (campos: Parameters<typeof atualizarTarefaAcao>[1]) => iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, campos)))
   const atual = status.find((s) => s.id === t.statusId)
@@ -101,29 +100,21 @@ export function GradePropriedades({
           </span>
         </Linha>
 
-        <Linha icone={Calendar} titulo="Datas">
-          {editandoDatas || t.inicio || t.prazo ? (
-            <span className="flex flex-wrap items-center gap-1.5">
-              <input
-                type="date"
-                aria-label="Início"
-                autoFocus={editandoDatas}
-                defaultValue={t.inicio ?? ''}
-                onBlur={(e) => e.target.value !== (t.inicio ?? '') && salvar({ inicio: e.target.value || null })}
-                className={`${campo} h-8 w-36 py-0`}
-              />
-              →
-              <input
-                type="date"
-                aria-label="Prazo"
-                defaultValue={t.prazo ?? ''}
-                onBlur={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null })}
-                className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
-              />
-            </span>
-          ) : (
-            <Vazio onClick={() => setEditandoDatas(true)} />
-          )}
+        <Linha icone={Calendar} titulo="Vencimento">
+          <span className="flex items-center gap-1.5">
+            <input
+              type="date"
+              aria-label="Vencimento"
+              defaultValue={t.prazo ?? ''}
+              onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null })}
+              className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
+            />
+            {t.prazo && (
+              <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </span>
         </Linha>
 
         <Linha icone={Hourglass} titulo="Estimativa de tempo">

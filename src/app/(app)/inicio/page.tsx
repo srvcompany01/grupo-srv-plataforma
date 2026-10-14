@@ -14,7 +14,7 @@ const GRUPOS: { id: GrupoPrazo; nome: string; cor: string }[] = [
   { id: 'hoje', nome: 'Hoje', cor: '#f76808' },
   { id: 'semana', nome: 'Próximos 7 dias', cor: '#7b68ee' },
   { id: 'depois', nome: 'Depois', cor: '#5b8def' },
-  { id: 'sem-prazo', nome: 'Sem prazo', cor: '#87909e' },
+  { id: 'sem-prazo', nome: 'Sem vencimento', cor: '#87909e' },
 ]
 
 export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio'>) {

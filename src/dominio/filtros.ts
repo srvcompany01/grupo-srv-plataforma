@@ -70,7 +70,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
 }
 
 /** Soma dias a uma data YYYY-MM-DD sem depender do fuso local. */
-function somarDias(iso: string, dias: number): string {
+export function somarDias(iso: string, dias: number): string {
   const d = new Date(`${iso}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + dias)
   return d.toISOString().slice(0, 10)
