@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
-import { lerFormCliente } from '@/servicos/clientes-plataforma'
+import { lerFormCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
 // Cliente do usuário: a RLS só permite admin e gestores.
 
@@ -49,6 +49,17 @@ export async function excluirCliente(id: string): Promise<Resultado> {
     if (error) throw error
     if (!data.length) throw { code: '42501' }
   }, 'Cliente excluído.')
+  revalidatePath('/clientes')
+  return r
+}
+
+/** Nova ordem da galeria (ids de todos os clientes mostrados, na ordem do arrasto). */
+export async function ordenarGaleriaAcao(ids: string[]): Promise<Resultado> {
+  await exigirEquipe()
+  const unicos = [...new Set(ids)]
+  if (unicos.length === 0 || unicos.length > 500 || unicos.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) return { erro: 'Ordem inválida.' }
+  const sb = await criarClienteServidor()
+  const r = await tentar(() => ordenarGaleria(sb, unicos), 'Ordem salva.')
   revalidatePath('/clientes')
   return r
 }

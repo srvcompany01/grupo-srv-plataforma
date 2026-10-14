@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
-import { formatarCampoCliente } from '@/dominio/clientes-galeria'
+import { formatarCampoCliente, ordenarGaleriaClientes } from '@/dominio/clientes-galeria'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
@@ -8,6 +8,7 @@ import { listarClientes } from '@/servicos/clientes-plataforma'
 import { criarCliente } from './acoes'
 import { CartaoCliente } from './CartaoCliente'
 import { FormCliente } from './FormCliente'
+import { GaleriaOrdenavel } from './GaleriaOrdenavel'
 
 export default async function Clientes() {
   const eu = await exigirEquipe()
@@ -32,19 +33,16 @@ export default async function Clientes() {
         </details>
       )}
       {clientes.length === 0 && <EstadoVazio icone={Users} titulo="Nenhum cliente cadastrado ainda" descricao={podeCriar ? 'Use "Novo cliente" acima para cadastrar o primeiro.' : undefined} />}
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-        {clientes.map((c) => {
+      <GaleriaOrdenavel
+        podeOrdenar={podeCriar}
+        itens={ordenarGaleriaClientes(clientes).map((c) => {
           const info = camposNaCapa.flatMap((campo) => {
             const valor = valores[c.id]?.[campo.id]
             return valor ? [{ id: campo.id, nome: campo.nome, texto: formatarCampoCliente(campo.tipo, valor), cor: campo.tipo === 'selecao' ? campo.opcoes.find((o) => o.nome === valor)?.cor : undefined }] : []
           })
-          return (
-            <li key={c.id}>
-              <CartaoCliente cliente={c} capa={capas[c.id]} info={info} />
-            </li>
-          )
+          return { id: c.id, no: <CartaoCliente cliente={c} capa={capas[c.id]} info={info} /> }
         })}
-      </ul>
+      />
     </div>
   )
 }

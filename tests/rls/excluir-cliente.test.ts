@@ -18,3 +18,12 @@ describe('excluir cliente', () => {
     expect(await ler(db, admin, `select id from clients where id = $1`, [livre])).toEqual([])
   })
 })
+
+it('gestor reordena a galeria; membro não', async () => {
+  const db = await criarBanco()
+  const gestor = await criarUsuario(db, { role: 'gestor' })
+  const membro = await criarUsuario(db, { role: 'membro' })
+  const cliente = await criarCliente(db, 'Padaria')
+  expect(await executar(db, gestor, `update clients set gallery_position = 'a0' where id = $1`, [cliente])).toBe(1)
+  expect(await executar(db, membro, `update clients set gallery_position = 'a1' where id = $1`, [cliente])).toBe(0)
+})

@@ -63,3 +63,13 @@ export function formatarCampoCliente(tipo: TipoCampoCliente, valor: string): str
 export function iniciais(nome: string): string {
   return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
 }
+
+/** Ordem da galeria: primeiro quem já foi posicionado (na ordem escolhida), depois os novos em ordem alfabética. */
+export function ordenarGaleriaClientes<T extends { nome: string; posicaoGaleria: string | null }>(clientes: T[]): T[] {
+  return [...clientes].sort((a, b) => {
+    if (a.posicaoGaleria && b.posicaoGaleria) return a.posicaoGaleria < b.posicaoGaleria ? -1 : a.posicaoGaleria > b.posicaoGaleria ? 1 : 0
+    if (a.posicaoGaleria) return -1
+    if (b.posicaoGaleria) return 1
+    return a.nome.localeCompare(b.nome, 'pt-BR')
+  })
+}

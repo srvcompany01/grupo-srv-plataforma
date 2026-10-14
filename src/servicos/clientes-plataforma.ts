@@ -1,3 +1,4 @@
+import { generateNKeysBetween } from 'fractional-indexing'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
@@ -13,9 +14,11 @@ export type Cliente = {
   telefone: string | null
   status: StatusCliente
   interno: boolean
+  /** Posição na galeria (ordem manual); null = ainda não ordenado. */
+  posicaoGaleria: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position'
 
 type Linha = {
   id: string
@@ -27,6 +30,7 @@ type Linha = {
   phone: string | null
   status: string
   is_internal: boolean
+  gallery_position: string | null
 }
 
 const paraCliente = (c: Linha): Cliente => ({
@@ -39,6 +43,7 @@ const paraCliente = (c: Linha): Cliente => ({
   telefone: c.phone,
   status: c.status as StatusCliente,
   interno: c.is_internal,
+  posicaoGaleria: c.gallery_position,
 })
 
 export async function listarClientes(sb: Supabase): Promise<Cliente[]> {
@@ -71,5 +76,15 @@ export function lerFormCliente(form: FormData) {
     email: texto('email'),
     phone: texto('telefone'),
     status: (['ativo', 'pausado', 'encerrado'].includes(status) ? status : 'ativo') as StatusCliente,
+  }
+}
+
+/** Grava a ordem da galeria: a lista inteira, na ordem em que ficou. Só admin/gestor (RLS). */
+export async function ordenarGaleria(sb: Supabase, ids: string[]): Promise<void> {
+  const posicoes = generateNKeysBetween(null, null, ids.length)
+  const resultados = await Promise.all(ids.map((id, i) => sb.from('clients').update({ gallery_position: posicoes[i] }, { count: 'exact' }).eq('id', id)))
+  for (const r of resultados) {
+    if (r.error) throw r.error
+    if (!r.count) throw { code: '42501' }
   }
 }

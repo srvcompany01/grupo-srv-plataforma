@@ -210,6 +210,7 @@ export type Database = {
           created_at: string
           document: string | null
           email: string | null
+          gallery_position: string | null
           id: string
           is_internal: boolean
           legal_name: string | null
@@ -226,6 +227,7 @@ export type Database = {
           created_at?: string
           document?: string | null
           email?: string | null
+          gallery_position?: string | null
           id?: string
           is_internal?: boolean
           legal_name?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           created_at?: string
           document?: string | null
           email?: string | null
+          gallery_position?: string | null
           id?: string
           is_internal?: boolean
           legal_name?: string | null

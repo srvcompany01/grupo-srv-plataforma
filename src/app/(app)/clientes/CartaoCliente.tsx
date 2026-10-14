@@ -25,11 +25,15 @@ export function CartaoCliente({ cliente: c, capa, info }: { cliente: Pick<Client
           <h2 className="min-w-0 flex-1 break-words text-corpo font-semibold leading-snug">{c.nome}</h2>
           {c.interno && <span className="shrink-0 rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Interno</span>}
         </div>
+        {/* Mesmo canto do cartão (arredondado, mais quadradinho que uma pílula). */}
         {c.status === 'ativo' ? (
-          // Mesmo canto do cartão (arredondado, mais quadradinho que uma pílula).
-          <span title="Cliente ativo" aria-label="Cliente ativo" className="w-fit rounded-lg border border-sucesso/60 bg-sucesso-fundo px-1.5 py-0.5 text-[13px] leading-none">✅</span>
+          <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-sucesso/60 bg-sucesso-fundo px-2 py-1 text-legenda font-semibold leading-none text-sucesso-forte">
+            <span aria-hidden="true" className="text-[11px] leading-none">✅</span> Ativo
+          </span>
         ) : (
-          <p className="text-legenda text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</p>
+          <span title={ROTULO_STATUS_CLIENTE[c.status]} className="inline-flex w-fit items-center gap-1 rounded-lg border border-perigo/60 bg-perigo-fundo px-2 py-1 text-legenda font-semibold leading-none text-perigo">
+            <span aria-hidden="true" className="text-[11px] leading-none">❌</span> Inativo
+          </span>
         )}
         {info.length > 0 && (
           <dl className="mt-1 space-y-1.5 border-t border-borda pt-2.5">
