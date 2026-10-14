@@ -12,7 +12,9 @@ import { FormCliente } from './FormCliente'
 export default async function Clientes() {
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
-  const [clientes, campos, valores, capas] = await Promise.all([listarClientes(sb), listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
+  const [todosClientes, campos, valores, capas] = await Promise.all([listarClientes(sb), listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
+  // O cliente interno (Grupo SRV) continua existindo para as listas internas, mas não aparece na galeria.
+  const clientes = todosClientes.filter((c) => !c.interno)
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
   const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
@@ -30,7 +32,7 @@ export default async function Clientes() {
         </details>
       )}
       {clientes.length === 0 && <EstadoVazio icone={Users} titulo="Nenhum cliente cadastrado ainda" descricao={podeCriar ? 'Use "Novo cliente" acima para cadastrar o primeiro.' : undefined} />}
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {clientes.map((c) => {
           const info = camposNaCapa.flatMap((campo) => {
             const valor = valores[c.id]?.[campo.id]

@@ -39,3 +39,16 @@ export async function editarCliente(id: string, _: Resultado, form: FormData): P
   revalidatePath(`/clientes/${id}`)
   return r
 }
+
+/** Exclusão definitiva (só admin, pela RLS). Recusada pelo banco se o cliente ainda tem listas, tarefas, documentos ou usuários. */
+export async function excluirCliente(id: string): Promise<Resultado> {
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const r = await tentar(async () => {
+    const { data, error } = await sb.from('clients').delete().eq('id', id).select('id')
+    if (error) throw error
+    if (!data.length) throw { code: '42501' }
+  }, 'Cliente excluído.')
+  revalidatePath('/clientes')
+  return r
+}

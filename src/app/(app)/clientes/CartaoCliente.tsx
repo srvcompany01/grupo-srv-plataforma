@@ -11,16 +11,16 @@ export function CartaoCliente({ cliente: c, capa, info }: { cliente: Pick<Client
       href={`/clientes/${c.id}`}
       className="group flex h-full flex-col overflow-hidden rounded-xl border border-borda bg-white transition-[border-color,transform] hover:-translate-y-0.5 hover:border-borda-forte focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25"
     >
-      <div className="relative aspect-[16/9] w-full overflow-hidden" style={{ background: c.cor }}>
+      <div className="relative aspect-[2/1] w-full overflow-hidden" style={{ background: c.cor }}>
         {capa?.url ? (
           // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
           <img src={capa.url} alt="" width={640} height={360} loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-[32px] font-bold tracking-rotulo text-white/90">{iniciais(c.nome)}</span>
+          <span className="flex h-full w-full items-center justify-center text-[26px] font-bold tracking-rotulo text-white/90">{iniciais(c.nome)}</span>
         )}
         {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3.5">
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
         <div className="flex items-start gap-2">
           <h2 className="min-w-0 flex-1 break-words text-corpo font-semibold leading-snug">{c.nome}</h2>
           {c.interno && <span className="shrink-0 rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Interno</span>}

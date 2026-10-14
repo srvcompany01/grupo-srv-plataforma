@@ -16,6 +16,7 @@ import { FormConvite } from '../../config/usuarios/FormConvite'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
 import { CamposCliente } from './CamposCliente'
+import { ExcluirCliente } from './ExcluirCliente'
 import { SeletorCapa } from './SeletorCapa'
 
 export default async function Cliente({ params }: PageProps<'/clientes/[cliente]'>) {
@@ -93,6 +94,7 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
           <FormConvite clientes={[]} espacos={[]} clienteFixo={id} />
         </section>
       )}
+      {admin && !cliente.interno && <ExcluirCliente clienteId={id} nome={cliente.nome} />}
     </div>
   )
 }
