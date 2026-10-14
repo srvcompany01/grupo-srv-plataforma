@@ -9,7 +9,7 @@ import { ehSubtarefa, tarefasDoCalendario } from '@/dominio/calendario'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { type Filtros, type NivelCalendario } from '@/dominio/filtros'
 import { corDaOpcao, formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
-import type { TarefaResumo } from '@/dominio/tarefas'
+import type { Pessoa, TarefaResumo } from '@/dominio/tarefas'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
 import { avisar } from './avisar'
 
@@ -68,6 +68,7 @@ export function VisaoCalendario({
   caminho,
   filtros,
   campos,
+  equipe,
 }: {
   tarefas: TarefaResumo[]
   hoje: string
@@ -77,6 +78,7 @@ export function VisaoCalendario({
   filtros: Filtros
   /** Campos personalizados da lista (as escolhas valem para todos os itens). */
   campos: DefinicaoCampo[]
+  equipe: Pessoa[]
 }) {
   const niveis = filtros.niveis
   // Vencimento escolhido por arrasto, mostrado na hora até o servidor responder (null = sem data).
@@ -196,7 +198,7 @@ export function VisaoCalendario({
                       const blocos = camposVisiveis.flatMap((c) => {
                         const valor = tarefa.camposPersonalizados?.[c.id]
                         if (valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)) return []
-                        const texto = formatarValorCampo(c, valor)
+                        const texto = c.tipo === 'people' && Array.isArray(valor) ? valor.map((id) => equipe.find((p) => p.id === id)?.nome ?? '—').join(', ') : formatarValorCampo(c, valor)
                         const cor = c.tipo === 'dropdown' || c.tipo === 'labels' ? corDaOpcao(c.configuracao, String(Array.isArray(valor) ? valor[0] : valor)) : null
                         return [
                           <span key={c.id} title={`${c.nome}: ${texto}`} className="max-w-full rounded bg-fundo px-1.5 py-0.5 text-micro font-medium text-texto-2 ring-1 ring-borda" style={cor ? { background: `${cor}22` } : undefined}>
