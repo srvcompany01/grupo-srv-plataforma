@@ -1,7 +1,7 @@
 import type { ChamarModelo } from './agente'
 
 /** Qualquer provedor com API no formato OpenAI (Gemini, Grok, OpenRouter…): só muda o endereço, a chave e o modelo. */
-export const PADRAO_IA = { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', modelo: 'gemini-2.5-flash' } as const
+export const PADRAO_IA = { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', modelo: 'gemini-3.8-flash' } as const
 
 export function configIA() {
   const chave = process.env.IA_API_KEY
@@ -23,7 +23,15 @@ export function chamarProvedor(config: NonNullable<ReturnType<typeof configIA>>)
         await new Promise((r) => setTimeout(r, 1500 * (tentativa + 1)))
         continue
       }
-      if (!resposta.ok) throw new Error(resposta.status === 429 ? 'Limite de uso da IA atingido por agora. Tente de novo em instantes.' : `A IA respondeu com erro (${resposta.status}).`)
+      if (!resposta.ok) {
+        console.error('IA: erro do provedor', resposta.status, (await resposta.text().catch(() => '')).slice(0, 500))
+        throw new Error(
+          resposta.status === 429 ? 'Limite de uso da IA atingido por agora. Tente de novo em instantes.'
+            : resposta.status === 404 ? `O modelo "${config.modelo}" não existe para esta chave. Defina IA_MODELO na Vercel com um modelo disponível no AI Studio.`
+            : resposta.status === 401 || resposta.status === 403 ? 'A chave da IA (IA_API_KEY) foi recusada. Confira se está correta.'
+            : `A IA respondeu com erro (${resposta.status}).`,
+        )
+      }
       const dados = (await resposta.json()) as { choices?: { message?: { content?: string | null; tool_calls?: { id: string; type: 'function'; function: { name: string; arguments: string } }[] } }[] }
       const m = dados.choices?.[0]?.message
       if (!m) throw new Error('A IA não devolveu resposta.')
