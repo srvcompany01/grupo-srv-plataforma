@@ -39,6 +39,8 @@ export type TarefaResumo = {
   clienteNome: string
   clienteCor: string
   concluidaEm: string | null
+  /** Quantidade de comentários (aparece no cartão do Kanban). */
+  comentarios?: number
   /** Valores dos campos vinculados à lista, indexados pelo id da definição. */
   camposPersonalizados?: Record<string, Json | null>
 }

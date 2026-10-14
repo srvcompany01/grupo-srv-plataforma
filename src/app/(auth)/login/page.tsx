@@ -8,8 +8,8 @@ import { entrar, enviarLink, esqueciSenha, type Estado } from './acoes'
 type Modo = 'equipe' | 'cliente' | 'esqueci'
 
 function Mensagem({ estado }: { estado: Estado }) {
-  if (estado?.erro) return <p className="text-sm text-rose-600">{estado.erro}</p>
-  if (estado?.ok) return <p className="text-sm text-emerald-700">{estado.ok}</p>
+  if (estado?.erro) return <p className="text-sm text-perigo">{estado.erro}</p>
+  if (estado?.ok) return <p className="text-sm text-sucesso-forte">{estado.ok}</p>
   return null
 }
 
@@ -23,7 +23,7 @@ export default function Login() {
     <button
       type="button"
       onClick={() => setModo(m)}
-      className={`flex-1 rounded-full py-2 text-[12px] font-semibold transition ${modo === m ? 'bg-texto text-white' : 'text-texto-2 hover:text-texto'}`}
+      className={`flex-1 rounded-full py-2 text-rotulo font-semibold transition ${modo === m ? 'bg-texto text-white' : 'text-texto-2 hover:text-texto'}`}
     >
       {texto}
     </button>
@@ -37,12 +37,12 @@ export default function Login() {
             <Marca tamanho="h-9 w-9 text-sm" />
             <div>
               <p className="font-sans text-sm font-bold tracking-[-0.025em]">Grupo SRV</p>
-              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-texto-3">Plataforma da agência</p>
+              <p className="font-mono text-legenda uppercase tracking-rotulo text-texto-3">Plataforma da agência</p>
             </div>
           </div>
 
           <div className="max-w-lg">
-            <span className="inline-flex rounded-full border border-borda bg-white px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-texto-2">
+            <span className="inline-flex rounded-full border border-borda bg-white px-3 py-1.5 font-mono text-legenda uppercase tracking-rotulo text-texto-2">
               Trabalho em um só lugar
             </span>
             <h1 className="mt-5 text-[48px] leading-[1.05] font-extrabold tracking-[-0.045em] text-texto lg:text-[58px]">
@@ -60,14 +60,14 @@ export default function Login() {
               ].map(([status, titulo, cor], i) => (
                 <div key={status} className={`flex items-center gap-3 px-4 py-3.5 ${i ? 'border-t border-borda' : ''}`}>
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: cor }} />
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{titulo}</span>
-                  <span className="rounded-full bg-fundo px-2 py-1 font-mono text-[9px] tracking-[0.05em] text-texto-2">{status}</span>
+                  <span className="min-w-0 flex-1 truncate text-corpo font-medium">{titulo}</span>
+                  <span className="rounded-full bg-fundo px-2 py-1 font-mono text-legenda tracking-rotulo text-texto-2">{status}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-texto-3">Conteúdo · Operação · Clientes</p>
+          <p className="font-mono text-legenda uppercase tracking-rotulo text-texto-3">Conteúdo · Operação · Clientes</p>
         </section>
 
         <section className="flex items-center justify-center p-6 sm:p-10 lg:p-14">
@@ -98,7 +98,7 @@ export default function Login() {
                 <button disabled={entrando} className={`${botaoPrimario} h-11 w-full text-sm`}>
                   {entrando ? 'Entrando…' : 'Entrar'}
                 </button>
-                <button type="button" onClick={() => setModo('esqueci')} className="w-full py-1 text-[12px] font-medium text-texto-2 hover:text-texto">
+                <button type="button" onClick={() => setModo('esqueci')} className="w-full py-1 text-rotulo font-medium text-texto-2 hover:text-texto">
                   Esqueci minha senha
                 </button>
               </form>
@@ -106,7 +106,7 @@ export default function Login() {
 
             {modo === 'cliente' && (
               <form action={acaoLink} className="mt-6 space-y-3">
-                <p className="rounded-xl border border-borda bg-fundo p-3 text-[12px] leading-5 text-texto-2">Enviaremos um link de acesso para o seu e-mail. Não precisa de senha.</p>
+                <p className="rounded-xl border border-borda bg-fundo p-3 text-rotulo leading-5 text-texto-2">Enviaremos um link de acesso para o seu e-mail. Não precisa de senha.</p>
                 <input aria-label="Seu e-mail" name="email" type="email" placeholder="Seu e-mail" autoComplete="email" required className={campo} />
                 <Mensagem estado={estadoLink} />
                 <button disabled={enviandoLink} className={`${botaoPrimario} h-11 w-full text-sm`}>
@@ -117,19 +117,19 @@ export default function Login() {
 
             {modo === 'esqueci' && (
               <form action={acaoEsqueci} className="mt-7 space-y-3">
-                <p className="rounded-xl border border-borda bg-fundo p-3 text-[12px] leading-5 text-texto-2">Informe seu e-mail para receber um link de redefinição de senha.</p>
+                <p className="rounded-xl border border-borda bg-fundo p-3 text-rotulo leading-5 text-texto-2">Informe seu e-mail para receber um link de redefinição de senha.</p>
                 <input aria-label="E-mail" name="email" type="email" placeholder="E-mail" autoComplete="email" required className={campo} />
                 <Mensagem estado={estadoEsqueci} />
                 <button disabled={enviandoEsqueci} className={`${botaoPrimario} h-11 w-full text-sm`}>
                   {enviandoEsqueci ? 'Enviando…' : 'Enviar link'}
                 </button>
-                <button type="button" onClick={() => setModo('equipe')} className="w-full py-1 text-[12px] font-medium text-texto-2 hover:text-texto">
+                <button type="button" onClick={() => setModo('equipe')} className="w-full py-1 text-rotulo font-medium text-texto-2 hover:text-texto">
                   Voltar
                 </button>
               </form>
             )}
 
-            <p className="mt-8 text-center text-[11px] leading-5 text-texto-3">Acesso restrito a colaboradores e clientes autorizados.</p>
+            <p className="mt-8 text-center text-legenda leading-5 text-texto-3">Acesso restrito a colaboradores e clientes autorizados.</p>
           </div>
         </section>
       </div>

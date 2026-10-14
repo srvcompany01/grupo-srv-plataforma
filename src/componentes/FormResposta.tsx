@@ -56,7 +56,7 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
         </label>
       )}
       {nomeSalvo && (
-        <p className="text-[13px] text-texto-2">
+        <p className="text-corpo text-texto-2">
           Respondendo como <strong>{nomeSalvo}</strong>{' '}
           <button type="button" className="font-medium text-marca" onClick={() => setTrocando(true)}>
             trocar
@@ -77,7 +77,7 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
           />
         </label>
       )}
-      {erro && <p className="text-[13px] text-rose-600">{erro}</p>}
+      {erro && <p className="text-corpo text-perigo">{erro}</p>}
 
       {decisao === 'ajuste' ? (
         <div className="grid grid-cols-2 gap-2">

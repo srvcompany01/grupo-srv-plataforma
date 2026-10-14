@@ -49,9 +49,14 @@ export async function vincularUsuarioCliente(db: Banco, userId: string, clientId
   await db.query(`insert into public.client_users (user_id, client_id) values ($1, $2)`, [userId, clientId])
 }
 
-/** Id de um espaço criado pela migração (ex.: 'Conteúdo'). */
+/** Id de um espaço da migração inicial (ex.: 'Conteúdo'). Os espaços fixos de navegação (com slug) têm função própria. */
 export function idEspaco(db: Banco, nome: string): Promise<string> {
-  return inserir(db, `select id from public.spaces where name = $1`, [nome])
+  return inserir(db, `select id from public.spaces where name = $1 and slug is null`, [nome])
+}
+
+/** Id de um espaço fixo da navegação (Administração, Comercial, Operação) pelo slug. */
+export function idEspacoFixo(db: Banco, slug: string): Promise<string> {
+  return inserir(db, `select id from public.spaces where slug = $1`, [slug])
 }
 
 export function idInterno(db: Banco): Promise<string> {

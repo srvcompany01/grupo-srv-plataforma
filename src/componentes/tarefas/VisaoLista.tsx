@@ -1,18 +1,28 @@
 'use client'
 
-import { ChevronRight, Flag, Trash2, UserRound, X } from 'lucide-react'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
 import { IconeVisual } from '@/componentes/IconeVisual'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import type { GrupoTarefas } from '@/dominio/agrupamento'
+import {
+  COLUNAS_BASE, COLUNAS_PADRAO, colunasVisiveis, CONFIG_COLUNAS_VAZIA, idBruto, LIMITE_CAMPO, mostrarColuna, moverColuna, ocultarColuna, visivel,
+  type ConfigColunas, type LimiteColuna,
+} from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { No, TarefaResumo } from '@/dominio/tarefas'
 import { avisar } from './avisar'
-import { COLUNAS_BASE, LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
+import { ConfigurarCampo } from './ConfigurarCampo'
+import { EditarCamposEmLote } from './EditarCamposEmLote'
+import { GerenciarCampos } from './GerenciarCampos'
+import { LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
 
-export type Grupo = { id: string; nome: string; cor: string; tarefas: No<TarefaResumo>[]; statusId?: string }
+export type Grupo = GrupoTarefas
 
-type LimiteColuna = { minima: number; maxima: number; largura: number }
 type Arraste = { id: string; inicioX: number; larguraInicial: number; minima: number; maxima: number; pointerId: number }
 
 const limitar = (valor: number, minima: number, maxima: number) => Math.min(maxima, Math.max(minima, Math.round(valor)))
@@ -24,9 +34,7 @@ function tarefasEmProfundidade(tarefas: No<TarefaResumo>[]): No<TarefaResumo>[] 
 function limiteDaColuna(id: string, campos: DefinicaoCampo[]): LimiteColuna {
   const base = COLUNAS_BASE.find((coluna) => coluna.id === id)
   if (base) return base
-  return campos.some((campo) => `campo:${campo.id}` === id)
-    ? { largura: 180, minima: 120, maxima: 600 }
-    : { largura: 180, minima: 100, maxima: 600 }
+  return campos.some((campo) => `campo:${campo.id}` === id) ? LIMITE_CAMPO : { ...LIMITE_CAMPO, minima: 100 }
 }
 
 function CabecalhoColuna({ children, colunaId, className = '', onPointerDown, onPointerMove, onPointerUp, onKeyDown, onReset }: {
@@ -64,11 +72,26 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const [fechados, setFechados] = useState<Set<string>>(new Set())
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set())
   const [excluindo, iniciarExclusao] = useTransition()
+  const confirmar = useConfirmar()
   const [larguras, setLarguras] = useState<Record<string, number>>({})
   const largurasRef = useRef(larguras)
+  const raiz = useRef<HTMLDivElement>(null)
+  const ultimaMarcada = useRef<string | null>(null)
   const arrasteRef = useRef<Arraste | null>(null)
-  const campos = ctx.camposPersonalizados ?? []
+  const [configurando, setConfigurando] = useState<string | null>(null)
+  const [novoCampo, setNovoCampo] = useState(false)
+  const [config, setConfig] = useState<ConfigColunas>(CONFIG_COLUNAS_VAZIA)
+  const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
+  const chaveCampos = chaveLarguras ? `srv:list-fields:v1:${chaveLarguras}` : null
+  // A visibilidade na lista é independente da tarefa: ocultar aqui não remove o campo da tarefa.
+  const colunas = useMemo(() => colunasVisiveis(campos.map((campo) => campo.id), config), [campos, config])
+  const camposPorColuna = useMemo(() => new Map(campos.map((campo) => [`campo:${campo.id}`, campo])), [campos])
+  /** Colunas opcionais fora da lista agora: ocultadas pelo usuário ou nativas que começam ocultas. */
+  const colunasFora = [
+    ...COLUNAS_PADRAO.filter((c) => !visivel(c.id, config)).map((c) => ({ id: c.id, nome: c.nome, campo: undefined })),
+    ...campos.filter((campo) => !visivel(campo.id, config)).map((campo) => ({ id: campo.id, nome: campo.nome, campo })),
+  ]
   const tarefas = useMemo(() => grupos.flatMap((grupo) => tarefasEmProfundidade(grupo.tarefas)), [grupos])
   const idsTarefas = useMemo(() => tarefas.map((tarefa) => tarefa.id), [tarefas])
   const todasSelecionadas = idsTarefas.length > 0 && idsTarefas.every((id) => selecionadas.has(id))
@@ -89,6 +112,34 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     return () => cancelAnimationFrame(quadro)
   }, [chaveStorage])
 
+  useEffect(() => {
+    if (!chaveCampos) return
+    let quadro = 0
+    try {
+      const salva = JSON.parse(localStorage.getItem(chaveCampos) ?? 'null') as Partial<ConfigColunas> | null
+      const lista = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+      if (salva) quadro = requestAnimationFrame(() => setConfig({ ocultas: lista(salva.ocultas), mostrar: lista(salva.mostrar), ordem: lista(salva.ordem) }))
+    } catch {
+      localStorage.removeItem(chaveCampos)
+    }
+    return () => cancelAnimationFrame(quadro)
+  }, [chaveCampos])
+
+  const atualizarColunas = (proxima: ConfigColunas) => {
+    setConfig(proxima)
+    if (chaveCampos) localStorage.setItem(chaveCampos, JSON.stringify(proxima))
+  }
+  /** Os `id` abaixo são ids brutos: o da coluna nativa ou o do campo, sem o prefixo `campo:`. */
+  const ocultarCampo = (id: string) => atualizarColunas(ocultarColuna(config, id))
+  const mostrarCampo = (id: string) => atualizarColunas(mostrarColuna(config, id))
+  const moverCampo = (id: string, para: 'inicio' | 'final') => atualizarColunas(moverColuna(config, colunas, id, para))
+  const alternarColuna = (id: string) => (visivel(id, config) ? ocultarCampo(id) : mostrarCampo(id))
+
+  const arquivarCampo = async (id: string, nome: string) => {
+    if (!(await confirmar({ titulo: `Arquivar "${nome}"?`, descricao: 'Ele some das listas, mas os valores já preenchidos nas tarefas são preservados.', confirmar: 'Arquivar', perigo: true }))) return
+    void arquivarCampoGestaoAcao(id).then((r) => avisar(r, true))
+  }
+
   const aplicarLargura = (id: string, largura: number) => {
     const limite = limiteDaColuna(id, campos)
     const proximas = { ...largurasRef.current, [id]: limitar(largura, limite.minima, limite.maxima) }
@@ -102,7 +153,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
 
   const iniciarRedimensionamento = (id: string, evento: PointerEvent<HTMLButtonElement>) => {
     const limite = limiteDaColuna(id, campos)
-    arrasteRef.current = { id, inicioX: evento.clientX, larguraInicial: larguraDaColuna(id, largurasRef.current), minima: limite.minima, maxima: limite.maxima, pointerId: evento.pointerId }
+    // Nome começa flexível: o ponto de partida do arrasto é a largura que ele tem na tela agora.
+    const medida = id === 'nome' && largurasRef.current.nome == null ? evento.currentTarget.parentElement?.getBoundingClientRect().width : undefined
+    arrasteRef.current = { id, inicioX: evento.clientX, larguraInicial: medida ? Math.round(medida) : larguraDaColuna(id, largurasRef.current), minima: limite.minima, maxima: limite.maxima, pointerId: evento.pointerId }
     evento.currentTarget.setPointerCapture(evento.pointerId)
     evento.preventDefault()
   }
@@ -141,11 +194,20 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     else novo.add(id)
     setFechados(novo)
   }
-  const alternarSelecao = (id: string, selecionada: boolean) => {
+  const alternarSelecao = (id: string, selecionada: boolean, intervalo = false) => {
+    const ancora = ultimaMarcada.current
+    ultimaMarcada.current = id
+    // Shift: usa a ordem em que as linhas aparecem na tela (só as visíveis), de um clique ao outro.
+    const visiveis = intervalo && ancora ? [...(raiz.current?.querySelectorAll<HTMLInputElement>('input[data-tarefa-id]') ?? [])].map((c) => c.dataset.tarefaId as string) : []
+    const de = visiveis.indexOf(ancora ?? '')
+    const ate = visiveis.indexOf(id)
+    const afetadas = de >= 0 && ate >= 0 ? visiveis.slice(Math.min(de, ate), Math.max(de, ate) + 1) : [id]
     setSelecionadas((atuais) => {
       const proximas = new Set(atuais)
-      if (selecionada) proximas.add(id)
-      else proximas.delete(id)
+      for (const alvo of afetadas) {
+        if (selecionada) proximas.add(alvo)
+        else proximas.delete(alvo)
+      }
       return proximas
     })
   }
@@ -161,15 +223,46 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       return true
     })
   }
-  const excluirSelecionadas = () => {
+  const excluirSelecionadas = async () => {
     const quantidade = selecionadas.size
-    if (!quantidade || !confirm(`Excluir ${quantidade} ${quantidade === 1 ? 'tarefa' : 'tarefas'}? As subtarefas relacionadas também serão removidas da visualização.`)) return
+    if (!quantidade || !(await confirmar({ titulo: `Excluir ${quantidade} ${quantidade === 1 ? 'tarefa' : 'tarefas'}?`, descricao: 'As subtarefas relacionadas também serão removidas da visualização.', confirmar: 'Excluir', perigo: true }))) return
     iniciarExclusao(async () => {
       if (!avisar(await arquivarTarefasAcao(idsRaizSelecionados()), true)) return
       setSelecionadas(new Set())
     })
   }
-  const contexto = { ...ctx, largurasColunas: larguras, selecionadas, alternarSelecao }
+  const contexto = { ...ctx, camposPersonalizados: campos, colunas, largurasColunas: larguras, selecionadas, alternarSelecao }
+  const colunasPadrao = COLUNAS_PADRAO.map((c) => ({ id: c.id, nome: c.nome, visivel: visivel(c.id, config) }))
+
+  const menuDaColuna = (colunaId: string, gatilho: ReactNode, titulo: string) => {
+    const bruto = idBruto(colunaId)
+    const campo = camposPorColuna.get(colunaId)
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 text-left uppercase outline-none transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30" title={titulo}>
+          {gatilho}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52 normal-case">
+          <DropdownMenuItem onSelect={() => ocultarCampo(bruto)}><EyeOff className="h-4 w-4" />Ocultar coluna</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'inicio')}><ArrowLeftToLine className="h-4 w-4" />Mover para o início</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'final')}><ArrowRightToLine className="h-4 w-4" />Mover para o final</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => restaurarLargura(colunaId)}><MoveHorizontal className="h-4 w-4" />Restaurar largura</DropdownMenuItem>
+          {campo && ctx.podeEditarCampos && (
+            <>
+              <DropdownMenuItem onSelect={() => setConfigurando(campo.id)}><Settings2 className="h-4 w-4" />Configurar campo…</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => arquivarCampo(campo.id, campo.nome)}><Archive className="h-4 w-4" />Arquivar campo</DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+  const cabecalhoNativo = (id: string) => {
+    const coluna = COLUNAS_PADRAO.find((c) => c.id === id)!
+    if (id === 'responsavel') return <><UserRound className="h-3 w-3 shrink-0" /><span className="truncate">{coluna.nome}</span></>
+    if (id === 'prioridade') return <Flag className="h-3 w-3" aria-label={coluna.nome} />
+    return <span className="truncate">{coluna.nome}</span>
+  }
   const propsRedimensionamento = {
     onPointerDown: iniciarRedimensionamento,
     onPointerMove: moverRedimensionamento,
@@ -177,38 +270,72 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     onKeyDown: redimensionarComTeclado,
     onReset: restaurarLargura,
   }
+  const colunasOcultas = colunasFora.length > 0 ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 outline-none transition hover:bg-hover hover:text-texto"><EyeOff className="h-3.5 w-3.5" />{colunasFora.length} {colunasFora.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        {colunasFora.map((coluna) => (
+          <DropdownMenuItem key={coluna.id} onSelect={() => mostrarCampo(coluna.id)}>
+            {coluna.campo && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
+            Mostrar {coluna.nome}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null
+
   return (
-    <div className="space-y-2">
+    <div ref={raiz} className="space-y-2">
       {selecionadas.size > 0 && (
-        <div className="sticky top-0 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-sky-200 bg-white/95 px-3 py-2 shadow-lg shadow-sky-950/5 backdrop-blur">
-          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
-          <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-rose-50 px-3 text-[12px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
-          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
+        <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
+          <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
+          {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
+          <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-perigo-fundo px-3 text-rotulo font-semibold text-perigo-forte transition hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
+          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
+      {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} colunasPadrao={colunasPadrao} aoAlternarColuna={alternarColuna} />}
+      {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
+      {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
       <div className="overflow-x-auto pb-2">
-        <div className="space-y-5" style={{ minWidth: gradeDaLista(campos, larguras).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
-      {grupos.map((g) => (
-        <section key={g.id} className="overflow-hidden rounded-xl border border-borda bg-white shadow-[0_6px_24px_rgba(32,32,32,0.035)]" style={{ boxShadow: `inset 3px 0 0 ${g.cor}, 0 6px 24px rgba(32,32,32,0.035)` }}>
-          <button onClick={() => alternar(g.id)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition hover:brightness-[0.985]" style={{ background: `linear-gradient(90deg, ${g.cor}12, #f8f9fa 42%, #ffffff)` }}>
-            <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
-            <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-white" style={{ background: g.cor }}>
-              {g.nome}
-            </span>
-            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
-          </button>
-          {!fechados.has(g.id) && (
+        <div className="space-y-3" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+      {grupos.map((g, indice) => (
+        <section key={g.id} className="bg-white">
+          {!g.semCabecalho && (
+            <div className="flex items-center transition hover:bg-hover">
+              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left">
+                <ChevronRight className={`h-4 w-4 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+                <span className="rounded-full px-2.5 py-1 text-legenda font-semibold uppercase tracking-rotulo text-white" style={{ background: g.cor }}>
+                  {g.nome}
+                </span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">{g.tarefas.length}</span>
+              </button>
+              {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
+              {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
+            </div>
+          )}
+          {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-8 items-center border-t border-borda bg-[#fbfbfc] text-[10px] font-semibold uppercase tracking-[0.045em] text-texto-3" style={{ gridTemplateColumns: gradeDaLista(campos, larguras) }}>
-                <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-sky-600" /> Nome</span></CabecalhoColuna>
-                <CabecalhoColuna colunaId="responsavel" {...propsRedimensionamento}><span className="flex items-center gap-1"><UserRound className="h-3 w-3" /> Responsável</span></CabecalhoColuna>
-                <CabecalhoColuna colunaId="prazo" {...propsRedimensionamento}>Prazo</CabecalhoColuna>
-                <CabecalhoColuna colunaId="prioridade" {...propsRedimensionamento}><Flag className="h-3 w-3" /></CabecalhoColuna>
-                {campos.map((definicao) => (
-                  <CabecalhoColuna key={definicao.id} colunaId={`campo:${definicao.id}`} className="border-l border-borda/70" {...propsRedimensionamento}>
-                    <span className="flex min-w-0 items-center gap-1.5" title={definicao.nome}><span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span></span>
-                  </CabecalhoColuna>
-                ))}
+              <div className="grid min-h-8 items-center border-y border-borda bg-white text-legenda font-semibold uppercase tracking-rotulo text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+                <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
+                {colunas.map((colunaId) => {
+                  const definicao = camposPorColuna.get(colunaId)
+                  if (definicao) {
+                    return (
+                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/70" {...propsRedimensionamento}>
+                        {menuDaColuna(colunaId, <><span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span><span className="truncate">{definicao.nome}</span></>, definicao.nome)}
+                      </CabecalhoColuna>
+                    )
+                  }
+                  return (
+                    <CabecalhoColuna key={colunaId} colunaId={colunaId} {...propsRedimensionamento}>
+                      {menuDaColuna(colunaId, cabecalhoNativo(colunaId), COLUNAS_PADRAO.find((c) => c.id === colunaId)?.nome ?? colunaId)}
+                    </CabecalhoColuna>
+                  )
+                })}
+                {ctx.gerirCampos && (
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/70 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                )}
               </div>
               {g.tarefas.map((t) => (
                 <LinhaTarefa key={t.id} tarefa={t} nivel={0} ctx={contexto} euId={euId} />

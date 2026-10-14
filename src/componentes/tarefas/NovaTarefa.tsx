@@ -35,7 +35,7 @@ export function NovaTarefa({
 
   if (!aberta) {
     return (
-      <button onClick={() => setAberta(true)} className="flex h-9 w-full items-center gap-1.5 border-t border-borda px-10 text-[12px] font-medium text-texto-3 transition hover:bg-hover/70 hover:text-texto">
+      <button onClick={() => setAberta(true)} className="flex h-9 w-full items-center gap-1.5 border-t border-borda px-10 text-rotulo font-medium text-texto-3 transition hover:bg-hover/70 hover:text-texto">
         <Plus className="h-3.5 w-3.5" /> {paiId ? 'Nova subtarefa' : 'Nova tarefa'}
       </button>
     )
@@ -61,7 +61,7 @@ export function NovaTarefa({
         onBlur={() => !titulo && fechar()}
         disabled={pendente}
         placeholder={`${paiId ? 'Nome da subtarefa' : 'Nome da tarefa'} (Enter para salvar, Esc para cancelar)`}
-        className="flex-1 bg-transparent text-[13px] outline-none"
+        className="flex-1 bg-transparent text-corpo outline-none"
       />
     </form>
   )

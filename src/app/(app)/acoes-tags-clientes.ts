@@ -7,16 +7,32 @@ import { tentar, type Resultado } from '@/servicos/acao'
 
 const COR_HEX = /^#[0-9a-f]{6}$/i
 
-/** Troca a tag obrigatoria da lista; o gatilho do banco sincroniza todas as tarefas. */
-export async function definirTagClienteDaLista(listaId: string, clienteId: string): Promise<Resultado> {
+/**
+ * Troca a tag de cliente de UMA tarefa e de toda a sua árvore (a mãe de origem e todas as subtarefas),
+ * sem mexer nas outras tarefas da lista. Sobe até a raiz e desce de volta para manter a árvore coerente.
+ */
+export async function definirTagClienteDaTarefa(tarefaId: string, clienteId: string | null): Promise<Resultado> {
   await exigirEquipe()
-  if (!listaId || !clienteId) return { erro: 'Selecione uma tag de cliente.' }
+  if (!tarefaId) return { erro: 'Tarefa inválida.' }
   const sb = await criarClienteServidor()
   const resultado = await tentar(async () => {
-    const { error, count } = await sb.from('lists').update({ client_id: clienteId }, { count: 'exact' }).eq('id', listaId)
+    const { data: tarefa, error } = await sb.from('tasks').select('id, parent_task_id, list_id').eq('id', tarefaId).single()
     if (error) throw error
+    const { data: todas, error: erroLista } = await sb.from('tasks').select('id, parent_task_id').eq('list_id', tarefa.list_id).is('archived_at', null)
+    if (erroLista) throw erroLista
+    const paiDe = new Map(todas.map((t) => [t.id, t.parent_task_id]))
+    let raiz = tarefa.id
+    while (paiDe.get(raiz)) raiz = paiDe.get(raiz) as string
+    const ids = new Set([raiz])
+    let achou = true
+    while (achou) {
+      achou = false
+      for (const [id, pai] of paiDe) if (pai && ids.has(pai) && !ids.has(id)) { ids.add(id); achou = true }
+    }
+    const { error: erroUpdate, count } = await sb.from('tasks').update({ client_id: clienteId }, { count: 'exact' }).in('id', [...ids])
+    if (erroUpdate) throw erroUpdate
     if (!count) throw { code: '42501' }
-  }, 'Tag de cliente atualizada em todas as tarefas.')
+  }, clienteId ? 'Tag de cliente atualizada nesta tarefa e nas subtarefas.' : 'Tag de cliente removida desta tarefa e das subtarefas.')
   revalidatePath('/', 'layout')
   return resultado
 }

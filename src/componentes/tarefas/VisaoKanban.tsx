@@ -13,14 +13,17 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { CalendarDays, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { indiceAoSoltar, posicaoAoSoltar, statusDaCategoria } from '@/dominio/kanban'
 import type { Categoria, TarefaResumo } from '@/dominio/tarefas'
 import { moverTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
-import { Prazo, type Contexto } from './LinhaTarefa'
+import { EditorVencimento } from './EditorVencimento'
+import { type Contexto } from './LinhaTarefa'
 import { Pessoas } from './Pessoas'
+import { SeloPrioridade } from './SeloPrioridade'
 
 export type Coluna = { id: string; nome: string; cor: string }
 type Itens = Record<string, TarefaResumo[]>
@@ -107,12 +110,11 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} className={`flex w-72 shrink-0 flex-col rounded-xl border border-borda bg-fundo p-2.5 transition ${isOver ? 'ring-2 ring-marca/20' : ''}`}>
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-72 shrink-0 flex-col rounded-2xl border border-borda p-2.5 transition ${isOver ? 'ring-2 ring-petroleo/25' : ''}`} style={{ background: `color-mix(in oklab, ${coluna.cor} 7%, var(--color-fundo))` }}>
       <header className="mb-2.5 flex items-center gap-2 px-1">
-        <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-white" style={{ background: coluna.cor }}>
-          {coluna.nome}
-        </span>
-        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-texto-3 ring-1 ring-borda">{tarefas.length}</span>
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: coluna.cor }} aria-hidden="true" />
+        <h3 className="min-w-0 truncate text-corpo font-semibold">{coluna.nome}</h3>
+        <span className="rounded-full bg-white/80 px-2 py-0.5 text-legenda tabular-nums text-texto-2 ring-1 ring-borda">{tarefas.length}</span>
       </header>
       <SortableContext items={tarefas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-h-16 flex-col gap-2">
@@ -136,31 +138,41 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-[13px] transition hover:border-borda-forte">
-      {ctx.mostrarLista && (
-        <p className="truncate text-[11px] text-texto-3">
-          {tarefa.listaNome} · @{tarefa.clienteNome}
-        </p>
-      )}
-      <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium hover:text-marca">
-        {tarefa.titulo}
+    <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-corpo shadow-cartao transition hover:-translate-y-px hover:border-borda-forte hover:shadow-flutuante focus-within:border-petroleo">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <SeloPrioridade prioridade={tarefa.prioridade} />
+        {ctx.mostrarLista && <span className="max-w-full truncate rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
+      </div>
+      <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium leading-snug outline-none hover:text-marca focus-visible:underline">
+        {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
       </Link>
       {tarefa.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {tarefa.tags.map((t) => (
-            <span key={t.id} className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ background: t.cor }}>
+            <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-white" style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 text-[12px]">
-        <Pessoas pessoas={tarefa.responsaveis} />
-        <span className="ml-auto">
-          <Prazo prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-rotulo text-texto-3">
+        <span className="inline-flex items-center gap-0.5" title="Vencimento">
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
-        {subtarefas > 0 && <span className="text-texto-3">{subtarefas} sub</span>}
+        {!!tarefa.comentarios && (
+          <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="tabular-nums">{tarefa.comentarios}</span>
+          </span>
+        )}
+        {subtarefas > 0 && <span className="tabular-nums">{subtarefas} sub</span>}
       </div>
+      {tarefa.responsaveis.length > 0 && (
+        <div className="flex items-center gap-2 text-rotulo">
+          <Pessoas pessoas={tarefa.responsaveis} />
+        </div>
+      )}
     </div>
   )
 }

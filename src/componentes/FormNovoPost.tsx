@@ -35,7 +35,7 @@ export function FormNovoPost({ clienteId }: { clienteId: string }) {
             <span className={rotulo}>Data prevista</span>
             <input name="dataPrevista" type="date" required className={campo} />
           </label>
-          {estado && 'erro' in estado && <p className="text-xs text-rose-600">{estado.erro}</p>}
+          {estado && 'erro' in estado && <p className="text-xs text-perigo">{estado.erro}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>
               Cancelar

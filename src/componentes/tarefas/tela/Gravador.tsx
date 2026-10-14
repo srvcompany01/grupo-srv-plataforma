@@ -125,7 +125,7 @@ export function Gravador({
   }, [modo])
 
   return (
-    <div className="space-y-2 rounded-md border border-borda bg-white p-2 text-[13px]">
+    <div className="space-y-2 rounded-md border border-borda bg-white p-2 text-corpo">
       {fase === 'escolha' && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-texto-2">Gravar:</span>
@@ -149,7 +149,7 @@ export function Gravador({
       {fase === 'iniciando' && <p className="text-texto-3">Aguardando permissão…</p>}
       {fase === 'gravando' && (
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-perigo" />
           <span className="font-mono tabular-nums">
             {formatarRelogio(segundos)} / {formatarRelogio(DURACAO_MAX_GRAVACAO_S)}
           </span>

@@ -22,7 +22,7 @@ export function ControlesUsuario({ id, papel, ativo }: { id: string; papel: Pape
           defaultValue={papel}
           disabled={pendente}
           onChange={(e) => iniciar(async () => avisar(await alterarPapel(id, e.target.value as PapelUsuario)))}
-          className={`${campo} h-8 w-28 py-0 text-[13px]`}
+          className={`${campo} h-8 w-28 py-0 text-corpo`}
         >
           <option value="admin">Admin</option>
           <option value="gestor">Gestor</option>

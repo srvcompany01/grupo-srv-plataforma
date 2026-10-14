@@ -43,7 +43,7 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
         <div>
           <p className="eyebrow">Espaço</p>
           <h1 className="page-title mt-1">{espaco.name}</h1>
-          {espaco.description && <p className="mt-1 text-[13px] text-texto-2">{espaco.description}</p>}
+          {espaco.description && <p className="mt-1 text-corpo text-texto-2">{espaco.description}</p>}
         </div>
       </header>
       {abas.length > 1 && (
@@ -52,7 +52,7 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
             <Link
               key={a}
               href={a === 'tarefas' ? `/espacos/${id}` : `/espacos/${id}?aba=${a}`}
-              className={`-mb-px border-b-2 pb-2.5 text-[13px] font-semibold ${aba === a ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
+              className={`-mb-px border-b-2 pb-2.5 text-corpo font-semibold ${aba === a ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
             >
               {rotulo}
             </Link>
@@ -86,7 +86,7 @@ async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<st
     <div className="space-y-4">
       <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} />
       <BarraFiltros filtros={filtros} equipe={equipe} status={[]} tags={tags} clientes={clientes} comMes />
-      {tarefas.length === 0 && <p className="text-[13px] text-texto-3">Nenhuma tarefa encontrada.</p>}
+      {tarefas.length === 0 && <p className="text-corpo text-texto-3">Nenhuma tarefa encontrada.</p>}
       {filtros.visao === 'lista' ? (
         <VisaoLista grupos={CATEGORIAS.map((c) => ({ ...c, tarefas: arvore.filter((t) => categoria(t) === c.id) }))} ctx={ctx} euId={euId} />
       ) : (

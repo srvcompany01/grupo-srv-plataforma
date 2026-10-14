@@ -1,73 +1,69 @@
 'use client'
 
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
+  AtSign,
   CheckSquare,
   ChevronDown,
-  LogOut,
-  Menu,
+  Hash,
+  Inbox,
+  LayoutDashboard,
+  MessageCircle,
   PanelLeftClose,
   Pin,
+  Reply,
   Settings,
+  Star,
   Users,
+  Video,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { Avatar } from '@/componentes/Avatar'
 import { IconeVisual } from '@/componentes/IconeVisual'
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import { IndicadorCronometro } from './IndicadorCronometro'
-import { SinoAvisos } from './SinoAvisos'
-import type { Aviso } from '@/servicos/avisos'
+import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, LARGURA_LATERAL, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
-import { sair } from '@/app/(auth)/login/acoes'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-type Props = { navegacao: Navegacao; clientes: Opcao[]; nome: string; papel: string; cronometro: CronometroAtivo | null; avisos: Aviso[]; naoLidos: number; euId: string }
+export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[] }
 type IconeLucide = ComponentType<{ className?: string }>
-type TipoArrastavel = 'space' | 'folder' | 'list'
+
+/** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
+const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (id: string) => void; admin: boolean }>({ fechado: () => false, alternar: () => {}, admin: false })
 
 const item =
-  'flex h-8 items-center gap-2 rounded-md px-2 text-[11px] tracking-[0.04em] text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
+  'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
+
+/** Módulo que ainda não existe: aparece como no ClickUp, desabilitado e com a etiqueta "Em breve". */
+function ItemEmBreve({ rotulo, Icone }: { rotulo: string; Icone: IconeLucide }) {
+  return (
+    <span role="link" aria-disabled="true" title={`${rotulo}: em breve`} className="flex h-7 cursor-not-allowed items-center gap-2 rounded-md px-2 text-legenda text-lat-3">
+      <Icone className="h-3.5 w-3.5" />
+      <span className="min-w-0 flex-1 truncate">{rotulo}</span>
+      <span className="shrink-0 rounded-full bg-lat-hover px-1.5 py-0.5 text-micro font-medium tracking-normal text-lat-2">Em breve</span>
+    </span>
+  )
+}
+
+function TituloSecao({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-7 items-center px-2">
+      <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">{children}</h2>
+    </div>
+  )
+}
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
-}
-
-function LinhaArrastavel({ tipo, id, habilitado, className, style, children }: {
-  tipo: TipoArrastavel
-  id: string
-  habilitado: boolean
-  className: string
-  style?: CSSProperties
-  children: ReactNode
-}) {
-  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: idArrastavel(tipo, id),
-    data: { tipo, id },
-    disabled: !habilitado,
-  })
-  // Segurar e arrastar a linha inteira (o PointerSensor só ativa após 6px, então cliques seguem funcionando).
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      className={`${className} ${isDragging ? 'z-20 cursor-grabbing opacity-45 ring-1 ring-marca/40' : ''}`}
-      style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
-    >
-      {children}
-    </div>
-  )
 }
 
 /** Ícone do item; ao passar o mouse vira a seta de abrir/recolher (quando há o que abrir). */
@@ -90,7 +86,7 @@ function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto
 function ZonaRaiz({ visivel }: { visivel: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
   if (!visivel) return null
-  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-[10px] transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
+  return <div ref={setNodeRef} className={`mx-1 my-2 rounded-lg border border-dashed px-3 py-2 text-center text-legenda transition ${isOver ? 'border-marca bg-marca/10 text-marca' : 'border-lat-borda text-lat-3'}`}>Solte aqui para deixar sem espaço</div>
 }
 
 function idsDaNavegacao(navegacao: Navegacao): string[] {
@@ -115,70 +111,86 @@ function idsDaNavegacao(navegacao: Navegacao): string[] {
 
 function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista; nivel: number; podeGerir: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
+  const { admin } = useContext(Recolhidos)
   const href = `/listas/${lista.id}`
-  const detalhe = [`@${lista.clienteNome}`, lista.mes && rotuloMes(lista.mes)].filter(Boolean).join(' · ')
+  const detalhe = lista.mes ? rotuloMes(lista.mes) : ''
 
   return (
-    <LinhaArrastavel
+    <LinhaNavegacao
       tipo="list"
       id={lista.id}
+      nome={lista.nome}
       habilitado={podeArrastar}
+      podeEditar={podeGerir}
+      podeExcluir={podeGerir && (!lista.slug || admin)}
+      fixa={!!lista.slug}
       className={`${item} group ${caminho === href ? ativo : ''}`}
       style={{ paddingLeft: 8 + nivel * 14 }}
     >
-      <Link href={href} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
+      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
         <span className="flex h-4 w-4 shrink-0 items-center justify-center" style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
         <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
       </Link>
       {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
-    </LinhaArrastavel>
+    </LinhaNavegacao>
   )
 }
 
-function Pasta({ pasta, nivel, contexto, pastas, clientes, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; clientes: Opcao[]; podeGerir: boolean; podeArrastar: boolean }) {
-  const [aberta, setAberta] = useState(true)
+function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; podeGerir: boolean; podeArrastar: boolean }) {
+  const { fechado, alternar } = useContext(Recolhidos)
+  const aberta = !fechado(pasta.id)
+  const setAberta = () => alternar(pasta.id)
 
   return (
     <div>
-      <LinhaArrastavel tipo="folder" id={pasta.id} habilitado={podeArrastar} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberta} alternar={() => setAberta(!aberta)} rotulo={pasta.nome} ativo>
+      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
+        <IconeAlternavel aberto={aberta} alternar={setAberta} rotulo={pasta.nome} ativo>
           <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
         </IconeAlternavel>
-        <button type="button" onClick={() => setAberta(!aberta)} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-[9px] tabular-nums text-lat-3">{pasta.listas.length}</span>
-        {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} clientes={clientes} pastaInicial={pasta.id} modoInicial="lista" />}
+        <button type="button" onClick={setAberta} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
+        <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
+        {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
-      </LinhaArrastavel>
+      </LinhaNavegacao>
       {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
     </div>
   )
 }
 
-function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; clientes: Opcao[]; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
+function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
-  const [aberto, setAberto] = useState(true)
+  const { fechado, alternar } = useContext(Recolhidos)
+  const aberto = !fechado(espaco.id)
   const href = `/espacos/${espaco.id}`
-  const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
+  // Administração abre o Painel de Gestão (visão geral): ele aparece como item dentro dela.
+  const comPainel = espaco.slug === 'administracao'
+  const temConteudo = comPainel || espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
 
   return (
     <div>
-      <LinhaArrastavel tipo="space" id={espaco.id} habilitado={podeArrastar} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberto} alternar={() => setAberto(!aberto)} rotulo={espaco.nome} ativo={temConteudo}>
+      <LinhaNavegacao tipo="space" id={espaco.id} nome={espaco.nome} habilitado={podeArrastar} podeEditar={podeEditarEspaco} podeExcluir={podeEditarEspaco} fixa={!!espaco.slug} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
+        <IconeAlternavel aberto={aberto} alternar={() => alternar(espaco.id)} rotulo={espaco.nome} ativo={temConteudo}>
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
             <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
           </span>
         </IconeAlternavel>
-        <Link href={href} className="min-w-0 flex-1 truncate">
+        <Link href={href} draggable={false} className="min-w-0 flex-1 truncate">
           {espaco.nome}
         </Link>
-        {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} />}
+        {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
-      </LinhaArrastavel>
+      </LinhaNavegacao>
 
       {aberto && (
         <div>
-          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} clientes={clientes} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
-          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} clientes={clientes} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+          {comPainel && (
+            <Link href="/painel-de-gestao" className={`${item} ${caminho.startsWith('/painel-de-gestao') ? ativo : ''}`} style={{ paddingLeft: 8 + (nivel + 1) * 14 }}>
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-lat-2"><LayoutDashboard className="h-3.5 w-3.5" /></span>
+              <span className="min-w-0 flex-1 truncate">Painel de Gestão</span>
+            </Link>
+          )}
+          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
+          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
           {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
         </div>
       )}
@@ -186,8 +198,24 @@ function Espaco({ espaco, nivel, clientes, podeGerir, podeEditarEspaco, podeArra
   )
 }
 
-function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos, euId, acaoTopo }: Props & { acaoTopo?: ReactNode }) {
+/** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
   const caminho = usePathname()
+  const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
+  const recolhimento = useMemo(
+    () => ({
+      admin: papel === 'admin',
+      fechado: (id: string) => fechados.has(id),
+      alternar: (id: string) =>
+        setFechados((atual) => {
+          const proximo = new Set(atual)
+          if (!proximo.delete(id)) proximo.add(id)
+          gravarPreferencia(COOKIE_NAV_FECHADOS, escreverFechados(proximo))
+          return proximo
+        }),
+    }),
+    [fechados, papel],
+  )
   const router = useRouter()
   const [arrastando, setArrastando] = useState(false)
   const [movendo, iniciarMovimento] = useTransition()
@@ -225,71 +253,78 @@ function Painel({ navegacao, clientes, nome, papel, cronometro, avisos, naoLidos
   )
 
   return (
+    <Recolhidos.Provider value={recolhimento}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-lat-borda px-4">
-        <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-[0.22em] text-lat-fg">Grupo SRV</p>
-        <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
-        {acaoTopo}
-      </div>
-
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
-        <div className="flex h-8 items-center px-2">
-          <h2 className="text-[10px] font-semibold tracking-[0.18em] text-lat-3">Navegação</h2>
-        </div>
-        <nav className="space-y-0.5">
-          {link('/inicio', 'Minhas tarefas', CheckSquare)}
-          {link('/clientes', 'Clientes', Users)}
-          {papel === 'admin' && link('/config', 'Configurações', Settings)}
-        </nav>
+        {mobile && (
+          <>
+            <nav className="space-y-0.5">
+              {link('/inicio', 'Minhas tarefas', CheckSquare)}
+              {link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard)}
+              {link('/clientes', 'Clientes', Users)}
+              {papel === 'admin' && link('/config', 'Configurações', Settings)}
+            </nav>
+            <div className="mx-2 my-3 border-t border-lat-borda" />
+          </>
+        )}
 
+        <TituloSecao>Início</TituloSecao>
+        <nav className="space-y-0.5">
+          <ItemEmBreve rotulo="Caixa de entrada" Icone={Inbox} />
+          <ItemEmBreve rotulo="Respostas" Icone={Reply} />
+          <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} />
+          <ItemEmBreve rotulo="Reuniões" Icone={Video} />
+          {link('/inicio', 'Minhas tarefas', CheckSquare)}
+        </nav>
+        <div className="mx-2 my-3 border-t border-lat-borda" />
+        <TituloSecao>Favoritos</TituloSecao>
+        <nav className="space-y-0.5">
+          <ItemEmBreve rotulo="Marcar como favorito" Icone={Star} />
+        </nav>
         <div className="mx-2 my-3 border-t border-lat-borda" />
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
-            <div className="flex h-8 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Espaços</h2>
+            <div className="flex h-7 items-center px-2">
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Espaços</h2>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
+              {acaoTopo}
             </div>
 
             <nav className="space-y-0.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-[11px] leading-5 text-lat-3">Você ainda não faz parte de nenhum departamento.</p>}
-              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} clientes={clientes} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
+              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
+              {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
 
-            {(papel === 'admin' || navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
+            {(navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
               <div className="mt-3 border-t border-lat-borda pt-2">
-                <div className="flex h-8 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-[10px] font-semibold tracking-[0.18em] text-lat-3">Itens soltos</h2>
-                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} clientes={clientes} />}
+                <div className="flex h-7 items-center px-2">
+                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Itens soltos</h2>
+                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} />}
                 </div>
                 <nav className="space-y-0.5">
-                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} clientes={clientes} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
+                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                   {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {!navegacao.pastasRaiz.length && !navegacao.listasRaiz.length && !arrastando && <p className="px-2 py-1 text-[10px] text-lat-3">Pastas e listas sem espaço aparecem aqui.</p>}
                 </nav>
               </div>
             )}
             <ZonaRaiz visivel={arrastando} />
           </SortableContext>
         </DndContext>
+
+        <div className="mt-3 border-t border-lat-borda pt-2">
+          <TituloSecao>Canais</TituloSecao>
+          <ItemEmBreve rotulo="Adicionar canal" Icone={Hash} />
+          <TituloSecao>Mensagens diretas</TituloSecao>
+          <ItemEmBreve rotulo="Nova mensagem" Icone={MessageCircle} />
+        </div>
       </div>
 
       <div className="shrink-0 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-lat-hover">
-          <Avatar nome={nome || '?'} tamanho="h-6 w-6 text-[9px]" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-semibold text-lat-fg">{nome}</p>
-            <p className="truncate text-[9px] text-lat-3">{papel}</p>
-          </div>
-          <form action={sair}>
-            <button aria-label="Sair" title="Sair" className="rounded-[5px] p-1.5 text-lat-3 transition hover:bg-lat-hover hover:text-lat-fg">
-              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </form>
-        </div>
       </div>
     </div>
+    </Recolhidos.Provider>
   )
 }
 
@@ -299,7 +334,8 @@ function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
 
-export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & { modoInicial: ModoLateral; larguraInicial: number }) {
+/** Camada 2 no desktop: a barra de espaços, abaixo do cabeçalho, recolhível e redimensionável. */
+export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPainel & { modoInicial: ModoLateral; larguraInicial: number }) {
   const [modo, setModo] = useState(modoInicial)
   const [largura, setLargura] = useState(larguraInicial)
   const [aberta, setAberta] = useState(false)
@@ -355,7 +391,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed inset-y-0 left-0 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -363,13 +399,13 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-screen w-[var(--lat-w)] border-r border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-3.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
           recolhida
-            ? `fixed inset-y-0 left-0 z-40 shadow-2xl transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-full'}`
-            : 'sticky top-0 shrink-0'
+            ? `fixed bottom-0 left-16 top-14 z-40 shadow-flutuante transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-[calc(100%+64px)]'}`
+            : 'sticky top-14 z-20 shrink-0'
         }`}
       >
-        <Painel
+        <PainelEspacos
           {...props}
           acaoTopo={
             recolhida ? (
@@ -399,23 +435,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: Props & 
             onPointerCancel={soltarArrasto}
             onDoubleClick={() => aplicarLargura(LARGURA_LATERAL.padrao)}
             onKeyDown={redimensionarComTeclado}
-            className="absolute -right-1 top-0 z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-transparent hover:after:bg-marca focus-visible:after:w-0.5 focus-visible:after:bg-marca"
+            className="absolute right-0 top-0 z-30 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-transparent hover:after:bg-marca focus-visible:after:w-0.5 focus-visible:after:bg-marca"
           />
         )}
       </aside>
-
-      <div className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-borda bg-white/95 px-3 backdrop-blur md:hidden">
-        <Sheet>
-          <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover">
-            <Menu className="h-5 w-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <Painel {...props} />
-          </SheetContent>
-        </Sheet>
-        <span className="text-[13px] font-bold tracking-[0.22em]">Grupo SRV</span>
-      </div>
     </>
   )
 }

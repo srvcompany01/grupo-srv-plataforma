@@ -1,13 +1,15 @@
-import { CalendarDays, Columns3, List, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
-import { escreverFiltros, type Filtros, type VisaoTarefas } from '@/dominio/filtros'
+import { type Filtros, type VisaoTarefas } from '@/dominio/filtros'
+import { enderecoDaVisao } from '@/dominio/visao-salva'
+import { IconeVisao } from './IconesVisao'
 
-const OPCOES = {
-  lista: { rotulo: 'Lista', Icone: List },
-  calendario: { rotulo: 'Calendário', Icone: CalendarDays },
-  kanban: { rotulo: 'Quadro', Icone: Columns3 },
-} satisfies Record<VisaoTarefas, { rotulo: string; Icone: typeof List }>
+const OPCOES: Record<VisaoTarefas, { rotulo: string }> = {
+  lista: { rotulo: 'Lista' },
+  calendario: { rotulo: 'Calendário' },
+  kanban: { rotulo: 'Quadro' },
+}
 
 export function AlternadorVisao({
   caminho,
@@ -20,24 +22,22 @@ export function AlternadorVisao({
   visoes?: VisaoTarefas[]
   abas?: boolean
 }) {
-  const href = (visao: VisaoTarefas) => {
-    const qs = escreverFiltros({ ...filtros, visao }).toString()
-    return qs ? `${caminho}?${qs}` : caminho
-  }
+  const href = (visao: VisaoTarefas) => enderecoDaVisao(caminho, { ...filtros, visao })
   const aba = (visao: VisaoTarefas) => {
-    const { rotulo, Icone } = OPCOES[visao]
+    const { rotulo } = OPCOES[visao]
     return (
     <Link
       key={visao}
       href={href(visao)}
       scroll={false}
-      className={`inline-flex items-center gap-1.5 text-[12px] font-semibold transition ${
+      aria-current={filtros.visao === visao ? 'page' : undefined}
+      className={`inline-flex items-center gap-1.5 text-rotulo font-semibold transition ${
         abas
-          ? `-mb-px border-b-2 px-2 py-3 ${filtros.visao === visao ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
-          : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-texto text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
+          ? `-mb-px border-b-2 px-2 py-3 ${filtros.visao === visao ? 'border-petroleo text-petroleo' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
+          : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
-      <Icone className={`h-4 w-4 ${visao === 'calendario' ? 'text-orange-500' : ''}`} />
+      <IconeVisao visao={visao} />
       {rotulo}
     </Link>
     )
@@ -47,13 +47,13 @@ export function AlternadorVisao({
       {visoes.map(aba)}
       {abas && (
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-3 text-[12px] font-medium text-texto-3 transition hover:text-texto">
+          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-3 text-rotulo font-medium text-texto-3 transition hover:text-texto">
             <Plus className="h-4 w-4" /> Visualização
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
             {(Object.keys(OPCOES) as VisaoTarefas[]).map((visao) => {
-              const { rotulo, Icone } = OPCOES[visao]
-              return <DropdownMenuItem key={visao} asChild><Link href={href(visao)} scroll={false}><Icone className="h-4 w-4" />{rotulo}</Link></DropdownMenuItem>
+              const { rotulo } = OPCOES[visao]
+              return <DropdownMenuItem key={visao} asChild><Link href={href(visao)} scroll={false}><IconeVisao visao={visao} />{rotulo}</Link></DropdownMenuItem>
             })}
           </DropdownMenuContent>
         </DropdownMenu>

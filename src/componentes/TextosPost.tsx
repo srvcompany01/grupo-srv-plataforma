@@ -15,7 +15,7 @@ export function TextosPost({ ideia, objetivo, legenda }: { ideia: string; objeti
             <h3 className={rotulo}>{titulo}</h3>
             {titulo === 'Legenda' && texto && <CopiarTexto texto={texto} rotulo="Copiar legenda" />}
           </div>
-          <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-texto">{texto || <span className="text-texto-3">—</span>}</p>
+          <p className="whitespace-pre-wrap break-words text-destaque leading-relaxed text-texto">{texto || <span className="text-texto-3">—</span>}</p>
         </section>
       ))}
     </div>

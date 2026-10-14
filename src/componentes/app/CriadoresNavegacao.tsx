@@ -50,8 +50,8 @@ function OpcaoCriacao({ icone: Icone, nome, descricao, cor, onClick, seta = fals
     >
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center" style={{ color: cor }}><Icone className="h-[18px] w-[18px]" /></span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 text-[14px] font-medium text-[#292a2d]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-[#8b8c91]">Em breve</span>}</span>
-        {descricao && <span className="mt-0.5 block text-[11px] leading-[1.45] text-[#77787d]">{descricao}</span>}
+        <span className="flex items-center gap-2 text-destaque font-medium text-[#292a2d]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-rotulo text-[#8b8c91]">Em breve</span>}</span>
+        {descricao && <span className="mt-0.5 block text-legenda leading-[1.45] text-[#77787d]">{descricao}</span>}
       </span>
       {seta && <ChevronRight className="mt-0.5 h-4 w-4 text-[#98999d]" />}
     </button>
@@ -76,7 +76,7 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [paiId, setPaiId] = useState('')
-  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#d11a22', icone: 'layers-3', emoji: null })
+  const [visual, setVisual] = useState<EstadoVisual>({ cor: '#70262d', icone: 'layers-3', emoji: null })
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
@@ -121,14 +121,12 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
 export function CriarEstruturaDialog({
   espaco,
   pastas,
-  clientes,
   pastaInicial = null,
   modoInicial = 'pasta',
   trigger,
 }: {
   espaco: Opcao | null
   pastas: Opcao[]
-  clientes: Opcao[]
   pastaInicial?: string | null
   modoInicial?: 'pasta' | 'lista'
   trigger?: ReactNode
@@ -140,7 +138,6 @@ export function CriarEstruturaDialog({
   const [modo, setModo] = useState<'pasta' | 'lista'>(modoInicial)
   const [nome, setNome] = useState('')
   const [pastaId, setPastaId] = useState(pastaInicial ?? '')
-  const [clienteId, setClienteId] = useState('')
   const [mes, setMes] = useState('')
   const [visual, setVisual] = useState<EstadoVisual>({ cor: '#3b82f6', icone: modoInicial === 'pasta' ? 'folder' : 'list', emoji: null })
 
@@ -160,7 +157,7 @@ export function CriarEstruturaDialog({
       <Popover open={menuAberto} onOpenChange={setMenuAberto}>
         <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
         <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-2xl border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
-          <div className="px-4 pb-2 pt-4"><p className="text-[12px] font-medium text-[#77787d]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
+          <div className="px-4 pb-2 pt-4"><p className="text-rotulo font-medium text-[#77787d]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
           <div className="px-2 pb-2">
             <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="#5f6368" onClick={() => abrirCriador('lista')} />
             <OpcaoCriacao icone={FolderPlus} nome="Pasta" descricao="Agrupe listas, documentos e muito mais" cor="#5f6368" onClick={() => abrirCriador('pasta')} />
@@ -190,7 +187,7 @@ export function CriarEstruturaDialog({
             iniciar(async () => {
               const resultado = modo === 'pasta'
                 ? await criarPastaNavegacao({ espacoId: espaco?.id ?? null, nome, visual })
-                : await criarListaNavegacao({ espacoId: espaco?.id ?? null, pastaId: pastaId || null, clienteId, nome, mes, visual })
+                : await criarListaNavegacao({ espacoId: espaco?.id ?? null, pastaId: pastaId || null, nome, mes, visual })
               if (!avisar(resultado)) return
               setAberto(false)
               setNome('')
@@ -205,12 +202,11 @@ export function CriarEstruturaDialog({
             <label className="block flex-1 space-y-1"><span className={rotulo}>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
           </div>
           {modo === 'lista' && <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1"><span className={rotulo}>Tag do cliente</span><select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}><option value="">Escolha a tag…</option>{clientes.map((c) => <option key={c.id} value={c.id}>@{c.nome}</option>)}</select></label>
             <label className="space-y-1"><span className={rotulo}>Pasta</span><select value={pastaId} onChange={(e) => setPastaId(e.target.value)} className={campo}><option value="">Sem pasta</option>{pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
             <label className="space-y-1 sm:col-span-2"><span className={rotulo}>Mês de referência</span><input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className={campo} /></label>
           </div>}
           <SeletorVisual valor={visual} onChange={setVisual} />
-          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim() || (modo === 'lista' && !clienteId)} className={botaoPrimario}>{pendente ? 'Criando…' : `Criar ${modo}`}</button></div>
+          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>{pendente ? 'Criando…' : `Criar ${modo}`}</button></div>
         </form>
         </DialogContent>
       </Dialog>

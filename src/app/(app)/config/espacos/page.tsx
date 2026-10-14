@@ -4,7 +4,7 @@ import { listarEspacosComMembros } from '@/servicos/espacos'
 import { listarEquipe } from '@/servicos/usuarios'
 import { CartaoEspaco, FormNovoEspaco } from './Espacos'
 
-export default async function Departamentos() {
+export default async function Espacos() {
   await exigirAdmin()
   const sb = await criarClienteServidor()
   const [espacos, equipe] = await Promise.all([listarEspacosComMembros(sb), listarEquipe(sb)])

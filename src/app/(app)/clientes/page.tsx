@@ -1,14 +1,20 @@
-import Link from 'next/link'
+import { Users } from 'lucide-react'
+import { EstadoVazio } from '@/componentes/EstadoVazio'
+import { formatarCampoCliente } from '@/dominio/clientes-galeria'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { listarClientes, ROTULO_STATUS_CLIENTE } from '@/servicos/clientes-plataforma'
+import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
+import { listarClientes } from '@/servicos/clientes-plataforma'
 import { criarCliente } from './acoes'
+import { CartaoCliente } from './CartaoCliente'
 import { FormCliente } from './FormCliente'
 
 export default async function Clientes() {
   const eu = await exigirEquipe()
-  const clientes = await listarClientes(await criarClienteServidor())
+  const sb = await criarClienteServidor()
+  const [clientes, campos, valores, capas] = await Promise.all([listarClientes(sb), listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
+  const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
     <div className="page-shell">
       <div>
@@ -17,21 +23,26 @@ export default async function Clientes() {
       </div>
       {podeCriar && (
         <details className="group">
-          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-carbon">+ Novo cliente</summary>
+          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-corpo font-semibold text-white transition hover:bg-carbon">+ Novo cliente</summary>
           <div className="mt-2">
             <FormCliente acao={criarCliente} podeEditar />
           </div>
         </details>
       )}
-      <div className="overflow-hidden rounded-xl border border-borda bg-white">
-        {clientes.map((c) => (
-          <Link key={c.id} href={`/clientes/${c.id}`} className="flex items-center gap-3 border-t border-borda px-3 py-2.5 text-[13px] first:border-t-0 hover:bg-hover">
-            <span className="flex-1 font-medium">{c.nome}</span>
-            {c.interno && <span className="rounded-full bg-marca-fundo px-2 py-0.5 text-[10px] font-semibold text-marca">Interno</span>}
-            <span className="text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</span>
-          </Link>
-        ))}
-      </div>
+      {clientes.length === 0 && <EstadoVazio icone={Users} titulo="Nenhum cliente cadastrado ainda" descricao={podeCriar ? 'Use "Novo cliente" acima para cadastrar o primeiro.' : undefined} />}
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        {clientes.map((c) => {
+          const info = camposNaCapa.flatMap((campo) => {
+            const valor = valores[c.id]?.[campo.id]
+            return valor ? [{ id: campo.id, nome: campo.nome, texto: formatarCampoCliente(campo.tipo, valor) }] : []
+          })
+          return (
+            <li key={c.id}>
+              <CartaoCliente cliente={c} capa={capas[c.id]} info={info} />
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

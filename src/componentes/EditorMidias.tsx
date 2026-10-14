@@ -127,7 +127,7 @@ export function EditorMidias({
           adicionar(e.dataTransfer.files)
         }}
         onClick={() => entrada.current?.click()}
-        className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-6 text-center text-[13px] transition ${
+        className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-6 text-center text-corpo transition ${
           arrastando ? 'border-marca bg-marca-fundo text-marca' : 'border-borda-forte bg-fundo text-texto-2 hover:border-marca hover:text-marca'
         }`}
       >
@@ -161,10 +161,10 @@ export function EditorMidias({
                 <img src={item.preview} alt="" className="h-full w-full object-cover" />
               )}
             </div>
-            <div className="min-w-0 flex-1 text-[13px]">
+            <div className="min-w-0 flex-1 text-corpo">
               <p className="truncate">{item.nome}</p>
               {item.erro ? (
-                <p className="text-rose-600">
+                <p className="text-perigo">
                   {item.erro}{' '}
                   {item.arquivo && TIPOS_ACEITOS[item.arquivo.type] && (
                     <button type="button" className="underline" onClick={() => subir(item)}>

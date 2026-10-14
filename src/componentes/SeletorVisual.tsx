@@ -9,7 +9,7 @@ export function SeletorVisual({ valor, onChange }: { valor: EstadoVisual; onChan
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-[11px] font-semibold text-texto-2">Cor</p>
+        <p className="mb-2 text-legenda font-semibold text-texto-2">Cor</p>
         <div className="flex flex-wrap gap-2">
           {CORES_PERSONALIZACAO.map((cor) => (
             <button
@@ -25,7 +25,7 @@ export function SeletorVisual({ valor, onChange }: { valor: EstadoVisual; onChan
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-semibold text-texto-2">Ícone Lucide</p>
+        <p className="mb-2 text-legenda font-semibold text-texto-2">Ícone Lucide</p>
         <div className="grid grid-cols-8 gap-1.5">
           {ICONES_PERSONALIZACAO.map((icone) => (
             <button
@@ -42,7 +42,7 @@ export function SeletorVisual({ valor, onChange }: { valor: EstadoVisual; onChan
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-semibold text-texto-2">Ou use um emoji</p>
+        <p className="mb-2 text-legenda font-semibold text-texto-2">Ou use um emoji</p>
         <div className="grid grid-cols-8 gap-1.5">
           {EMOJIS_PERSONALIZACAO.map((emoji) => (
             <button

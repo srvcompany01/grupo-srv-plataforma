@@ -40,7 +40,7 @@ export default async function Clientes() {
                 <Link href={`/admin/clientes/${c.id}`} className="flex min-w-0 items-center gap-2.5">
                   <Avatar nome={c.nome} />
                   <span className="truncate font-medium hover:text-marca">{c.nome}</span>
-                  {!c.ativo && <span className="rounded bg-hover px-1.5 text-[11px] text-texto-2">desativado</span>}
+                  {!c.ativo && <span className="rounded bg-hover px-1.5 text-legenda text-texto-2">desativado</span>}
                 </Link>
                 <span className={c.pendentes > 0 ? '' : 'hidden sm:inline'}>
                   {c.pendentes > 0 ? (

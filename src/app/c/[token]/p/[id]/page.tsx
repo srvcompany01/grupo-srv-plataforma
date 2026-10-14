@@ -30,7 +30,7 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
     <>
       <CabecalhoCliente nome={cliente.nome} token={token} />
       <main className="mx-auto max-w-[560px] space-y-5 p-4 pb-12">
-        <Link href={`/c/${token}`} className="inline-flex items-center gap-1 text-[13px] text-texto-2 hover:text-marca">
+        <Link href={`/c/${token}`} className="inline-flex items-center gap-1 text-corpo text-texto-2 hover:text-marca">
           <Icone nome="voltar" className="h-4 w-4" /> Todos os posts
         </Link>
         <VisualizadorMidia midias={midias} formato={post.formato} nomeZip={nomeZip(cliente.nome, post.dataPrevista)} />

@@ -21,9 +21,11 @@ const tarefa = async (db: Banco, id: string) =>
   ).rows[0]
 
 describe('tarefas', () => {
-  it('client_id vem da lista', async () => {
+  it('tarefa nasce com o cliente da lista, ou com o informado', async () => {
     const db = await criarBanco()
     const { a, b, lista, ana } = await base(db)
+    const padrao = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    expect((await tarefa(db, padrao)).client_id).toBe(a)
     const t = await db.transaction(async (tx) => {
       const { rows } = await tx.query<{ id: string }>(
         `insert into tasks (list_id, client_id, title, position) values ($1, $2, 'T', 'a0') returning id`,
@@ -32,15 +34,38 @@ describe('tarefas', () => {
       await tx.query(`insert into task_assignees values ($1, $2)`, [rows[0].id, ana])
       return rows[0].id
     })
-    expect((await tarefa(db, t)).client_id).toBe(a)
+    expect((await tarefa(db, t)).client_id).toBe(b)
   })
 
-  it('client_id não pode ser editado', async () => {
+  it('duas tarefas na mesma lista podem ter clientes diferentes', async () => {
     const db = await criarBanco()
     const { a, b, lista, ana } = await base(db)
+    const t1 = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    const t2 = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    await db.query(`update tasks set client_id = $2 where id = $1`, [t2, b])
+    expect((await tarefa(db, t1)).client_id).toBe(a)
+    expect((await tarefa(db, t2)).client_id).toBe(b)
+  })
+
+  it('trocar o cliente padrão da lista só move quem ainda o seguia', async () => {
+    const db = await criarBanco()
+    const { a, b, lista, ana } = await base(db)
+    const c = await criarCliente(db, 'C')
+    const segue = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    const propria = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
+    await db.query(`update tasks set client_id = $2 where id = $1`, [propria, b])
+    await db.query(`update lists set client_id = $2 where id = $1`, [lista, c])
+    expect((await tarefa(db, segue)).client_id).toBe(c)
+    expect((await tarefa(db, propria)).client_id).toBe(b)
+    expect(a).not.toBe(c)
+  })
+
+  it('mover para outra lista adota o cliente da lista de destino', async () => {
+    const db = await criarBanco()
+    const { b, lista, outra, ana } = await base(db)
     const t = await criarTarefa(db, { listId: lista, responsaveis: [ana] })
-    await db.query(`update tasks set client_id = $2 where id = $1`, [t, b])
-    expect((await tarefa(db, t)).client_id).toBe(a)
+    await db.query(`update tasks set list_id = $2 where id = $1`, [t, outra])
+    expect((await tarefa(db, t)).client_id).toBe(b)
   })
 
   it('subtarefa herda lista e cliente da mãe', async () => {
@@ -213,6 +238,8 @@ describe('arquivamento em cascata', () => {
     expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [naPasta])).rows).toEqual([{ arq: true }])
     const comercial = await idEspaco(db, 'Comercial')
     const lc = await criarLista(db, { spaceId: comercial, clientId: a })
+    // A migração de estrutura já arquivou os espaços antigos: reativa para testar a transição ativo → arquivado.
+    await db.query(`update spaces set archived_at = null where id = $1`, [comercial])
     await db.query(`update spaces set archived_at = now() where id = $1`, [comercial])
     expect((await db.query(`select archived_at is not null as arq from lists where id = $1`, [lc])).rows).toEqual([{ arq: true }])
   })

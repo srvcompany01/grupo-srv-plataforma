@@ -1,4 +1,6 @@
-import { calcularFormula, type ConfigCampo, type DefinicaoCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
+import { limparOpcoes } from '@/dominio/campos-gestao'
+import { calcularFormula, configuracaoPadrao, type ConfigCampo, type DefinicaoCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
+import { posicaoEntre } from '@/dominio/posicao'
 import type { TarefaResumo } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
@@ -156,4 +158,60 @@ export async function valoresParaRelatorio(sb: Supabase, campoId: string) {
       .select('task_id, field_id, value, number_value, text_value, date_value, boolean_value, updated_at')
       .eq('field_id', campoId),
   )
+}
+
+/** Liga um campo existente a uma lista (a trigger do banco exige o mesmo espaço). */
+export async function vincularCampoALista(sb: Supabase, listaId: string, campoId: string): Promise<void> {
+  const { data, error } = await sb.from('list_custom_fields').select('position').eq('list_id', listaId).order('position', { ascending: false }).limit(1)
+  if (error) throw error
+  const inserir = await sb.from('list_custom_fields').insert({ list_id: listaId, field_id: campoId, position: posicaoEntre(data[0]?.position ?? null, null) })
+  if (inserir.error) throw inserir.error
+}
+
+/** Cria o campo no espaço (ou na raiz) e já o liga à lista. Devolve o id do campo. */
+export async function criarCampo(
+  sb: Supabase,
+  d: { espacoId: string | null; listaId: string; nome: string; tipo: TipoCampoPersonalizado; configuracao: ConfigCampo; cor: string; icone: string },
+): Promise<string> {
+  let consulta = sb.from('custom_fields').select('position').order('position', { ascending: false }).limit(1)
+  consulta = d.espacoId ? consulta.eq('space_id', d.espacoId) : consulta.is('space_id', null)
+  const { data: ultimos, error: e1 } = await consulta
+  if (e1) throw e1
+  const { data, error } = await sb
+    .from('custom_fields')
+    .insert({
+      space_id: d.espacoId,
+      name: d.nome.trim(),
+      type: d.tipo,
+      config: limparOpcoes({ ...configuracaoPadrao(d.tipo), ...d.configuracao }) as Json,
+      color: /^#[0-9a-f]{6}$/i.test(d.cor) ? d.cor : '#70262d',
+      icon: d.icone,
+      position: posicaoEntre(ultimos[0]?.position ?? null, null),
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+  await vincularCampoALista(sb, d.listaId, data.id)
+  return data.id
+}
+
+/** Grava (ou apaga, se vazio) o valor de um campo numa tarefa. Devolve a lista da tarefa. */
+export async function salvarValorDoCampo(sb: Supabase, tarefaId: string, campoId: string, valor: Json | null): Promise<string> {
+  const { data: tarefa, error: e1 } = await sb.from('tasks').select('list_id').eq('id', tarefaId).single()
+  if (e1) throw e1
+  const vazio = valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)
+  const { error } = vazio
+    ? await sb.from('task_custom_field_values').delete().eq('task_id', tarefaId).eq('field_id', campoId)
+    : await sb.from('task_custom_field_values').upsert({ task_id: tarefaId, field_id: campoId, value: valor })
+  if (error) throw error
+  return tarefa.list_id
+}
+
+/** Grava (ou limpa, se vazio) o mesmo valor do campo em várias tarefas de uma vez. A trigger do banco valida cada uma. */
+export async function salvarValorEmLote(sb: Supabase, tarefaIds: string[], campoId: string, valor: Json | null): Promise<void> {
+  const vazio = valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)
+  const { error } = vazio
+    ? await sb.from('task_custom_field_values').delete().in('task_id', tarefaIds).eq('field_id', campoId)
+    : await sb.from('task_custom_field_values').upsert(tarefaIds.map((id) => ({ task_id: id, field_id: campoId, value: valor })))
+  if (error) throw error
 }

@@ -38,28 +38,29 @@ async function ultimaPosicao(sb: Supabase, tabela: 'folders' | 'lists', espacoId
   return posicaoEntre(r.data[0]?.position ?? null, null)
 }
 
-export async function criarPasta(sb: Supabase, espacoId: string | null, nome: string, visual?: { cor?: string; icone?: string; emoji?: string | null }) {
-  const { error } = await sb.from('folders').insert({
+export async function criarPasta(sb: Supabase, espacoId: string | null, nome: string, visual?: { cor?: string; icone?: string; emoji?: string | null }): Promise<string> {
+  const { data, error } = await sb.from('folders').insert({
     space_id: espacoId,
     name: nome,
     color: visual?.cor,
     icon: visual?.icone,
     emoji: visual?.emoji,
     position: await ultimaPosicao(sb, 'folders', espacoId),
-  })
+  }).select('id').single()
   if (error) throw error
+  return data.id
 }
 
 export async function criarLista(
   sb: Supabase,
-  d: { espacoId: string | null; pastaId: string | null; clienteId: string; nome: string; mes: string | null; cor?: string; icone?: string; emoji?: string | null },
+  d: { espacoId: string | null; pastaId: string | null; clienteId?: string | null; nome: string; mes: string | null; cor?: string; icone?: string; emoji?: string | null },
 ): Promise<string> {
   const { data, error } = await sb
     .from('lists')
     .insert({
       space_id: d.espacoId,
       folder_id: d.pastaId,
-      client_id: d.clienteId,
+      client_id: d.clienteId ?? null,
       name: d.nome,
       reference_month: d.mes,
       color: d.cor,

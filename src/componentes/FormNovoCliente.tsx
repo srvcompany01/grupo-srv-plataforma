@@ -21,7 +21,7 @@ export function FormNovoCliente() {
         disabled={enviando}
         className="h-8 flex-1 bg-transparent text-sm outline-none placeholder:text-texto-3"
       />
-      {estado && 'erro' in estado && <span className="text-xs text-rose-600">{estado.erro}</span>}
+      {estado && 'erro' in estado && <span className="text-xs text-perigo">{estado.erro}</span>}
     </form>
   )
 }

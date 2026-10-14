@@ -36,12 +36,11 @@ describe('regras', () => {
     await criarLista(db, { spaceId: conteudo, clientId: cliente, mes: '2026-10-01' })
   })
 
-  it('lista sem cliente é rejeitada', async () => {
+  it('lista não precisa de cliente', async () => {
     const db = await criarBanco()
     const { conteudo } = await base(db)
-    await expect(
-      db.query(`insert into lists (space_id, name, position) values ($1, 'L', 'a0')`, [conteudo]),
-    ).rejects.toThrow()
+    const { rows } = await db.query(`insert into lists (space_id, name, position) values ($1, 'L', 'a0') returning client_id`, [conteudo])
+    expect(rows).toEqual([{ client_id: null }])
   })
 
   it('não apaga o último status concluído', async () => {
@@ -127,9 +126,11 @@ describe('RLS', () => {
     await criarLista(db, { spaceId: comercial, clientId: cliente })
     const pc = await criarPasta(db, conteudo)
     await criarPasta(db, comercial)
-    expect(await ler(db, m, `select id from lists`)).toEqual([{ id: lc }])
+    // As listas das áreas fixas (slug) são abertas à equipe e ficam de fora desta conta.
+    expect(await ler(db, m, `select id from lists where slug is null`)).toEqual([{ id: lc }])
     expect(await ler(db, m, `select id from folders`)).toEqual([{ id: pc }])
-    expect(await ler(db, m, `select id from list_statuses`)).toHaveLength(3)
+    expect(await ler(db, m, `select id from list_statuses where list_id = '${lc}'`)).toHaveLength(3)
+    expect((await ler<{ slug: string }>(db, m, `select slug from lists where slug is not null order by slug`)).map((l) => l.slug)).toEqual(['crm', 'jornada-de-compra', 'playbooks', 'social-conteudo', 'trafego-performance'])
   })
 
   it('cliente não lê folders, lists nem list_statuses', async () => {

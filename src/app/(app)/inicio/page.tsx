@@ -14,7 +14,7 @@ const GRUPOS: { id: GrupoPrazo; nome: string; cor: string }[] = [
   { id: 'hoje', nome: 'Hoje', cor: '#f76808' },
   { id: 'semana', nome: 'Próximos 7 dias', cor: '#7b68ee' },
   { id: 'depois', nome: 'Depois', cor: '#5b8def' },
-  { id: 'sem-prazo', nome: 'Sem prazo', cor: '#87909e' },
+  { id: 'sem-prazo', nome: 'Sem vencimento', cor: '#87909e' },
 ]
 
 export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio'>) {
@@ -37,12 +37,12 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
           <p className="eyebrow">Visão pessoal</p>
           <h1 className="page-title mt-1">Minhas tarefas</h1>
         </div>
-        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="rounded-full border border-borda bg-white px-3 py-1.5 text-[12px] font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
+        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="rounded-full border border-borda bg-white px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
           {comConcluidas ? 'Ocultar concluídas' : 'Mostrar concluídas'}
         </Link>
       </header>
       {tarefas.length === 0 ? (
-        <p className="text-[13px] text-texto-3">Nenhuma tarefa atribuída a você. 🎉</p>
+        <p className="text-corpo text-texto-3">Nenhuma tarefa atribuída a você. 🎉</p>
       ) : (
         <VisaoLista
           grupos={GRUPOS.map((g) => ({ ...g, tarefas: planas.filter((t) => grupoDePrazo(t.prazo, t.concluidaEm, hoje) === g.id) })).filter((g) => g.tarefas.length)}

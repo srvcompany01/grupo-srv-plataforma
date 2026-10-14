@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, ArrowRightLeft, CircleDot, Link2, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,6 +18,7 @@ import type { ListaOpcao } from './TelaTarefa'
 export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { tarefa: TarefaCompleta; listas: ListaOpcao[]; podeGerir: boolean; emJanela: boolean }) {
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const [titulo, setTitulo] = useState(t.titulo)
   const [movendo, setMovendo] = useState(false)
   const ehSubtarefa = !!t.paiId
@@ -30,11 +32,11 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
     }
   }
 
-  function mover(destinoId: string) {
+  async function mover(destinoId: string) {
     const destino = listas.find((l) => l.id === destinoId)
     if (!destino || destino.id === t.lista.id) return
-    const aviso = destino.clienteId !== t.lista.clienteId ? `\n\nAtenção: a tag do cliente muda para @${destino.clienteNome}.` : ''
-    if (!confirm(`Mover a tarefa (e as subtarefas) para "${destino.nome}"?${aviso}`)) return
+    const aviso = destino.clienteId !== t.lista.clienteId ? (destino.clienteNome ? `Atenção: a tag do cliente muda para @${destino.clienteNome}.` : 'Atenção: a tag do cliente será removida (a lista de destino não tem cliente).') : undefined
+    if (!(await confirmar({ titulo: `Mover a tarefa (e as subtarefas) para "${destino.nome}"?`, descricao: aviso, confirmar: 'Mover' }))) return
     iniciar(async () => {
       if (avisar(await moverParaListaAcao(t.id, destino.id), true)) setMovendo(false)
     })
@@ -42,7 +44,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[12px] text-texto-3">
+      <div className="flex items-center gap-2 text-rotulo text-texto-3">
         <span className="inline-flex items-center gap-1 rounded-md bg-hover px-2 py-1 font-medium text-texto-2">
           <CircleDot className="h-3.5 w-3.5" /> {ehSubtarefa ? 'Subtarefa' : 'Tarefa'}
         </span>
@@ -63,8 +65,8 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
             {podeGerir && (
               <DropdownMenuItem
                 variant="destructive"
-                onSelect={() =>
-                  confirm('Arquivar esta tarefa? Ela some das listas.') &&
+                onSelect={async () =>
+                  (await confirmar({ titulo: 'Arquivar esta tarefa?', descricao: 'Ela some das listas.', confirmar: 'Arquivar', perigo: true })) &&
                   iniciar(async () => {
                     if (!avisar(await arquivarTarefaAcao(t.id), true)) return
                     if (emJanela) router.back()
@@ -80,13 +82,13 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
       </div>
 
       {t.pai ? (
-        <Link href={`/tarefas/${t.pai.id}`} className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-texto-2 hover:text-marca">
+        <Link href={`/tarefas/${t.pai.id}`} className="inline-flex max-w-full items-center gap-1.5 text-rotulo text-texto-2 hover:text-marca">
           Subtarefa de <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-texto-3" />
           <span className="truncate font-medium">{t.pai.titulo}</span>
         </Link>
       ) : (
         t.paiId && (
-          <Link href={`/tarefas/${t.paiId}`} className="text-[12px] text-texto-2 hover:text-marca">
+          <Link href={`/tarefas/${t.paiId}`} className="text-rotulo text-texto-2 hover:text-marca">
             Subtarefa de uma tarefa mãe
           </Link>
         )
@@ -102,11 +104,11 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         className="w-full rounded px-1 text-2xl font-semibold outline-none hover:bg-hover focus:bg-hover"
       />
 
-      <div className="text-[12px] text-texto-3">
+      <div className="text-rotulo text-texto-3">
         <Link href={`/listas/${t.lista.id}`} className="hover:text-marca">
           {t.lista.nome}
         </Link>
-        {' · '}@{t.lista.clienteNome}
+        {t.lista.clienteNome && ` · @${t.lista.clienteNome}`}
         {t.lista.mes && ` · ${rotuloMes(t.lista.mes)}`}
       </div>
 
@@ -114,10 +116,10 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         <DialogContent className="sm:max-w-md">
           <DialogTitle>Mover para lista</DialogTitle>
           <DialogDescription>A tarefa e as subtarefas vão para a lista escolhida.</DialogDescription>
-          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-[13px]`}>
+          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-corpo`}>
             {listas.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.espacoNome} › {l.nome} · @{l.clienteNome}
+                {l.espacoNome} › {l.nome}{l.clienteNome ? ` · @${l.clienteNome}` : ''}
                 {l.mes ? ` · ${rotuloMes(l.mes)}` : ''}
               </option>
             ))}

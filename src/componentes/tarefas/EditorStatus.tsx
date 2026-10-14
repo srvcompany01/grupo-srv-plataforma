@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
@@ -17,6 +18,7 @@ type S = StatusLista & { posicao: string }
 
 export function EditorStatus({ listaId, status }: { listaId: string; status: S[] }) {
   const [pendente, iniciar] = useTransition()
+  const confirmar = useConfirmar()
   const [novo, setNovo] = useState({ nome: '', cor: '#7b68ee', categoria: 'in_progress' as Categoria })
   const rodar = (fn: () => Promise<Parameters<typeof avisar>[0]>) => iniciar(async () => void avisar(await fn()))
 
@@ -52,7 +54,7 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
                 defaultValue={s.categoria}
                 aria-label="Categoria"
                 onChange={(e) => rodar(() => atualizarStatusAcao(s.id, { categoria: e.target.value as Categoria }))}
-                className={`${campo} h-8 w-36 py-0 text-[13px]`}
+                className={`${campo} h-8 w-36 py-0 text-corpo`}
               >
                 {(Object.keys(ROTULO_CATEGORIA) as Categoria[]).map((c) => (
                   <option key={c} value={c}>
@@ -69,9 +71,9 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
               <button
                 aria-label="Remover"
                 disabled={pendente}
-                onClick={() => {
+                onClick={async () => {
                   const destino = status.find((o) => o.id !== s.id && o.categoria === 'todo') ?? status.find((o) => o.id !== s.id)
-                  if (destino && confirm(`Remover "${s.nome}"? As tarefas dele vão para "${destino.nome}".`)) {
+                  if (destino && (await confirmar({ titulo: `Remover "${s.nome}"?`, descricao: `As tarefas dele vão para "${destino.nome}".`, confirmar: 'Remover', perigo: true }))) {
                     rodar(() => removerStatusAcao(s.id, destino.id))
                   }
                 }}
@@ -99,7 +101,7 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
             value={novo.categoria}
             onChange={(e) => setNovo({ ...novo, categoria: e.target.value as Categoria })}
             aria-label="Categoria"
-            className={`${campo} h-8 w-36 py-0 text-[13px]`}
+            className={`${campo} h-8 w-36 py-0 text-corpo`}
           >
             {(Object.keys(ROTULO_CATEGORIA) as Categoria[]).map((c) => (
               <option key={c} value={c}>

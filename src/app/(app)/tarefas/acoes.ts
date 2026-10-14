@@ -10,6 +10,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as comentarios from '@/servicos/comentarios'
 import * as status from '@/servicos/status'
+import * as recorrencias from '@/servicos/recorrencias'
 import * as tarefas from '@/servicos/tarefas'
 import * as tempo from '@/servicos/tempo'
 
@@ -38,6 +39,12 @@ export async function criarTarefaAcao(d: {
 export async function atualizarTarefaAcao(id: string, campos: tarefas.CamposTarefa): Promise<Resultado> {
   if (campos.titulo !== undefined && !campos.titulo.trim()) return { erro: 'O título não pode ficar vazio.' }
   return executar((sb) => tarefas.atualizarTarefa(sb, id, campos))
+}
+
+export async function definirRecorrenciaAcao(id: string, regra: Parameters<typeof recorrencias.definirRecorrencia>[2]): Promise<Resultado> {
+  if (regra && (!Number.isInteger(regra.cada) || regra.cada < 1 || regra.cada > 365 || !Number.isInteger(regra.antecedencia) || regra.antecedencia < 0 || regra.antecedencia > 60 || !/^\d{4}-\d{2}-\d{2}$/.test(regra.primeiroPrazo)))
+    return { erro: 'Confira o intervalo, a antecedência e o primeiro prazo.' }
+  return executar((sb) => recorrencias.definirRecorrencia(sb, id, regra), regra ? 'Repetição salva.' : 'Repetição removida.')
 }
 
 export async function definirResponsaveisAcao(id: string, ids: string[]): Promise<Resultado> {

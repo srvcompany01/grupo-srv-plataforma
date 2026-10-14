@@ -1,11 +1,13 @@
+import { lerAgrupamento } from './agrupamento'
 import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
 export const VISOES = ['lista', 'kanban', 'calendario'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
-export const AGRUPAMENTOS = ['status', 'prioridade', 'mes'] as const
-export type AgrupamentoTarefas = (typeof AGRUPAMENTOS)[number]
+/** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
+export const NIVEIS_CALENDARIO = ['ambas', 'maes', 'subtarefas'] as const
+export type NivelCalendario = (typeof NIVEIS_CALENDARIO)[number]
 
 export type Filtros = {
   responsaveis: string[]
@@ -18,7 +20,9 @@ export type Filtros = {
   mes: string | null
   busca: string
   visao: VisaoTarefas
-  agrupamento: AgrupamentoTarefas
+  /** 'status' | 'nenhum' | 'prioridade' | 'mes' | 'cliente' | 'responsavel' | 'etiqueta' | 'campo:<uuid>' */
+  agrupamento: string
+  niveis: NivelCalendario
 }
 
 type Params = Record<string, string | string[] | undefined>
@@ -43,7 +47,8 @@ export function lerFiltros(sp: Params): Filtros {
     mes: /^\d{4}-(0[1-9]|1[0-2])-01$/.test(mes) ? mes : null,
     busca: valor(sp, 'busca').trim().slice(0, 120),
     visao: de(VISOES, valor(sp, 'visao')) ? (valor(sp, 'visao') as VisaoTarefas) : 'lista',
-    agrupamento: de(AGRUPAMENTOS, valor(sp, 'grupo')) ? (valor(sp, 'grupo') as AgrupamentoTarefas) : 'status',
+    agrupamento: lerAgrupamento(valor(sp, 'grupo')),
+    niveis: de(NIVEIS_CALENDARIO, valor(sp, 'niveis')) ? (valor(sp, 'niveis') as NivelCalendario) : 'ambas',
   }
 }
 
@@ -60,11 +65,12 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   if (f.busca) sp.set('busca', f.busca)
   if (f.visao !== 'lista') sp.set('visao', f.visao)
   if (f.agrupamento !== 'status') sp.set('grupo', f.agrupamento)
+  if (f.niveis !== 'ambas') sp.set('niveis', f.niveis)
   return sp
 }
 
 /** Soma dias a uma data YYYY-MM-DD sem depender do fuso local. */
-function somarDias(iso: string, dias: number): string {
+export function somarDias(iso: string, dias: number): string {
   const d = new Date(`${iso}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + dias)
   return d.toISOString().slice(0, 10)

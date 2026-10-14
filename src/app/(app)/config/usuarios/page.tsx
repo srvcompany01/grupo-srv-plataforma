@@ -19,8 +19,8 @@ export default async function Usuarios() {
     <div className="space-y-6">
       <FormConvite clientes={clientes.filter((c) => !c.interno).map((c) => ({ id: c.id, nome: c.nome }))} espacos={espacos} />
       <div className="overflow-hidden rounded-lg border border-borda bg-white">
-        <table className="w-full text-[13px]">
-          <thead className="bg-hover text-left text-[11px] uppercase tracking-wide text-texto-3">
+        <table className="w-full text-corpo">
+          <thead className="bg-hover text-left text-legenda uppercase tracking-rotulo text-texto-3">
             <tr>
               <th className="px-3 py-2">Pessoa</th>
               <th className="hidden px-3 py-2 md:table-cell">Departamentos / cliente</th>
@@ -33,7 +33,7 @@ export default async function Usuarios() {
               <tr key={u.id} className={`border-t border-borda ${u.ativo ? '' : 'opacity-50'}`}>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <Avatar nome={u.nome || u.email} tamanho="h-7 w-7 text-[11px]" />
+                    <Avatar nome={u.nome || u.email} tamanho="h-7 w-7 text-legenda" />
                     <div className="min-w-0">
                       <div className="truncate font-medium">{u.nome || '—'}</div>
                       <div className="truncate text-texto-3">{u.email}</div>

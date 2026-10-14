@@ -44,10 +44,10 @@ export function SeletorResponsaveis({ tarefaId, atuais, equipe }: { tarefaId: st
             <CommandEmpty>Ninguém encontrado.</CommandEmpty>
             {opcoesResponsaveis(equipe, atuais).map((p) => (
               <CommandItem key={p.id} value={p.nome} onSelect={() => alternar(p.id)}>
-                <Avatar nome={p.nome || '?'} tamanho="h-5 w-5 text-[9px]" />
+                <Avatar nome={p.nome || '?'} tamanho="h-5 w-5 text-legenda" />
                 <span className="flex-1">
                   {p.nome}
-                  {p.inativo && <span className="ml-1 text-[11px] text-texto-3">(inativo)</span>}
+                  {p.inativo && <span className="ml-1 text-legenda text-texto-3">(inativo)</span>}
                 </span>
                 {marcados.has(p.id) && <Check className="h-4 w-4 text-marca" />}
               </CommandItem>

@@ -14,6 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_media: {
+        Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
+        Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
+        Update: { id?: string; kind?: string; original_name?: string; position?: number; r2_key?: string; size_bytes?: number; task_id?: string; version_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "content_media_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "content_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_media_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      content_posts: {
+        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string }
+        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string }
+        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "content_posts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_responses: {
+        Row: { comment: string; created_at: string; decision: string; id: string; responder_name: string; task_id: string; version_id: string }
+        Insert: { comment?: string; created_at?: string; decision: string; id?: string; responder_name: string; task_id: string; version_id: string }
+        Update: { comment?: string; created_at?: string; decision?: string; id?: string; responder_name?: string; task_id?: string; version_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "content_responses_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "content_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_responses_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      content_versions: {
+        Row: { caption: string; created_at: string; id: string; idea: string; number: number; objective: string; task_id: string }
+        Insert: { caption?: string; created_at?: string; id?: string; idea?: string; number: number; objective?: string; task_id: string }
+        Update: { caption?: string; created_at?: string; id?: string; idea?: string; number?: number; objective?: string; task_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "content_versions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      client_field_values: {
+        Row: {
+          client_id: string
+          field_id: string
+          value: string
+        }
+        Insert: {
+          client_id: string
+          field_id: string
+          value: string
+        }
+        Update: {
+          client_id?: string
+          field_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_field_values_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "client_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_fields: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          position: number
+          show_on_card: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          position?: number
+          show_on_card?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          position?: number
+          show_on_card?: boolean
+        }
+        Relationships: []
+      }
       client_users: {
         Row: {
           client_id: string
@@ -49,7 +200,10 @@ export type Database = {
       }
       clients: {
         Row: {
+          approval_token: string
           color: string
+          cover_credit: string | null
+          cover_url: string | null
           created_at: string
           document: string | null
           email: string | null
@@ -62,7 +216,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_token?: string
           color?: string
+          cover_credit?: string | null
+          cover_url?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
@@ -75,7 +232,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_token?: string
           color?: string
+          cover_credit?: string | null
+          cover_url?: string | null
           created_at?: string
           document?: string | null
           email?: string | null
@@ -88,6 +248,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      api_tokens: {
+        Row: { created_at: string; expires_at: string; id: string; last_used_at: string | null; name: string; revoked_at: string | null; scope: string; token_hash: string; user_id: string }
+        Insert: { created_at?: string; expires_at: string; id?: string; last_used_at?: string | null; name: string; revoked_at?: string | null; scope: string; token_hash: string; user_id?: string }
+        Update: { created_at?: string; expires_at?: string; id?: string; last_used_at?: string | null; name?: string; revoked_at?: string | null; scope?: string; token_hash?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "api_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comment_attachments: {
         Row: {
@@ -275,6 +449,20 @@ export type Database = {
           },
         ]
       }
+      forms: {
+        Row: { active: boolean; archived_at: string | null; assignee_id: string; client_id: string | null; created_at: string; created_by: string | null; description: string | null; fields: Json; id: string; list_id: string; name: string; token: string; updated_at: string }
+        Insert: { active?: boolean; archived_at?: string | null; assignee_id: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; list_id: string; name: string; token: string; updated_at?: string }
+        Update: { active?: boolean; archived_at?: string | null; assignee_id?: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; list_id?: string; name?: string; token?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "forms_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           archived_at: string | null
@@ -399,44 +587,50 @@ export type Database = {
       lists: {
         Row: {
           archived_at: string | null
-          client_id: string
+          client_id: string | null
           color: string
           created_at: string
           emoji: string | null
           folder_id: string | null
           icon: string
           id: string
+          kind: string
           name: string
           position: string
           reference_month: string | null
+          slug: string | null
           space_id: string | null
         }
         Insert: {
           archived_at?: string | null
-          client_id: string
+          client_id?: string | null
           color?: string
           created_at?: string
           emoji?: string | null
           folder_id?: string | null
           icon?: string
           id?: string
+          kind?: string
           name: string
           position: string
           reference_month?: string | null
+          slug?: string | null
           space_id?: string | null
         }
         Update: {
           archived_at?: string | null
-          client_id?: string
+          client_id?: string | null
           color?: string
           created_at?: string
           emoji?: string | null
           folder_id?: string | null
           icon?: string
           id?: string
+          kind?: string
           name?: string
           position?: string
           reference_month?: string | null
+          slug?: string | null
           space_id?: string | null
         }
         Relationships: [
@@ -558,6 +752,20 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_views: {
+        Row: { list_id: string; params: string; updated_at: string; user_id: string }
+        Insert: { list_id: string; params: string; updated_at?: string; user_id?: string }
+        Update: { list_id?: string; params?: string; updated_at?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "saved_views_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_members: {
         Row: {
           created_at: string
@@ -606,6 +814,8 @@ export type Database = {
           name: string
           parent_id: string | null
           position: string
+          slug: string | null
+          team_open: boolean
         }
         Insert: {
           archived_at?: string | null
@@ -618,6 +828,8 @@ export type Database = {
           name: string
           parent_id?: string | null
           position: string
+          slug?: string | null
+          team_open?: boolean
         }
         Update: {
           archived_at?: string | null
@@ -630,6 +842,8 @@ export type Database = {
           name?: string
           parent_id?: string | null
           position?: string
+          slug?: string | null
+          team_open?: boolean
         }
         Relationships: [
           {
@@ -802,6 +1016,20 @@ export type Database = {
           },
         ]
       }
+      task_recurrences: {
+        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string }
+        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string }
+        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "task_recurrences_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_tags: {
         Row: {
           tag_id: string
@@ -835,7 +1063,7 @@ export type Database = {
       tasks: {
         Row: {
           archived_at: string | null
-          client_id: string
+          client_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -855,7 +1083,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
-          client_id: string
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -875,7 +1103,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
-          client_id?: string
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -987,6 +1215,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
+      salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }
+      duplicar_lista: { Args: { p_list: string }; Returns: string }
+      gerar_recorrencias: { Args: { p_hoje: string }; Returns: number }
+      enviar_formulario: { Args: { p_respostas: Json; p_token: string }; Returns: string }
+      criar_post_conteudo: { Args: { p_client: string; p_date: string; p_format: string; p_list: string; p_title: string }; Returns: string }
       can_access_space_target: { Args: { space: string | null }; Returns: boolean }
       can_edit_task: { Args: { task: string }; Returns: boolean }
       can_manage_list: { Args: { list: string }; Returns: boolean }
