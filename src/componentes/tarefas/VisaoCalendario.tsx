@@ -1,12 +1,14 @@
 'use client'
 
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { ehSubtarefa, tarefasDoCalendario } from '@/dominio/calendario'
+import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { type Filtros, type NivelCalendario } from '@/dominio/filtros'
+import { corDaOpcao, formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
 import type { TarefaResumo } from '@/dominio/tarefas'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
 import { avisar } from './avisar'
@@ -65,6 +67,7 @@ export function VisaoCalendario({
   coresStatus,
   caminho,
   filtros,
+  campos,
 }: {
   tarefas: TarefaResumo[]
   hoje: string
@@ -72,10 +75,13 @@ export function VisaoCalendario({
   coresStatus: Record<string, string>
   caminho: string
   filtros: Filtros
+  /** Campos personalizados da lista (as escolhas valem para todos os itens). */
+  campos: DefinicaoCampo[]
 }) {
   const niveis = filtros.niveis
   // Vencimento escolhido por arrasto, mostrado na hora até o servidor responder (null = sem data).
   const [movidas, setMovidas] = useState<Map<string, string | null>>(new Map())
+  const camposVisiveis = useMemo(() => campos.filter((c) => filtros.campos.includes(c.id)), [campos, filtros.campos])
   const [, iniciar] = useTransition()
   const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
   const comMovidas = useMemo(() => todas.map((t) => (movidas.has(t.id) ? { ...t, prazo: movidas.get(t.id) ?? null } : t)), [todas, movidas])
@@ -137,6 +143,26 @@ export function VisaoCalendario({
             </Link>
           ))}
         </div>
+        {campos.length > 0 && (
+          <Popover>
+            <PopoverTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-borda bg-white px-2.5 py-1.5 text-legenda font-semibold text-texto-2 shadow-sm hover:bg-hover">
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-full bg-petroleo px-1.5 text-micro text-white">{camposVisiveis.length}</span>}
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 space-y-0.5 p-2">
+              <p className="px-2 pb-1 text-legenda font-bold uppercase tracking-rotulo text-texto-3">Mostrar nos itens</p>
+              {campos.map((c) => {
+                const marcado = filtros.campos.includes(c.id)
+                const novos = marcado ? filtros.campos.filter((id) => id !== c.id) : [...filtros.campos, c.id]
+                return (
+                  <Link key={c.id} href={enderecoDaVisao(caminho, { ...filtros, campos: novos })} replace scroll={false} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-rotulo hover:bg-hover">
+                    <span className={`flex h-4 w-4 items-center justify-center rounded border text-micro ${marcado ? 'border-petroleo bg-petroleo text-white' : 'border-borda'}`}>{marcado && '✓'}</span>
+                    <span className="truncate">{c.nome}</span>
+                  </Link>
+                )
+              })}
+            </PopoverContent>
+          </Popover>
+        )}
         <div className="flex items-center gap-1 rounded-lg border border-borda bg-white p-1 shadow-sm">
           <button type="button" aria-label="Mês anterior" onClick={() => setAnoMes(moverMes(anoMes, -1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></button>
           <button type="button" onClick={() => setAnoMes(hoje.slice(0, 7))} className="rounded-md px-2.5 py-1 text-legenda font-semibold text-texto-2 hover:bg-hover">Hoje</button>
@@ -157,7 +183,7 @@ export function VisaoCalendario({
           <div className="grid grid-cols-7 border-b border-borda bg-fundo/70">
             {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-bold uppercase tracking-rotulo text-texto-3">{dia}</div>)}
           </div>
-          <div className="grid grid-cols-7">
+          <div className="grid auto-rows-fr grid-cols-7">
             {dias.map((dia) => {
               const itens = porData.get(dia.iso) ?? []
               return (
@@ -166,6 +192,18 @@ export function VisaoCalendario({
                   <div className="mt-1 space-y-1">
                     {(diasAbertos.has(dia.iso) ? itens : itens.slice(0, 4)).map((tarefa) => {
                       const sub = ehSubtarefa(tarefa)
+                      // Cada campo escolhido vira um bloquinho; pequenos ficam lado a lado, grandes ocupam a linha.
+                      const blocos = camposVisiveis.flatMap((c) => {
+                        const valor = tarefa.camposPersonalizados?.[c.id]
+                        if (valor == null || valor === '' || (Array.isArray(valor) && valor.length === 0)) return []
+                        const texto = formatarValorCampo(c, valor)
+                        const cor = c.tipo === 'dropdown' || c.tipo === 'labels' ? corDaOpcao(c.configuracao, String(Array.isArray(valor) ? valor[0] : valor)) : null
+                        return [
+                          <span key={c.id} title={`${c.nome}: ${texto}`} className="max-w-full rounded bg-fundo px-1.5 py-0.5 text-micro font-medium text-texto-2 ring-1 ring-borda" style={cor ? { background: `${cor}22` } : undefined}>
+                            <span className="text-texto-3">{c.nome}:</span> <span className="break-words">{texto}</span>
+                          </span>,
+                        ]
+                      })
                       return (
                         <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
                         <Link
@@ -173,13 +211,16 @@ export function VisaoCalendario({
                           href={`/tarefas/${tarefa.id}`}
                           scroll={false}
                           title={sub ? `${tarefa.titulo} · subtarefa de ${tituloPai.get(tarefa.paiId ?? '') ?? 'tarefa-mãe'}` : `${tarefa.titulo} · tarefa-mãe (entrega)`}
-                          className={`flex items-center gap-1 truncate rounded-md border-l-[3px] px-1.5 py-1 text-legenda transition hover:text-marca ${
+                          className={`flex flex-col gap-1 rounded-md border-l-[3px] px-1.5 py-1 text-legenda transition hover:text-marca ${
                             sub ? 'bg-white font-normal ring-1 ring-borda hover:bg-hover' : 'bg-fundo font-semibold hover:bg-hover'
                           } ${tarefa.concluidaEm ? 'text-texto-3 line-through' : 'text-texto'}`}
                           style={{ borderLeftColor: coresStatus[tarefa.statusId] ?? '#87909e' }}
                         >
-                          {sub ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-texto-3" aria-hidden="true" /> : <PackageCheck className="h-3 w-3 shrink-0 text-petroleo" aria-hidden="true" />}
-                          <span className="truncate">{tarefa.titulo}</span>
+                          <span className="flex min-w-0 items-center gap-1">
+                            {sub ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-texto-3" aria-hidden="true" /> : <PackageCheck className="h-3 w-3 shrink-0 text-petroleo" aria-hidden="true" />}
+                            <span className="truncate">{tarefa.titulo}</span>
+                          </span>
+                          {blocos.length > 0 && <span className="flex flex-wrap gap-1">{blocos}</span>}
                         </Link>
                         )}</Arrastavel>
                       )

@@ -23,7 +23,11 @@ export type Filtros = {
   /** 'status' | 'nenhum' | 'prioridade' | 'mes' | 'cliente' | 'responsavel' | 'etiqueta' | 'campo:<uuid>' */
   agrupamento: string
   niveis: NivelCalendario
+  /** Campos personalizados mostrados nos itens do calendário (ids). */
+  campos: string[]
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 type Params = Record<string, string | string[] | undefined>
 
@@ -49,6 +53,7 @@ export function lerFiltros(sp: Params): Filtros {
     visao: de(VISOES, valor(sp, 'visao')) ? (valor(sp, 'visao') as VisaoTarefas) : 'lista',
     agrupamento: lerAgrupamento(valor(sp, 'grupo')),
     niveis: de(NIVEIS_CALENDARIO, valor(sp, 'niveis')) ? (valor(sp, 'niveis') as NivelCalendario) : 'ambas',
+    campos: lista(sp, 'cal').filter((id) => UUID.test(id)),
   }
 }
 
@@ -66,6 +71,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   if (f.visao !== 'lista') sp.set('visao', f.visao)
   if (f.agrupamento !== 'status') sp.set('grupo', f.agrupamento)
   if (f.niveis !== 'ambas') sp.set('niveis', f.niveis)
+  por('cal', f.campos)
   return sp
 }
 
