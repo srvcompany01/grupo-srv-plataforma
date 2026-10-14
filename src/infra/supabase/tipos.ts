@@ -752,6 +752,174 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: { id: string; title: string; icon: string | null; owner_id: string; visibility: string; client_id: string | null; client_visible: boolean; is_wiki: boolean; archived_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; title?: string; icon?: string | null; owner_id?: string; visibility?: string; client_id?: string | null; client_visible?: boolean; is_wiki?: boolean; archived_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; title?: string; icon?: string | null; owner_id?: string; visibility?: string; client_id?: string | null; client_visible?: boolean; is_wiki?: boolean; archived_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "documents_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_members: {
+        Row: { document_id: string; user_id: string; can_edit: boolean }
+        Insert: { document_id: string; user_id: string; can_edit?: boolean }
+        Update: { document_id?: string; user_id?: string; can_edit?: boolean }
+        Relationships: [
+          {
+            foreignKeyName: "document_members_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_lists: {
+        Row: { document_id: string; list_id: string; created_by: string | null; created_at: string }
+        Insert: { document_id: string; list_id: string; created_by?: string | null; created_at?: string }
+        Update: { document_id?: string; list_id?: string; created_by?: string | null; created_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_lists_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_lists_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_pages: {
+        Row: { id: string; document_id: string; parent_id: string | null; title: string; icon: string | null; position: string; content: Json | null; ydoc: string | null; base_update: number; created_at: string; updated_at: string }
+        Insert: { id?: string; document_id: string; parent_id?: string | null; title?: string; icon?: string | null; position?: string; content?: Json | null; ydoc?: string | null; base_update?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; document_id?: string; parent_id?: string | null; title?: string; icon?: string | null; position?: string; content?: Json | null; ydoc?: string | null; base_update?: number; created_at?: string; updated_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_pages_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_pages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_updates: {
+        Row: { id: number; page_id: string; data: string; created_by: string | null; created_at: string }
+        Insert: { id?: number; page_id: string; data: string; created_by?: string | null; created_at?: string }
+        Update: { id?: number; page_id?: string; data?: string; created_by?: string | null; created_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_updates_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "document_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_favorites: {
+        Row: { user_id: string; document_id: string }
+        Insert: { user_id?: string; document_id: string }
+        Update: { user_id?: string; document_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_favorites_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_views: {
+        Row: { user_id: string; document_id: string; viewed_at: string }
+        Insert: { user_id?: string; document_id: string; viewed_at?: string }
+        Update: { user_id?: string; document_id?: string; viewed_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_views_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: { id: string; page_id: string; title: string; content: Json | null; ydoc: string | null; created_by: string | null; created_at: string }
+        Insert: { id?: string; page_id: string; title?: string; content?: Json | null; ydoc?: string | null; created_by?: string | null; created_at?: string }
+        Update: { id?: string; page_id?: string; title?: string; content?: Json | null; ydoc?: string | null; created_by?: string | null; created_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "document_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_comments: {
+        Row: { id: string; page_id: string; author_id: string; body: string; quote: string | null; resolved_at: string | null; created_at: string }
+        Insert: { id?: string; page_id: string; author_id?: string; body: string; quote?: string | null; resolved_at?: string | null; created_at?: string }
+        Update: { id?: string; page_id?: string; author_id?: string; body?: string; quote?: string | null; resolved_at?: string | null; created_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "document_comments_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "document_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_views: {
         Row: { list_id: string; params: string; updated_at: string; user_id: string }
         Insert: { list_id: string; params: string; updated_at?: string; user_id?: string }
@@ -1226,6 +1394,9 @@ export type Database = {
       can_manage_list: { Args: { list: string }; Returns: boolean }
       can_manage_space_target: { Args: { space: string | null }; Returns: boolean }
       can_read_list: { Args: { list: string }; Returns: boolean }
+      can_read_document: { Args: { doc: string }; Returns: boolean }
+      can_edit_document: { Args: { doc: string }; Returns: boolean }
+      can_manage_document: { Args: { doc: string }; Returns: boolean }
       can_read_task: { Args: { task: string }; Returns: boolean }
       can_see_space: { Args: { space: string }; Returns: boolean }
       criar_comentario: {

@@ -6,6 +6,7 @@ import {
   AtSign,
   CheckSquare,
   ChevronDown,
+  FileText,
   Hash,
   Inbox,
   LayoutDashboard,
@@ -252,6 +253,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           <>
             <nav className="space-y-0.5">
               {link('/inicio', 'Minhas tarefas', CheckSquare)}
+              {link('/documentos', 'Documentos', FileText)}
               {link('/clientes', 'Clientes', Users)}
               {papel === 'admin' && link('/config', 'Configurações', Settings)}
             </nav>
@@ -267,6 +269,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} />
           <ItemEmBreve rotulo="Reuniões" Icone={Video} />
           {link('/inicio', 'Minhas tarefas', CheckSquare)}
+          {link('/documentos', 'Documentos', FileText)}
         </nav>
         <div className="mx-2 my-3 border-t border-lat-borda" />
         <TituloSecao>Favoritos</TituloSecao>

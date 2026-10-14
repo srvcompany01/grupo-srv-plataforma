@@ -13,6 +13,9 @@ import * as estrutura from '@/servicos/estrutura'
 import { buscarLista } from '@/servicos/listas'
 import * as status from '@/servicos/status'
 import * as tarefas from '@/servicos/tarefas'
+import * as documentos from '@/servicos/documentos'
+import { anexarTexto, conteudoAtual } from '@/servicos/documentos-yjs'
+import { arvoreDePaginas } from '@/dominio/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
 import type { NoEspaco, NoPasta, ItemLista } from '@/dominio/arvore-espacos'
 
@@ -74,7 +77,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
-        'Nada é apagado por aqui. Para tirar algo do caminho, o fluxo é arquivar na plataforma.',
+        'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui. Para tirar algo do caminho, o fluxo é arquivar na plataforma.',
       ],
       prioridades: PRIORIDADES,
       categoriasDeStatus: STATUS_CATEGORIAS,
@@ -309,6 +312,106 @@ export const FERRAMENTAS: Ferramenta[] = [
     entrada: { tarefaId: id('Id da tarefa'), campoId: id('Id do campo'), valor: valorCampo },
     executar: async ({ sb }, a) => {
       await campos.salvarValorDoCampo(sb, a.tarefaId, a.campoId, a.valor as Json)
+      return { ok: true }
+    },
+  }),
+
+
+  definir({
+    nome: 'listar_documentos',
+    descricao: 'Lista os documentos que você pode ver (título, dono, quem vê, cliente e listas em que estão). Com listaId, só os daquela lista.',
+    escrita: false,
+    entrada: { listaId: id('Id da lista (opcional)').optional() },
+    executar: async ({ sb }, a) => {
+      const docs = a.listaId ? await documentos.listarDocumentosDaLista(sb, a.listaId) : await documentos.listarDocumentos(sb)
+      return docs.filter((d) => !d.arquivadoEm).map((d) => ({ id: d.id, titulo: d.titulo, dono: d.donoNome, quemVe: d.visibilidade, cliente: d.clienteNome, clienteVe: d.clienteVisivel, wiki: d.wiki, listas: d.listas, atualizadoEm: d.atualizadoEm }))
+    },
+  }),
+
+  definir({
+    nome: 'buscar_documento',
+    descricao: 'Abre um documento: páginas (em árvore) e o texto de uma página (a primeira, ou paginaId). O texto sai simples, sem formatação.',
+    escrita: false,
+    entrada: { documentoId: id('Id do documento'), paginaId: id('Id da página (opcional)').optional() },
+    executar: async ({ sb }, a) => {
+      const doc = await documentos.buscarDocumento(sb, a.documentoId)
+      if (!doc) throw new Error('Documento não encontrado ou sem acesso')
+      const ordem = arvoreDePaginas(doc.paginas)
+      const alvo = ordem.find((p) => p.id === a.paginaId) ?? ordem[0]
+      const pagina = alvo ? await documentos.buscarPagina(sb, alvo.id) : null
+      return {
+        id: doc.resumo.id,
+        titulo: doc.resumo.titulo,
+        quemVe: doc.resumo.visibilidade,
+        cliente: doc.resumo.clienteNome,
+        clienteVe: doc.resumo.clienteVisivel,
+        listas: doc.resumo.listas,
+        paginas: ordem.map((p) => ({ id: p.id, titulo: p.titulo || '(sem título)', nivel: p.nivel })),
+        pagina: pagina ? { id: pagina.id, titulo: pagina.titulo, texto: descricaoParaTexto(conteudoAtual(pagina)) } : null,
+      }
+    },
+  }),
+
+  definir({
+    nome: 'criar_documento',
+    descricao: 'Cria um documento (com texto inicial opcional). Com listaId ele já nasce vinculado à lista. quemVe: "team" (equipe toda, padrão) ou "private" (só quem tem o token). Para o cliente ver, informe clienteId e clienteVe=true.',
+    escrita: true,
+    entrada: {
+      titulo: z.string().min(1).max(200),
+      texto: z.string().max(100000).optional().describe('Texto da primeira página; quebras de linha viram parágrafos'),
+      listaId: id('Lista onde o documento fica vinculado').optional(),
+      quemVe: z.enum(['team', 'private']).optional(),
+      clienteId: id('Cliente do documento').optional(),
+      clienteVe: z.boolean().optional().describe('O cliente pode ver (somente leitura, no portal)'),
+    },
+    executar: async ({ sb, userId }, a) => {
+      const novo = await documentos.criarDocumento(sb, userId, { titulo: a.titulo, texto: a.texto, listaId: a.listaId, visibilidade: a.quemVe, clienteId: a.clienteId ?? null, clienteVisivel: a.clienteVe })
+      return { id: novo }
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_documento',
+    descricao: 'Muda título, arquivamento, quem vê (team/private), cliente e se ele vê; vincula ou desvincula de uma lista. Desvincular não apaga o documento.',
+    escrita: true,
+    entrada: {
+      documentoId: id('Id do documento'),
+      titulo: z.string().min(1).max(200).optional(),
+      arquivado: z.boolean().optional(),
+      quemVe: z.enum(['team', 'private']).optional(),
+      clienteId: id('Cliente do documento').nullable().optional(),
+      clienteVe: z.boolean().optional(),
+      vincularListaId: id('Vincular a esta lista').optional(),
+      desvincularListaId: id('Desvincular desta lista').optional(),
+    },
+    executar: async ({ sb }, a) => {
+      await documentos.atualizarDocumento(sb, a.documentoId, { titulo: a.titulo, arquivado: a.arquivado, visibilidade: a.quemVe, clienteId: a.clienteId, clienteVisivel: a.clienteVe })
+      if (a.vincularListaId) await documentos.vincularLista(sb, a.documentoId, a.vincularListaId)
+      if (a.desvincularListaId) await documentos.desvincularLista(sb, a.documentoId, a.desvincularListaId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'criar_pagina_documento',
+    descricao: 'Cria uma página (ou subpágina, com paiId) num documento, com texto inicial opcional.',
+    escrita: true,
+    entrada: { documentoId: id('Id do documento'), titulo: z.string().max(200), paiId: id('Página-mãe (opcional)').optional(), texto: z.string().max(100000).optional() },
+    executar: async ({ sb, userId }, a) => {
+      const pagina = await documentos.criarPagina(sb, a.documentoId, a.paiId ?? null, a.titulo)
+      if (a.texto) await anexarTexto(sb, userId, pagina, a.texto)
+      return { id: pagina }
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_pagina_documento',
+    descricao: 'Muda o título de uma página e/ou ACRESCENTA texto ao fim dela (não substitui o que já existe, para não apagar o que outras pessoas escreveram).',
+    escrita: true,
+    entrada: { paginaId: id('Id da página'), titulo: z.string().max(200).optional(), acrescentarTexto: z.string().max(100000).optional() },
+    executar: async ({ sb, userId }, a) => {
+      if (a.titulo !== undefined) await documentos.atualizarPagina(sb, a.paginaId, { titulo: a.titulo })
+      if (a.acrescentarTexto) await anexarTexto(sb, userId, a.paginaId, a.acrescentarTexto)
       return { ok: true }
     },
   }),

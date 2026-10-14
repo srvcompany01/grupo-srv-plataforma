@@ -1,7 +1,7 @@
 import type { VisaoTarefas } from '@/dominio/filtros'
 
 /** Cor de cada tipo de visualização: lista amarela, quadro azul, calendário laranja. */
-export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808' }
+export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', documentos: '#7c5cd6' }
 
 /** Ícones preenchidos (não só linhas). O desenho é branco sobre um quadrado arredondado colorido. */
 export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTarefas; className?: string }) {
@@ -15,6 +15,12 @@ export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTaref
           <rect x="6" y="6.5" width="3.4" height="11" rx="1.2" />
           <rect x="10.3" y="6.5" width="3.4" height="7.5" rx="1.2" />
           <rect x="14.6" y="6.5" width="3.4" height="9.5" rx="1.2" />
+        </g>
+      )}
+      {visao === 'documentos' && (
+        <g fill="#fff">
+          <path d="M7.5 5h6l3.5 3.5V17a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
+          <path d="M9 12.5h6M9 15.5h4" stroke={cor} strokeWidth="1.4" strokeLinecap="round" fill="none" />
         </g>
       )}
       {visao === 'calendario' && (
