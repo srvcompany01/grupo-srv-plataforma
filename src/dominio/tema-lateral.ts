@@ -26,3 +26,21 @@ export function lerFechados(valor: string | undefined): string[] {
 }
 
 export const escreverFechados = (ids: Iterable<string>): string => [...ids].slice(-MAX_FECHADOS).join('.')
+
+export const COOKIE_ORDEM_GLOBAL = 'srv-nav-ordem-global'
+export const COOKIE_ORDEM_INICIO = 'srv-nav-ordem-inicio'
+const ID_ITEM = /^[a-z0-9-]{1,30}$/
+
+/** Ordem escolhida pela pessoa para os atalhos (ids separados por "."), sem repetidos nem valores inválidos. */
+export function lerOrdem(valor: string | undefined): string[] {
+  return [...new Set((valor ?? '').split('.').filter((id) => ID_ITEM.test(id)))].slice(0, 40)
+}
+
+export const escreverOrdem = (ids: string[]): string => ids.join('.')
+
+/** Aplica a ordem salva. Itens que não estão nela (novos) ficam no fim, na ordem padrão; ids salvos que sumiram são ignorados. */
+export function ordenarItens<T extends { id: string }>(itens: T[], ordem: string[]): T[] {
+  const posicao = new Map(ordem.map((id, i) => [id, i]))
+  const conhecidos = itens.filter((i) => posicao.has(i.id)).sort((a, b) => posicao.get(a.id)! - posicao.get(b.id)!)
+  return [...conhecidos, ...itens.filter((i) => !posicao.has(i.id))]
+}
