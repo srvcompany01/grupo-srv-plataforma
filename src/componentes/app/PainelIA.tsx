@@ -1,0 +1,88 @@
+'use client'
+
+import { Sparkles, Send, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+
+type Mensagem = { role: 'user' | 'assistant'; content: string }
+
+const SUGESTOES = ['O que está atrasado esta semana?', 'Resuma as tarefas da lista que estou vendo', 'Quais clientes têm risco de churn alto?']
+
+/** Assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Fase 1: só consulta. */
+export function PainelIA() {
+  const caminho = usePathname()
+  const [aberto, setAberto] = useState(false)
+  const [mensagens, setMensagens] = useState<Mensagem[]>([])
+  const [texto, setTexto] = useState('')
+  const [carregando, setCarregando] = useState(false)
+  const fim = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const atalho = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        setAberto((a) => !a)
+      }
+    }
+    document.addEventListener('keydown', atalho)
+    return () => document.removeEventListener('keydown', atalho)
+  }, [])
+  useEffect(() => fim.current?.scrollIntoView({ block: 'end' }), [mensagens, carregando, aberto])
+
+  const enviar = async (pergunta: string) => {
+    const limpa = pergunta.trim()
+    if (!limpa || carregando) return
+    const proximas: Mensagem[] = [...mensagens, { role: 'user', content: limpa }]
+    setMensagens(proximas)
+    setTexto('')
+    setCarregando(true)
+    try {
+      const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: proximas, caminho }) })
+      const dados = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string }
+      setMensagens([...proximas, { role: 'assistant', content: dados.resposta ?? dados.erro ?? 'Não foi possível consultar a IA.' }])
+    } catch {
+      setMensagens([...proximas, { role: 'assistant', content: 'Sem conexão. Tente de novo.' }])
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <button type="button" onClick={() => setAberto(true)} title="Assistente (Ctrl+J)" aria-label="Abrir o assistente" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
+        <Sparkles className="h-5 w-5" />
+      </button>
+    )
+  }
+  return (
+    <section aria-label="Assistente" className="fixed bottom-4 right-4 z-40 flex h-[32rem] max-h-[calc(100dvh-2rem)] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-flutuante ring-1 ring-black/10">
+      <header className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
+        <Sparkles className="h-4 w-4 text-petroleo" />
+        <h2 className="flex-1 text-corpo font-semibold">Assistente</h2>
+        <span className="rounded-full bg-fundo px-2 py-0.5 text-legenda text-texto-3">só consulta</span>
+        <button type="button" aria-label="Fechar" onClick={() => setAberto(false)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
+      </header>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+        {mensagens.length === 0 && (
+          <div className="space-y-2">
+            <p className="text-corpo text-texto-2">Pergunte sobre tarefas, listas, clientes e documentos. Eu só consulto: não altero nada.</p>
+            {SUGESTOES.map((s) => (
+              <button key={s} type="button" onClick={() => void enviar(s)} className="block w-full rounded-lg bg-fundo px-3 py-2 text-left text-rotulo text-texto-2 hover:bg-hover">{s}</button>
+            ))}
+          </div>
+        )}
+        {mensagens.map((m, i) => (
+          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
+            <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'bg-petroleo text-white' : 'bg-fundo text-texto'}`}>{m.content}</p>
+          </div>
+        ))}
+        {carregando && <p className="text-legenda text-texto-3">Consultando a plataforma…</p>}
+        <div ref={fim} />
+      </div>
+      <form onSubmit={(e) => { e.preventDefault(); void enviar(texto) }} className="flex items-center gap-2 border-t border-borda p-2.5">
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Pergunte algo…" maxLength={2000} autoFocus className="h-9 min-w-0 flex-1 rounded-lg border border-borda bg-white px-3 text-corpo outline-none focus:border-petroleo" />
+        <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-lg bg-petroleo text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
+      </form>
+    </section>
+  )
+}
