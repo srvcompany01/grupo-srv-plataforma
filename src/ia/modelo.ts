@@ -15,7 +15,11 @@ export function configIA() {
 }
 
 type Config = NonNullable<ReturnType<typeof configIA>>
-type Corpo = { choices?: { message?: { content?: string | null; tool_calls?: { id: string; type: 'function'; function: { name: string; arguments: string } }[] } }[] }
+type Corpo = { choices?: { message?: { content?: unknown; tool_calls?: { id?: string; function?: { name?: string; arguments?: unknown } }[] } }[] }
+
+/** Alguns provedores devolvem o texto em partes (lista) ou os argumentos já como objeto: aqui tudo vira texto. */
+const comoTexto = (v: unknown): string | null =>
+  v == null ? null : typeof v === 'string' ? v : Array.isArray(v) ? v.map((p) => (typeof p === 'string' ? p : ((p as { text?: string })?.text ?? ''))).join('') : JSON.stringify(v)
 
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -41,7 +45,10 @@ export function chamarProvedor(config: Config): ChamarModelo {
         if (resposta.ok) {
           const m = ((await resposta.json()) as Corpo).choices?.[0]?.message
           if (!m) throw new Error('A IA não devolveu resposta.')
-          return { content: m.content ?? null, tool_calls: m.tool_calls?.map((t, i) => ({ ...t, id: t.id || `chamada-${i}`, type: 'function' as const })) }
+          return {
+            content: comoTexto(m.content),
+            tool_calls: m.tool_calls?.map((t, i) => ({ id: t.id || `chamada-${i}`, type: 'function' as const, function: { name: t.function?.name ?? '', arguments: comoTexto(t.function?.arguments) ?? '{}' } })),
+          }
         }
         ultimo = resposta.status
         const texto = await resposta.text().catch(() => '')

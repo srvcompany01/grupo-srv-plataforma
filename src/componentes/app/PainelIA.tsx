@@ -2,15 +2,47 @@
 
 import { Sparkles, Send, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 
 type Mensagem = { role: 'user' | 'assistant'; content: string }
 type Proposta = { id: string; nome: string; argumentos: Record<string, unknown>; resumo: string }
 
 const SUGESTOES = ['O que está atrasado esta semana?', 'Crie uma tarefa “Reunião de pauta” para sexta', 'Quais clientes têm risco de churn alto?']
 
-/** Assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Fase 1: só consulta. */
+/** Qualquer valor vindo do servidor vira texto: um objeto no lugar de texto derrubaria a página inteira. */
+const comoTexto = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v))
+
+/** Se o painel falhar ao desenhar, só ele cai: a plataforma continua de pé e o motivo aparece na tela. */
+class ProtegePainel extends Component<{ children: ReactNode }, { erro: Error | null }> {
+  state = { erro: null as Error | null }
+  static getDerivedStateFromError(erro: Error) {
+    return { erro }
+  }
+  componentDidCatch(erro: Error) {
+    console.error('Painel da IA', erro)
+  }
+  render() {
+    if (!this.state.erro) return this.props.children
+    return (
+      <section className="fixed bottom-4 right-4 z-40 w-[22rem] max-w-[calc(100vw-2rem)] space-y-2 rounded-2xl bg-white p-4 shadow-flutuante ring-1 ring-black/10">
+        <p className="text-corpo font-semibold text-perigo">O assistente encontrou um problema</p>
+        <p className="break-words text-legenda text-texto-2">{this.state.erro.message}</p>
+        <button type="button" onClick={() => this.setState({ erro: null })} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white">Tentar de novo</button>
+      </section>
+    )
+  }
+}
+
 export function PainelIA() {
+  return (
+    <ProtegePainel>
+      <PainelIAInterno />
+    </ProtegePainel>
+  )
+}
+
+/** Assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Consulta e, com confirmação, cria tarefas e documentos. */
+function PainelIAInterno() {
   const caminho = usePathname()
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
@@ -43,8 +75,8 @@ export function PainelIA() {
     try {
       const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: proximas, caminho }) })
       const dados = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; propostas?: Proposta[] }
-      setMensagens([...proximas, { role: 'assistant', content: dados.resposta ?? dados.erro ?? 'Não foi possível consultar a IA.' }])
-      setPropostas(dados.propostas?.length ? dados.propostas : null)
+      setMensagens([...proximas, { role: 'assistant', content: comoTexto(dados.resposta ?? dados.erro) || 'Não foi possível consultar a IA.' }])
+      setPropostas(Array.isArray(dados.propostas) && dados.propostas.length ? dados.propostas.map((p) => ({ ...p, resumo: comoTexto(p.resumo) })) : null)
     } catch {
       setMensagens([...proximas, { role: 'assistant', content: 'Sem conexão. Tente de novo.' }])
     } finally {
@@ -100,7 +132,7 @@ export function PainelIA() {
         )}
         {mensagens.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'bg-petroleo text-white' : 'bg-fundo text-texto'}`}>{m.content}</p>
+            <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'bg-petroleo text-white' : 'bg-fundo text-texto'}`}>{comoTexto(m.content)}</p>
           </div>
         ))}
         {propostas && (
