@@ -136,6 +136,8 @@ export async function atualizarTarefa(sb: Supabase, id: string, c: CamposTarefa)
     estimate_minutes: c.estimativaMin,
     visible_to_client: c.visivelCliente,
   }
+  // Nada a gravar (ex.: só a tag de cliente ou só os responsáveis mudaram): um UPDATE vazio não casa nenhuma linha e daria "sem permissão".
+  if (Object.values(campos).every((v) => v === undefined)) return
   // Campos undefined não vão na requisição.
   const { error, count } = await sb.from('tasks').update(campos, { count: 'exact' }).eq('id', id)
   if (error) throw error
