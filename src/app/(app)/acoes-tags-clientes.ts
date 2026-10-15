@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
+import * as tarefas from '@/servicos/tarefas'
 
 const COR_HEX = /^#[0-9a-f]{6}$/i
 
@@ -16,22 +17,7 @@ export async function definirTagClienteDaTarefa(tarefaId: string, clienteId: str
   if (!tarefaId) return { erro: 'Tarefa inválida.' }
   const sb = await criarClienteServidor()
   const resultado = await tentar(async () => {
-    const { data: tarefa, error } = await sb.from('tasks').select('id, parent_task_id, list_id').eq('id', tarefaId).single()
-    if (error) throw error
-    const { data: todas, error: erroLista } = await sb.from('tasks').select('id, parent_task_id').eq('list_id', tarefa.list_id).is('archived_at', null)
-    if (erroLista) throw erroLista
-    const paiDe = new Map(todas.map((t) => [t.id, t.parent_task_id]))
-    let raiz = tarefa.id
-    while (paiDe.get(raiz)) raiz = paiDe.get(raiz) as string
-    const ids = new Set([raiz])
-    let achou = true
-    while (achou) {
-      achou = false
-      for (const [id, pai] of paiDe) if (pai && ids.has(pai) && !ids.has(id)) { ids.add(id); achou = true }
-    }
-    const { error: erroUpdate, count } = await sb.from('tasks').update({ client_id: clienteId }, { count: 'exact' }).in('id', [...ids])
-    if (erroUpdate) throw erroUpdate
-    if (!count) throw { code: '42501' }
+    await tarefas.definirTagCliente(sb, tarefaId, clienteId)
   }, clienteId ? 'Tag de cliente atualizada nesta tarefa e nas subtarefas.' : 'Tag de cliente removida desta tarefa e das subtarefas.')
   revalidatePath('/', 'layout')
   return resultado

@@ -77,7 +77,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
-        'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui. Para tirar algo do caminho, o fluxo é arquivar na plataforma.',
+        'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
       categoriasDeStatus: STATUS_CATEGORIAS,
@@ -240,8 +240,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
       responsaveis: z.array(id('Id de uma pessoa')).max(10).optional(),
+      clienteId: id('Tag de cliente da tarefa (id de listar_clientes)').optional(),
     },
-    executar: async (ctx, a) => ({ tarefaId: await criarUma(ctx, a) }),
+    executar: async (ctx, a) => {
+      const tarefaId = await criarUma(ctx, a)
+      if (a.clienteId) await tarefas.definirTagCliente(ctx.sb, tarefaId, a.clienteId)
+      return { tarefaId }
+    },
   }),
 
   definir({
@@ -258,6 +263,7 @@ export const FERRAMENTAS: Ferramenta[] = [
             descricao: z.string().max(50000).optional(),
             prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
             prioridade: z.enum(PRIORIDADES).optional(),
+            clienteId: id('Tag de cliente da tarefa e das subtarefas (id de listar_clientes)').optional(),
             valoresCampos: z.record(z.string().uuid(), valorCampo).optional().describe('Objeto { idDoCampo: valor }'),
             subtarefas: z.array(z.object({ titulo: z.string().min(1).max(200), descricao: z.string().max(50000).optional() })).max(100).optional(),
             serieSubtarefas: z
@@ -281,6 +287,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         for (const [campoId, valor] of Object.entries(t.valoresCampos ?? {})) await campos.salvarValorDoCampo(ctx.sb, tarefaId, campoId, valor as Json)
         const subtarefaIds: string[] = []
         for (const s of lista(t)) subtarefaIds.push(await criarUma(ctx, { listaId: a.listaId, titulo: s.titulo, descricao: s.descricao, paiId: tarefaId }))
+        if (t.clienteId) await tarefas.definirTagCliente(ctx.sb, tarefaId, t.clienteId)
         criadas.push({ tarefaId, titulo: t.titulo, subtarefaIds })
       }
       return { criadas }
@@ -289,7 +296,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'atualizar_tarefa',
-    descricao: 'Altera título, descrição, status, prioridade, datas ou responsáveis de uma tarefa. Só envie o que muda.',
+    descricao: 'Altera título, descrição, status, prioridade, vencimento, responsáveis ou a tag de cliente de uma tarefa. A tag de cliente vale para a tarefa-mãe e todas as subtarefas (clienteId null remove). Só envie o que muda.',
     escrita: true,
     entrada: {
       tarefaId: id('Id da tarefa'),
@@ -299,6 +306,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').nullable().optional(),
       responsaveis: z.array(id('Id de uma pessoa')).min(1).max(10).optional(),
+      clienteId: id('Tag de cliente (id de listar_clientes); null remove a tag').nullable().optional(),
     },
     executar: async ({ sb }, a) => {
       await tarefas.atualizarTarefa(sb, a.tarefaId, {
@@ -309,6 +317,18 @@ export const FERRAMENTAS: Ferramenta[] = [
         prazo: a.prazo,
       })
       if (a.responsaveis) await tarefas.definirResponsaveis(sb, a.tarefaId, a.responsaveis)
+      if (a.clienteId !== undefined) await tarefas.definirTagCliente(sb, a.tarefaId, a.clienteId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'arquivar_tarefa',
+    descricao: 'Arquiva uma tarefa criada por engano (com as subtarefas): ela some das listas, mas continua guardada no banco, nada é apagado de verdade. Use só quando a pessoa pedir.',
+    escrita: true,
+    entrada: { tarefaId: id('Id da tarefa-mãe a arquivar') },
+    executar: async ({ sb }, a) => {
+      await tarefas.arquivarTarefas(sb, [a.tarefaId])
       return { ok: true }
     },
   }),

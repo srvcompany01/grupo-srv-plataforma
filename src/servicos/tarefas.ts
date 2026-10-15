@@ -1,3 +1,4 @@
+import { idsDaArvore } from '@/dominio/arvore-tarefa'
 import { prazoEm, type Filtros } from '@/dominio/filtros'
 import { posicaoEntre } from '@/dominio/posicao'
 import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
@@ -285,4 +286,19 @@ export async function listarAtividade(sb: Supabase, tarefaId: string): Promise<I
     ator: a.profiles?.full_name ?? null,
     criadoEm: a.created_at,
   }))
+}
+
+/**
+ * Troca a tag de cliente de UMA tarefa e de toda a sua árvore (a mãe de origem e todas as subtarefas),
+ * sem mexer nas outras tarefas da lista. `null` remove a tag.
+ */
+export async function definirTagCliente(sb: Supabase, tarefaId: string, clienteId: string | null): Promise<void> {
+  const { data: tarefa, error } = await sb.from('tasks').select('id, list_id').eq('id', tarefaId).single()
+  if (error) throw error
+  const { data: todas, error: erroLista } = await sb.from('tasks').select('id, parent_task_id').eq('list_id', tarefa.list_id).is('archived_at', null)
+  if (erroLista) throw erroLista
+  const ids = idsDaArvore(new Map(todas.map((t) => [t.id, t.parent_task_id])), tarefa.id)
+  const { error: erroUpdate, count } = await sb.from('tasks').update({ client_id: clienteId }, { count: 'exact' }).in('id', ids)
+  if (erroUpdate) throw erroUpdate
+  if (!count) throw { code: '42501' }
 }
