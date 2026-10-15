@@ -63,7 +63,10 @@ function PainelIAInterno() {
     document.addEventListener('keydown', atalho)
     return () => document.removeEventListener('keydown', atalho)
   }, [])
-  useEffect(() => fim.current?.scrollIntoView({ block: 'end' }), [mensagens, carregando, aberto])
+  // Chaves de propósito: o efeito não pode devolver nada (se o navegador devolver uma Promise, o React tenta chamá-la e a página cai).
+  useEffect(() => {
+    fim.current?.scrollIntoView({ block: 'end' })
+  }, [mensagens, carregando, aberto])
 
   const enviar = async (pergunta: string) => {
     const limpa = pergunta.trim()
