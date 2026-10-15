@@ -12,6 +12,30 @@ const SUGESTOES = ['O que está atrasado esta semana?', 'Crie uma tarefa “Reun
 /** Qualquer valor vindo do servidor vira texto: um objeto no lugar de texto derrubaria a página inteira. */
 const comoTexto = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v))
 
+/** Trecho com **negrito** (e crases) em texto normal, sem HTML: nenhum asterisco solto aparece na conversa. */
+function Linha({ texto }: { texto: string }) {
+  return (
+    <>
+      {texto.split(/(\*\*[^*]+\*\*)/g).map((parte, i) => (parte.startsWith('**') && parte.endsWith('**') && parte.length > 4 ? <strong key={i}>{parte.slice(2, -2)}</strong> : <span key={i}>{parte.replace(/`/g, '')}</span>))}
+    </>
+  )
+}
+
+/** Resposta da IA com o mínimo de formatação: parágrafos, listas com "-" e **negrito**. */
+function TextoFormatado({ texto }: { texto: string }) {
+  return (
+    <div className="space-y-1">
+      {texto.split('\n').map((l, i) => {
+        const item = /^\s*(?:[-•*])\s+(.*)$/.exec(l)
+        const titulo = /^\s*#{1,6}\s+(.*)$/.exec(l)
+        if (!l.trim()) return <div key={i} className="h-1.5" />
+        if (item) return <div key={i} className="flex gap-2 pl-1"><span aria-hidden="true">•</span><span className="min-w-0 flex-1"><Linha texto={item[1]} /></span></div>
+        return <div key={i} className={titulo ? 'font-semibold' : undefined}><Linha texto={titulo ? titulo[1] : l} /></div>
+      })}
+    </div>
+  )
+}
+
 /** Se o painel falhar ao desenhar, só ele cai: a plataforma continua de pé e o motivo aparece na tela. */
 class ProtegePainel extends Component<{ children: ReactNode }, { erro: Error | null }> {
   state = { erro: null as Error | null }
@@ -164,7 +188,9 @@ function PainelIAInterno() {
         )}
         {mensagens.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'bg-petroleo text-white' : 'bg-fundo text-texto'}`}>{comoTexto(m.content)}</p>
+            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-white' : 'bg-fundo text-texto'}`}>
+              {m.role === 'user' ? comoTexto(m.content) : <TextoFormatado texto={comoTexto(m.content)} />}
+            </div>
           </div>
         ))}
         {propostas && (

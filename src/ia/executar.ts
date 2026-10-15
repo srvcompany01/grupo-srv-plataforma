@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import { FERRAMENTAS, type Contexto } from '@/mcp/ferramentas'
 import { ESCRITAS_DA_IA } from './agente'
+import { mensagemErro } from '@/dominio/erros-banco'
 import { resumirResultado } from './resumo'
 
 /** Executa UMA ferramenta de escrita que a pessoa confirmou. Só as permitidas à IA; valida os argumentos de novo. */
@@ -12,7 +13,9 @@ export async function executarConfirmada(ctx: Contexto, nome: string, argumentos
   try {
     return { ok: true, resumo: resumirResultado(nome, await f.executar(ctx, lido.data as never)) }
   } catch (e) {
-    console.error('IA executar', nome, e)
-    return { ok: false, erro: e instanceof Error ? e.message.slice(0, 300) : 'Falha ao executar.' }
+    console.error('IA executar', nome, JSON.stringify(e instanceof Error ? { message: e.message } : e))
+    // Erros do banco chegam como objeto ({ code, message }), não como Error: traduz para algo que a pessoa entenda.
+    const texto = e instanceof Error ? e.message : mensagemErro(e)
+    return { ok: false, erro: texto.slice(0, 300) }
   }
 }

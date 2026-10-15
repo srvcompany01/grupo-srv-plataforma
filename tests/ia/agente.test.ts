@@ -53,7 +53,7 @@ describe('assistente (fase 1)', () => {
       tool_calls: [{ id: 'p1', type: 'function', function: { name: 'criar_tarefas_em_lote', arguments: JSON.stringify({ listaId: lista, tarefas: [{ titulo: 'Conteúdo estratégico de novembro', serieSubtarefas: { prefixo: 'Post', de: 1, ate: 30 } }] }) } }],
     })
     // O ctx.sb é vazio: se o laço tentasse gravar, quebraria.
-    const r = await conversar({ mensagens: [{ role: 'user', content: 'crie' }], ctx, caminho: '/', hoje: '2026-10-14', chamar })
+    const r = await conversar({ mensagens: [{ role: 'user', content: 'crie' }], ctx, caminho: '/', hoje: '2026-10-14', chamar, conferir: async () => null })
     expect(r.tipo).toBe('proposta')
     if (r.tipo === 'proposta') expect(r.propostas.map((p) => p.nome)).toEqual(['criar_tarefas_em_lote'])
   })
@@ -88,6 +88,32 @@ describe('assistente (fase 1)', () => {
   it('para depois de muitas rodadas', async () => {
     const chamar: ChamarModelo = async () => ({ content: null, tool_calls: [{ id: 'x', type: 'function', function: { name: 'descrever_plataforma', arguments: '{}' } }] })
     expect(await conversar({ mensagens: [{ role: 'user', content: 'x' }], ctx, caminho: '/', hoje: '2026-10-14', chamar })).toEqual({ tipo: 'resposta', texto: expect.stringContaining('longa demais') })
+  })
+})
+
+describe('ids inventados', () => {
+  it('proposta com id que não existe não chega à pessoa: o erro volta para o modelo corrigir', async () => {
+    const vistos: string[] = []
+    let rodada = 0
+    const chamar: ChamarModelo = async (mensagens) => {
+      const ultima = mensagens.at(-1)!
+      if (ultima.role === 'tool') vistos.push(ultima.content)
+      rodada++
+      return rodada === 1
+        ? { content: null, tool_calls: [{ id: 'x', type: 'function', function: { name: 'atualizar_tarefa', arguments: JSON.stringify({ tarefaId: '9786e4c9-0000-4000-8000-000000000000', titulo: 'novo' }) } }] }
+        : { content: 'Não achei essa tarefa.' }
+    }
+    const r = await conversar({ mensagens: [{ role: 'user', content: 'mude' }], ctx, caminho: '/', hoje: '2026-10-14', chamar, conferir: async () => 'tarefaId não existe' })
+    expect(r).toEqual({ tipo: 'resposta', texto: 'Não achei essa tarefa.' })
+    expect(vistos[0]).toContain('tarefaId não existe')
+  })
+
+  it('acha os ids do pedido, inclusive dentro de tarefas[]', async () => {
+    const { idsDoPedido } = await import('@/ia/ids')
+    expect(idsDoPedido({ listaId: 'L', tarefas: [{ titulo: 'a', clienteId: 'C' }], titulo: 'x' })).toEqual([
+      { campo: 'listaId', id: 'L' },
+      { campo: 'clienteId', id: 'C' },
+    ])
   })
 })
 
