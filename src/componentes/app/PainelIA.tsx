@@ -75,7 +75,7 @@ class ProtegePainel extends Component<{ children: ReactNode }, { erro: Error | n
     if (!this.state.erro) return this.props.children
     return (
       <section className="fixed bottom-4 right-4 z-40 w-[22rem] max-w-[calc(100vw-2rem)] space-y-2 rounded-2xl bg-white p-4 shadow-flutuante ring-1 ring-black/10">
-        <p className="text-corpo font-semibold text-perigo">O assistente encontrou um problema</p>
+        <p className="text-corpo font-semibold text-perigo">A Emma encontrou um problema</p>
         <p className="break-words text-legenda text-texto-2">{this.state.erro.message}</p>
         <button type="button" onClick={() => this.setState({ erro: null })} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white">Tentar de novo</button>
       </section>
@@ -91,7 +91,7 @@ export function PainelIA() {
   )
 }
 
-/** Assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Consulta e, com confirmação, cria tarefas e documentos. */
+/** Emma, a assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Consulta e, com confirmação, cria tarefas e documentos. */
 function PainelIAInterno() {
   const caminho = usePathname()
   const router = useRouter()
@@ -222,19 +222,19 @@ function PainelIAInterno() {
 
   if (!aberto) {
     return (
-      <button type="button" onClick={abrir} title="Assistente (Ctrl+J)" aria-label="Abrir o assistente" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
+      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
         <Sparkles className="h-5 w-5" />
       </button>
     )
   }
   return (
     <section
-      aria-label="Assistente"
+      aria-label="Emma, assistente da Grupo SRV"
       className={`fixed bottom-4 right-4 z-40 flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-flutuante ring-1 ring-black/10 transition-[width,height] ${grande ? 'h-[calc(100dvh-2rem)] w-[56rem]' : 'h-[42rem] w-[30rem]'}`}
     >
       <header className="flex items-center gap-2 px-4 py-3">
         <Sparkles className="h-4 w-4 text-petroleo" />
-        <h2 className="flex-1 text-destaque font-semibold">Assistente</h2>
+        <h2 className="flex-1 text-destaque font-semibold">Emma <span className="font-normal text-texto-3">· assistente da Grupo SRV</span></h2>
         <button
           type="button"
           aria-label={grande ? 'Diminuir o painel' : 'Ampliar o painel'}
@@ -254,7 +254,7 @@ function PainelIAInterno() {
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
         {mensagens.length === 0 && (
           <div className="space-y-2">
-            <p className="text-corpo text-texto-2">Pergunte sobre tarefas, listas, clientes e documentos, ou peça para criar tarefas e documentos. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero você confirmar.</p>
+            <p className="text-corpo text-texto-2">Oi, eu sou a Emma! Posso consultar tarefas, listas, clientes e documentos, e criar tarefas e documentos para você. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero a sua confirmação.</p>
             {SUGESTOES.map((s) => (
               <button key={s} type="button" onClick={() => void enviar(s)} className="block w-full rounded-lg bg-fundo px-3 py-2 text-left text-rotulo text-texto-2 hover:bg-hover">{s}</button>
             ))}
@@ -293,7 +293,7 @@ function PainelIAInterno() {
                 void enviar(texto)
               }
             }}
-            placeholder={ouvindo ? 'Estou ouvindo… pode falar' : 'Pergunte algo ou peça uma tarefa…'}
+            placeholder={ouvindo ? 'Estou ouvindo… pode falar' : 'Pergunte à Emma ou peça uma tarefa…'}
             maxLength={2000}
             autoFocus
             className="block max-h-44 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-corpo outline-none"
