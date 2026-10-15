@@ -1,10 +1,36 @@
 'use client'
 
-import { Brain, Sparkles, Send, X } from 'lucide-react'
+import { ArrowUp, Brain, Maximize2, Mic, Minimize2, Sparkles, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 
 type Mensagem = { role: 'user' | 'assistant'; content: string }
+
+/** Reconhecimento de voz do navegador (Chrome, Edge, Safari). Não vem nos tipos padrão do TypeScript. */
+type ReconhecimentoVoz = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  start(): void
+  stop(): void
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null
+  onend: (() => void) | null
+  onerror: ((e: { error: string }) => void) | null
+}
+
+function criarReconhecimento(): ReconhecimentoVoz | null {
+  const w = window as unknown as { SpeechRecognition?: new () => ReconhecimentoVoz; webkitSpeechRecognition?: new () => ReconhecimentoVoz }
+  const Classe = w.SpeechRecognition ?? w.webkitSpeechRecognition
+  return Classe ? new Classe() : null
+}
+
+/** As escolhas do painel (Pensar e tamanho) ficam no navegador e são lidas quando ele abre. */
+function lerPreferencias(definirPensar: (v: boolean) => void, definirGrande: (v: boolean) => void) {
+  try {
+    definirPensar(localStorage.getItem('srv-ia-pensar') === '1')
+    definirGrande(localStorage.getItem('srv-ia-grande') === '1')
+  } catch {}
+}
 type Proposta = { id: string; nome: string; argumentos: Record<string, unknown>; resumo: string }
 
 const SUGESTOES = ['O que está atrasado esta semana?', 'Crie uma tarefa “Reunião de pauta” para sexta', 'Quais clientes têm risco de churn alto?']
@@ -76,13 +102,15 @@ function PainelIAInterno() {
   const [propostas, setPropostas] = useState<Proposta[] | null>(null)
   const [andamento, setAndamento] = useState<string | null>(null)
   const [pensar, setPensar] = useState(false)
+  const [grande, setGrande] = useState(false)
+  const [ouvindo, setOuvindo] = useState(false)
+  const [avisoVoz, setAvisoVoz] = useState<string | null>(null)
+  const voz = useRef<ReconhecimentoVoz | null>(null)
+  const campoRef = useRef<HTMLTextAreaElement>(null)
   const fim = useRef<HTMLDivElement>(null)
 
-  // A escolha do botão Pensar fica guardada no navegador e é lida quando o painel abre (não na renderização, para não divergir do servidor).
   const abrir = () => {
-    try {
-      setPensar(localStorage.getItem('srv-ia-pensar') === '1')
-    } catch {}
+    lerPreferencias(setPensar, setGrande)
     setAberto(true)
   }
   useEffect(() => {
@@ -90,11 +118,7 @@ function PainelIAInterno() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
         e.preventDefault()
         setAberto((a) => {
-          if (!a) {
-            try {
-              setPensar(localStorage.getItem('srv-ia-pensar') === '1')
-            } catch {}
-          }
+          if (!a) lerPreferencias(setPensar, setGrande)
           return !a
         })
       }
@@ -106,10 +130,18 @@ function PainelIAInterno() {
   useEffect(() => {
     fim.current?.scrollIntoView({ block: 'end' })
   }, [mensagens, carregando, aberto])
+  // O campo cresce com o texto (até um limite), inclusive quando o texto vem do microfone.
+  useEffect(() => {
+    const el = campoRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 176)}px`
+  }, [texto, aberto, grande])
 
   const enviar = async (pergunta: string) => {
     const limpa = pergunta.trim()
     if (!limpa || carregando) return
+    voz.current?.stop()
     const proximas: Mensagem[] = [...mensagens, { role: 'user', content: limpa }]
     setMensagens(proximas)
     setTexto('')
@@ -148,6 +180,46 @@ function PainelIAInterno() {
     router.refresh()
   }
 
+  /** Liga ou desliga o microfone: a fala vira texto no campo (aparece enquanto você fala) e você envia quando quiser. */
+  const alternarMicrofone = () => {
+    if (ouvindo) {
+      voz.current?.stop()
+      return
+    }
+    const r = criarReconhecimento()
+    if (!r) {
+      setAvisoVoz('Este navegador não reconhece voz. Use o Chrome, o Edge ou o Safari.')
+      return
+    }
+    const base = texto.trim() ? `${texto.trim()} ` : ''
+    r.lang = 'pt-BR'
+    r.continuous = true
+    r.interimResults = true
+    r.onresult = (e) => {
+      let finais = ''
+      let parcial = ''
+      for (let i = 0; i < e.results.length; i++) {
+        const trecho = e.results[i][0].transcript
+        if (e.results[i].isFinal) finais += trecho
+        else parcial += trecho
+      }
+      setTexto((base + finais + parcial).slice(0, 2000))
+    }
+    r.onerror = (e) => setAvisoVoz(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Permita o uso do microfone no navegador para ditar.' : e.error === 'no-speech' ? 'Não ouvi nada. Tente de novo.' : 'Não foi possível usar o microfone.')
+    r.onend = () => {
+      setOuvindo(false)
+      voz.current = null
+    }
+    voz.current = r
+    setAvisoVoz(null)
+    try {
+      r.start()
+      setOuvindo(true)
+    } catch {
+      setAvisoVoz('Não foi possível usar o microfone.')
+    }
+  }
+
   if (!aberto) {
     return (
       <button type="button" onClick={abrir} title="Assistente (Ctrl+J)" aria-label="Abrir o assistente" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
@@ -156,28 +228,30 @@ function PainelIAInterno() {
     )
   }
   return (
-    <section aria-label="Assistente" className="fixed bottom-4 right-4 z-40 flex h-[32rem] max-h-[calc(100dvh-2rem)] w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-flutuante ring-1 ring-black/10">
-      <header className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
+    <section
+      aria-label="Assistente"
+      className={`fixed bottom-4 right-4 z-40 flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-flutuante ring-1 ring-black/10 transition-[width,height] ${grande ? 'h-[calc(100dvh-2rem)] w-[56rem]' : 'h-[42rem] w-[30rem]'}`}
+    >
+      <header className="flex items-center gap-2 px-4 py-3">
         <Sparkles className="h-4 w-4 text-petroleo" />
-        <h2 className="flex-1 text-corpo font-semibold">Assistente</h2>
+        <h2 className="flex-1 text-destaque font-semibold">Assistente</h2>
         <button
           type="button"
-          role="switch"
-          aria-checked={pensar}
-          title="Pensar: respostas melhores em pedidos difíceis, porém mais lentas e mais caras. Só funciona com o DeepSeek."
+          aria-label={grande ? 'Diminuir o painel' : 'Ampliar o painel'}
+          title={grande ? 'Diminuir' : 'Ampliar'}
           onClick={() => {
-            setPensar(!pensar)
+            setGrande(!grande)
             try {
-              localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
+              localStorage.setItem('srv-ia-grande', grande ? '0' : '1')
             } catch {}
           }}
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-legenda font-semibold ${pensar ? 'bg-petroleo text-white' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+          className="rounded-lg p-1.5 text-texto-3 hover:bg-hover"
         >
-          <Brain className="h-3 w-3" /> Pensar {pensar ? 'ligado' : 'desligado'}
+          {grande ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </button>
-        <button type="button" aria-label="Fechar" onClick={() => setAberto(false)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
+        <button type="button" aria-label="Fechar" onClick={() => { voz.current?.stop(); setAberto(false) }} className="rounded-lg p-1.5 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
       </header>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
         {mensagens.length === 0 && (
           <div className="space-y-2">
             <p className="text-corpo text-texto-2">Pergunte sobre tarefas, listas, clientes e documentos, ou peça para criar tarefas e documentos. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero você confirmar.</p>
@@ -188,7 +262,7 @@ function PainelIAInterno() {
         )}
         {mensagens.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-white' : 'bg-fundo text-texto'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-white' : 'bg-fundo text-texto'}`}>
               {m.role === 'user' ? comoTexto(m.content) : <TextoFormatado texto={comoTexto(m.content)} />}
             </div>
           </div>
@@ -206,9 +280,55 @@ function PainelIAInterno() {
         {carregando && <p className="text-legenda text-texto-3">Consultando a plataforma…</p>}
         <div ref={fim} />
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); void enviar(texto) }} className="flex items-center gap-2 border-t border-borda p-2.5">
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Pergunte algo…" maxLength={2000} autoFocus className="h-9 min-w-0 flex-1 rounded-lg border border-borda bg-white px-3 text-corpo outline-none focus:border-petroleo" />
-        <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-lg bg-petroleo text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
+      <form onSubmit={(e) => { e.preventDefault(); void enviar(texto) }} className="px-3 pb-3 pt-2">
+        <div className={`rounded-2xl border bg-white shadow-sm transition ${ouvindo ? 'border-perigo ring-2 ring-perigo/20' : 'border-borda focus-within:border-petroleo focus-within:ring-2 focus-within:ring-petroleo/15'}`}>
+          <textarea
+            ref={campoRef}
+            rows={1}
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                void enviar(texto)
+              }
+            }}
+            placeholder={ouvindo ? 'Estou ouvindo… pode falar' : 'Pergunte algo ou peça uma tarefa…'}
+            maxLength={2000}
+            autoFocus
+            className="block max-h-44 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-corpo outline-none"
+          />
+          <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={pensar}
+              title="Pensar: respostas melhores em pedidos difíceis, porém mais lentas e mais caras. Só funciona com o DeepSeek."
+              onClick={() => {
+                setPensar(!pensar)
+                try {
+                  localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
+                } catch {}
+              }}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-white' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+            >
+              <Brain className="h-3.5 w-3.5" /> Pensar {pensar ? 'ligado' : 'desligado'}
+            </button>
+            <span className="min-w-0 flex-1 truncate px-1 text-legenda text-perigo">{avisoVoz}</span>
+            <button
+              type="button"
+              aria-pressed={ouvindo}
+              aria-label={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar'}
+              title={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar (o navegador transcreve a sua voz)'}
+              onClick={alternarMicrofone}
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition ${ouvindo ? 'animate-pulse bg-perigo text-white' : 'text-texto-2 hover:bg-hover'}`}
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+            <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-full bg-petroleo text-white transition disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+          </div>
+        </div>
+        <p className="mt-1.5 hidden px-2 text-legenda text-texto-3 sm:block">Enter envia · Shift+Enter nova linha</p>
       </form>
     </section>
   )
