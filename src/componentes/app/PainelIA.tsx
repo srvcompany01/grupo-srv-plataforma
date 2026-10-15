@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles, Send, X } from 'lucide-react'
+import { Brain, Sparkles, Send, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -51,13 +51,28 @@ function PainelIAInterno() {
   const [carregando, setCarregando] = useState(false)
   const [propostas, setPropostas] = useState<Proposta[] | null>(null)
   const [andamento, setAndamento] = useState<string | null>(null)
+  const [pensar, setPensar] = useState(false)
   const fim = useRef<HTMLDivElement>(null)
 
+  // A escolha do botão Pensar fica guardada no navegador e é lida quando o painel abre (não na renderização, para não divergir do servidor).
+  const abrir = () => {
+    try {
+      setPensar(localStorage.getItem('srv-ia-pensar') === '1')
+    } catch {}
+    setAberto(true)
+  }
   useEffect(() => {
     const atalho = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
         e.preventDefault()
-        setAberto((a) => !a)
+        setAberto((a) => {
+          if (!a) {
+            try {
+              setPensar(localStorage.getItem('srv-ia-pensar') === '1')
+            } catch {}
+          }
+          return !a
+        })
       }
     }
     document.addEventListener('keydown', atalho)
@@ -76,7 +91,7 @@ function PainelIAInterno() {
     setTexto('')
     setCarregando(true)
     try {
-      const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: proximas, caminho }) })
+      const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagens: proximas, caminho, pensar }) })
       const dados = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; propostas?: Proposta[] }
       setMensagens([...proximas, { role: 'assistant', content: comoTexto(dados.resposta ?? dados.erro) || 'Não foi possível consultar a IA.' }])
       setPropostas(Array.isArray(dados.propostas) && dados.propostas.length ? dados.propostas.map((p) => ({ ...p, resumo: comoTexto(p.resumo) })) : null)
@@ -111,7 +126,7 @@ function PainelIAInterno() {
 
   if (!aberto) {
     return (
-      <button type="button" onClick={() => setAberto(true)} title="Assistente (Ctrl+J)" aria-label="Abrir o assistente" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
+      <button type="button" onClick={abrir} title="Assistente (Ctrl+J)" aria-label="Abrir o assistente" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
         <Sparkles className="h-5 w-5" />
       </button>
     )
@@ -121,7 +136,21 @@ function PainelIAInterno() {
       <header className="flex items-center gap-2 border-b border-borda px-3 py-2.5">
         <Sparkles className="h-4 w-4 text-petroleo" />
         <h2 className="flex-1 text-corpo font-semibold">Assistente</h2>
-        <span className="rounded-full bg-fundo px-2 py-0.5 text-legenda text-texto-3">confirma antes de gravar</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={pensar}
+          title="Pensar: respostas melhores em pedidos difíceis, porém mais lentas e mais caras. Só funciona com o DeepSeek."
+          onClick={() => {
+            setPensar(!pensar)
+            try {
+              localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
+            } catch {}
+          }}
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-legenda font-semibold ${pensar ? 'bg-petroleo text-white' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+        >
+          <Brain className="h-3 w-3" /> Pensar {pensar ? 'ligado' : 'desligado'}
+        </button>
         <button type="button" aria-label="Fechar" onClick={() => setAberto(false)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">

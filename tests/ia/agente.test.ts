@@ -71,8 +71,37 @@ describe('assistente (fase 1)', () => {
     expect(texto).toBe('Criar 1 tarefa com 30 subtarefas na lista “Aurum Belém”: “Novembro”')
   })
 
+  it('devolve o raciocínio do provedor nas chamadas seguintes do laço (DeepSeek exige)', async () => {
+    let visto: unknown
+    const chamar: ChamarModelo = async (mensagens) => {
+      const ultima = mensagens.at(-1)!
+      if (ultima.role === 'tool') {
+        visto = mensagens.find((m) => m.role === 'assistant' && 'reasoning_content' in m)
+        return { content: 'ok' }
+      }
+      return { content: null, reasoning_content: 'pensei nisto', tool_calls: [{ id: 'c1', type: 'function', function: { name: 'descrever_plataforma', arguments: '{}' } }] }
+    }
+    await conversar({ mensagens: [{ role: 'user', content: 'oi' }], ctx, caminho: '/', hoje: '2026-10-14', chamar })
+    expect(visto).toMatchObject({ reasoning_content: 'pensei nisto' })
+  })
+
   it('para depois de muitas rodadas', async () => {
     const chamar: ChamarModelo = async () => ({ content: null, tool_calls: [{ id: 'x', type: 'function', function: { name: 'descrever_plataforma', arguments: '{}' } }] })
     expect(await conversar({ mensagens: [{ role: 'user', content: 'x' }], ctx, caminho: '/', hoje: '2026-10-14', chamar })).toEqual({ tipo: 'resposta', texto: expect.stringContaining('longa demais') })
+  })
+})
+
+describe('botão Pensar', () => {
+  it('resume a conversa anterior dentro da última pergunta (o modo pensar do DeepSeek não aceita histórico sem raciocínio)', async () => {
+    const { achatarConversa } = await import('@/ia/modelo')
+    expect(achatarConversa([{ role: 'user', content: 'oi' }])).toEqual([{ role: 'user', content: 'oi' }])
+    const [m] = achatarConversa([
+      { role: 'user' as const, content: 'liste as listas' },
+      { role: 'assistant' as const, content: 'São 3.' },
+      { role: 'user' as const, content: 'e a primeira?' },
+    ])
+    expect(m.content).toContain('Pessoa: liste as listas')
+    expect(m.content).toContain('Assistente: São 3.')
+    expect(m.content.endsWith('Pergunta atual: e a primeira?')).toBe(true)
   })
 })

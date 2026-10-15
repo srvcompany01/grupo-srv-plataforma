@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dataDeHoje } from '@/dominio/filtros'
 import { conversar, type Mensagem } from '@/ia/agente'
 import { resumirChamada } from '@/ia/resumo'
-import { chamarProvedor, configIA } from '@/ia/modelo'
+import { achatarConversa, chamarProvedor, comPensar, configIA } from '@/ia/modelo'
 import { papelPodeUsarIA } from '@/ia/acesso'
 import { usuarioAtual } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const config = configIA()
   if (!config) return NextResponse.json({ erro: 'A IA ainda não foi configurada (falta a chave IA_API_KEY).' }, { status: 503 })
 
-  const corpo = (await req.json().catch(() => null)) as { mensagens?: Mensagem[]; caminho?: string } | null
+  const corpo = (await req.json().catch(() => null)) as { mensagens?: Mensagem[]; caminho?: string; pensar?: boolean } | null
   const mensagens = (corpo?.mensagens ?? [])
     .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
     .slice(-12)
@@ -25,12 +25,13 @@ export async function POST(req: Request) {
 
   try {
     const sb = await criarClienteServidor()
+    const pensar = corpo?.pensar === true && config.deepseek
     const resposta = await conversar({
-      mensagens,
+      mensagens: pensar ? achatarConversa(mensagens) : mensagens,
       ctx: { sb, userId: eu.id, nome: eu.nome, papel: eu.papel, escopo: 'write' },
       caminho: String(corpo?.caminho ?? '/').slice(0, 200),
       hoje: dataDeHoje(new Date()),
-      chamar: chamarProvedor(config),
+      chamar: chamarProvedor(comPensar(config, pensar)),
     })
     if (resposta.tipo === 'resposta') return NextResponse.json({ resposta: resposta.texto })
     // Proposta: nada foi gravado. A tela mostra o resumo e só executa depois do "Confirmar".

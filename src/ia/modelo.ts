@@ -11,11 +11,16 @@ export function configIA() {
   const chave = process.env.IA_API_KEY
   if (!chave) return null
   const modelos = (process.env.IA_MODELO ?? '').split(',').map((m) => m.trim()).filter(Boolean)
-  return { chave, baseUrl: (process.env.IA_BASE_URL ?? PADRAO_IA.baseUrl).replace(/\/$/, ''), modelos: modelos.length ? modelos : [...PADRAO_IA.modelos] }
+  const baseUrl = (process.env.IA_BASE_URL ?? PADRAO_IA.baseUrl).replace(/\/$/, '')
+  // DeepSeek: o modo "pensar" vem ligado e, com ferramentas, exige devolver o raciocínio a cada chamada (senão dá erro 400).
+  // Para tarefas simples ele só encarece, então fica desligado, salvo IA_PENSAR=on.
+  const deepseek = baseUrl.includes('deepseek.com')
+  const desligarPensar = deepseek && process.env.IA_PENSAR !== 'on'
+  return { chave, baseUrl, deepseek, modelos: modelos.length ? modelos : [...PADRAO_IA.modelos], desligarPensar }
 }
 
 type Config = NonNullable<ReturnType<typeof configIA>>
-type Corpo = { choices?: { message?: { content?: unknown; tool_calls?: { id?: string; function?: { name?: string; arguments?: unknown } }[] } }[] }
+type Corpo = { choices?: { message?: { content?: unknown; reasoning_content?: unknown; tool_calls?: { id?: string; function?: { name?: string; arguments?: unknown } }[] } }[] }
 
 /** Alguns provedores devolvem o texto em partes (lista) ou os argumentos já como objeto: aqui tudo vira texto. */
 const comoTexto = (v: unknown): string | null =>
@@ -35,7 +40,7 @@ export function chamarProvedor(config: Config): ChamarModelo {
           resposta = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.chave}` },
-            body: JSON.stringify({ model: modelo, messages: mensagens, tools: ferramentas, tool_choice: 'auto', temperature: 0.2 }),
+            body: JSON.stringify({ model: modelo, messages: mensagens, tools: ferramentas, tool_choice: 'auto', temperature: 0.2, ...(config.desligarPensar ? { thinking: { type: 'disabled' } } : {}) }),
             signal: AbortSignal.timeout(20_000),
           })
         } catch {
@@ -47,6 +52,7 @@ export function chamarProvedor(config: Config): ChamarModelo {
           if (!m) throw new Error('A IA não devolveu resposta.')
           return {
             content: comoTexto(m.content),
+            reasoning_content: typeof m.reasoning_content === 'string' && m.reasoning_content ? m.reasoning_content : undefined,
             tool_calls: m.tool_calls?.map((t, i) => ({ id: t.id || `chamada-${i}`, type: 'function' as const, function: { name: t.function?.name ?? '', arguments: comoTexto(t.function?.arguments) ?? '{}' } })),
           }
         }
@@ -68,4 +74,18 @@ export function chamarProvedor(config: Config): ChamarModelo {
         : `A IA respondeu com erro (${ultimo}).`,
     )
   }
+}
+
+/**
+ * Botão "Pensar" do painel: só tem efeito no DeepSeek. Ligado, o raciocínio dele é usado; como esse modo exige devolver o raciocínio
+ * de cada resposta anterior (que não guardamos entre perguntas), a conversa anterior vai resumida em texto, dentro da própria pergunta.
+ */
+export function comPensar(config: Config, pensar: boolean): Config {
+  return config.deepseek ? { ...config, desligarPensar: !pensar } : config
+}
+
+export function achatarConversa<T extends { role: 'user' | 'assistant'; content: string }>(mensagens: T[]): { role: 'user'; content: string }[] {
+  if (mensagens.length <= 1) return mensagens as { role: 'user'; content: string }[]
+  const anteriores = mensagens.slice(0, -1).map((m) => `${m.role === 'user' ? 'Pessoa' : 'Assistente'}: ${m.content}`).join('\n')
+  return [{ role: 'user', content: `Conversa até aqui:\n${anteriores}\n\nPergunta atual: ${mensagens.at(-1)!.content}` }]
 }

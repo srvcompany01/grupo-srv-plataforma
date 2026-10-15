@@ -5,10 +5,11 @@ import { esquemaDaFerramenta } from './esquema'
 export type Mensagem = { role: 'user' | 'assistant'; content: string }
 type ChamadaDeFerramenta = { id: string; type: 'function'; function: { name: string; arguments: string } }
 type MensagemApi =
-  | { role: 'system' | 'user' | 'assistant'; content: string | null; tool_calls?: ChamadaDeFerramenta[] }
+  | { role: 'system' | 'user' | 'assistant'; content: string | null; tool_calls?: ChamadaDeFerramenta[]; reasoning_content?: string }
   | { role: 'tool'; tool_call_id: string; name: string; content: string }
 
-export type RespostaModelo = { content: string | null; tool_calls?: ChamadaDeFerramenta[] }
+/** `reasoning_content`: raciocínio devolvido por alguns provedores (DeepSeek); precisa voltar nas chamadas seguintes do mesmo laço. */
+export type RespostaModelo = { content: string | null; tool_calls?: ChamadaDeFerramenta[]; reasoning_content?: string }
 export type ChamarModelo = (mensagens: MensagemApi[], ferramentas: unknown[]) => Promise<RespostaModelo>
 
 const MAX_PASSOS = 8
@@ -65,7 +66,7 @@ export async function conversar(opcoes: { mensagens: Mensagem[]; ctx: Contexto; 
   for (let passo = 0; passo < MAX_PASSOS; passo++) {
     const r = await chamar(mensagens, definicoes)
     if (!r.tool_calls?.length) return { tipo: 'resposta', texto: (r.content ?? '').trim() || 'Não consegui montar uma resposta. Tente reformular.' }
-    mensagens.push({ role: 'assistant', content: r.content ?? null, tool_calls: r.tool_calls })
+    mensagens.push({ role: 'assistant', content: r.content ?? null, tool_calls: r.tool_calls, ...(r.reasoning_content ? { reasoning_content: r.reasoning_content } : {}) })
     const propostas: Proposta[] = []
     for (const chamada of r.tool_calls) {
       const f = ferramentas.find((x) => x.nome === chamada.function.name)
