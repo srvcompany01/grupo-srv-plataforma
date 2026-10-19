@@ -40,3 +40,17 @@ describe('leads das landing pages', () => {
     expect(descricao).toContain('utmSource=instagram')
   })
 })
+
+import { LANDINGS } from '@/dominio/landings'
+import { rotaPublica } from '@/dominio/acesso'
+
+describe('landing pages no app', () => {
+  it('toda landing responde sem login, com seus arquivos e a API de leads', () => {
+    for (const slug of LANDINGS) {
+      expect(rotaPublica(`/${slug}`), slug).toBe(true)
+      expect(rotaPublica(`/lp/${slug}/index.html`), slug).toBe(true)
+    }
+    expect(rotaPublica('/api/leads')).toBe(true)
+    expect(rotaPublica('/inicio')).toBe(false)
+  })
+})
