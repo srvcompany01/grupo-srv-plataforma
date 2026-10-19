@@ -88,3 +88,17 @@ export async function ordenarGaleria(sb: Supabase, ids: string[]): Promise<void>
     if (!r.count) throw { code: '42501' }
   }
 }
+
+/** Clientes em que ESTA pessoa marcou "trabalhei hoje" no dia informado (a RLS só mostra as marcas dela). */
+export async function clientesTrabalhadosEm(sb: Supabase, dia: string): Promise<Set<string>> {
+  const { data, error } = await sb.from('client_work_marks').select('client_id').eq('day', dia)
+  if (error) throw error
+  return new Set(data.map((m) => m.client_id))
+}
+
+export async function marcarTrabalhado(sb: Supabase, usuarioId: string, clienteId: string, dia: string, marcado: boolean): Promise<void> {
+  const { error } = marcado
+    ? await sb.from('client_work_marks').upsert({ user_id: usuarioId, client_id: clienteId, day: dia }, { onConflict: 'user_id,client_id,day', ignoreDuplicates: true })
+    : await sb.from('client_work_marks').delete().eq('client_id', clienteId).eq('day', dia)
+  if (error) throw error
+}

@@ -2,11 +2,15 @@ import Link from 'next/link'
 import { iniciais } from '@/dominio/clientes-galeria'
 import { ROTULO_STATUS_CLIENTE, type Cliente } from '@/servicos/clientes-plataforma'
 import type { Capa } from '@/servicos/clientes-galeria'
+import { BotaoTrabalhado } from './BotaoTrabalhado'
 
 export type InfoCartao = { id: string; nome: string; texto: string; cor?: string }
 
-export function CartaoCliente({ cliente: c, capa, info }: { cliente: Pick<Cliente, 'id' | 'nome' | 'cor' | 'status' | 'interno'>; capa?: Capa; info: InfoCartao[] }) {
+export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }: { cliente: Pick<Cliente, 'id' | 'nome' | 'cor' | 'status' | 'interno'>; capa?: Capa; info: InfoCartao[]; trabalhadoHoje?: boolean }) {
   return (
+    // O botão fica ao lado do link (não dentro dele), por cima da capa.
+    <div className="relative h-full">
+    <BotaoTrabalhado clienteId={c.id} nome={c.nome} marcado={trabalhadoHoje} />
     <Link
       href={`/clientes/${c.id}`}
       className="group flex h-full flex-col overflow-hidden rounded-xl border border-borda bg-white transition-[border-color,transform] hover:-translate-y-0.5 hover:border-borda-forte focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25"
@@ -49,5 +53,6 @@ export function CartaoCliente({ cliente: c, capa, info }: { cliente: Pick<Client
         )}
       </div>
     </Link>
+    </div>
   )
 }

@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
-import { lerFormCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
+import { dataDeHoje } from '@/dominio/filtros'
+import { lerFormCliente, marcarTrabalhado, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
 // Cliente do usuário: a RLS só permite admin e gestores.
 
@@ -60,6 +61,16 @@ export async function ordenarGaleriaAcao(ids: string[]): Promise<Resultado> {
   if (unicos.length === 0 || unicos.length > 500 || unicos.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) return { erro: 'Ordem inválida.' }
   const sb = await criarClienteServidor()
   const r = await tentar(() => ordenarGaleria(sb, unicos), 'Ordem salva.')
+  revalidatePath('/clientes')
+  return r
+}
+
+/** "Já trabalhei neste cliente hoje": liga ou desliga a marca do dia (a data é a do servidor, no fuso de Belém; zera sozinha à meia-noite). */
+export async function marcarTrabalhadoHojeAcao(clienteId: string, marcado: boolean): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (!/^[0-9a-f-]{36}$/i.test(clienteId)) return { erro: 'Cliente inválido.' }
+  const sb = await criarClienteServidor()
+  const r = await tentar(() => marcarTrabalhado(sb, eu.id, clienteId, dataDeHoje(new Date()), marcado), marcado ? 'Marcado: você trabalhou neste cliente hoje.' : 'Marca de hoje removida.')
   revalidatePath('/clientes')
   return r
 }

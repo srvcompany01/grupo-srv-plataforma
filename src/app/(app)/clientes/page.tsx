@@ -4,7 +4,8 @@ import { formatarCampoCliente, ordenarGaleriaClientes } from '@/dominio/clientes
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
-import { listarClientes } from '@/servicos/clientes-plataforma'
+import { clientesTrabalhadosEm, listarClientes } from '@/servicos/clientes-plataforma'
+import { dataDeHoje } from '@/dominio/filtros'
 import { criarCliente } from './acoes'
 import { CartaoCliente } from './CartaoCliente'
 import { FormCliente } from './FormCliente'
@@ -16,6 +17,9 @@ export default async function Clientes() {
   const [todosClientes, campos, valores, capas] = await Promise.all([listarClientes(sb), listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
   // O cliente interno (Grupo SRV) continua existindo para as listas internas, mas não aparece na galeria.
   const clientes = todosClientes.filter((c) => !c.interno)
+  // Sem a migration das marcas, a galeria abre normalmente (só sem o botão marcado).
+  const hoje = dataDeHoje(new Date())
+  const trabalhados = await clientesTrabalhadosEm(sb, hoje).catch(() => new Set<string>())
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
   const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
@@ -35,12 +39,13 @@ export default async function Clientes() {
       {clientes.length === 0 && <EstadoVazio icone={Users} titulo="Nenhum cliente cadastrado ainda" descricao={podeCriar ? 'Use "Novo cliente" acima para cadastrar o primeiro.' : undefined} />}
       <GaleriaOrdenavel
         podeOrdenar={podeCriar}
+        hoje={hoje}
         itens={ordenarGaleriaClientes(clientes).map((c) => {
           const info = camposNaCapa.flatMap((campo) => {
             const valor = valores[c.id]?.[campo.id]
             return valor ? [{ id: campo.id, nome: campo.nome, texto: formatarCampoCliente(campo.tipo, valor), cor: campo.tipo === 'selecao' ? campo.opcoes.find((o) => o.nome === valor)?.cor : undefined }] : []
           })
-          return { id: c.id, no: <CartaoCliente cliente={c} capa={capas[c.id]} info={info} /> }
+          return { id: c.id, no: <CartaoCliente cliente={c} capa={capas[c.id]} info={info} trabalhadoHoje={trabalhados.has(c.id)} /> }
         })}
       />
     </div>
