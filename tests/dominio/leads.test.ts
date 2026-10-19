@@ -54,3 +54,53 @@ describe('landing pages no app', () => {
     expect(rotaPublica('/inicio')).toBe(false)
   })
 })
+
+import { CAMPOS_RECONHECIDOS, montarRespostas, normalizarRotulo, respostasBasicas } from '@/dominio/leads-campos'
+
+describe('lead → campos do formulário (CRM & Vendas)', () => {
+  const p = PedidoLead.parse({ payload: payload() }).payload
+  const campo = (key: string, label: string, tipo: string | null, opcoes: string[] = [], required = false) => ({ key, label, tipo, opcoes, required })
+
+  it('reconhece o campo pelo nome, sem acento nem maiúscula, e converte para o tipo do campo', () => {
+    const r = montarRespostas(p, [
+      campo('title', 'Título', null),
+      campo('c1', 'TELEFONE', 'phone'),
+      campo('c2', 'e-mail', 'email'),
+      campo('c3', 'Pontuação', 'number'),
+      campo('c4', 'Faturamento mensal', 'dropdown', ['Até R$50 mil', 'De R$100 mil a R$299 mil']),
+      campo('c5', 'Data do lead', 'date'),
+      campo('c6', 'Diagnóstico concluído', 'checkbox'),
+      campo('c7', 'Origem', 'text'),
+    ])
+    expect(r.c1).toBe('91999999999')
+    expect(r.c2).toBe('fabricio@empresa.com.br')
+    expect(r.c3).toBe(61)
+    expect(r.c4).toBe('De R$100 mil a R$299 mil')
+    expect(r.c5).toBe('2026-10-19')
+    expect(r.c6).toBe(true)
+    expect(r.c7).toBe('instagram')
+    expect(String(r.description)).toContain('Telefone: 91999999999')
+  })
+
+  it('valor que o campo não aceita (opção inexistente) é pulado e campos desconhecidos ficam vazios', () => {
+    const r = montarRespostas(p, [campo('c4', 'Faturamento mensal', 'dropdown', ['Só estas', 'Opções']), campo('c9', 'Prioridade interna', 'text')])
+    expect(r.c4).toBeUndefined()
+    expect(r.c9).toBeUndefined()
+    expect(r.title).toBe('[Lead] Grupo SRV — Fabrício Saraiva')
+  })
+
+  it('campo de texto obrigatório sem dado recebe "—" para o banco não recusar o lead', () => {
+    const sem = { ...p, company: { ...p.company, websiteOrInstagram: undefined } }
+    const r = respostasBasicas(sem, [campo('c8', 'Site ou Instagram', 'text', [], true), campo('c4', 'Faturamento', 'dropdown', ['x'], true)])
+    expect(r.c8).toBe('—')
+    expect(r.c4).toBeUndefined()
+  })
+
+  it('os nomes reconhecidos não se repetem entre campos diferentes', () => {
+    const vistos = new Map<string, string>()
+    for (const c of CAMPOS_RECONHECIDOS) for (const n of [c.nome, ...c.apelidos].map(normalizarRotulo)) {
+      expect(vistos.get(n) ?? c.nome, n).toBe(c.nome)
+      vistos.set(n, c.nome)
+    }
+  })
+})

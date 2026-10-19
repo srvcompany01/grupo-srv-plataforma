@@ -79,7 +79,9 @@ export async function buscarFormularioPublico(sb: Supabase, token: string): Prom
   }
 }
 
-export async function enviarFormulario(sb: Supabase, token: string, respostas: Json): Promise<void> {
-  const { error } = await sb.rpc('enviar_formulario', { p_token: token, p_respostas: respostas })
+/** Cria a tarefa do formulário e devolve o id dela. */
+export async function enviarFormulario(sb: Supabase, token: string, respostas: Json): Promise<string> {
+  const { data, error } = await sb.rpc('enviar_formulario', { p_token: token, p_respostas: respostas })
   if (error) throw error
+  return data
 }
