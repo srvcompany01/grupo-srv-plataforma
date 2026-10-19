@@ -5,7 +5,6 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import {
   AtSign,
   CheckSquare,
-  ChevronDown,
   FileText,
   Hash,
   Inbox,
@@ -68,23 +67,6 @@ function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
 }
 
-/** Ícone do item; ao passar o mouse vira a seta de abrir/recolher (quando há o que abrir). */
-function IconeAlternavel({ aberto, alternar, rotulo, ativo, children }: { aberto: boolean; alternar: () => void; rotulo: string; ativo: boolean; children: ReactNode }) {
-  if (!ativo) return <span className="flex h-4 w-4 shrink-0 items-center justify-center">{children}</span>
-  return (
-    <button
-      type="button"
-      onClick={alternar}
-      aria-label={`${aberto ? 'Recolher' : 'Expandir'} ${rotulo}`}
-      aria-expanded={aberto}
-      className="group/seta relative flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-marca"
-    >
-      <span className="flex transition-opacity group-hover/seta:opacity-0 group-focus-visible/seta:opacity-0">{children}</span>
-      <ChevronDown aria-hidden="true" className={`absolute h-3.5 w-3.5 text-lat-fg opacity-0 transition group-hover/seta:opacity-100 group-focus-visible/seta:opacity-100 ${aberto ? '' : '-rotate-90'}`} />
-    </button>
-  )
-}
-
 function ZonaRaiz({ visivel }: { visivel: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'root', data: { tipo: 'root' } })
   if (!visivel) return null
@@ -138,58 +120,58 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
   )
 }
 
+/** Pasta vira um subtítulo em negrito dentro do cartão do espaço, com as listas logo abaixo (sem recolher). */
 function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; podeGerir: boolean; podeArrastar: boolean }) {
-  const { fechado, alternar } = useContext(Recolhidos)
-  const aberta = !fechado(pasta.id)
-  const setAberta = () => alternar(pasta.id)
-
   return (
-    <div>
-      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className={`${item} group w-full`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberta} alternar={setAberta} rotulo={pasta.nome} ativo>
-          <span style={{ color: pasta.cor }}><IconeVisual icone={pasta.icone} emoji={pasta.emoji} className="h-3.5 w-3.5" /></span>
-        </IconeAlternavel>
-        <button type="button" onClick={setAberta} className="min-w-0 flex-1 truncate text-left">{pasta.nome}</button>
-        <span className="ml-auto text-legenda tabular-nums text-lat-3">{pasta.listas.length}</span>
+    <div className="mt-2">
+      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className="group flex h-7 items-center gap-2 rounded-md px-2 text-legenda font-semibold text-lat-fg hover:bg-lat-hover" style={{ paddingLeft: 8 + nivel * 14 }}>
+        <span className="min-w-0 flex-1 truncate">{pasta.nome}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
       </LinhaNavegacao>
-      {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+      {pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
     </div>
   )
 }
 
+/** Espaço na raiz vira um cartão com o nome em maiúsculas e as listas dentro; espaço dentro de espaço vira subtítulo. */
 function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
-  const { fechado, alternar } = useContext(Recolhidos)
-  const aberto = !fechado(espaco.id)
   const href = `/espacos/${espaco.id}`
-  const temConteudo = espaco.filhos.length + espaco.pastas.length + espaco.listas.length > 0
+  const cartao = nivel === 0
 
-  return (
-    <div>
-      <LinhaNavegacao tipo="space" id={espaco.id} nome={espaco.nome} habilitado={podeArrastar} podeEditar={podeEditarEspaco} podeExcluir={podeEditarEspaco} fixa={!!espaco.slug} className={`${item} group ${caminho === href ? ativo : ''}`} style={{ paddingLeft: 8 + nivel * 14 }}>
-        <IconeAlternavel aberto={aberto} alternar={() => alternar(espaco.id)} rotulo={espaco.nome} ativo={temConteudo}>
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] text-white" style={{ background: espaco.cor }}>
-            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
+  const corpo = (
+    <>
+      <LinhaNavegacao
+        tipo="space"
+        id={espaco.id}
+        nome={espaco.nome}
+        habilitado={podeArrastar}
+        podeEditar={podeEditarEspaco}
+        podeExcluir={podeEditarEspaco}
+        fixa={!!espaco.slug}
+        className={`${item} group ${cartao ? 'h-9 font-semibold uppercase tracking-rotulo text-lat-fg' : 'mt-2 font-semibold text-lat-fg'} ${caminho === href ? ativo : ''}`}
+        style={{ paddingLeft: 8 + nivel * 14 }}
+      >
+        {cartao && (
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: espaco.cor }}>
+            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-3 w-3" />
           </span>
-        </IconeAlternavel>
+        )}
         <Link href={href} draggable={false} className="min-w-0 flex-1 truncate">
           {espaco.nome}
         </Link>
         {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
       </LinhaNavegacao>
-
-      {aberto && (
-        <div>
-          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
-          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-          {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-        </div>
-      )}
-    </div>
+      <div className={cartao ? 'mt-1' : ''}>
+        {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+        {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+        {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
+      </div>
+    </>
   )
+  return cartao ? <section className="rounded-xl border border-lat-borda p-2">{corpo}</section> : <div>{corpo}</div>
 }
 
 /** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
@@ -291,7 +273,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
               {acaoTopo}
             </div>
 
-            <nav className="space-y-0.5">
+            <nav className="space-y-2">
               {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
