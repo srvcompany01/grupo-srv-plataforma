@@ -2,7 +2,8 @@ import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Json } from '@/infra/supabase/tipos'
 import type { PayloadLead } from '@/dominio/leads'
 import { montarRespostas, respostasBasicas } from '@/dominio/leads-campos'
-import { buscarFormularioPublico, enviarFormulario } from './formularios'
+import { landingDoSource } from '@/dominio/landings'
+import { buscarFormularioPublico, enviarFormulario, tokenDoFormularioDaLanding } from './formularios'
 
 /**
  * Guarda o lead (tabela landing_leads) e, se houver um formulário público configurado (LEADS_FORM_TOKEN), cria também a tarefa
@@ -17,7 +18,9 @@ export async function registrarLead(payload: PayloadLead): Promise<{ duplicado: 
   else if (error.code === '23505') return { duplicado: true }
   else console.error('Lead: não foi possível guardar na tabela', error)
 
-  const token = process.env.LEADS_FORM_TOKEN
+  // O formulário que recebe é o ligado à landing na aba Formulários; a variável LEADS_FORM_TOKEN só vale como reserva.
+  const landing = landingDoSource(payload.source)
+  const token = (landing && (await tokenDoFormularioDaLanding(sb, landing).catch(() => null))) || process.env.LEADS_FORM_TOKEN
   if (token) {
     try {
       // Os campos do formulário (CRM & Vendas) recebem os dados do lead pelo nome. Se o banco recusar algum valor, tenta de novo

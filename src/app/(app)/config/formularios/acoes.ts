@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { CampoFormulario } from '@/dominio/formularios'
+import { LANDINGS_COM_FORMULARIO } from '@/dominio/landings'
 import { gerarToken } from '@/dominio/token'
 import { exigirAdmin } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -16,6 +17,8 @@ export type EntradaFormulario = {
   responsavelId: string
   nome: string
   descricao: string
+  /** Nome de uma landing (src/dominio/landings.ts) ou null. */
+  landing: string | null
   campos: CampoFormulario[]
 }
 
@@ -27,9 +30,10 @@ export async function salvarFormularioAcao(id: string | null, e: EntradaFormular
   const nome = e.nome.trim()
   if (!nome || nome.length > 120) return { erro: 'O nome deve ter de 1 a 120 caracteres.' }
   if (!UUID.test(e.listaId) || !UUID.test(e.responsavelId) || (e.clienteId && !UUID.test(e.clienteId))) return { erro: 'Escolha a lista, o responsável e o cliente.' }
+  if (e.landing && !LANDINGS_COM_FORMULARIO.some((l) => l.slug === e.landing)) return { erro: 'Landing page inválida.' }
   const campos = e.campos.map((c) => ({ key: c.key, label: c.label.trim(), required: c.key === 'title' || c.required }))
   const sb = await criarClienteServidor()
-  const base = { list_id: e.listaId, client_id: e.clienteId, assignee_id: e.responsavelId, name: nome, description: e.descricao.trim() || null, fields: campos as unknown as Json }
+  const base = { list_id: e.listaId, client_id: e.clienteId, assignee_id: e.responsavelId, name: nome, description: e.descricao.trim() || null, landing: e.landing || null, fields: campos as unknown as Json }
   const r = await tentar(async () => {
     const { error } = id ? await sb.from('forms').update(base).eq('id', id) : await sb.from('forms').insert({ ...base, token: gerarToken() })
     if (error) throw error

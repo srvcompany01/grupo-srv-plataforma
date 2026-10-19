@@ -7,6 +7,7 @@ import { EstadoVazio } from '@/componentes/EstadoVazio'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import type { CampoFormulario } from '@/dominio/formularios'
+import { LANDINGS_COM_FORMULARIO } from '@/dominio/landings'
 import { botaoPrimario, botaoSecundario, campo as estiloCampo } from '@/lib/ui'
 import type { DadosFormularios, Formulario } from '@/servicos/formularios'
 import { alternarFormularioAcao, arquivarFormularioAcao, salvarFormularioAcao } from './acoes'
@@ -42,7 +43,7 @@ export function GerenciarFormularios({ formularios, listas, clientes, equipe }: 
             <li key={f.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{f.nome}</p>
-                <p className="truncate text-corpo text-texto-2">{caminho(f.listaId)} · {f.campos.length} campos</p>
+                <p className="truncate text-corpo text-texto-2">{caminho(f.listaId)} · {f.campos.length} campos{f.landing && ` · recebe os leads de /${f.landing}`}</p>
               </div>
               <label className="flex items-center gap-2 text-corpo">
                 <input type="checkbox" checked={f.ativo} disabled={pendente} onChange={(e) => iniciar(async () => void avisar(await alternarFormularioAcao(f.id, e.target.checked), true))} />
@@ -73,6 +74,7 @@ function EditorFormulario({ formulario, dados, aoFechar }: { formulario: Formula
   const [listaId, setListaId] = useState(formulario?.listaId ?? '')
   const [clienteId, setClienteId] = useState(formulario?.clienteId ?? '')
   const [responsavelId, setResponsavelId] = useState(formulario?.responsavelId ?? '')
+  const [landing, setLanding] = useState(formulario?.landing ?? '')
   const [escolhidos, setEscolhidos] = useState<Record<string, { required: boolean; label: string }>>(
     Object.fromEntries((formulario?.campos ?? [{ key: 'title', label: 'Título', required: true }]).map((c) => [c.key, { required: c.required, label: c.label }])),
   )
@@ -93,7 +95,7 @@ function EditorFormulario({ formulario, dados, aoFechar }: { formulario: Formula
   const salvar = () =>
     iniciar(async () => {
       const campos = oferecidos.filter((c) => escolhidos[c.key]).map((c) => ({ key: c.key, label: escolhidos[c.key].label, required: escolhidos[c.key].required }))
-      const r = await salvarFormularioAcao(formulario?.id ?? null, { listaId, clienteId: clienteId || null, responsavelId, nome, descricao, campos })
+      const r = await salvarFormularioAcao(formulario?.id ?? null, { listaId, clienteId: clienteId || null, responsavelId, nome, descricao, landing: landing || null, campos })
       if (avisar(r, true)) aoFechar()
     })
 
@@ -116,6 +118,14 @@ function EditorFormulario({ formulario, dados, aoFechar }: { formulario: Formula
             <option value="">Cliente: o padrão da lista</option>
             {dados.clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
+          <label className="block space-y-1">
+            <span className="text-legenda text-texto-3">Landing page ligada (opcional)</span>
+            <select className={estiloCampo} value={landing} onChange={(e) => setLanding(e.target.value)}>
+              <option value="">Nenhuma: só o link público do formulário</option>
+              {LANDINGS_COM_FORMULARIO.map((l) => <option key={l.slug} value={l.slug}>{l.nome} (/{l.slug})</option>)}
+            </select>
+            <span className="block text-legenda text-texto-3">Os envios dessa página criam a tarefa nesta lista, preenchendo os campos que tiverem o mesmo nome dos dados do lead (Telefone, Empresa, Pontuação…). Cada landing tem um só formulário.</span>
+          </label>
           {listaId && (
             <fieldset className="space-y-1.5 rounded-lg border border-borda p-3">
               <legend className="px-1 text-corpo font-medium">Campos do formulário</legend>

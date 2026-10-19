@@ -16,6 +16,8 @@ export type Formulario = {
   descricao: string | null
   token: string
   ativo: boolean
+  /** Landing page (src/dominio/landings.ts) cujos envios este formulário recebe. */
+  landing: string | null
   campos: CampoFormulario[]
 }
 
@@ -32,7 +34,7 @@ export type DadosFormularios = {
 export async function dadosFormularios(sb: Supabase): Promise<DadosFormularios> {
   const [gestao, linhas, clientes, equipe] = await Promise.all([
     dadosGestaoCampos(sb),
-    sb.from('forms').select('id, list_id, client_id, assignee_id, name, description, token, active, fields').is('archived_at', null).order('created_at'),
+    sb.from('forms').select('id, list_id, client_id, assignee_id, name, description, token, active, landing, fields').is('archived_at', null).order('created_at'),
     listarClientes(sb),
     listarEquipe(sb),
   ])
@@ -46,6 +48,7 @@ export async function dadosFormularios(sb: Supabase): Promise<DadosFormularios> 
       descricao: f.description,
       token: f.token,
       ativo: f.active,
+      landing: f.landing,
       campos: f.fields as CampoFormulario[],
     })),
     listas: gestao.listas.map((l) => ({
@@ -84,4 +87,10 @@ export async function enviarFormulario(sb: Supabase, token: string, respostas: J
   const { data, error } = await sb.rpc('enviar_formulario', { p_token: token, p_respostas: respostas })
   if (error) throw error
   return data
+}
+
+/** Token do formulário ativo ligado a uma landing (cliente de serviço: quem envia não tem login). null = nenhum ligado. */
+export async function tokenDoFormularioDaLanding(sb: Supabase, landing: string): Promise<string | null> {
+  const { data } = await sb.from('forms').select('token').eq('landing', landing).eq('active', true).is('archived_at', null).maybeSingle()
+  return data?.token ?? null
 }

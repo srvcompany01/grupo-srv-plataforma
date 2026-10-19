@@ -41,17 +41,22 @@ describe('leads das landing pages', () => {
   })
 })
 
-import { LANDINGS } from '@/dominio/landings'
+import { landingDoSource, SLUGS_DAS_LANDINGS } from '@/dominio/landings'
 import { rotaPublica } from '@/dominio/acesso'
 
 describe('landing pages no app', () => {
   it('toda landing responde sem login, com seus arquivos e a API de leads', () => {
-    for (const slug of LANDINGS) {
+    for (const slug of SLUGS_DAS_LANDINGS) {
       expect(rotaPublica(`/${slug}`), slug).toBe(true)
       expect(rotaPublica(`/lp/${slug}/index.html`), slug).toBe(true)
     }
     expect(rotaPublica('/api/leads')).toBe(true)
     expect(rotaPublica('/inicio')).toBe(false)
+  })
+
+  it('o source que a página manda aponta para a landing certa', () => {
+    expect(landingDoSource('landing_page_maquina_de_vendas')).toBe('maquinadevendas')
+    expect(landingDoSource('qualquer-outra-coisa')).toBeNull()
   })
 })
 
