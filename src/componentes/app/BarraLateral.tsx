@@ -150,12 +150,12 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         podeEditar={podeEditarEspaco}
         podeExcluir={podeEditarEspaco}
         fixa={!!espaco.slug}
-        className={`${item} group ${cartao ? 'h-9 font-semibold uppercase tracking-rotulo text-lat-fg' : 'mt-2 font-semibold text-lat-fg'} ${caminho === href ? ativo : ''}`}
+        className={`${item} group ${cartao ? 'h-7 font-semibold uppercase text-lat-fg' : 'mt-2 font-semibold text-lat-fg'} ${caminho === href ? ativo : ''}`}
         style={{ paddingLeft: 8 + nivel * 14 }}
       >
         {cartao && (
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: espaco.cor }}>
-            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-3 w-3" />
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-white" style={{ background: espaco.cor }}>
+            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
           </span>
         )}
         <Link href={href} draggable={false} className="min-w-0 flex-1 truncate">
@@ -171,7 +171,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
       </div>
     </>
   )
-  return cartao ? <section className="rounded-xl border border-lat-borda p-2">{corpo}</section> : <div>{corpo}</div>
+  return cartao ? <section className="rounded-xl border border-lat-borda p-1.5">{corpo}</section> : <div>{corpo}</div>
 }
 
 /** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
@@ -273,7 +273,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
               {acaoTopo}
             </div>
 
-            <nav className="space-y-2">
+            <nav className="space-y-1.5">
               {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
