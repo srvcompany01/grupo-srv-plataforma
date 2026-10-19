@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Landing pages estáticas copiadas (arquivos prontos, de terceiros/gerados): não são código do app.
+    "public/lp/**",
   ]),
 ]);
 

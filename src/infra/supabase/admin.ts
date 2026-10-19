@@ -8,7 +8,7 @@ import type { Database } from './tipos'
  * - convidar usuários e definir papel/ativo (config/usuarios/acoes.ts), sempre após exigirAdmin();
  * - scripts/criar-admin.ts;
  * - formulário público (app/f/[token]): só a RPC enviar_formulario e a leitura do formulário ativo;
- * - Fase 2: endpoint público de leads.
+ * - endpoint público de leads das landing pages (app/api/leads): grava em landing_leads e envia o formulário de leads.
  */
 export function criarClienteAdmin() {
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY

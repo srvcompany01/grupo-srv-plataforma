@@ -1,6 +1,8 @@
+import { LANDINGS } from './landings'
+
 export type PapelUsuario = 'admin' | 'gestor' | 'membro' | 'cliente'
 
-const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/f', '/api/cron', '/api/mcp', '/api/dev-arquivos']
+const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/f', '/api/cron', '/api/mcp', '/api/dev-arquivos', '/api/leads', '/lp', ...LANDINGS.map((slug) => `/${slug}`)]
 
 const comecaCom = (caminho: string, prefixo: string) => caminho === prefixo || caminho.startsWith(`${prefixo}/`)
 
