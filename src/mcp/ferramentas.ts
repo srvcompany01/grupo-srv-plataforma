@@ -17,6 +17,10 @@ import * as documentos from '@/servicos/documentos'
 import { anexarTexto, conteudoAtual } from '@/servicos/documentos-yjs'
 import { arvoreDePaginas } from '@/dominio/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
+import * as financeiro from '@/servicos/financeiro'
+import * as telas from '@/servicos/telas'
+import { CATEGORIAS, TIPOS_LANCAMENTO, lerMes, limitesDoMes, resumir } from '@/dominio/financeiro'
+import { calcularFunil, lerDadosFunil } from '@/dominio/funil'
 import type { NoEspaco, NoPasta, ItemLista } from '@/dominio/arvore-espacos'
 
 /**
@@ -77,6 +81,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
+        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
+        'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
@@ -453,6 +459,82 @@ export const FERRAMENTAS: Ferramenta[] = [
       await criarComentario(sb, { tarefaId: a.tarefaId, texto: a.texto, interno: a.interno, mencoes: [], anexos: [] })
       return { ok: true }
     },
+  }),
+  definir({
+    nome: 'listar_lancamentos',
+    descricao: 'Lançamentos financeiros (entradas e despesas) de um mês, do mais recente ao mais antigo. Só o admin tem acesso. Valores em reais.',
+    escrita: false,
+    entrada: { mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Mês (AAAA-MM); padrão: o mês atual') },
+    executar: async ({ sb }, a) => {
+      const { de, ate } = limitesDoMes(lerMes(a.mes, dataDeHoje(new Date())))
+      return (await financeiro.listarLancamentos(sb, de, ate)).map((l) => ({ id: l.id, tipo: l.tipo, categoria: l.categoria, descricao: l.descricao, valor: l.centavos / 100, data: l.data, pago: l.pago, cliente: l.clienteNome }))
+    },
+  }),
+
+  definir({
+    nome: 'resumir_financeiro',
+    descricao: 'Resumo do mês: entradas, despesas, saldo (só o que foi pago), a receber, a pagar, previsto e totais por categoria. Só o admin tem acesso. Valores em reais.',
+    escrita: false,
+    entrada: { mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Mês (AAAA-MM); padrão: o mês atual') },
+    executar: async ({ sb }, a) => {
+      const mes = lerMes(a.mes, dataDeHoje(new Date()))
+      const { de, ate } = limitesDoMes(mes)
+      const r = resumir(await financeiro.listarLancamentos(sb, de, ate))
+      const reais = (c: number) => c / 100
+      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, valor: reais(c.centavos) })) }
+    },
+  }),
+
+  definir({
+    nome: 'criar_lancamento',
+    descricao: `Cria um lançamento financeiro (só o admin). tipo: entrada ou saida (despesa). Categorias sugeridas — entrada: ${CATEGORIAS.entrada.join(', ')}; saida: ${CATEGORIAS.saida.join(', ')}. Valor em reais (positivo). repetirMeses > 1 repete todo mês (os próximos ficam pendentes).`,
+    escrita: true,
+    entrada: {
+      tipo: z.enum(TIPOS_LANCAMENTO),
+      categoria: z.string().min(1).max(60),
+      valor: z.number().positive().max(999999999),
+      data: data('Data do lançamento'),
+      descricao: z.string().max(200).optional(),
+      pago: z.boolean().default(true).describe('Já recebido/pago'),
+      clienteId: id('Cliente ligado ao lançamento').optional(),
+      repetirMeses: z.number().int().min(1).max(36).default(1),
+    },
+    executar: async ({ sb }, a) => ({ criados: await financeiro.criarLancamentos(sb, { tipo: a.tipo, categoria: a.categoria, descricao: a.descricao ?? '', centavos: Math.round(a.valor * 100), data: a.data, pago: a.pago, clienteId: a.clienteId ?? null }, a.repetirMeses) }),
+  }),
+
+  definir({
+    nome: 'listar_funis',
+    descricao: 'Funis visuais da equipe (nome, id e quando mudou).',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => (await telas.listarTelas(sb, 'funil')).map((f) => ({ id: f.id, nome: f.titulo, atualizadoEm: f.atualizadoEm })),
+  }),
+
+  definir({
+    nome: 'calcular_funil',
+    descricao: 'Etapas, ligações (taxa de conversão) e o resultado calculado de um funil: visitantes por etapa, leads, vendas, receita, lucro, custo por lead, custo por venda e ROAS. Valores em reais.',
+    escrita: false,
+    entrada: { funilId: id('Id do funil') },
+    executar: async ({ sb }, a) => {
+      const tela = await telas.buscarTela(sb, 'funil', a.funilId)
+      if (!tela) throw new Error('Funil não encontrado.')
+      const d = lerDadosFunil(tela.dados)
+      const r = calcularFunil(d)
+      return {
+        nome: tela.titulo,
+        etapas: d.nos.map((n) => ({ id: n.id, nome: n.nome, tipo: n.tipo, visitantes: r.nos[n.id].visitantes, investimento: n.custo, receita: r.nos[n.id].receita })),
+        ligacoes: d.ligacoes.map((l) => ({ de: l.de, para: l.para, taxaPercentual: l.taxa, pessoas: r.fluxo[l.id] })),
+        totais: r.totais,
+      }
+    },
+  }),
+
+  definir({
+    nome: 'listar_quadros',
+    descricao: 'Quadros brancos da equipe (nome, id e quando mudou). O desenho em si só existe na tela.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => (await telas.listarTelas(sb, 'quadro')).map((q) => ({ id: q.id, nome: q.titulo, atualizadoEm: q.atualizadoEm })),
   }),
 ]
 

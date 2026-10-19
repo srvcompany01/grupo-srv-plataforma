@@ -7,12 +7,14 @@ import {
   Clock,
   Ellipsis,
   FileText,
+  Filter,
   Home,
   Layers,
   MessageCircle,
   PenTool,
   Settings,
   Trophy,
+  Wallet,
   UsersRound,
   Users,
   Video,
@@ -37,7 +39,10 @@ const ITENS: Item[] = [
   { id: 'equipes', rotulo: 'Equipes', icone: UsersRound },
   { id: 'documentos', rotulo: 'Documentos', icone: FileText, href: '/documentos' },
   { id: 'paineis', rotulo: 'Painéis', icone: ChartColumn },
-  { id: 'quadros', rotulo: 'Quadros', icone: PenTool },
+  { id: 'quadros', rotulo: 'Quadros', icone: PenTool, href: '/quadros' },
+  { id: 'funis', rotulo: 'Funis', icone: Filter, href: '/funis' },
+  // Financeiro: só o admin enxerga (o banco também recusa os demais).
+  { id: 'financeiro', rotulo: 'Financeiro', icone: Wallet, href: '/financeiro' },
   // Formulários já existe, mas a gestão fica em Configurações (só admin).
   { id: 'formularios', rotulo: 'Formulários', icone: ClipboardList, href: '/config/formularios' },
   { id: 'clipes', rotulo: 'Clipes', icone: Video },
@@ -52,7 +57,7 @@ const base = 'flex w-full flex-col items-center gap-0.5 rounded-lg px-0 py-1.5 t
 export function NavegacaoGlobal({ admin, ordem }: { admin: boolean; ordem: string[] }) {
   const caminho = usePathname()
   // Só o admin gerencia formulários; para os demais o item fica como "Em breve".
-  const itens = ITENS.map((i) => (i.href === '/config/formularios' && !admin ? { ...i, href: undefined } : i))
+  const itens = ITENS.filter((i) => admin || i.id !== 'financeiro').map((i) => (i.href === '/config/formularios' && !admin ? { ...i, href: undefined } : i))
   const ativo = (i: Item) => (i.ativoEm ?? (i.href ? [i.href] : [])).some((p) => caminho === p || caminho.startsWith(`${p}/`))
 
   return (

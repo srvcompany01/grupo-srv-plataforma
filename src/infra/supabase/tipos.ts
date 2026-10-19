@@ -954,6 +954,26 @@ export type Database = {
           },
         ]
       }
+      finance_entries: {
+        Row: { amount_cents: number; category: string; client_id: string | null; created_at: string; created_by: string | null; description: string; id: string; kind: string; occurred_on: string; paid: boolean }
+        Insert: { amount_cents: number; category: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string; id?: string; kind: string; occurred_on: string; paid?: boolean }
+        Update: { amount_cents?: number; category?: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string; id?: string; kind?: string; occurred_on?: string; paid?: boolean }
+        Relationships: [
+          {
+            foreignKeyName: "finance_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canvases: {
+        Row: { archived_at: string | null; created_at: string; created_by: string | null; data: Json; id: string; kind: string; title: string; updated_at: string }
+        Insert: { archived_at?: string | null; created_at?: string; created_by?: string | null; data?: Json; id?: string; kind: string; title?: string; updated_at?: string }
+        Update: { archived_at?: string | null; created_at?: string; created_by?: string | null; data?: Json; id?: string; kind?: string; title?: string; updated_at?: string }
+        Relationships: []
+      }
       saved_views: {
         Row: { list_id: string; params: string; updated_at: string; user_id: string }
         Insert: { list_id: string; params: string; updated_at?: string; user_id?: string }
