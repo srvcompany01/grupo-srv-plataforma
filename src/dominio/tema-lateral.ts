@@ -27,7 +27,6 @@ export function lerFechados(valor: string | undefined): string[] {
 
 export const escreverFechados = (ids: Iterable<string>): string => [...ids].slice(-MAX_FECHADOS).join('.')
 
-export const COOKIE_ORDEM_GLOBAL = 'srv-nav-ordem-global'
 export const COOKIE_ORDEM_INICIO = 'srv-nav-ordem-inicio'
 const ID_ITEM = /^[a-z0-9-]{1,30}$/
 

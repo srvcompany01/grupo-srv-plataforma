@@ -3,20 +3,17 @@
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
-  AtSign,
   CheckSquare,
+  ClipboardList,
   FileText,
-  Hash,
-  Inbox,
+  Filter,
   LayoutDashboard,
-  MessageCircle,
   PanelLeftClose,
+  PenTool,
   Pin,
-  Reply,
   Settings,
-  Star,
   Users,
-  Video,
+  Wallet,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -43,17 +40,6 @@ const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (
 const item =
   'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
-
-/** Módulo que ainda não existe: aparece como no ClickUp, desabilitado e com a etiqueta "Em breve". */
-function ItemEmBreve({ rotulo, Icone }: { rotulo: string; Icone: IconeLucide }) {
-  return (
-    <span role="link" aria-disabled="true" title={`${rotulo}: em breve`} className="flex h-7 cursor-not-allowed items-center gap-2 rounded-md px-2 text-legenda text-lat-3">
-      <Icone className="h-3.5 w-3.5" />
-      <span className="min-w-0 flex-1 truncate">{rotulo}</span>
-      <span className="shrink-0 rounded-full bg-lat-hover px-1.5 py-0.5 text-micro font-medium tracking-normal text-lat-2">Em breve</span>
-    </span>
-  )
-}
 
 function TituloSecao({ children }: { children: ReactNode }) {
   return (
@@ -174,8 +160,8 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
   return cartao ? <section className="rounded-xl border border-lat-borda p-1.5">{corpo}</section> : <div>{corpo}</div>
 }
 
-/** Segunda camada: árvore de espaços, pastas e listas. `mobile` = dentro do menu do celular (traz também os atalhos da navegação principal). */
-export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], acaoTopo, mobile = false }: PropsPainel & { acaoTopo?: ReactNode; mobile?: boolean }) {
+/** Barra lateral única: atalhos dos módulos no topo e, abaixo, cada departamento (espaço) com as suas listas. */
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], acaoTopo }: PropsPainel & { acaoTopo?: ReactNode }) {
   const caminho = usePathname()
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
   const recolhimento = useMemo(
@@ -232,37 +218,27 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
     <Recolhidos.Provider value={recolhimento}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
-        {mobile && (
-          <>
-            <nav className="space-y-0.5">
-              {link('/inicio', 'Minhas tarefas', CheckSquare)}
-              {link('/documentos', 'Documentos', FileText)}
-              {link('/clientes', 'Clientes', Users)}
-              {papel === 'admin' && link('/config', 'Configurações', Settings)}
-            </nav>
-            <div className="mx-2 my-3 border-t border-lat-borda" />
-          </>
-        )}
-
         <TituloSecao>Início</TituloSecao>
         <ListaOrdenavel
           className="space-y-0.5"
           cookie={COOKIE_ORDEM_INICIO}
           ordemInicial={ordemInicio}
           itens={[
-            { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
-            { id: 'caixa', no: <ItemEmBreve rotulo="Caixa de entrada" Icone={Inbox} /> },
-            { id: 'respostas', no: <ItemEmBreve rotulo="Respostas" Icone={Reply} /> },
-            { id: 'comentarios', no: <ItemEmBreve rotulo="Comentários atribuídos" Icone={AtSign} /> },
-            { id: 'reunioes', no: <ItemEmBreve rotulo="Reuniões" Icone={Video} /> },
             { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
+            { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
+            { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
+            { id: 'documentos', no: link('/documentos', 'Documentos', FileText) },
+            { id: 'quadros', no: link('/quadros', 'Quadros', PenTool) },
+            { id: 'funis', no: link('/funis', 'Funis', Filter) },
+            ...(papel === 'admin'
+              ? [
+                  { id: 'financeiro', no: link('/financeiro', 'Financeiro', Wallet) },
+                  { id: 'formularios', no: link('/config/formularios', 'Formulários', ClipboardList) },
+                  { id: 'config', no: link('/config', 'Configurações', Settings) },
+                ]
+              : []),
           ]}
         />
-        <div className="mx-2 my-3 border-t border-lat-borda" />
-        <TituloSecao>Favoritos</TituloSecao>
-        <nav className="space-y-0.5">
-          <ItemEmBreve rotulo="Marcar como favorito" Icone={Star} />
-        </nav>
         <div className="mx-2 my-3 border-t border-lat-borda" />
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
@@ -294,12 +270,6 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           </SortableContext>
         </DndContext>
 
-        <div className="mt-3 border-t border-lat-borda pt-2">
-          <TituloSecao>Canais</TituloSecao>
-          <ItemEmBreve rotulo="Adicionar canal" Icone={Hash} />
-          <TituloSecao>Mensagens diretas</TituloSecao>
-          <ItemEmBreve rotulo="Nova mensagem" Icone={MessageCircle} />
-        </div>
       </div>
 
       <div className="shrink-0 border-t border-lat-borda p-2">
@@ -373,7 +343,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-0 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -383,7 +353,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
         className={`hidden h-[calc(100dvh-3.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
           recolhida
-            ? `fixed bottom-0 left-16 top-14 z-40 shadow-flutuante transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-[calc(100%+64px)]'}`
+            ? `fixed bottom-0 left-0 top-14 z-40 shadow-flutuante transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-full'}`
             : 'sticky top-14 z-20 shrink-0'
         }`}
       >

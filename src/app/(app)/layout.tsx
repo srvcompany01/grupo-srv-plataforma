@@ -1,12 +1,11 @@
 import { cookies } from 'next/headers'
 import { BarraLateral } from '@/componentes/app/BarraLateral'
 import { CabecalhoTopo } from '@/componentes/app/CabecalhoTopo'
-import { NavegacaoGlobal } from '@/componentes/app/NavegacaoGlobal'
 import { PainelIA } from '@/componentes/app/PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
 import { Toaster } from '@/componentes/ui/sonner'
 import { cssTema } from '@/dominio/tema'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_GLOBAL, COOKIE_ORDEM_INICIO, lerFechados, lerOrdem, lerLarguraLateral, lerModoLateral } from '@/dominio/tema-lateral'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, lerFechados, lerOrdem, lerLarguraLateral, lerModoLateral } from '@/dominio/tema-lateral'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarArvore } from '@/servicos/espacos'
@@ -21,12 +20,11 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
   const sb = await criarClienteServidor()
   const [navegacao, cronometro, avisos, naoLidos, tema] = await Promise.all([listarArvore(sb), cronometroAtivo(sb, eu.id), listarAvisos(sb), contarNaoLidos(sb), temaAtual(sb)])
   const painel = { navegacao, papel: eu.papel, cronometro, fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value), ordemInicio: lerOrdem(jar.get(COOKIE_ORDEM_INICIO)?.value) }
-  // Três camadas: faixa global (64px), cabeçalho do topo e, abaixo dele, a barra de espaços + o conteúdo.
+  // Cabeçalho do topo e, abaixo dele, a barra lateral única + o conteúdo.
   return (
     <div className="flex min-h-dvh bg-fundo">
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
       <style>{cssTema(tema)}</style>
-      <NavegacaoGlobal admin={eu.papel === 'admin'} ordem={lerOrdem(jar.get(COOKIE_ORDEM_GLOBAL)?.value)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <CabecalhoTopo painel={painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} nome={eu.nome} papel={eu.papel} />
         <div className="flex min-h-0 flex-1">
