@@ -954,6 +954,38 @@ export type Database = {
           },
         ]
       }
+      agenda_events: {
+        Row: { all_day: boolean; created_at: string; created_by: string; description: string; ends_at: string; id: string; repeat: string; repeat_until: string | null; starts_at: string; title: string; updated_at: string; visibility: string }
+        Insert: { all_day?: boolean; created_at?: string; created_by?: string; description?: string; ends_at: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at: string; title: string; updated_at?: string; visibility?: string }
+        Update: { all_day?: boolean; created_at?: string; created_by?: string; description?: string; ends_at?: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at?: string; title?: string; updated_at?: string; visibility?: string }
+        Relationships: []
+      }
+      agenda_event_people: {
+        Row: { event_id: string; user_id: string }
+        Insert: { event_id: string; user_id: string }
+        Update: { event_id?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_event_people_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_links: {
+        Row: { created_at: string; email: string; refresh_token: string; user_id: string }
+        Insert: { created_at?: string; email?: string; refresh_token: string; user_id: string }
+        Update: { created_at?: string; email?: string; refresh_token?: string; user_id?: string }
+        Relationships: []
+      }
+      agenda_google_events: {
+        Row: { event_id: string; google_event_id: string; user_id: string }
+        Insert: { event_id: string; google_event_id: string; user_id: string }
+        Update: { event_id?: string; google_event_id?: string; user_id?: string }
+        Relationships: []
+      }
       finance_entries: {
         Row: { amount_cents: number; category: string; client_id: string | null; created_at: string; created_by: string | null; description: string; id: string; kind: string; occurred_on: string; paid: boolean }
         Insert: { amount_cents: number; category: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string; id?: string; kind: string; occurred_on: string; paid?: boolean }

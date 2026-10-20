@@ -3,6 +3,7 @@
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
+  CalendarDays,
   CheckSquare,
   ClipboardList,
   FileText,
@@ -225,6 +226,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           ordemInicial={ordemInicio}
           itens={[
             { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
+            { id: 'agenda', no: link('/agenda', 'Agenda', CalendarDays) },
             { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
             { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
             { id: 'documentos', no: link('/documentos', 'Documentos', FileText) },

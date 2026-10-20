@@ -1,4 +1,5 @@
-import { Users } from 'lucide-react'
+import { BarChart3, Users } from 'lucide-react'
+import Link from 'next/link'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
 import { formatarCampoCliente, ordenarGaleriaClientes } from '@/dominio/clientes-galeria'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -24,9 +25,14 @@ export default async function Clientes() {
   const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
     <div className="page-shell">
-      <div>
-        <p className="eyebrow">Relacionamento</p>
-        <h1 className="page-title mt-1">Clientes</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Relacionamento</p>
+          <h1 className="page-title mt-1">Clientes</h1>
+        </div>
+        <Link href="/clientes/relatorio" className="flex items-center gap-1.5 rounded-full border border-borda px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
+          <BarChart3 className="h-3.5 w-3.5" /> Relatório de trabalho
+        </Link>
       </div>
       {podeCriar && (
         <details className="group">

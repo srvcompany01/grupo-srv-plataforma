@@ -5,7 +5,10 @@ import { CATALOGO_CAMPOS, TIPOS_CAMPO, type TipoCampoPersonalizado } from '@/dom
 import { PRIORIDADES } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
-import { listarClientes } from '@/servicos/clientes-plataforma'
+import { listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
+import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
+import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
+import * as agenda from '@/servicos/agenda'
 import * as campos from '@/servicos/campos-personalizados'
 import { criarComentario } from '@/servicos/comentarios'
 import { listarArvore } from '@/servicos/espacos'
@@ -65,6 +68,23 @@ const resumoEspaco = (e: NoEspaco): unknown => ({
 
 const STATUS_CATEGORIAS = ['todo', 'in_progress', 'done'] as const
 
+// Carregado na hora: o serviço do Google é server-only (usa a chave mestra).
+const googleAgenda = () => import('@/servicos/google-agenda')
+
+const hora = (descricao: string) => z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe(`${descricao} (HH:MM, fuso de Belém)`)
+const entradaCompromisso = {
+  titulo: z.string().min(1).max(120).describe('Título'),
+  descricao: z.string().max(2000).optional().describe('Descrição (texto simples)'),
+  data: data('Dia do compromisso (o primeiro, se for fixo)'),
+  horaInicio: hora('Início').optional(),
+  horaFim: hora('Fim').optional(),
+  diaInteiro: z.boolean().optional().describe('Dia inteiro (ignora as horas)'),
+  visibilidade: z.enum(['privado', 'equipe', 'selecionados']).optional().describe('privado (padrão), equipe ou selecionados'),
+  pessoas: z.array(z.string().uuid()).max(50).optional().describe('Com visibilidade selecionados: ids de listar_equipe'),
+  repetir: z.enum(['nunca', 'diario', 'semanal', 'mensal']).optional().describe('nunca (padrão), diario, semanal ou mensal'),
+  repetirAte: data('Último dia da repetição').nullable().optional(),
+}
+
 export const FERRAMENTAS: Ferramenta[] = [
   definir({
     nome: 'descrever_plataforma',
@@ -83,6 +103,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
+        'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
@@ -110,6 +131,19 @@ export const FERRAMENTAS: Ferramenta[] = [
     escrita: false,
     entrada: {},
     executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status })),
+  }),
+
+  definir({
+    nome: 'relatorio_clientes_trabalhados',
+    descricao: 'Ranking de em quais clientes a pessoa conectada trabalhou (botão "trabalhei hoje" da galeria) nos últimos 7, 14 ou 30 dias: dias trabalhados por cliente, último dia, saudável (≥ 2 dias por semana) ou precisando de atenção, e quantos clientes por dia.',
+    escrita: false,
+    entrada: { dias: z.union([z.literal(7), z.literal(14), z.literal(30)]).optional().describe('Período em dias; padrão 7') },
+    executar: async ({ sb }, a) => {
+      const dias = diasDoPeriodo(dataDeHoje(new Date()), a.dias ?? 7)
+      const [clientes, marcas] = await Promise.all([listarClientes(sb), marcasDeTrabalhoDesde(sb, dias[0])])
+      const r = rankingDeTrabalho(clientes.filter((c) => !c.interno && c.status !== 'encerrado'), marcas, dias)
+      return { de: dias[0], ate: dias.at(-1), minimoSaudavel: r.minimo, ranking: r.ranking.map(({ id, nome, dias, ultimo, saudavel }) => ({ id, nome, dias, ultimo, saudavel })), porDia: r.porDia }
+    },
   }),
 
   definir({
@@ -535,6 +569,71 @@ export const FERRAMENTAS: Ferramenta[] = [
     escrita: false,
     entrada: {},
     executar: async ({ sb }) => (await telas.listarTelas(sb, 'quadro')).map((q) => ({ id: q.id, nome: q.titulo, atualizadoEm: q.atualizadoEm })),
+  }),
+
+  definir({
+    nome: 'listar_agenda',
+    descricao: 'Agenda da pessoa dona do token entre duas datas (padrão: a semana atual, de segunda a domingo; no máximo 62 dias). Traz os compromissos da plataforma (cada repetição de um fixo aparece no seu dia) e os eventos do Google Agenda dela, se conectado (origem: google, só leitura).',
+    escrita: false,
+    entrada: { de: data('Primeiro dia').optional(), ate: data('Último dia').optional() },
+    executar: async ({ sb, userId }, a) => {
+      const semana = semanaDe(dataDeHoje(new Date()))
+      const de = a.de ?? semana[0]
+      const ate = a.ate ?? (a.de ? somarDias(a.de, 6) : semana[6])
+      if (ate < de || ate > somarDias(de, 61)) throw new Error('Período inválido: ate precisa ser depois de de, com no máximo 62 dias.')
+      const [compromissos, doGoogle, equipe] = await Promise.all([agenda.listarCompromissos(sb, de, ate), googleAgenda().then((g) => g.eventosDoGoogle(userId, de, ate)), listarEquipe(sb)])
+      const nome = new Map(equipe.map((p) => [p.id, p.nome]))
+      return [...ocorrencias(compromissos, de, ate), ...doGoogle]
+        .sort((x, y) => x.inicio.localeCompare(y.inicio))
+        .map((o) => ({
+          origem: o.compromisso ? 'plataforma' : 'google',
+          compromissoId: o.compromisso?.id,
+          titulo: o.titulo,
+          data: dataLocal(o.inicio),
+          inicio: o.diaInteiro ? null : horaLocal(o.inicio),
+          fim: o.diaInteiro ? null : horaLocal(o.fim),
+          diaInteiro: o.diaInteiro,
+          ...(o.compromisso && {
+            descricao: o.compromisso.descricao,
+            visibilidade: o.compromisso.visibilidade,
+            pessoas: o.compromisso.pessoas.map((p) => nome.get(p) ?? p),
+            repetir: o.compromisso.repetir,
+            repetirAte: o.compromisso.repetirAte,
+            criadoPor: nome.get(o.compromisso.criadoPor) ?? o.compromisso.criadoPor,
+          }),
+        }))
+    },
+  }),
+
+  definir({
+    nome: 'criar_compromisso',
+    descricao: 'Cria um compromisso na agenda (e no Google Agenda de quem vê, se conectado). Sem horaInicio/horaFim, use diaInteiro: true.',
+    escrita: true,
+    entrada: entradaCompromisso,
+    executar: async (ctx, a) => {
+      const v = lerCompromisso(a, ctx.papel === 'admin' || ctx.papel === 'gestor')
+      if ('erro' in v) throw new Error(v.erro)
+      const compromissoId = await agenda.criarCompromisso(ctx.sb, v.campos)
+      await (await googleAgenda()).sincronizarCompromisso(compromissoId)
+      return { compromissoId }
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_compromisso',
+    descricao: 'Altera um compromisso (só quem criou, ou o admin). Informe só o que muda; o resto continua igual. Vale para todas as repetições de um fixo.',
+    escrita: true,
+    entrada: { compromissoId: id('Compromisso (compromissoId de listar_agenda)'), ...z.object(entradaCompromisso).partial().shape },
+    executar: async (ctx, { compromissoId, ...a }) => {
+      const atual = await agenda.buscarCompromisso(ctx.sb, compromissoId)
+      if (!atual) throw new Error('Compromisso não encontrado.')
+      const definidos = Object.fromEntries(Object.entries(a).filter(([, x]) => x !== undefined)) as Partial<EntradaCompromisso>
+      const v = lerCompromisso({ ...paraEntrada(atual), ...definidos }, ctx.papel === 'admin' || ctx.papel === 'gestor')
+      if ('erro' in v) throw new Error(v.erro)
+      await agenda.atualizarCompromisso(ctx.sb, compromissoId, v.campos)
+      await (await googleAgenda()).sincronizarCompromisso(compromissoId)
+      return { ok: true }
+    },
   }),
 ]
 

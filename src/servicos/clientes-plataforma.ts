@@ -96,6 +96,11 @@ export async function clientesTrabalhadosEm(sb: Supabase, dia: string): Promise<
   return new Set(data.map((m) => m.client_id))
 }
 
+/** Marcas "trabalhei hoje" DESTA pessoa a partir de um dia (inclusive), para o relatório. */
+export async function marcasDeTrabalhoDesde(sb: Supabase, de: string): Promise<{ clienteId: string; dia: string }[]> {
+  return dados(await sb.from('client_work_marks').select('client_id, day').gte('day', de)).map((m) => ({ clienteId: m.client_id, dia: m.day }))
+}
+
 export async function marcarTrabalhado(sb: Supabase, usuarioId: string, clienteId: string, dia: string, marcado: boolean): Promise<void> {
   const { error } = marcado
     ? await sb.from('client_work_marks').upsert({ user_id: usuarioId, client_id: clienteId, day: dia }, { onConflict: 'user_id,client_id,day', ignoreDuplicates: true })
