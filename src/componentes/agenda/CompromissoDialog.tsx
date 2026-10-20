@@ -56,11 +56,13 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
       setAberto(false)
       if (!compromisso) setF(vazio(hoje))
     })
-  const excluir = () =>
+  // Confirma ANTES da transição: dentro dela o diálogo de confirmação só apareceria no fim (e o fim espera a resposta).
+  const excluir = async () => {
+    if (!(await confirmar({ titulo: `Excluir "${compromisso!.titulo}"?`, descricao: 'Sai da agenda de todos que o veem e do Google Agenda deles. Se for fixo, todas as repetições somem.', confirmar: 'Excluir', perigo: true }))) return
     iniciar(async () => {
-      if (!(await confirmar({ titulo: `Excluir "${compromisso!.titulo}"?`, descricao: 'Sai da agenda de todos que o veem e do Google Agenda deles. Se for fixo, todas as repetições somem.', confirmar: 'Excluir', perigo: true }))) return
       if (avisar(await excluirCompromissoAcao(compromisso!.id), true)) setAberto(false)
     })
+  }
   // Quem não é admin/gestor ainda vê a visibilidade de um compromisso compartilhado com ela, só sem mudar.
   const visibilidades = podeCompartilhar ? VISIBILIDADES : VISIBILIDADES.filter((v) => v.valor === f.visibilidade)
 
@@ -71,7 +73,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
       ) : (
         <DialogTrigger className={botaoPrimario}><Plus className="h-3.5 w-3.5" /> Novo compromisso</DialogTrigger>
       )}
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{compromisso ? (podeEditar ? 'Editar compromisso' : 'Compromisso') : 'Novo compromisso'}</DialogTitle>
           <DialogDescription>{podeEditar ? 'Quem vê o compromisso também o recebe no Google Agenda, se tiver conectado.' : 'Só quem criou pode alterar este compromisso.'}</DialogDescription>
@@ -111,7 +113,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
             {podeEditar && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <input className={`${campo} h-8 w-36 px-2`} value={nomeTag} onChange={(e) => setNomeTag(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && nomeTag.trim()) { e.preventDefault(); criarTag() } }} placeholder="Nova tag" maxLength={40} aria-label="Nome da nova tag" />
-                <div className="flex gap-0.5" role="radiogroup" aria-label="Cor da nova tag">
+                <div className="flex flex-wrap gap-0.5" role="radiogroup" aria-label="Cor da nova tag">
                   {CORES_PERSONALIZACAO.map((cor) => (
                     <button key={cor} type="button" role="radio" aria-checked={corTag === cor} aria-label={`Cor ${cor}`} onClick={() => setCorTag(cor)} className={`h-4 w-4 rounded-full ${corTag === cor ? 'ring-2 ring-texto ring-offset-1' : ''}`} style={{ background: cor }} />
                   ))}
@@ -120,7 +122,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
               </div>
             )}
           </div>
-          <div className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2">
             <label className="space-y-1 text-legenda text-texto-3">
               Data
               <input type="date" className={`${campo} h-9`} value={f.data} onChange={(e) => mudar({ data: e.target.value })} />

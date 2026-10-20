@@ -25,12 +25,12 @@ export function PainelEtiquetas({ tipo, titulo, linhas, extras = [] }: { tipo: '
     iniciar(async () => {
       if (avisar(await criarEtiquetaAcao(tipo, nome, cor), true)) setNome('')
     })
-  const excluir = (item: TagAgenda) =>
-    iniciar(async () => {
-      const descricao = tipo === 'tag' ? 'A tag sai de todos os compromissos que a usam.' : 'Os compromissos dela ficam sem categoria.'
-      if (!(await confirmar({ titulo: `Excluir a ${rotulo} "${item.nome}"?`, descricao, confirmar: 'Excluir', perigo: true }))) return
-      avisar(await excluirEtiquetaAcao(tipo, item.id), true)
-    })
+  // Confirma ANTES da transição (dentro dela o diálogo de confirmação não chega a aparecer).
+  const excluir = async (item: TagAgenda) => {
+    const descricao = tipo === 'tag' ? 'A tag sai de todos os compromissos que a usam.' : 'Os compromissos dela ficam sem categoria.'
+    if (!(await confirmar({ titulo: `Excluir a ${rotulo} "${item.nome}"?`, descricao, confirmar: 'Excluir', perigo: true }))) return
+    iniciar(async () => void avisar(await excluirEtiquetaAcao(tipo, item.id), true))
+  }
 
   const marca = (corItem: string, visivel?: boolean) =>
     visivel === undefined ? (

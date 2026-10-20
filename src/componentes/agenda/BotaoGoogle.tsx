@@ -16,11 +16,11 @@ export function BotaoGoogle({ email }: { email: string | null }) {
     // eslint-disable-next-line @next/next/no-html-link-for-pages
     return <a href="/api/google/conectar" className={botaoSecundario}><CalendarPlus className="h-3.5 w-3.5" /> Conectar Google Agenda</a>
   }
-  const desconectar = () =>
-    iniciar(async () => {
-      if (!(await confirmar({ titulo: 'Desconectar o Google Agenda?', descricao: 'Os compromissos da plataforma saem do seu Google e os eventos do Google deixam de aparecer aqui.', confirmar: 'Desconectar', perigo: true }))) return
-      avisar(await desconectarGoogleAcao(), true)
-    })
+  // Confirma ANTES da transição (dentro dela o diálogo de confirmação não chega a aparecer).
+  const desconectar = async () => {
+    if (!(await confirmar({ titulo: 'Desconectar o Google Agenda?', descricao: 'Os compromissos da plataforma saem do seu Google e os eventos do Google deixam de aparecer aqui.', confirmar: 'Desconectar', perigo: true }))) return
+    iniciar(async () => void avisar(await desconectarGoogleAcao(), true))
+  }
   return (
     <button type="button" onClick={desconectar} disabled={pendente} className={botaoSecundario} title="Clique para desconectar">
       <CalendarCheck2 className="h-3.5 w-3.5 text-sucesso" /> <span className="max-w-44 truncate">{email || 'Google conectado'}</span>

@@ -189,7 +189,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
             </div>
             {dias.map((dia) => (
               <div key={dia} className={`relative border-l border-borda ${dia === hoje ? 'bg-petroleo/[0.03]' : ''}`}>
-                {HORAS.slice(1).map((h) => <span key={h} className="pointer-events-none absolute inset-x-0 border-t border-borda/70" style={{ top: h * HORA_PX }} />)}
+                {HORAS.slice(1).map((h) => <span key={h} className="pointer-events-none absolute inset-x-0 border-t border-borda" style={{ top: h * HORA_PX }} />)}
                 {blocosDoDia(todas, dia).map((b) => {
                   const cor = corDe(b.ocorrencia)
                   const altura = Math.max(((b.ate - b.de) / 60) * HORA_PX, 18)
