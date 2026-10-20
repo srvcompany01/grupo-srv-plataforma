@@ -3,7 +3,7 @@
 import { Check, Plus } from 'lucide-react'
 import { useState, useTransition, type CSSProperties, type ReactNode } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { criarTagAgendaAcao, excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
+import { criarEtiquetaAcao, excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { REPETICOES, VISIBILIDADES, paraEntrada, type Compromisso, type EntradaCompromisso, type TagAgenda } from '@/dominio/agenda'
@@ -15,6 +15,7 @@ type Props = {
   equipe: { id: string; nome: string }[]
   clientes: { id: string; nome: string }[]
   tags: TagAgenda[]
+  categorias: TagAgenda[]
   /** Admin e gestor criam para a equipe ou para pessoas escolhidas. */
   podeCompartilhar: boolean
   /** Quem criou (ou o admin) edita; os demais só veem. */
@@ -25,9 +26,9 @@ type Props = {
   children?: ReactNode
 }
 
-const vazio = (hoje: string): Required<EntradaCompromisso> => ({ titulo: '', descricao: '', data: hoje, horaInicio: '09:00', horaFim: '10:00', diaInteiro: false, visibilidade: 'privado', pessoas: [], repetir: 'nunca', repetirAte: null, clienteId: null, tags: [] })
+const vazio = (hoje: string): Required<EntradaCompromisso> => ({ titulo: '', descricao: '', data: hoje, horaInicio: '09:00', horaFim: '10:00', diaInteiro: false, visibilidade: 'privado', pessoas: [], repetir: 'nunca', repetirAte: null, clienteId: null, tags: [], categoriaId: null })
 
-export function CompromissoDialog({ compromisso, equipe, clientes, tags, podeCompartilhar, podeEditar = true, hoje, className, estilo, children }: Props) {
+export function CompromissoDialog({ compromisso, equipe, clientes, tags, categorias, podeCompartilhar, podeEditar = true, hoje, className, estilo, children }: Props) {
   const [aberto, setAberto] = useState(false)
   const [f, setF] = useState(() => (compromisso ? paraEntrada(compromisso) : vazio(hoje)))
   const [pendente, iniciar] = useTransition()
@@ -42,10 +43,10 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, podeCom
   const [corTag, setCorTag] = useState<string>(CORES_PERSONALIZACAO[7])
   const criarTag = () =>
     iniciar(async () => {
-      const r = await criarTagAgendaAcao(nomeTag, corTag)
-      if (!avisar(r) || !r?.tag) return
-      setNovas((v) => [...v, r.tag!])
-      mudar({ tags: [...f.tags, r.tag.id] })
+      const r = await criarEtiquetaAcao('tag', nomeTag, corTag)
+      if (!avisar(r) || !r?.item) return
+      setNovas((v) => [...v, r.item!])
+      mudar({ tags: [...f.tags, r.item.id] })
       setNomeTag('')
     })
 
@@ -77,6 +78,14 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, podeCom
         </DialogHeader>
         <fieldset disabled={!podeEditar || pendente} className="space-y-3">
           <input className={`${campo} h-9`} value={f.titulo} onChange={(e) => mudar({ titulo: e.target.value })} placeholder="Título (ex.: Reunião de pauta)" maxLength={120} autoFocus aria-label="Título" />
+          <div className="grid grid-cols-2 gap-2">
+          <label className="block space-y-1 text-legenda text-texto-3">
+            Categoria
+            <select className={`${campo} h-9`} value={f.categoriaId ?? ''} onChange={(e) => mudar({ categoriaId: e.target.value || null })}>
+              <option value="">Sem categoria</option>
+              {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </label>
           <label className="block space-y-1 text-legenda text-texto-3">
             Cliente (opcional)
             <select className={`${campo} h-9`} value={f.clienteId ?? ''} onChange={(e) => mudar({ clienteId: e.target.value || null })}>
@@ -84,6 +93,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, podeCom
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </label>
+          </div>
           <div className="space-y-1.5">
             <p className="text-legenda text-texto-3">Tags</p>
             {todasTags.length > 0 && (

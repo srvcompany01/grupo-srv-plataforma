@@ -4,11 +4,11 @@ import { dados } from './resultado'
 
 // Compromissos com o cliente da pessoa logada: a RLS decide o que ela vê e o que pode mudar.
 
-export const CAMPOS_COMPROMISSO = 'id, title, description, starts_at, ends_at, all_day, visibility, repeat, repeat_until, created_by, client_id, agenda_event_people(user_id), agenda_event_tags(tag_id)'
+export const CAMPOS_COMPROMISSO = 'id, title, description, starts_at, ends_at, all_day, visibility, repeat, repeat_until, created_by, client_id, category_id, agenda_event_people(user_id), agenda_event_tags(tag_id)'
 
 type Linha = {
   id: string; title: string; description: string; starts_at: string; ends_at: string; all_day: boolean
-  visibility: string; repeat: string; repeat_until: string | null; created_by: string; client_id: string | null
+  visibility: string; repeat: string; repeat_until: string | null; created_by: string; client_id: string | null; category_id: string | null
   agenda_event_people: { user_id: string }[]; agenda_event_tags: { tag_id: string }[]
 }
 
@@ -26,11 +26,12 @@ export const paraCompromisso = (l: Linha): Compromisso => ({
   pessoas: l.agenda_event_people.map((p) => p.user_id),
   clienteId: l.client_id,
   tags: l.agenda_event_tags.map((t) => t.tag_id),
+  categoriaId: l.category_id,
 })
 
 const paraLinha = (c: CamposCompromisso) => ({
   title: c.titulo, description: c.descricao, starts_at: c.inicio, ends_at: c.fim, all_day: c.diaInteiro,
-  visibility: c.visibilidade, repeat: c.repetir, repeat_until: c.repetirAte, client_id: c.clienteId,
+  visibility: c.visibilidade, repeat: c.repetir, repeat_until: c.repetirAte, client_id: c.clienteId, category_id: c.categoriaId,
 })
 
 const semPermissao = () => new Error('row-level security: compromisso não encontrado ou sem permissão')
@@ -73,12 +74,22 @@ export async function excluirCompromisso(sb: Supabase, id: string): Promise<void
   if (!dados(await sb.from('agenda_events').delete().eq('id', id).select('id')).length) throw semPermissao()
 }
 
-export async function listarTagsAgenda(sb: Supabase): Promise<TagAgenda[]> {
-  return dados(await sb.from('agenda_tags').select('id, name, color').order('name')).map((t) => ({ id: t.id, nome: t.name, cor: t.color }))
+/** Tags e categorias da agenda: mesmo formato, tabelas diferentes. */
+export type TipoEtiqueta = 'tag' | 'categoria'
+const TABELA = { tag: 'agenda_tags', categoria: 'agenda_categories' } as const
+const paraEtiqueta = (t: { id: string; name: string; color: string; created_by: string | null }): TagAgenda => ({ id: t.id, nome: t.name, cor: t.color, criadoPor: t.created_by })
+
+export async function listarEtiquetas(sb: Supabase, tipo: TipoEtiqueta): Promise<TagAgenda[]> {
+  return dados(await sb.from(TABELA[tipo]).select('id, name, color, created_by').order('name')).map(paraEtiqueta)
 }
 
-export async function criarTagAgenda(sb: Supabase, nome: string, cor: string): Promise<TagAgenda> {
-  const { data, error } = await sb.from('agenda_tags').insert({ name: nome, color: cor }).select('id, name, color').single()
+export async function criarEtiqueta(sb: Supabase, tipo: TipoEtiqueta, nome: string, cor: string): Promise<TagAgenda> {
+  const { data, error } = await sb.from(TABELA[tipo]).insert({ name: nome, color: cor }).select('id, name, color, created_by').single()
   if (error) throw error
-  return { id: data.id, nome: data.name, cor: data.color }
+  return paraEtiqueta(data)
+}
+
+/** Some dos compromissos também (a tag sai deles; a categoria vira "sem categoria"). Só quem criou ou o admin. */
+export async function excluirEtiqueta(sb: Supabase, tipo: TipoEtiqueta, id: string): Promise<void> {
+  if (!dados(await sb.from(TABELA[tipo]).delete().eq('id', id).select('id')).length) throw semPermissao()
 }

@@ -48,6 +48,19 @@ describe('agenda', () => {
     expect(await ler(db, ana, `select * from agenda_event_tags`)).toEqual([])
   })
 
+  it('categorias: equipe vê, quem criou apaga, compromisso fica sem categoria', async () => {
+    const db = await criarBanco()
+    const ana = await criarUsuario(db, { role: 'membro' })
+    const bia = await criarUsuario(db, { role: 'membro' })
+    const [cat] = await ler<{ id: string }>(db, ana, `insert into agenda_categories (name, color) values ('Reuniões', '#3b82f6') returning id`)
+    expect(await ler(db, bia, `select name from agenda_categories`)).toEqual([{ name: 'Reuniões' }])
+    const [ev] = await ler<{ id: string }>(db, ana, NOVO, ['Pauta', 'privado'])
+    expect(await executar(db, ana, `update agenda_events set category_id = $2 where id = $1`, [ev.id, cat.id])).toBe(1)
+    expect(await executar(db, bia, `delete from agenda_categories where id = $1`, [cat.id])).toBe(0)
+    expect(await executar(db, ana, `delete from agenda_categories where id = $1`, [cat.id])).toBe(1)
+    expect(await ler(db, ana, `select category_id from agenda_events`)).toEqual([{ category_id: null }])
+  })
+
   it('membro só cria compromisso privado; vínculo com o Google fica fechado', async () => {
     const db = await criarBanco()
     const ana = await criarUsuario(db, { role: 'membro' })

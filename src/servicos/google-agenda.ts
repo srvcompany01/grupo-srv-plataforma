@@ -107,11 +107,16 @@ export async function sincronizarCompromisso(id: string): Promise<void> {
   if (!envolvidos.length) return
   const links = dados(await admin.from('google_calendar_links').select('user_id, refresh_token').in('user_id', envolvidos))
   if (!links.length) return
-  const [cliente, tags] = await Promise.all([
+  const [cliente, tags, categoria] = await Promise.all([
     c?.clienteId ? admin.from('clients').select('name').eq('id', c.clienteId).then(dados) : [],
     c?.tags.length ? admin.from('agenda_tags').select('name').in('id', c.tags).then(dados) : [],
+    c?.categoriaId ? admin.from('agenda_categories').select('name').eq('id', c.categoriaId).then(dados) : [],
   ])
-  const extras = [cliente.length ? `Cliente: ${cliente[0].name}` : '', tags.length ? `Tags: ${tags.map((t) => t.name).join(', ')}` : '']
+  const extras = [
+    categoria.length ? `Categoria: ${categoria[0].name}` : '',
+    cliente.length ? `Cliente: ${cliente[0].name}` : '',
+    tags.length ? `Tags: ${tags.map((t) => t.name).join(', ')}` : '',
+  ]
   const resultados = await Promise.allSettled(links.map(async (l) => {
     const a = await acesso(l.refresh_token)
     const mapa = mapas.find((m) => m.user_id === l.user_id)

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { gradeDoMes, horaLocal, lerCompromisso, ocorrencias, paraEntrada, publico, regraGoogle, semanaDe, type Compromisso } from '@/dominio/agenda'
+import { blocosDoDia, doDia, gradeDoMes, horaLocal, lerCompromisso, ocorrencias, paraEntrada, publico, regraGoogle, semanaDe, type Compromisso } from '@/dominio/agenda'
 
 const c = (p: Partial<Compromisso>): Compromisso => ({
   id: 'c1', titulo: 'Reunião', descricao: '', inicio: '2026-10-19T13:00:00.000Z', fim: '2026-10-19T14:00:00.000Z',
-  diaInteiro: false, visibilidade: 'privado', repetir: 'nunca', repetirAte: null, criadoPor: 'eu', pessoas: [], clienteId: null, tags: [], ...p,
+  diaInteiro: false, visibilidade: 'privado', repetir: 'nunca', repetirAte: null, criadoPor: 'eu', pessoas: [], clienteId: null, tags: [], categoriaId: null, ...p,
 })
 
 describe('agenda', () => {
@@ -42,6 +42,23 @@ describe('agenda', () => {
     // mensal no dia 31 pula os meses sem dia 31
     const mensal = c({ repetir: 'mensal', inicio: '2026-01-31T13:00:00.000Z', fim: '2026-01-31T14:00:00.000Z' })
     expect(ocorrencias([mensal], '2026-02-01', '2026-05-31').map((o) => o.inicio.slice(0, 10))).toEqual(['2026-03-31', '2026-05-31'])
+  })
+
+  it('grade de horas: posição em minutos e colunas para sobrepostos', () => {
+    const o = (id: string, ini: string, fim: string, diaInteiro = false) => ({ id, titulo: id, inicio: `2026-10-19T${ini}:00.000Z`, fim: `2026-10-19T${fim}:00.000Z`, diaInteiro })
+    // horários em UTC; Belém = UTC-3 → 13:00Z é 10h
+    const b = blocosDoDia([o('a', '13:00', '14:00'), o('b', '13:30', '15:00'), o('c', '17:00', '18:00'), o('d', '03:00', '03:00', true)], '2026-10-19')
+    expect(b.map((x) => [x.ocorrencia.id, x.de, x.ate, x.coluna, x.colunas])).toEqual([
+      ['a', 600, 660, 0, 2],
+      ['b', 630, 720, 1, 2],
+      ['c', 840, 900, 0, 1],
+    ])
+    // atravessa a meia-noite: corta em 24h e aparece no dia seguinte
+    const noite = o('n', '01:00', '05:00') // 22h do dia 18 até 2h do dia 19
+    expect(blocosDoDia([noite], '2026-10-18')[0].ate).toBe(1440)
+    expect(blocosDoDia([noite], '2026-10-19')[0].de).toBe(0)
+    expect(doDia([noite], '2026-10-18')).toHaveLength(1)
+    expect(doDia([noite], '2026-10-20')).toHaveLength(0)
   })
 
   it('público e regra do Google', () => {

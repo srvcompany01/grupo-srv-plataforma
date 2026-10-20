@@ -31,9 +31,12 @@ export type Compromisso = {
   pessoas: string[]
   clienteId: string | null
   tags: string[]
+  categoriaId: string | null
 }
 
-export type TagAgenda = { id: string; nome: string; cor: string }
+/** Tag ou categoria da agenda (mesmo formato; a categoria pinta o compromisso). */
+export type TagAgenda = { id: string; nome: string; cor: string; criadoPor: string | null }
+export type CategoriaAgenda = TagAgenda
 
 /** Uma vez em que o compromisso acontece (o fixo aparece várias vezes). `google` = evento só do Google da pessoa. */
 export type Ocorrencia = { id: string; titulo: string; inicio: string; fim: string; diaInteiro: boolean; compromisso?: Compromisso; google?: { link: string } }
@@ -52,6 +55,7 @@ export type EntradaCompromisso = {
   repetirAte?: string | null
   clienteId?: string | null
   tags?: string[]
+  categoriaId?: string | null
 }
 
 export type CamposCompromisso = Omit<Compromisso, 'id' | 'criadoPor'>
@@ -117,7 +121,9 @@ export function lerCompromisso(e: EntradaCompromisso, podeCompartilhar: boolean)
   if (clienteId && !UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
   const tags = [...new Set(e.tags ?? [])]
   if (tags.some((t) => !UUID.test(t)) || tags.length > 20) return { erro: 'Tags inválidas.' }
-  return { campos: { titulo, descricao, inicio: inicio.toISOString(), fim: fim.toISOString(), diaInteiro, visibilidade, repetir, repetirAte, pessoas, clienteId, tags } }
+  const categoriaId = e.categoriaId || null
+  if (categoriaId && !UUID.test(categoriaId)) return { erro: 'Categoria inválida.' }
+  return { campos: { titulo, descricao, inicio: inicio.toISOString(), fim: fim.toISOString(), diaInteiro, visibilidade, repetir, repetirAte, pessoas, clienteId, tags, categoriaId } }
 }
 
 /** Volta para o formato do formulário (edição). */
@@ -134,6 +140,7 @@ export const paraEntrada = (c: Compromisso): Required<EntradaCompromisso> => ({
   repetirAte: c.repetirAte,
   clienteId: c.clienteId,
   tags: c.tags,
+  categoriaId: c.categoriaId,
 })
 
 /** Início da n-ésima repetição (null se o dia não existe naquele mês, como 31 de abril: pula, igual ao Google). */
@@ -184,4 +191,42 @@ export function regraGoogle(c: Pick<Compromisso, 'repetir' | 'repetirAte' | 'dia
   if (!c.repetirAte) return [`RRULE:FREQ=${freq}`]
   const ate = c.diaInteiro ? c.repetirAte.replaceAll('-', '') : instante(c.repetirAte, '23:59').toISOString().replace(/[-:]|\.\d+/g, '')
   return [`RRULE:FREQ=${freq};UNTIL=${ate}`]
+}
+
+/** Bloco de um compromisso com horário na grade de horas: minutos desde 0h e a coluna quando há sobreposição. */
+export type Bloco = { ocorrencia: Ocorrencia; de: number; ate: number; coluna: number; colunas: number }
+
+/**
+ * Compromissos com horário que tocam o dia, cortados em 0h–24h, com as colunas para os que se sobrepõem
+ * (como no Google Agenda: um grupo de sobrepostos divide a largura igualmente).
+ */
+export function blocosDoDia(lista: Ocorrencia[], dia: string): Bloco[] {
+  const zero = instante(dia).getTime()
+  const fimDia = zero + DIA_MS
+  const blocos = lista
+    .filter((o) => !o.diaInteiro && Date.parse(o.inicio) < fimDia && Date.parse(o.fim) > zero)
+    .map((o) => ({ ocorrencia: o, de: (Math.max(Date.parse(o.inicio), zero) - zero) / 60_000, ate: (Math.min(Date.parse(o.fim), fimDia) - zero) / 60_000, coluna: 0, colunas: 1 }))
+    .sort((a, b) => a.de - b.de || b.ate - a.ate)
+  let grupo: Bloco[] = []
+  let fimGrupo = -1
+  const fechar = () => {
+    const n = Math.max(1, ...grupo.map((b) => b.coluna + 1))
+    grupo.forEach((b) => (b.colunas = n))
+    grupo = []
+  }
+  for (const b of blocos) {
+    if (b.de >= fimGrupo) fechar()
+    const ocupadas = new Set(grupo.filter((g) => g.ate > b.de).map((g) => g.coluna))
+    while (ocupadas.has(b.coluna)) b.coluna++
+    grupo.push(b)
+    fimGrupo = Math.max(fimGrupo, b.ate)
+  }
+  fechar()
+  return blocos
+}
+
+/** Ocorrências que tocam o dia (as de vários dias aparecem em cada um). */
+export const doDia = (lista: Ocorrencia[], dia: string) => {
+  const zero = instante(dia).getTime()
+  return lista.filter((o) => Date.parse(o.inicio) < zero + DIA_MS && Date.parse(o.fim) > zero)
 }

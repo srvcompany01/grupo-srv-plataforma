@@ -955,9 +955,9 @@ export type Database = {
         ]
       }
       agenda_events: {
-        Row: { all_day: boolean; client_id: string | null; created_at: string; created_by: string; description: string; ends_at: string; id: string; repeat: string; repeat_until: string | null; starts_at: string; title: string; updated_at: string; visibility: string }
-        Insert: { all_day?: boolean; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at: string; title: string; updated_at?: string; visibility?: string }
-        Update: { all_day?: boolean; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at?: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at?: string; title?: string; updated_at?: string; visibility?: string }
+        Row: { all_day: boolean; category_id: string | null; client_id: string | null; created_at: string; created_by: string; description: string; ends_at: string; id: string; repeat: string; repeat_until: string | null; starts_at: string; title: string; updated_at: string; visibility: string }
+        Insert: { all_day?: boolean; category_id?: string | null; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at: string; title: string; updated_at?: string; visibility?: string }
+        Update: { all_day?: boolean; category_id?: string | null; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at?: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at?: string; title?: string; updated_at?: string; visibility?: string }
         Relationships: []
       }
       agenda_event_people: {
@@ -973,6 +973,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agenda_categories: {
+        Row: { color: string; created_at: string; created_by: string | null; id: string; name: string }
+        Insert: { color?: string; created_at?: string; created_by?: string | null; id?: string; name: string }
+        Update: { color?: string; created_at?: string; created_by?: string | null; id?: string; name?: string }
+        Relationships: []
       }
       agenda_tags: {
         Row: { color: string; created_at: string; created_by: string | null; id: string; name: string }

@@ -47,19 +47,32 @@ export async function desconectarGoogleAcao(): Promise<Resultado> {
   return r
 }
 
-/** Tag nova da agenda (vale para a equipe toda). Devolve a tag para o formulário já marcá-la. */
-export async function criarTagAgendaAcao(nome: string, cor: string): Promise<Resultado & { tag?: TagAgenda }> {
+const ROTULO = { tag: 'tag', categoria: 'categoria' } as const
+
+/** Tag ou categoria nova (vale para a equipe toda). Devolve o item para o formulário já marcá-lo. */
+export async function criarEtiquetaAcao(tipo: agenda.TipoEtiqueta, nome: string, cor: string): Promise<Resultado & { item?: TagAgenda }> {
   await exigirEquipe()
+  if (!(tipo in ROTULO)) return { erro: 'Tipo inválido.' }
   const limpo = nome.trim()
-  if (!limpo || limpo.length > 40) return { erro: 'Dê um nome de até 40 caracteres para a tag.' }
+  if (!limpo || limpo.length > 40) return { erro: `Dê um nome de até 40 caracteres para a ${ROTULO[tipo]}.` }
   if (!/^#[0-9a-f]{6}$/i.test(cor)) return { erro: 'Cor inválida.' }
   const sb = await criarClienteServidor()
   try {
-    const tag = await agenda.criarTagAgenda(sb, limpo, cor)
+    const item = await agenda.criarEtiqueta(sb, tipo, limpo, cor)
     revalidatePath('/agenda')
-    return { ok: 'Tag criada.', tag }
+    return { ok: tipo === 'tag' ? 'Tag criada.' : 'Categoria criada.', item }
   } catch (e) {
     console.error(e)
-    return { erro: (e as { code?: string }).code === '23505' ? 'Já existe uma tag com esse nome.' : mensagemErro(e) }
+    return { erro: (e as { code?: string }).code === '23505' ? `Já existe uma ${ROTULO[tipo]} com esse nome.` : mensagemErro(e) }
   }
+}
+
+/** Exclui a tag ou categoria (só quem criou ou o admin; a RLS confere). */
+export async function excluirEtiquetaAcao(tipo: agenda.TipoEtiqueta, id: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!(tipo in ROTULO) || !UUID.test(id)) return { erro: 'Item inválido.' }
+  const sb = await criarClienteServidor()
+  const r = await tentar(() => agenda.excluirEtiqueta(sb, tipo, id), tipo === 'tag' ? 'Tag excluída.' : 'Categoria excluída.')
+  revalidatePath('/agenda')
+  return r
 }
