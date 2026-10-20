@@ -29,7 +29,11 @@ export type Compromisso = {
   repetirAte: string | null // AAAA-MM-DD
   criadoPor: string
   pessoas: string[]
+  clienteId: string | null
+  tags: string[]
 }
+
+export type TagAgenda = { id: string; nome: string; cor: string }
 
 /** Uma vez em que o compromisso acontece (o fixo aparece várias vezes). `google` = evento só do Google da pessoa. */
 export type Ocorrencia = { id: string; titulo: string; inicio: string; fim: string; diaInteiro: boolean; compromisso?: Compromisso; google?: { link: string } }
@@ -46,6 +50,8 @@ export type EntradaCompromisso = {
   pessoas?: string[]
   repetir?: Repeticao
   repetirAte?: string | null
+  clienteId?: string | null
+  tags?: string[]
 }
 
 export type CamposCompromisso = Omit<Compromisso, 'id' | 'criadoPor'>
@@ -66,6 +72,17 @@ export function semanaDe(data: string): string[] {
   const dow = new Date(`${data}T00:00:00Z`).getUTCDay()
   const segunda = somarDias(data, -((dow + 6) % 7))
   return Array.from({ length: 7 }, (_, i) => somarDias(segunda, i))
+}
+
+/** Grade do mês (AAAA-MM) em semanas completas, de segunda a domingo. */
+export function gradeDoMes(mes: string): string[] {
+  const inicio = semanaDe(`${mes}-01`)[0]
+  const [a, m] = mes.split('-').map(Number)
+  const ultimo = new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10)
+  const fim = semanaDe(ultimo)[6]
+  const dias: string[] = []
+  for (let d = inicio; d <= fim; d = somarDias(d, 1)) dias.push(d)
+  return dias
 }
 
 /** Valida e normaliza. Quem não é admin/gestor só cria compromisso privado (a RLS também recusa). */
@@ -96,7 +113,11 @@ export function lerCompromisso(e: EntradaCompromisso, podeCompartilhar: boolean)
   if (!REPETICOES.some((r) => r.valor === repetir)) return { erro: 'Repetição inválida.' }
   const repetirAte = repetir === 'nunca' ? null : e.repetirAte || null
   if (repetirAte && (!DATA.test(repetirAte) || repetirAte < e.data)) return { erro: 'A data final da repetição precisa ser depois do compromisso.' }
-  return { campos: { titulo, descricao, inicio: inicio.toISOString(), fim: fim.toISOString(), diaInteiro, visibilidade, repetir, repetirAte, pessoas } }
+  const clienteId = e.clienteId || null
+  if (clienteId && !UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
+  const tags = [...new Set(e.tags ?? [])]
+  if (tags.some((t) => !UUID.test(t)) || tags.length > 20) return { erro: 'Tags inválidas.' }
+  return { campos: { titulo, descricao, inicio: inicio.toISOString(), fim: fim.toISOString(), diaInteiro, visibilidade, repetir, repetirAte, pessoas, clienteId, tags } }
 }
 
 /** Volta para o formato do formulário (edição). */
@@ -111,6 +132,8 @@ export const paraEntrada = (c: Compromisso): Required<EntradaCompromisso> => ({
   pessoas: c.pessoas,
   repetir: c.repetir,
   repetirAte: c.repetirAte,
+  clienteId: c.clienteId,
+  tags: c.tags,
 })
 
 /** Início da n-ésima repetição (null se o dia não existe naquele mês, como 31 de abril: pula, igual ao Google). */

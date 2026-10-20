@@ -1,35 +1,53 @@
 'use client'
 
-import { Plus } from 'lucide-react'
-import { useState, useTransition, type ReactNode } from 'react'
+import { Check, Plus } from 'lucide-react'
+import { useState, useTransition, type CSSProperties, type ReactNode } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
+import { criarTagAgendaAcao, excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
-import { REPETICOES, VISIBILIDADES, paraEntrada, type Compromisso, type EntradaCompromisso } from '@/dominio/agenda'
+import { REPETICOES, VISIBILIDADES, paraEntrada, type Compromisso, type EntradaCompromisso, type TagAgenda } from '@/dominio/agenda'
+import { CORES_PERSONALIZACAO } from '@/dominio/personalizacao'
 import { botaoFantasma, botaoPrimario, campo } from '@/lib/ui'
 
 type Props = {
   compromisso?: Compromisso
   equipe: { id: string; nome: string }[]
+  clientes: { id: string; nome: string }[]
+  tags: TagAgenda[]
   /** Admin e gestor criam para a equipe ou para pessoas escolhidas. */
   podeCompartilhar: boolean
   /** Quem criou (ou o admin) edita; os demais só veem. */
   podeEditar?: boolean
   hoje: string
   className?: string
+  estilo?: CSSProperties
   children?: ReactNode
 }
 
-const vazio = (hoje: string): Required<EntradaCompromisso> => ({ titulo: '', descricao: '', data: hoje, horaInicio: '09:00', horaFim: '10:00', diaInteiro: false, visibilidade: 'privado', pessoas: [], repetir: 'nunca', repetirAte: null })
+const vazio = (hoje: string): Required<EntradaCompromisso> => ({ titulo: '', descricao: '', data: hoje, horaInicio: '09:00', horaFim: '10:00', diaInteiro: false, visibilidade: 'privado', pessoas: [], repetir: 'nunca', repetirAte: null, clienteId: null, tags: [] })
 
-export function CompromissoDialog({ compromisso, equipe, podeCompartilhar, podeEditar = true, hoje, className, children }: Props) {
+export function CompromissoDialog({ compromisso, equipe, clientes, tags, podeCompartilhar, podeEditar = true, hoje, className, estilo, children }: Props) {
   const [aberto, setAberto] = useState(false)
   const [f, setF] = useState(() => (compromisso ? paraEntrada(compromisso) : vazio(hoje)))
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   const mudar = (p: Partial<EntradaCompromisso>) => setF((v) => ({ ...v, ...p }))
   const alternarPessoa = (id: string) => mudar({ pessoas: f.pessoas.includes(id) ? f.pessoas.filter((p) => p !== id) : [...f.pessoas, id] })
+  const alternarTag = (id: string) => mudar({ tags: f.tags.includes(id) ? f.tags.filter((t) => t !== id) : [...f.tags, id] })
+  // Tags criadas aqui aparecem na hora (a página só atualiza depois).
+  const [novas, setNovas] = useState<TagAgenda[]>([])
+  const todasTags = [...tags, ...novas.filter((n) => !tags.some((t) => t.id === n.id))]
+  const [nomeTag, setNomeTag] = useState('')
+  const [corTag, setCorTag] = useState<string>(CORES_PERSONALIZACAO[7])
+  const criarTag = () =>
+    iniciar(async () => {
+      const r = await criarTagAgendaAcao(nomeTag, corTag)
+      if (!avisar(r) || !r?.tag) return
+      setNovas((v) => [...v, r.tag!])
+      mudar({ tags: [...f.tags, r.tag.id] })
+      setNomeTag('')
+    })
 
   const salvar = () =>
     iniciar(async () => {
@@ -48,17 +66,50 @@ export function CompromissoDialog({ compromisso, equipe, podeCompartilhar, podeE
   return (
     <Dialog open={aberto} onOpenChange={(a) => { setAberto(a); if (a && compromisso) setF(paraEntrada(compromisso)) }}>
       {compromisso ? (
-        <DialogTrigger className={className}>{children}</DialogTrigger>
+        <DialogTrigger className={className} style={estilo}>{children}</DialogTrigger>
       ) : (
         <DialogTrigger className={botaoPrimario}><Plus className="h-3.5 w-3.5" /> Novo compromisso</DialogTrigger>
       )}
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{compromisso ? (podeEditar ? 'Editar compromisso' : 'Compromisso') : 'Novo compromisso'}</DialogTitle>
           <DialogDescription>{podeEditar ? 'Quem vê o compromisso também o recebe no Google Agenda, se tiver conectado.' : 'Só quem criou pode alterar este compromisso.'}</DialogDescription>
         </DialogHeader>
         <fieldset disabled={!podeEditar || pendente} className="space-y-3">
           <input className={`${campo} h-9`} value={f.titulo} onChange={(e) => mudar({ titulo: e.target.value })} placeholder="Título (ex.: Reunião de pauta)" maxLength={120} autoFocus aria-label="Título" />
+          <label className="block space-y-1 text-legenda text-texto-3">
+            Cliente (opcional)
+            <select className={`${campo} h-9`} value={f.clienteId ?? ''} onChange={(e) => mudar({ clienteId: e.target.value || null })}>
+              <option value="">Nenhum</option>
+              {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </label>
+          <div className="space-y-1.5">
+            <p className="text-legenda text-texto-3">Tags</p>
+            {todasTags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {todasTags.map((t) => {
+                  const marcada = f.tags.includes(t.id)
+                  return (
+                    <button key={t.id} type="button" onClick={() => alternarTag(t.id)} aria-pressed={marcada} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-legenda font-medium ${marcada ? 'border-transparent text-white' : 'border-borda text-texto-2 hover:bg-hover'}`} style={marcada ? { background: t.cor } : undefined}>
+                      {marcada ? <Check className="h-3 w-3" /> : <span className="h-2 w-2 rounded-full" style={{ background: t.cor }} />} {t.nome}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            {podeEditar && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <input className={`${campo} h-8 w-36 px-2`} value={nomeTag} onChange={(e) => setNomeTag(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && nomeTag.trim()) { e.preventDefault(); criarTag() } }} placeholder="Nova tag" maxLength={40} aria-label="Nome da nova tag" />
+                <div className="flex gap-0.5" role="radiogroup" aria-label="Cor da nova tag">
+                  {CORES_PERSONALIZACAO.map((cor) => (
+                    <button key={cor} type="button" role="radio" aria-checked={corTag === cor} aria-label={`Cor ${cor}`} onClick={() => setCorTag(cor)} className={`h-4 w-4 rounded-full ${corTag === cor ? 'ring-2 ring-texto ring-offset-1' : ''}`} style={{ background: cor }} />
+                  ))}
+                </div>
+                <button type="button" onClick={criarTag} disabled={!nomeTag.trim()} className="rounded-md px-2 py-1 text-legenda font-semibold text-petroleo hover:bg-hover disabled:opacity-40">Criar</button>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
             <label className="space-y-1 text-legenda text-texto-3">
               Data

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { criarBanco, executar, ler } from '../ajuda/banco'
-import { criarUsuario } from '../ajuda/cenario'
+import { criarCliente, criarUsuario } from '../ajuda/cenario'
 
 const NOVO = `insert into agenda_events (title, starts_at, ends_at, visibility) values ($1, '2026-10-20 10:00-03', '2026-10-20 11:00-03', $2) returning id`
 
@@ -24,6 +24,28 @@ describe('agenda', () => {
     // a escolhida vê mas não edita nem se tira da lista
     expect(await executar(db, bia, `update agenda_events set title = 'x' where id = $1`, [sel.id])).toBe(0)
     expect(await executar(db, bia, `delete from agenda_event_people where event_id = $1`, [sel.id])).toBe(0)
+  })
+
+  it('tags da equipe e cliente no compromisso', async () => {
+    const db = await criarBanco()
+    const admin = await criarUsuario(db, { role: 'admin' })
+    const ana = await criarUsuario(db, { role: 'membro' })
+    const bia = await criarUsuario(db, { role: 'membro' })
+    const cliente = await criarCliente(db, 'Padaria')
+    const [tag] = await ler<{ id: string }>(db, ana, `insert into agenda_tags (name, color) values ('Gravação', '#ef4444') returning id`)
+    await expect(ler(db, bia, `insert into agenda_tags (name) values (' gravação ')`)).rejects.toThrow() // nome repetido
+    expect(await ler(db, bia, `select name from agenda_tags`)).toEqual([{ name: 'Gravação' }])
+    expect(await executar(db, bia, `delete from agenda_tags where id = $1`, [tag.id])).toBe(0)
+
+    const [ev] = await ler<{ id: string }>(db, ana, NOVO, ['Dentista', 'privado'])
+    expect(await executar(db, ana, `update agenda_events set client_id = $2 where id = $1`, [ev.id, cliente])).toBe(1)
+    expect(await executar(db, ana, `insert into agenda_event_tags (event_id, tag_id) values ($1, $2)`, [ev.id, tag.id])).toBe(1)
+    // quem não vê o compromisso não vê nem coloca tag nele
+    expect(await ler(db, bia, `select * from agenda_event_tags`)).toEqual([])
+    await expect(executar(db, bia, `insert into agenda_event_tags (event_id, tag_id) values ($1, $2)`, [ev.id, tag.id])).rejects.toThrow(/row-level security/)
+    // apagar a tag tira dos compromissos
+    expect(await executar(db, admin, `delete from agenda_tags where id = $1`, [tag.id])).toBe(1)
+    expect(await ler(db, ana, `select * from agenda_event_tags`)).toEqual([])
   })
 
   it('membro só cria compromisso privado; vínculo com o Google fica fechado', async () => {

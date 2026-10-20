@@ -1,7 +1,7 @@
 import 'server-only'
 import { instante, publico, regraGoogle, somarDias, dataLocal, type Compromisso, type Ocorrencia } from '@/dominio/agenda'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
-import { paraCompromisso } from './agenda'
+import { CAMPOS_COMPROMISSO, paraCompromisso } from './agenda'
 import { dados } from './resultado'
 
 /**
@@ -76,11 +76,11 @@ export async function desconectarGoogle(userId: string): Promise<void> {
   dados(await admin.from('agenda_google_events').delete().eq('user_id', userId))
 }
 
-function corpoDoEvento(c: Compromisso) {
+function corpoDoEvento(c: Compromisso, extras: string[]) {
   const quando = (iso: string) => (c.diaInteiro ? { date: dataLocal(iso) } : { dateTime: iso, timeZone: FUSO })
   return {
     summary: c.titulo,
-    description: [c.descricao, 'Compromisso da agenda do Grupo SRV (edite pela plataforma).'].filter(Boolean).join('\n\n'),
+    description: [c.descricao, ...extras, 'Compromisso da agenda do Grupo SRV (edite pela plataforma).'].filter(Boolean).join('\n\n'),
     start: quando(c.inicio),
     end: c.diaInteiro ? { date: dataLocal(c.fim) } : quando(c.fim),
     recurrence: regraGoogle(c) ?? [],
@@ -88,7 +88,6 @@ function corpoDoEvento(c: Compromisso) {
   }
 }
 
-const CAMPOS_ADMIN = 'id, title, description, starts_at, ends_at, all_day, visibility, repeat, repeat_until, created_by, agenda_event_people(user_id)'
 
 /**
  * Deixa o Google de cada pessoa igual à plataforma para este compromisso: cria/atualiza para quem vê e apaga de quem
@@ -98,7 +97,7 @@ export async function sincronizarCompromisso(id: string): Promise<void> {
   if (!googleConfigurado()) return
   const admin = criarClienteAdmin()
   const [linha, mapas] = await Promise.all([
-    admin.from('agenda_events').select(CAMPOS_ADMIN).eq('id', id).maybeSingle().then(dados),
+    admin.from('agenda_events').select(CAMPOS_COMPROMISSO).eq('id', id).maybeSingle().then(dados),
     admin.from('agenda_google_events').select('user_id, google_event_id').eq('event_id', id).then(dados),
   ])
   const c = linha ? paraCompromisso(linha) : null
@@ -107,6 +106,12 @@ export async function sincronizarCompromisso(id: string): Promise<void> {
   const envolvidos = [...new Set([...quem, ...mapas.map((m) => m.user_id)])]
   if (!envolvidos.length) return
   const links = dados(await admin.from('google_calendar_links').select('user_id, refresh_token').in('user_id', envolvidos))
+  if (!links.length) return
+  const [cliente, tags] = await Promise.all([
+    c?.clienteId ? admin.from('clients').select('name').eq('id', c.clienteId).then(dados) : [],
+    c?.tags.length ? admin.from('agenda_tags').select('name').in('id', c.tags).then(dados) : [],
+  ])
+  const extras = [cliente.length ? `Cliente: ${cliente[0].name}` : '', tags.length ? `Tags: ${tags.map((t) => t.name).join(', ')}` : '']
   const resultados = await Promise.allSettled(links.map(async (l) => {
     const a = await acesso(l.refresh_token)
     const mapa = mapas.find((m) => m.user_id === l.user_id)
@@ -115,7 +120,7 @@ export async function sincronizarCompromisso(id: string): Promise<void> {
       if (mapa && c) dados(await admin.from('agenda_google_events').delete().eq('event_id', id).eq('user_id', l.user_id))
       return
     }
-    const corpo = JSON.stringify(corpoDoEvento(c))
+    const corpo = JSON.stringify(corpoDoEvento(c, extras))
     if (mapa) {
       const r = await google(a, `/${mapa.google_event_id}`, { method: 'PUT', body: corpo })
       if (r.ok) return

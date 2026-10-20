@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { horaLocal, lerCompromisso, ocorrencias, paraEntrada, publico, regraGoogle, semanaDe, type Compromisso } from '@/dominio/agenda'
+import { gradeDoMes, horaLocal, lerCompromisso, ocorrencias, paraEntrada, publico, regraGoogle, semanaDe, type Compromisso } from '@/dominio/agenda'
 
 const c = (p: Partial<Compromisso>): Compromisso => ({
   id: 'c1', titulo: 'Reunião', descricao: '', inicio: '2026-10-19T13:00:00.000Z', fim: '2026-10-19T14:00:00.000Z',
-  diaInteiro: false, visibilidade: 'privado', repetir: 'nunca', repetirAte: null, criadoPor: 'eu', pessoas: [], ...p,
+  diaInteiro: false, visibilidade: 'privado', repetir: 'nunca', repetirAte: null, criadoPor: 'eu', pessoas: [], clienteId: null, tags: [], ...p,
 })
 
 describe('agenda', () => {
   it('semana começa na segunda', () => {
     expect(semanaDe('2026-10-25')).toEqual(['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25'])
     expect(semanaDe('2026-10-19')[0]).toBe('2026-10-19')
+  })
+
+  it('grade do mês em semanas completas', () => {
+    const g = gradeDoMes('2026-10')
+    expect([g[0], g.at(-1), g.length]).toEqual(['2026-09-28', '2026-11-01', 35])
+    expect(gradeDoMes('2026-02').length % 7).toBe(0)
   })
 
   it('lê o formulário no fuso de Belém e valida', () => {
@@ -22,6 +28,9 @@ describe('agenda', () => {
     expect('campos' in dia && [dia.campos.inicio, dia.campos.fim]).toEqual(['2026-10-19T03:00:00.000Z', '2026-10-20T03:00:00.000Z'])
     expect(horaLocal('2026-10-19T13:00:00.000Z')).toBe('10:00')
     expect(paraEntrada(c({})).horaInicio).toBe('10:00')
+    expect(lerCompromisso({ titulo: 'x', data: '2026-10-19', diaInteiro: true, clienteId: 'nao-e-id' }, true)).toEqual({ erro: 'Cliente inválido.' })
+    const comTags = lerCompromisso({ titulo: 'x', data: '2026-10-19', diaInteiro: true, tags: ['6f1c2c1e-0000-4000-8000-000000000001', '6f1c2c1e-0000-4000-8000-000000000001'] }, false)
+    expect('campos' in comTags && comTags.campos.tags).toHaveLength(1)
   })
 
   it('expande o compromisso fixo dentro da janela, respeitando a data final', () => {

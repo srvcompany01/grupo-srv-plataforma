@@ -83,6 +83,8 @@ const entradaCompromisso = {
   pessoas: z.array(z.string().uuid()).max(50).optional().describe('Com visibilidade selecionados: ids de listar_equipe'),
   repetir: z.enum(['nunca', 'diario', 'semanal', 'mensal']).optional().describe('nunca (padrão), diario, semanal ou mensal'),
   repetirAte: data('Último dia da repetição').nullable().optional(),
+  clienteId: id('Cliente vinculado (id de listar_clientes); null tira o vínculo').nullable().optional(),
+  tags: z.array(z.string().uuid()).max(20).optional().describe('Tags do compromisso (ids de listar_tags_agenda); a lista substitui as atuais'),
 }
 
 export const FERRAMENTAS: Ferramenta[] = [
@@ -103,7 +105,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
-        'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
+        'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ser vinculado a um cliente (clienteId) e ter tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
@@ -572,6 +574,22 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'listar_tags_agenda',
+    descricao: 'Tags da agenda (da equipe toda), com id, nome e cor. Use os ids em tags de criar_compromisso / atualizar_compromisso.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => agenda.listarTagsAgenda(sb),
+  }),
+
+  definir({
+    nome: 'criar_tag_agenda',
+    descricao: 'Cria uma tag da agenda (vale para a equipe toda). Nomes não se repetem. cor em #rrggbb (opcional).',
+    escrita: true,
+    entrada: { nome: z.string().trim().min(1).max(40).describe('Nome da tag'), cor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Cor #rrggbb') },
+    executar: async ({ sb }, a) => agenda.criarTagAgenda(sb, a.nome, a.cor ?? '#64748b'),
+  }),
+
+  definir({
     nome: 'listar_agenda',
     descricao: 'Agenda da pessoa dona do token entre duas datas (padrão: a semana atual, de segunda a domingo; no máximo 62 dias). Traz os compromissos da plataforma (cada repetição de um fixo aparece no seu dia) e os eventos do Google Agenda dela, se conectado (origem: google, só leitura).',
     escrita: false,
@@ -581,8 +599,16 @@ export const FERRAMENTAS: Ferramenta[] = [
       const de = a.de ?? semana[0]
       const ate = a.ate ?? (a.de ? somarDias(a.de, 6) : semana[6])
       if (ate < de || ate > somarDias(de, 61)) throw new Error('Período inválido: ate precisa ser depois de de, com no máximo 62 dias.')
-      const [compromissos, doGoogle, equipe] = await Promise.all([agenda.listarCompromissos(sb, de, ate), googleAgenda().then((g) => g.eventosDoGoogle(userId, de, ate)), listarEquipe(sb)])
+      const [compromissos, doGoogle, equipe, clientes, tags] = await Promise.all([
+        agenda.listarCompromissos(sb, de, ate),
+        googleAgenda().then((g) => g.eventosDoGoogle(userId, de, ate)),
+        listarEquipe(sb),
+        listarClientes(sb),
+        agenda.listarTagsAgenda(sb),
+      ])
       const nome = new Map(equipe.map((p) => [p.id, p.nome]))
+      const cliente = new Map(clientes.map((c) => [c.id, c.nome]))
+      const tag = new Map(tags.map((t) => [t.id, t.nome]))
       return [...ocorrencias(compromissos, de, ate), ...doGoogle]
         .sort((x, y) => x.inicio.localeCompare(y.inicio))
         .map((o) => ({
@@ -600,6 +626,8 @@ export const FERRAMENTAS: Ferramenta[] = [
             repetir: o.compromisso.repetir,
             repetirAte: o.compromisso.repetirAte,
             criadoPor: nome.get(o.compromisso.criadoPor) ?? o.compromisso.criadoPor,
+            cliente: o.compromisso.clienteId ? { id: o.compromisso.clienteId, nome: cliente.get(o.compromisso.clienteId) } : null,
+            tags: o.compromisso.tags.flatMap((t) => (tag.has(t) ? [{ id: t, nome: tag.get(t) }] : [])),
           }),
         }))
     },

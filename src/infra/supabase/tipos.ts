@@ -955,9 +955,9 @@ export type Database = {
         ]
       }
       agenda_events: {
-        Row: { all_day: boolean; created_at: string; created_by: string; description: string; ends_at: string; id: string; repeat: string; repeat_until: string | null; starts_at: string; title: string; updated_at: string; visibility: string }
-        Insert: { all_day?: boolean; created_at?: string; created_by?: string; description?: string; ends_at: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at: string; title: string; updated_at?: string; visibility?: string }
-        Update: { all_day?: boolean; created_at?: string; created_by?: string; description?: string; ends_at?: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at?: string; title?: string; updated_at?: string; visibility?: string }
+        Row: { all_day: boolean; client_id: string | null; created_at: string; created_by: string; description: string; ends_at: string; id: string; repeat: string; repeat_until: string | null; starts_at: string; title: string; updated_at: string; visibility: string }
+        Insert: { all_day?: boolean; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at: string; title: string; updated_at?: string; visibility?: string }
+        Update: { all_day?: boolean; client_id?: string | null; created_at?: string; created_by?: string; description?: string; ends_at?: string; id?: string; repeat?: string; repeat_until?: string | null; starts_at?: string; title?: string; updated_at?: string; visibility?: string }
         Relationships: []
       }
       agenda_event_people: {
@@ -970,6 +970,33 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_tags: {
+        Row: { color: string; created_at: string; created_by: string | null; id: string; name: string }
+        Insert: { color?: string; created_at?: string; created_by?: string | null; id?: string; name: string }
+        Update: { color?: string; created_at?: string; created_by?: string | null; id?: string; name?: string }
+        Relationships: []
+      }
+      agenda_event_tags: {
+        Row: { event_id: string; tag_id: string }
+        Insert: { event_id: string; tag_id: string }
+        Update: { event_id?: string; tag_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_event_tags_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_event_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_tags"
             referencedColumns: ["id"]
           },
         ]
