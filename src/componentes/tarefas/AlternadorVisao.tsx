@@ -9,6 +9,7 @@ const OPCOES: Record<VisaoTarefas, { rotulo: string }> = {
   lista: { rotulo: 'Lista' },
   calendario: { rotulo: 'Calendário' },
   kanban: { rotulo: 'Quadro' },
+  painel: { rotulo: 'Painel' },
   documentos: { rotulo: 'Documentos' },
 }
 

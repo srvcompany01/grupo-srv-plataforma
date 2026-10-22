@@ -3,7 +3,7 @@ import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
-export const VISOES = ['lista', 'kanban', 'calendario', 'documentos'] as const
+export const VISOES = ['lista', 'kanban', 'calendario', 'painel', 'documentos'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
 /** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
 export const NIVEIS_CALENDARIO = ['ambas', 'maes', 'subtarefas'] as const

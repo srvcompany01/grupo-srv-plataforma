@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PainelDoEscopo } from '@/componentes/projetos/PainelDoEscopo'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { CATEGORIAS } from '@/componentes/tarefas/categorias'
@@ -67,8 +68,16 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
 }
 
 async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<string, string | string[] | undefined>; euId: string }) {
-  const sb = await criarClienteServidor()
   const filtros = lerFiltros(sp)
+  if (filtros.visao === 'painel') {
+    return (
+      <div className="space-y-4">
+        <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} visoes={['lista', 'kanban', 'painel']} />
+        <PainelDoEscopo escopo={{ espacoId }} caminho={`/espacos/${espacoId}`} sp={sp} euId={euId} />
+      </div>
+    )
+  }
+  const sb = await criarClienteServidor()
   const hoje = dataDeHoje(new Date())
   const [tarefas, equipe, clientes, tags] = await Promise.all([
     listarTarefas(sb, { espacoId }, filtros, hoje),
@@ -84,7 +93,7 @@ async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<st
 
   return (
     <div className="space-y-4">
-      <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} />
+      <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} visoes={['lista', 'kanban', 'painel']} />
       <BarraFiltros filtros={filtros} equipe={equipe} status={[]} tags={tags} clientes={clientes} comMes />
       {tarefas.length === 0 && <p className="text-corpo text-texto-3">Nenhuma tarefa encontrada.</p>}
       {filtros.visao === 'lista' ? (

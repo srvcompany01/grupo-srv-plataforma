@@ -1097,6 +1097,7 @@ export type Database = {
           description: string | null
           emoji: string | null
           icon: string
+          is_projects: boolean
           id: string
           name: string
           parent_id: string | null
@@ -1111,6 +1112,7 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           icon?: string
+          is_projects?: boolean
           id?: string
           name: string
           parent_id?: string | null
@@ -1125,6 +1127,7 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           icon?: string
+          is_projects?: boolean
           id?: string
           name?: string
           parent_id?: string | null

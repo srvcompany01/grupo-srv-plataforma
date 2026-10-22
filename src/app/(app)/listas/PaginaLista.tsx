@@ -9,6 +9,7 @@ import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
 import { GerenciarCampos } from '@/componentes/tarefas/GerenciarCampos'
 import { VisaoDocumentos } from '@/componentes/documentos/VisaoDocumentos'
+import { PainelDoEscopo } from '@/componentes/projetos/PainelDoEscopo'
 import { VisaoCalendario } from '@/componentes/tarefas/VisaoCalendario'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
@@ -108,9 +109,9 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
           </div>
         </div>
-        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'documentos']} abas />
+        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'painel', 'documentos']} abas />
       </header>
-      {filtros.visao !== 'documentos' && (
+      {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
@@ -120,6 +121,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
       <main className="p-4 md:p-5">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
+        {filtros.visao === 'painel' && <PainelDoEscopo escopo={{ listaId: id, cor: lista.cor }} caminho={caminho} sp={spEfetivo} euId={eu.id} />}
         {filtros.visao === 'documentos' && (
           <VisaoDocumentos
             listaId={id}
