@@ -1,11 +1,12 @@
 import { chaveDeMidiaValida, type Aprovacao, type Decisao, type Formato } from '@/dominio/conteudo'
 import { validarEntrada } from '@/dominio/midias'
+import { ALVOS, validarPublicacao, type Alvo, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
 import type { TipoMidia } from '@/dominio/tipos'
 import { urlLeitura } from '@/infra/r2'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
-export type MidiaDoPost = { id: string; tipo: TipoMidia; nome: string; tamanho: number; url: string }
+export type MidiaDoPost = { id: string; tipo: TipoMidia; nome: string; tamanho: number; url: string; chave: string }
 export type RespostaDoCliente = { decisao: Decisao; comentario: string; nome: string; em: string }
 export type VersaoDoPost = { id: string; numero: number; ideia: string; objetivo: string; legenda: string; midias: MidiaDoPost[]; resposta: RespostaDoCliente | null }
 export type ConteudoDaTarefa = { formato: Formato; aprovacao: Aprovacao; versaoAtual: number; versoes: VersaoDoPost[] }
@@ -44,7 +45,7 @@ export async function buscarConteudo(sb: Supabase, tarefaId: string): Promise<Co
           midias: await Promise.all(
             [...v.content_media]
               .sort((a, b) => a.position - b.position)
-              .map(async (m) => ({ id: m.id, tipo: m.kind as TipoMidia, nome: m.original_name, tamanho: m.size_bytes, url: await urlLeitura(m.r2_key) })),
+              .map(async (m) => ({ id: m.id, tipo: m.kind as TipoMidia, nome: m.original_name, tamanho: m.size_bytes, url: await urlLeitura(m.r2_key), chave: m.r2_key })),
           ),
           resposta: r ? { decisao: r.decision as Decisao, comentario: r.comment, nome: r.responder_name, em: r.created_at } : null,
         }
@@ -69,4 +70,59 @@ export async function registrarMidia(sb: Supabase, tarefaId: string, m: NovaMidi
 export async function removerMidia(sb: Supabase, midiaId: string): Promise<void> {
   const { error } = await sb.from('content_media').delete().eq('id', midiaId)
   if (error) throw error
+}
+
+export type PublicacaoDoPost = {
+  em: string | null
+  alvos: Alvo[]
+  modo: ModoPublicacao
+  status: StatusPublicacao
+  erro: string | null
+  igLink: string | null
+  fbLink: string | null
+  publicadoEm: string | null
+  dataPrevista: string | null
+  cliente: { id: string; nome: string; paginaId: string | null } | null
+}
+
+/** Agendamento/publicação na Meta do post. null sem a migration de publicação (o post abre normalmente). */
+export async function buscarPublicacao(sb: Supabase, tarefaId: string): Promise<PublicacaoDoPost | null> {
+  const { data, error } = await sb
+    .from('content_posts')
+    .select('publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, fb_permalink, published_at, tasks(due_date, clients(id, name, meta_page_id))')
+    .eq('task_id', tarefaId)
+    .maybeSingle()
+  if (error || !data) return null
+  const c = data.tasks?.clients
+  return {
+    em: data.publish_at,
+    alvos: data.publish_targets as Alvo[],
+    modo: data.publish_mode as ModoPublicacao,
+    status: data.publish_status as StatusPublicacao,
+    erro: data.publish_error,
+    igLink: data.ig_permalink,
+    fbLink: data.fb_permalink,
+    publicadoEm: data.published_at,
+    dataPrevista: data.tasks?.due_date ?? null,
+    cliente: c ? { id: c.id, nome: c.name, paginaId: c.meta_page_id } : null,
+  }
+}
+
+/** Grava o agendamento (e, no modo aprovação, manda o rascunho para o cliente). A RLS confere o acesso ao post. */
+export async function agendarPost(sb: Supabase, tarefaId: string, a: { em: string; alvos: Alvo[]; modo: ModoPublicacao; enviarAoCliente: boolean }): Promise<void> {
+  const campos = { publish_at: a.em, publish_targets: a.alvos, publish_mode: a.modo, publish_status: 'agendado', publish_error: null, ...(a.enviarAoCliente ? { approval: 'aguardando' } : {}) }
+  if (!dados(await sb.from('content_posts').update(campos).eq('task_id', tarefaId).select('task_id')).length) throw { code: '42501' }
+}
+
+export async function cancelarAgendamento(sb: Supabase, tarefaId: string): Promise<void> {
+  if (!dados(await sb.from('content_posts').update({ publish_status: 'nao_agendado', publish_error: null }).eq('task_id', tarefaId).in('publish_status', ['agendado', 'falhou']).select('task_id')).length) throw { code: '42501' }
+}
+
+/** Confere se o post pode ir para as redes (alvos, mídias, formato, Página do cliente). null = pode. */
+export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos: Alvo[]): Promise<string | null> {
+  if (!alvos.length || alvos.some((a) => !(ALVOS as readonly string[]).includes(a))) return 'Escolha onde publicar (Instagram e/ou Facebook).'
+  const [post, pub] = await Promise.all([buscarConteudo(sb, tarefaId), buscarPublicacao(sb, tarefaId)])
+  if (!post || !pub) return 'Post não encontrado (ou falta a migration de publicação).'
+  if (!pub.cliente?.paginaId) return 'O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").'
+  return validarPublicacao(post.formato, alvos, post.versoes[0].midias.map((m) => ({ tipo: m.tipo, nome: m.nome, chave: m.chave })))
 }

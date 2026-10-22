@@ -36,9 +36,9 @@ export type Database = {
         ]
       }
       content_posts: {
-        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string }
-        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string }
-        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string }
+        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null }
+        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null }
+        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null }
         Relationships: [
           {
             foreignKeyName: "content_posts_task_id_fkey"

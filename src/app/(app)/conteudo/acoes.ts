@@ -9,6 +9,9 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as conteudo from '@/servicos/conteudo'
+import { instante } from '@/dominio/agenda'
+import type { Alvo, ModoPublicacao } from '@/dominio/publicacao'
+import { publicarPost } from '@/servicos/publicacao-meta'
 
 // Ações do pipeline de conteúdo. Tudo pelo cliente do usuário: a RLS e as regras do banco decidem.
 
@@ -71,4 +74,50 @@ export async function registrarMidiaAcao(tarefaId: string, m: { chave: string; t
 export async function removerMidiaAcao(midiaId: string): Promise<Resultado> {
   if (!UUID.test(midiaId)) return { erro: 'Mídia inválida.' }
   return executar((sb) => conteudo.removerMidia(sb, midiaId), 'Mídia removida.')
+}
+
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/
+
+/**
+ * Agenda o post. Modo "aprovacao": vai para o portal do cliente (se ainda é rascunho) e só publica depois que ele aprovar.
+ * Modo "direto": publica no horário sem aprovação.
+ */
+export async function agendarPostAcao(tarefaId: string, a: { data: string; hora: string; alvos: Alvo[]; modo: ModoPublicacao }): Promise<Resultado> {
+  if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  if (!DATA.test(a.data) || !HORA.test(a.hora)) return { erro: 'Informe o dia e a hora da publicação.' }
+  if (a.modo !== 'aprovacao' && a.modo !== 'direto') return { erro: 'Modo inválido.' }
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, a.alvos)
+  if (problema) return { erro: problema }
+  const post = await conteudo.buscarConteudo(sb, tarefaId)
+  if (a.modo === 'aprovacao' && post?.aprovacao === 'ajuste') return { erro: 'O cliente pediu ajuste: edite o post (nasce a versão nova, que volta para ele) e agende de novo.' }
+  const enviarAoCliente = a.modo === 'aprovacao' && post?.aprovacao === 'rascunho'
+  const r = await tentar(
+    () => conteudo.agendarPost(sb, tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.alvos, modo: a.modo, enviarAoCliente }),
+    enviarAoCliente ? 'Enviado para aprovação do cliente. Publica no horário depois que ele aprovar.' : a.modo === 'aprovacao' && post?.aprovacao !== 'aprovado' ? 'Agendado: publica no horário depois da aprovação do cliente.' : 'Agendado.',
+  )
+  revalidatePath('/', 'layout')
+  return r
+}
+
+/** Publica já, sem esperar o horário nem a aprovação (a equipe assume). */
+export async function publicarAgoraAcao(tarefaId: string, alvos: Alvo[]): Promise<Resultado> {
+  if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, alvos)
+  if (problema) return { erro: problema }
+  const r = await tentar(() => conteudo.agendarPost(sb, tarefaId, { em: new Date().toISOString(), alvos, modo: 'direto', enviarAoCliente: false }))
+  if (r?.erro) return r
+  const resultado = await publicarPost(tarefaId, { forcar: true })
+  revalidatePath('/', 'layout')
+  if (resultado.status === 'publicado') return { ok: 'Publicado!' }
+  if (resultado.status === 'publicando') return { ok: 'O vídeo ainda está processando no Instagram; a publicação termina sozinha em alguns minutos.' }
+  return { erro: resultado.erro ?? 'Não foi possível publicar.' }
+}
+
+export async function cancelarAgendamentoAcao(tarefaId: string): Promise<Resultado> {
+  if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  return executar((sb) => conteudo.cancelarAgendamento(sb, tarefaId), 'Agendamento cancelado.')
 }

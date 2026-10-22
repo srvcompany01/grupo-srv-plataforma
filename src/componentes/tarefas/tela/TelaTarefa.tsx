@@ -12,7 +12,8 @@ import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
 import { SecaoRecorrencia } from './SecaoRecorrencia'
 import type { Recorrencia } from '@/dominio/recorrencia'
 import { SecaoConteudo } from '@/componentes/conteudo/SecaoConteudo'
-import type { ConteudoDaTarefa } from '@/servicos/conteudo'
+import type { ConteudoDaTarefa, PublicacaoDoPost } from '@/servicos/conteudo'
+import type { ContaMeta } from '@/componentes/conteudo/BlocoPublicacao'
 import { EditorDescricao } from '../EditorDescricao'
 import { CabecalhoTarefa } from './CabecalhoTarefa'
 import { GradePropriedades } from './GradePropriedades'
@@ -44,6 +45,8 @@ export type PropsTela = {
   emJanela: boolean
   /** Dados do post quando a tarefa é um post de conteúdo. */
   conteudo: ConteudoDaTarefa | null
+  publicacao?: PublicacaoDoPost | null
+  contaMeta?: ContaMeta
   recorrencia: Recorrencia | null
 }
 
@@ -72,7 +75,7 @@ export function TelaTarefa(p: PropsTela) {
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
           </GradePropriedades>
           <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.cada}-${p.recorrencia?.frequencia}-${p.recorrencia?.ativa}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} />
-          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar />}
+          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} />}
           <div className="space-y-1">
             <span className={rotulo}>Descrição</span>
             <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />

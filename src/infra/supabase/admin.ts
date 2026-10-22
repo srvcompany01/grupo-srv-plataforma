@@ -9,6 +9,8 @@ import type { Database } from './tipos'
  * - scripts/criar-admin.ts;
  * - formulário público (app/f/[token]): só a RPC enviar_formulario e a leitura do formulário ativo;
  * - Google Agenda (servicos/google-agenda.ts): vínculo OAuth (refresh token) e sincronização dos compromissos com o Google de cada pessoa;
+ * - publicação de posts na Meta (servicos/publicacao-meta.ts, rotina /api/cron/publicar) e a resposta do cliente no portal
+ *   (aprovar/pedir ajuste), sempre depois de conferir que o post é do cliente logado;
  * - endpoint público de leads das landing pages (app/api/leads): grava em landing_leads e envia o formulário de leads.
  */
 export function criarClienteAdmin() {

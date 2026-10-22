@@ -9,9 +9,10 @@ import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/serv
 import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
 import { lerContaAnuncios, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
-import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
+import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
+import * as conteudoSvc from '@/servicos/conteudo'
 import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
@@ -114,6 +115,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
+        'Conteúdo (posts): cada post é uma tarefa da lista de conteúdo, com versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário.',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
         'Reuniões (notetaker): a equipe grava a reunião na plataforma e a IA cria um documento "Ata — <assunto> — dd/mm" com as páginas Ata (resumo, participantes, tópicos, decisões, próximos passos) e Transcrição. Para ler, use listar_documentos / buscar_documento.',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
@@ -650,6 +652,41 @@ export const FERRAMENTAS: Ferramenta[] = [
         })),
         horasPorSemana: p.semanas.map((s) => ({ semana: s.inicio, horas: horas(s.segundos) })),
       }
+    },
+  }),
+
+  definir({
+    nome: 'situacao_publicacao_post',
+    descricao: 'Agendamento e publicação de um post de conteúdo (tarefa da lista de conteúdo) no Instagram/Facebook: aprovação do cliente, dia e hora, redes, situação (agendado, publicado, falhou e o motivo) e os links publicados.',
+    escrita: false,
+    entrada: { tarefaId: id('Post (id da tarefa da lista de conteúdo)') },
+    executar: async ({ sb }, a) => {
+      const [post, pub] = await Promise.all([conteudoSvc.buscarConteudo(sb, a.tarefaId), conteudoSvc.buscarPublicacao(sb, a.tarefaId)])
+      if (!post || !pub) throw new Error('Post de conteúdo não encontrado (ou falta a migration de publicação).')
+      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
+    },
+  }),
+
+  definir({
+    nome: 'agendar_post',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. Não publica na hora (isso só pela tela).',
+    escrita: true,
+    entrada: {
+      tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
+      data: data('Dia da publicação'),
+      hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Hora HH:MM (Belém)'),
+      redes: z.array(z.enum(['instagram', 'facebook'])).min(1).describe('Onde publicar'),
+      modo: z.enum(['aprovacao', 'direto']).optional().describe('Padrão: aprovacao'),
+    },
+    executar: async ({ sb }, a) => {
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes)
+      if (problema) throw new Error(problema)
+      const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
+      const modo = a.modo ?? 'aprovacao'
+      if (modo === 'aprovacao' && post?.aprovacao === 'ajuste') throw new Error('O cliente pediu ajuste: edite o post (nasce a versão nova) antes de reenviar.')
+      const enviarAoCliente = modo === 'aprovacao' && post?.aprovacao === 'rascunho'
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente })
+      return { ok: true, enviadoAoCliente: enviarAoCliente }
     },
   }),
 

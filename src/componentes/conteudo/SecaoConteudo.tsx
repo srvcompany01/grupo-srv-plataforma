@@ -9,7 +9,8 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { corDoFormato, edicaoCriaNovaVersao, ROTULO_APROVACAO, ROTULO_FORMATO } from '@/dominio/conteudo'
 import { TIPOS_ACEITOS } from '@/dominio/midias'
 import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
-import type { ConteudoDaTarefa, VersaoDoPost } from '@/servicos/conteudo'
+import type { ConteudoDaTarefa, PublicacaoDoPost, VersaoDoPost } from '@/servicos/conteudo'
+import { BlocoPublicacao, type ContaMeta } from './BlocoPublicacao'
 import { enviarMidia } from './enviarMidia'
 
 const COR_APROVACAO = { rascunho: 'bg-hover text-texto-2', aguardando: 'bg-aviso-fundo text-aviso-forte', aprovado: 'bg-sucesso-fundo text-sucesso-forte', ajuste: 'bg-perigo-fundo text-perigo-forte' } as const
@@ -80,7 +81,7 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
 }
 
 /** Editor do post dentro da tarefa: ideia, objetivo, legenda, mídias e o histórico de versões. */
-export function SecaoConteudo({ tarefaId, conteudo, podeEditar }: { tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean }) {
+export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, conta, hoje }: { tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean; publicacao?: PublicacaoDoPost | null; conta?: ContaMeta; hoje: string }) {
   const router = useRouter()
   const atual = conteudo.versoes[0]
   const [ideia, setIdeia] = useState(atual.ideia)
@@ -127,6 +128,8 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar }: { tarefaId: st
         <Midias tarefaId={tarefaId} versao={atual} editavel={podeEditar && !atual.resposta} />
         {atual.resposta && <p className="text-legenda text-texto-3">Esta versão já foi respondida; as mídias dela estão congeladas.</p>}
       </div>
+
+      {publicacao && podeEditar && <BlocoPublicacao tarefaId={tarefaId} p={publicacao} conta={conta ?? null} formato={conteudo.formato} aprovacao={conteudo.aprovacao} hoje={hoje} />}
 
       {conteudo.versoes.some((v) => v.resposta || v.numero < conteudo.versaoAtual) && (
         <div className="space-y-2">

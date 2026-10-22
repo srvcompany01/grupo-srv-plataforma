@@ -4,7 +4,8 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarComentarios, pessoasDaTarefa } from '@/servicos/comentarios'
 import { buscarRecorrencia } from '@/servicos/recorrencias'
-import { buscarConteudo } from '@/servicos/conteudo'
+import { buscarConteudo, buscarPublicacao } from '@/servicos/conteudo'
+import { contaDaPagina } from '@/servicos/publicacao-meta'
 import { buscarLista, listarListasVisiveis, listarTags } from '@/servicos/listas'
 import { buscarTarefa, listarAtividade } from '@/servicos/tarefas'
 import { cronometroAtivo, listarTempo } from '@/servicos/tempo'
@@ -34,6 +35,9 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
     buscarConteudo(sb, id).catch(() => null), // sem a migration de conteúdo a tarefa abre normalmente
     buscarRecorrencia(sb, id).catch(() => null), // idem para a migration de recorrências
   ])
+  // Post de conteúdo: agendamento na Meta e a Página/Instagram do cliente.
+  const publicacao = conteudo ? await buscarPublicacao(sb, id) : null
+  const contaMeta = publicacao?.cliente?.paginaId ? await contaDaPagina(publicacao.cliente.paginaId) : null
   return (
     <TelaTarefa
       key={tarefa.id}
@@ -56,6 +60,8 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       pessoas={pessoas}
       emJanela={emJanela}
       conteudo={conteudo}
+      publicacao={publicacao}
+      contaMeta={contaMeta}
       recorrencia={recorrencia}
     />
   )
