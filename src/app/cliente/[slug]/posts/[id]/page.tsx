@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 import { PreviaPost } from '@/componentes/portal/PreviaPost'
 import { RespostaPost } from '@/componentes/portal/RespostaPost'
 import { ROTULO_ALVO, situacaoPublicacao } from '@/dominio/publicacao'
-import { exigirCliente } from '@/infra/supabase/sessao'
-import { clienteDoUsuario, postDoCliente } from '@/servicos/portal-conteudo'
+import { clientePorLink, postDoCliente } from '@/servicos/portal-conteudo'
 
 // Aprovar pode publicar na hora (quando o horário já passou).
 export const maxDuration = 300
@@ -14,11 +13,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const quando = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
 
 /** Post para o cliente ver como vai ficar, com o dia e a hora, e aprovar ou pedir ajuste. */
-export default async function PostDoPortal({ params }: PageProps<'/portal/posts/[id]'>) {
-  const { id } = await params
-  const eu = await exigirCliente()
+export default async function PostDoCliente({ params }: PageProps<'/cliente/[slug]/posts/[id]'>) {
+  const { slug, id } = await params
   if (!UUID.test(id)) notFound()
-  const cliente = await clienteDoUsuario(eu.id)
+  const cliente = await clientePorLink(slug)
   if (!cliente) notFound()
   const post = await postDoCliente(cliente.id, id)
   if (!post) notFound()
@@ -27,7 +25,7 @@ export default async function PostDoPortal({ params }: PageProps<'/portal/posts/
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-5 p-4 py-8">
-      <Link href="/portal" className="inline-flex items-center gap-1 text-rotulo text-texto-3 hover:text-texto"><ChevronLeft className="h-4 w-4" /> Voltar</Link>
+      <Link href={`/cliente/${cliente.slug}`} className="inline-flex items-center gap-1 text-rotulo text-texto-3 hover:text-texto"><ChevronLeft className="h-4 w-4" /> Voltar</Link>
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,420px)_1fr]">
         <PreviaPost nome={cliente.nome} formato={post.formato} midias={post.midias} legenda={post.legenda} />
         <section className="space-y-4">
@@ -43,7 +41,7 @@ export default async function PostDoPortal({ params }: PageProps<'/portal/posts/
           {post.aprovacao === 'aguardando' ? (
             <div className="space-y-2 rounded-xl border border-aviso-fundo bg-aviso-fundo/40 p-4">
               <p className="text-rotulo font-semibold text-aviso-forte">Este post espera a sua aprovação</p>
-              <RespostaPost tarefaId={post.id} quando={dataHora} />
+              <RespostaPost slug={cliente.slug} tarefaId={post.id} quando={dataHora} />
             </div>
           ) : (
             <div className={`rounded-xl border p-4 text-rotulo ${post.aprovacao === 'aprovado' ? 'border-sucesso-fundo bg-sucesso-fundo/40 text-sucesso-forte' : 'border-perigo-borda bg-perigo-fundo/30 text-perigo-forte'}`}>

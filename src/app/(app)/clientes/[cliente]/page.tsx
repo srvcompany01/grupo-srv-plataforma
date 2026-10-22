@@ -1,5 +1,6 @@
 import { IdCard, KeyRound, LayoutGrid, ListChecks, Megaphone } from 'lucide-react'
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { Suspense } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
@@ -12,13 +13,13 @@ import { iniciais } from '@/dominio/clientes-galeria'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { montarArvore, type Categoria } from '@/dominio/tarefas'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
-import { ROTULO_STATUS_CLIENTE, buscarCliente, usuariosDoCliente } from '@/servicos/clientes-plataforma'
+import { ROTULO_STATUS_CLIENTE, buscarCliente, linkDoCliente } from '@/servicos/clientes-plataforma'
 import { statusDasListas } from '@/servicos/listas'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
 import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { Modulo } from '@/componentes/Modulo'
-import { FormConvite } from '../../config/usuarios/FormConvite'
+import { LinkDoCliente } from '@/componentes/LinkDoCliente'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
 import { CamposCliente } from './CamposCliente'
@@ -37,7 +38,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   const podeGerir = admin || eu.papel === 'gestor'
   const [campos, valores, capas] = await Promise.all([listarCamposCliente(sb), valoresDosClientes(sb), capasDosClientes(sb)])
   const capa = capas[id]
-  const usuarios = admin && !cliente.interno ? await usuariosDoCliente(sb, id) : []
+  const linkSlug = cliente.interno ? null : await linkDoCliente(sb, id)
+  const cabecalhos = await headers()
+  const origem = `${cabecalhos.get('x-forwarded-proto') ?? 'https'}://${cabecalhos.get('host') ?? 'app.gruposrv.com.br'}`
 
   // Visão por cliente: o trabalho dele em todos os departamentos, uma seção por departamento (lista).
   const hoje = dataDeHoje(new Date())
@@ -121,20 +124,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           <Modulo icone={IdCard} titulo="Cadastro" descricao="Dados do cliente e as ligações com o Meta">
             <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={podeGerir} embutido />
           </Modulo>
-          {admin && !cliente.interno && (
-            <Modulo icone={KeyRound} titulo="Acesso ao portal" descricao="Quem do cliente entra no portal (documentos e anúncios)">
-              <div className="space-y-3">
-                <div className="overflow-hidden rounded-lg border border-borda">
-                  {usuarios.length === 0 && <p className="px-3 py-2.5 text-corpo text-texto-3">Nenhum usuário com acesso ao portal.</p>}
-                  {usuarios.map((u) => (
-                    <div key={u.id} className={`flex flex-wrap items-center gap-x-3 border-t border-borda px-3 py-2 text-corpo first:border-t-0 ${u.ativo ? '' : 'opacity-50'}`}>
-                      <span className="font-medium">{u.nome}</span>
-                      <span className="text-texto-3">{u.email}</span>
-                    </div>
-                  ))}
-                </div>
-                <FormConvite clientes={[]} espacos={[]} clienteFixo={id} />
-              </div>
+          {!cliente.interno && linkSlug && (
+            <Modulo icone={KeyRound} titulo="Link do cliente" descricao="Sem login: o cliente aprova os posts e vê anúncios e documentos por este link">
+              <LinkDoCliente clienteId={id} url={`${origem}/cliente/${linkSlug}`} podeGerir={podeGerir} />
             </Modulo>
           )}
           {admin && !cliente.interno && <ExcluirCliente clienteId={id} nome={cliente.nome} />}

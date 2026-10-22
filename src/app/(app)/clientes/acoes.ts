@@ -6,7 +6,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import { dataDeHoje } from '@/dominio/filtros'
-import { lerFormCliente, marcarTrabalhado, ordenarGaleria } from '@/servicos/clientes-plataforma'
+import { buscarCliente, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
 // Cliente do usuário: a RLS só permite admin e gestores.
 
@@ -74,5 +74,18 @@ export async function marcarTrabalhadoHojeAcao(clienteId: string, marcado: boole
   const sb = await criarClienteServidor()
   const r = await tentar(() => marcarTrabalhado(sb, eu.id, clienteId, dataDeHoje(new Date()), marcado), marcado ? 'Marcado: você trabalhou neste cliente hoje.' : 'Marca de hoje removida.')
   revalidatePath('/clientes')
+  return r
+}
+
+/** Novo link do cliente: o anterior para de funcionar na hora. */
+export async function novoLinkAcao(clienteId: string): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (eu.papel !== 'admin' && eu.papel !== 'gestor') return { erro: 'Só admin e gestor geram o link.' }
+  if (!/^[0-9a-f-]{36}$/i.test(clienteId)) return { erro: 'Cliente inválido.' }
+  const sb = await criarClienteServidor()
+  const cliente = await buscarCliente(sb, clienteId)
+  if (!cliente) return { erro: 'Cliente não encontrado.' }
+  const r = await tentar(() => novoLinkDoCliente(sb, clienteId, cliente.nome), 'Link novo gerado. O anterior não funciona mais.')
+  revalidatePath(`/clientes/${clienteId}`)
   return r
 }

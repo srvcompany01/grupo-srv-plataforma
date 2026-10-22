@@ -217,6 +217,7 @@ export type Database = {
           meta_ad_account_id: string | null
           meta_page_id: string | null
           name: string
+          portal_slug: string
           phone: string | null
           status: string
           updated_at: string
@@ -236,6 +237,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           meta_page_id?: string | null
           name: string
+          portal_slug?: string
           phone?: string | null
           status?: string
           updated_at?: string
@@ -255,6 +257,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           meta_page_id?: string | null
           name?: string
+          portal_slug?: string
           phone?: string | null
           status?: string
           updated_at?: string

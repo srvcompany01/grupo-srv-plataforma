@@ -133,3 +133,21 @@ export async function definirPaginaMeta(sb: Supabase, clienteId: string, campos:
   if (error) throw error
   if (!count) throw { code: '42501' }
 }
+
+/** Código do link do cliente (/cliente/<código>). null sem a migration do link. */
+export async function linkDoCliente(sb: Supabase, clienteId: string): Promise<string | null> {
+  const { data, error } = await sb.from('clients').select('portal_slug').eq('id', clienteId).maybeSingle()
+  return error || !data ? null : data.portal_slug
+}
+
+/** Gera um link novo (o anterior para de funcionar). Nome do cliente + 6 caracteres aleatórios. Só admin/gestor (RLS). */
+export async function novoLinkDoCliente(sb: Supabase, clienteId: string, nome: string): Promise<string> {
+  const letras = 'abcdefghijkmnpqrstuvwxyz23456789'
+  const codigo = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => letras[b % letras.length]).join('')
+  const base = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '') || 'cliente'
+  const slug = `${base}-${codigo}`
+  const { error, count } = await sb.from('clients').update({ portal_slug: slug }, { count: 'exact' }).eq('id', clienteId)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+  return slug
+}

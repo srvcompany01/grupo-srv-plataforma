@@ -7,10 +7,30 @@ import { dados } from './resultado'
 import { publicarPost } from './publicacao-meta'
 
 /**
- * Posts de conteúdo no portal do cliente. As tabelas de conteúdo são só da equipe (RLS), então o servidor lê e grava
- * com a chave mestra, SEMPRE filtrando pelo cliente do usuário logado (vem de client_users, não da tela).
- * O cliente vê o que já foi enviado para ele (tudo menos rascunho).
+ * Página do cliente pelo link (sem login): app.gruposrv.com.br/cliente/<nome>-<código>. O servidor lê e grava com a
+ * chave mestra, SEMPRE filtrando pelo cliente do link (resolvido aqui, nunca vindo da tela).
+ * O cliente vê os posts que já foram enviados para ele (tudo menos rascunho) e os documentos liberados.
  */
+
+export type ClienteDoLink = { id: string; nome: string; slug: string; metaPaginaId: string | null; metaContaId: string | null }
+
+export async function clientePorLink(slug: string): Promise<ClienteDoLink | null> {
+  if (!/^[a-z0-9][a-z0-9-]{2,60}$/.test(slug)) return null
+  const { data } = await criarClienteAdmin().from('clients').select('id, name, portal_slug, meta_page_id, meta_ad_account_id').eq('portal_slug', slug).neq('status', 'encerrado').maybeSingle()
+  return data ? { id: data.id, nome: data.name, slug: data.portal_slug, metaPaginaId: data.meta_page_id, metaContaId: data.meta_ad_account_id } : null
+}
+
+/** Documentos que a equipe liberou para o cliente. */
+export async function documentosDoCliente(clienteId: string): Promise<{ id: string; titulo: string; atualizadoEm: string }[]> {
+  const linhas = dados(await criarClienteAdmin().from('documents').select('id, title, updated_at').eq('client_id', clienteId).eq('client_visible', true).is('archived_at', null).order('updated_at', { ascending: false }))
+  return linhas.map((d) => ({ id: d.id, titulo: d.title, atualizadoEm: d.updated_at }))
+}
+
+/** O documento só abre se for deste cliente e estiver liberado para ele. */
+export async function documentoLiberado(clienteId: string, documentoId: string): Promise<boolean> {
+  const { data } = await criarClienteAdmin().from('documents').select('id').eq('id', documentoId).eq('client_id', clienteId).eq('client_visible', true).is('archived_at', null).maybeSingle()
+  return !!data
+}
 
 export type MidiaPortal = { tipo: 'imagem' | 'video'; url: string }
 export type PostPortal = {
@@ -30,10 +50,10 @@ export type PostPortal = {
   respostas: { versao: number; decisao: Decisao; comentario: string; nome: string; em: string }[]
 }
 
-/** Cliente do usuário do portal (o primeiro vínculo). */
-export async function clienteDoUsuario(usuarioId: string): Promise<{ id: string; nome: string } | null> {
-  const { data } = await criarClienteAdmin().from('client_users').select('client_id, clients(name)').eq('user_id', usuarioId).limit(1).maybeSingle()
-  return data ? { id: data.client_id, nome: data.clients?.name ?? '' } : null
+/** Link do cliente de quem entra pelo login antigo do portal (o primeiro vínculo). */
+export async function linkDoUsuario(usuarioId: string): Promise<string | null> {
+  const { data } = await criarClienteAdmin().from('client_users').select('clients(portal_slug)').eq('user_id', usuarioId).limit(1).maybeSingle()
+  return data?.clients?.portal_slug ?? null
 }
 
 const CAMPOS = `task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_permalink, fb_permalink,
@@ -87,17 +107,20 @@ export async function postDoCliente(clienteId: string, tarefaId: string): Promis
  * Resposta do cliente à versão atual: grava a resposta, muda a aprovação, deixa um comentário na tarefa para a equipe
  * e, se aprovou e o horário já passou, publica na hora.
  */
-export async function responderPost(clienteId: string, usuario: { id: string; nome: string }, tarefaId: string, decisao: Decisao, comentario: string): Promise<{ publicado?: boolean }> {
+export async function responderPost(clienteId: string, nome: string, tarefaId: string, decisao: Decisao, comentario: string): Promise<{ publicado?: boolean }> {
   const admin = criarClienteAdmin()
   const post = await postDoCliente(clienteId, tarefaId)
   if (!post) throw new Error('Post não encontrado.')
   if (post.aprovacao !== 'aguardando') throw new Error('Este post já foi respondido.')
   const { data: versao, error } = await admin.from('content_versions').select('id').eq('task_id', tarefaId).eq('number', post.versao).single()
   if (error) throw error
-  dados(await admin.from('content_responses').insert({ version_id: versao.id, task_id: tarefaId, decision: decisao, comment: comentario, responder_name: usuario.nome || 'Cliente' }))
+  dados(await admin.from('content_responses').insert({ version_id: versao.id, task_id: tarefaId, decision: decisao, comment: comentario, responder_name: nome }))
   dados(await admin.from('content_posts').update({ approval: decisao }).eq('task_id', tarefaId).eq('approval', 'aguardando').select('task_id'))
-  const texto = decisao === 'aprovado' ? `✅ Aprovou a versão ${post.versao} do post pelo portal.` : `✏️ Pediu ajuste na versão ${post.versao} pelo portal: ${comentario}`
-  await admin.from('comments').insert({ task_id: tarefaId, author_id: usuario.id, body: texto, is_internal: false })
+  // Sem login, o comentário sai em nome de quem criou a tarefa (ou do primeiro responsável), dizendo que foi o cliente.
+  const texto = decisao === 'aprovado' ? `✅ O cliente (${nome}) aprovou a versão ${post.versao} pelo link.` : `✏️ O cliente (${nome}) pediu ajuste na versão ${post.versao}: ${comentario}`
+  const { data: tarefa } = await admin.from('tasks').select('created_by, task_assignees(user_id)').eq('id', tarefaId).single()
+  const autor = tarefa?.created_by ?? tarefa?.task_assignees[0]?.user_id
+  if (autor) await admin.from('comments').insert({ task_id: tarefaId, author_id: autor, body: texto, is_internal: false })
   if (decisao === 'aprovado' && post.status === 'agendado' && post.publicarEm && Date.parse(post.publicarEm) <= Date.now()) {
     return { publicado: (await publicarPost(tarefaId)).status === 'publicado' }
   }

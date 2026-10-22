@@ -2,7 +2,7 @@ import { SLUGS_DAS_LANDINGS } from './landings'
 
 export type PapelUsuario = 'admin' | 'gestor' | 'membro' | 'cliente'
 
-const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/f', '/api/cron', '/api/mcp', '/api/dev-arquivos', '/api/leads', '/lp', ...SLUGS_DAS_LANDINGS.map((slug) => `/${slug}`)]
+const PREFIXOS_PUBLICOS = ['/login', '/auth', '/admin', '/c', '/cliente', '/f', '/api/cron', '/api/mcp', '/api/dev-arquivos', '/api/leads', '/lp', ...SLUGS_DAS_LANDINGS.map((slug) => `/${slug}`)]
 
 const comecaCom = (caminho: string, prefixo: string) => caminho === prefixo || caminho.startsWith(`${prefixo}/`)
 
