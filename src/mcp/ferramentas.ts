@@ -9,7 +9,7 @@ import { listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plata
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
-import { espacoDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
+import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import * as campos from '@/servicos/campos-personalizados'
 import { criarComentario } from '@/servicos/comentarios'
@@ -109,7 +109,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
-        'Projetos: um espaço marcado como "de projetos"; cada lista dele é um projeto (normalmente um por cliente) e as tarefas/subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão) e o andamento de cada projeto. Para criar um projeto, crie uma lista nesse espaço (criar_lista).',
+        'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
@@ -579,23 +579,25 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'relatorio_projetos',
-    descricao: 'Painel de foco dos projetos (espaço Projetos: cada lista é um projeto, normalmente um por cliente). Por projeto: tempo investido no período e no total, fatia do tempo, tarefas concluídas (no total e no período), em andamento, pendentes, atrasadas, última atividade e situação (em foco / precisa de atenção = tarefas abertas sem tempo nem entrega em 7 dias). Com projetoId, detalha esse projeto por tarefa principal. Conta só tarefas sem subtarefas (a tarefa-mãe é agrupamento).',
+    descricao: 'Painel de foco dos projetos. Projetos é uma lista: cada tarefa principal é um projeto (normalmente um cliente) e as subtarefas são as entregas. Por projeto: tempo investido no período e no total, fatia do tempo, subtarefas concluídas (no total e no período), em andamento, pendentes, atrasadas, última atividade e situação (em foco / precisa de atenção = tarefas abertas sem tempo nem entrega em 7 dias). Com listaId, faz o mesmo painel para outra lista (uma linha por tarefa principal). Conta só tarefas sem subtarefas (a tarefa-mãe é agrupamento).',
     escrita: false,
     entrada: {
       dias: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional().describe('Período em dias; padrão 30'),
       quem: z.enum(['eu', 'equipe']).optional().describe('Tempo só da pessoa dona do token (padrão) ou da equipe toda'),
-      projetoId: id('Projeto (id de lista do espaço Projetos) para detalhar por tarefa').optional(),
+      listaId: id('Outra lista para o mesmo painel (padrão: a lista Projetos)').optional(),
     },
     executar: async ({ sb, userId }, a) => {
-      const espaco = await espacoDeProjetos(sb)
-      if (!espaco && !a.projetoId) throw new Error('O espaço de projetos ainda não foi configurado (aba Projetos, botão "Configurar Projetos").')
-      const p = await painelDoEscopo(sb, a.projetoId ? { listaId: a.projetoId, cor: '' } : { espacoId: espaco!.id }, { dias: a.dias ?? 30, usuarioId: a.quem === 'equipe' ? null : userId, agora: new Date() })
+      const projetos = a.listaId ? null : await listaDeProjetos(sb)
+      if (!a.listaId && !projetos) throw new Error('Os projetos ainda não foram configurados (aba Projetos, botão "Configurar Projetos").')
+      const listaId = a.listaId ?? projetos!.id
+      const p = await painelDoEscopo(sb, { listaId, cor: '' }, { dias: a.dias ?? 30, usuarioId: a.quem === 'equipe' ? null : userId, agora: new Date() })
       const horas = (s: number) => Math.round((s / 3600) * 10) / 10
       return {
+        listaId,
         desde: p.inicioPeriodo,
         totais: { ...p.totais, horasPeriodo: horas(p.totais.segundosPeriodo), horasTotal: horas(p.totais.segundosTotal), tempoPeriodo: formatarDuracao(p.totais.segundosPeriodo) },
         linhas: p.linhas.map((l) => ({
-          id: l.id, nome: l.nome, detalhe: l.detalhe, horasPeriodo: horas(l.segundosPeriodo), horasTotal: horas(l.segundosTotal), participacaoPercentual: Math.round(l.participacao * 100),
+          tarefaId: l.id, nome: l.nome, detalhe: l.detalhe, horasPeriodo: horas(l.segundosPeriodo), horasTotal: horas(l.segundosTotal), participacaoPercentual: Math.round(l.participacao * 100),
           total: l.total, concluidas: l.concluidas, concluidasPeriodo: l.concluidasPeriodo, emAndamento: l.emAndamento, pendentes: l.pendentes, atrasadas: l.atrasadas, ultimaAtividade: l.ultimaAtividade, situacao: l.saude,
         })),
         horasPorSemana: p.semanas.map((s) => ({ semana: s.inicio, horas: horas(s.segundos) })),

@@ -30,8 +30,8 @@ import { listarEquipe } from '@/servicos/usuarios'
 import { buscarVisaoSalva } from '@/servicos/visoes'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 
-/** Tela de uma lista. `caminho` é a rota pública dela (`/listas/<id>` ou a rota fixa da área). */
-export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: string; sp: Record<string, string | string[] | undefined> }) {
+/** Tela de uma lista. `caminho` é a rota pública dela (`/listas/<id>` ou a rota fixa da área). `rotuloPainel` nomeia as linhas do Painel. */
+export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: string; caminho: string; sp: Record<string, string | string[] | undefined>; rotuloPainel?: string }) {
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
   const lista = await buscarLista(sb, id)
@@ -121,7 +121,7 @@ export async function PaginaLista({ id, caminho, sp }: { id: string; caminho: st
       <main className="p-4 md:p-5">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
-        {filtros.visao === 'painel' && <PainelDoEscopo escopo={{ listaId: id, cor: lista.cor }} caminho={caminho} sp={spEfetivo} euId={eu.id} />}
+        {filtros.visao === 'painel' && <PainelDoEscopo escopo={{ listaId: id, cor: lista.cor }} caminho={caminho} sp={spEfetivo} euId={eu.id} rotulo={rotuloPainel} />}
         {filtros.visao === 'documentos' && (
           <VisaoDocumentos
             listaId={id}

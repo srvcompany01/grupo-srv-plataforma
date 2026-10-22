@@ -7,7 +7,7 @@ type Sp = Record<string, string | string[] | undefined>
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
 /** Aba Painel (do espaço de projetos ou de um projeto). `caminho` + `sp` montam os links mantendo a visão atual. */
-export async function PainelDoEscopo({ escopo, caminho, sp, euId }: { escopo: { espacoId: string } | { listaId: string; cor: string }; caminho: string; sp: Sp; euId: string }) {
+export async function PainelDoEscopo({ escopo, caminho, sp, euId, rotulo }: { escopo: { espacoId: string } | { listaId: string; cor: string }; caminho: string; sp: Sp; euId: string; rotulo?: string }) {
   const sb = await criarClienteServidor()
   const periodo = lerPeriodoPainel(texto(sp.periodo))
   const quem = texto(sp.quem) === 'equipe' ? 'equipe' : 'eu'
@@ -25,11 +25,11 @@ export async function PainelDoEscopo({ escopo, caminho, sp, euId }: { escopo: { 
   return (
     <PainelProjetos
       painel={painel}
-      rotulo={'espacoId' in escopo ? 'Projeto' : 'Tarefa'}
+      rotulo={rotulo ?? ('espacoId' in escopo ? 'Lista' : 'Tarefa')}
       periodo={periodo}
       quem={quem}
       href={href}
-      vazio={'espacoId' in escopo ? 'Nenhum projeto ainda. Crie uma lista para cada cliente ou projeto neste espaço.' : 'Nenhuma tarefa neste projeto ainda.'}
+      vazio={'espacoId' in escopo ? 'Nenhuma lista neste espaço ainda.' : rotulo === 'Projeto' ? 'Nenhum projeto ainda. Crie uma tarefa para cada cliente ou projeto, com as entregas como subtarefas.' : 'Nenhuma tarefa nesta lista ainda.'}
     />
   )
 }

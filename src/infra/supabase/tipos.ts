@@ -600,6 +600,7 @@ export type Database = {
           folder_id: string | null
           icon: string
           id: string
+          is_projects: boolean
           kind: string
           name: string
           position: string
@@ -616,6 +617,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string
           id?: string
+          is_projects?: boolean
           kind?: string
           name: string
           position: string
@@ -632,6 +634,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string
           id?: string
+          is_projects?: boolean
           kind?: string
           name?: string
           position?: string
@@ -1097,7 +1100,6 @@ export type Database = {
           description: string | null
           emoji: string | null
           icon: string
-          is_projects: boolean
           id: string
           name: string
           parent_id: string | null
@@ -1112,7 +1114,6 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           icon?: string
-          is_projects?: boolean
           id?: string
           name: string
           parent_id?: string | null
@@ -1127,7 +1128,6 @@ export type Database = {
           description?: string | null
           emoji?: string | null
           icon?: string
-          is_projects?: boolean
           id?: string
           name?: string
           parent_id?: string | null

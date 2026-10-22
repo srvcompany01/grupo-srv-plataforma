@@ -2,36 +2,27 @@ import type { Categoria } from '@/dominio/tarefas'
 import { dataDeHoje } from '@/dominio/filtros'
 import { montarPainel, type LinhaBase, type Painel, type RegistroPainel, type TarefaPainel } from '@/dominio/painel-projetos'
 import type { Supabase } from '@/infra/supabase/servidor'
-import { posicaoEntre } from '@/dominio/posicao'
+import { criarLista } from './estrutura'
 import { statusDasListas } from './listas'
 import { dados } from './resultado'
 
-export type EspacoProjetos = { id: string; nome: string }
+export type ListaProjetos = { id: string; nome: string; cor: string }
 export type Projeto = { id: string; nome: string; cor: string; clienteId: string | null; clienteNome: string | null }
 
-/** O espaço marcado como "de projetos" (null se ainda não foi configurado ou sem a migration). */
-export async function espacoDeProjetos(sb: Supabase): Promise<EspacoProjetos | null> {
-  const { data, error } = await sb.from('spaces').select('id, name').eq('is_projects', true).is('archived_at', null).maybeSingle()
+/** A lista marcada como "de projetos" (null se ainda não foi configurada ou sem a migration). */
+export async function listaDeProjetos(sb: Supabase): Promise<ListaProjetos | null> {
+  const { data, error } = await sb.from('lists').select('id, name, color').eq('is_projects', true).is('archived_at', null).maybeSingle()
   if (error) throw error
-  return data ? { id: data.id, nome: data.name } : null
+  return data ? { id: data.id, nome: data.name, cor: data.color } : null
 }
 
-/** Marca o espaço "Projetos" que já existir (pelo nome) ou cria um novo. Só o admin (RLS de spaces). */
+/** Marca a lista solta "Projetos" que já existir ou cria uma (já vem com os status padrão). */
 export async function configurarProjetos(sb: Supabase): Promise<string> {
-  const { data: existente, error } = await sb.from('spaces').select('id').ilike('name', 'projetos').is('archived_at', null).is('parent_id', null).limit(1).maybeSingle()
+  const { data: existente, error } = await sb.from('lists').select('id').ilike('name', 'projetos').is('space_id', null).is('archived_at', null).limit(1).maybeSingle()
   if (error) throw error
-  if (existente) {
-    dados(await sb.from('spaces').update({ is_projects: true }).eq('id', existente.id).select('id'))
-    return existente.id
-  }
-  const ultimo = dados(await sb.from('spaces').select('position').is('parent_id', null).order('position', { ascending: false }).limit(1))
-  const { data: novo, error: e2 } = await sb
-    .from('spaces')
-    .insert({ name: 'Projetos', color: '#073f3b', icon: 'briefcase', is_projects: true, position: posicaoEntre(ultimo[0]?.position ?? null, null) })
-    .select('id')
-    .single()
-  if (e2) throw e2
-  return novo.id
+  const id = existente?.id ?? (await criarLista(sb, { espacoId: null, pastaId: null, nome: 'Projetos', mes: null, cor: '#073f3b', icone: 'briefcase' }))
+  dados(await sb.from('lists').update({ is_projects: true }).eq('id', id).select('id'))
+  return id
 }
 
 /** Listas (projetos) do espaço, sem as arquivadas, na ordem da navegação. */
