@@ -37,6 +37,11 @@ export function FormCliente({ acao, cliente, podeEditar }: { acao: Acao; cliente
         <input name="metaPagina" defaultValue={cliente?.metaPaginaId ?? ''} disabled={!podeEditar} className={campo} placeholder="Cole o link da Biblioteca de Anúncios do cliente ou o ID da página" />
         <span className="block text-legenda text-texto-3">Em facebook.com/ads/library, busque a página do cliente e copie o link (ele tem view_all_page_id=...).</span>
       </label>
+      <label className="block space-y-1">
+        <span className={rotulo}>Conta de anúncios do Meta</span>
+        <input name="metaConta" defaultValue={cliente?.metaContaId ? `act_${cliente.metaContaId}` : ''} disabled={!podeEditar} className={campo} placeholder="act_123456789 ou o link do Gerenciador de Anúncios" />
+        <span className="block text-legenda text-texto-3">Mostra os anúncios ativos com impressões, cliques, CTR e visualizações aqui e no portal do cliente. A conta precisa estar liberada para o usuário do sistema do Meta.</span>
+      </label>
       {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
       {estado?.ok && <p className="text-sm text-sucesso-forte">{estado.ok}</p>}
       {podeEditar && (

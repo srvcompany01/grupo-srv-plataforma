@@ -7,6 +7,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
 import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
+import { lerContaAnuncios, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
@@ -142,14 +143,43 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'definir_biblioteca_anuncios_cliente',
-    descricao: 'Liga o cliente à página dele no Facebook para a Biblioteca de Anúncios do Meta (link público dos anúncios ativos, mostrado no painel do cliente e no portal). Aceita o link da biblioteca (com view_all_page_id=) ou o ID numérico da página; vazio tira o vínculo. Só admin e gestor.',
+    descricao: 'Liga o cliente ao Meta. pagina: link da Biblioteca de Anúncios (com view_all_page_id=) ou ID da página do Facebook (link público dos anúncios). contaAnuncios: conta de anúncios (act_123… ou link do Gerenciador) para a galeria com os resultados. Informe só o que muda; vazio tira o vínculo. Só admin e gestor.',
     escrita: true,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), pagina: z.string().max(500).describe('Link da Biblioteca de Anúncios do cliente ou ID da página; vazio tira') },
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      pagina: z.string().max(500).optional().describe('Link da Biblioteca de Anúncios ou ID da página; vazio tira'),
+      contaAnuncios: z.string().max(500).optional().describe('Conta de anúncios act_123… ou link do Gerenciador; vazio tira'),
+    },
     executar: async ({ sb }, a) => {
-      const p = lerPaginaMeta(a.pagina)
-      if ('erro' in p) throw new Error(p.erro)
-      await definirPaginaMeta(sb, a.clienteId, p.id)
-      return { bibliotecaAnuncios: p.id ? urlBibliotecaAnuncios(p.id) : null }
+      const campos: { meta_page_id?: string | null; meta_ad_account_id?: string | null } = {}
+      if (a.pagina !== undefined) {
+        const p = lerPaginaMeta(a.pagina)
+        if ('erro' in p) throw new Error(p.erro)
+        campos.meta_page_id = p.id
+      }
+      if (a.contaAnuncios !== undefined) {
+        const c = lerContaAnuncios(a.contaAnuncios)
+        if ('erro' in c) throw new Error(c.erro)
+        campos.meta_ad_account_id = c.id
+      }
+      if (!Object.keys(campos).length) throw new Error('Informe pagina e/ou contaAnuncios.')
+      await definirPaginaMeta(sb, a.clienteId, campos)
+      return { ok: true, bibliotecaAnuncios: campos.meta_page_id ? urlBibliotecaAnuncios(campos.meta_page_id) : undefined }
+    },
+  }),
+
+  definir({
+    nome: 'anuncios_meta_cliente',
+    descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: impressões, alcance, cliques, CTR, CPM, CPC, gasto, frequência, visualizações de vídeo, diagnóstico da Meta (qualidade, engajamento e conversão frente aos concorrentes) e a avaliação da plataforma (bom / médio / fraco / poucos dados, com os motivos). O cliente precisa ter a conta de anúncios cadastrada.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!cliente.metaContaId) throw new Error('Este cliente não tem conta de anúncios do Meta cadastrada.')
+      const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, a.dias ?? 7)
+      if ('erro' in r) throw new Error(r.erro)
+      return { cliente: cliente.nome, dias: a.dias ?? 7, totais: totaisAnuncios(r.anuncios), anuncios: r.anuncios }
     },
   }),
 

@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
+import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
 import { notFound } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -20,8 +23,10 @@ import { CamposCliente } from './CamposCliente'
 import { ExcluirCliente } from './ExcluirCliente'
 import { SeletorCapa } from './SeletorCapa'
 
-export default async function Cliente({ params }: PageProps<'/clientes/[cliente]'>) {
+export default async function Cliente({ params, searchParams }: PageProps<'/clientes/[cliente]'>) {
   const { cliente: id } = await params
+  const sp = await searchParams
+  const diasAnuncios = lerPeriodoAnuncios(typeof sp.anuncios === 'string' ? sp.anuncios : undefined)
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
   const cliente = await buscarCliente(sb, id)
@@ -59,6 +64,11 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
         </div>
         {podeGerir && <SeletorCapa clienteId={id} temCapa={!!capa?.url} />}
       </section>
+      {cliente.metaContaId && (
+        <Suspense fallback={<p className="rounded-xl border border-borda bg-white p-4 text-rotulo text-texto-3">Carregando os anúncios do Meta…</p>}>
+          <GaleriaAnuncios contaId={cliente.metaContaId} dias={diasAnuncios} mostrarGasto href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+        </Suspense>
+      )}
       <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro abaixo para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
       <section className="space-y-4" aria-label="Trabalho do cliente">
         <h2 className="text-sm font-semibold">Trabalho por departamento</h2>

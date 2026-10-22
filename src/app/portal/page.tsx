@@ -1,5 +1,8 @@
 import { FileText } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
+import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
 import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { Marca } from '@/componentes/Marca'
 import { BotaoSair } from '@/componentes/app/BotaoSair'
@@ -9,13 +12,15 @@ import { listarDocumentos } from '@/servicos/documentos'
 
 const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 
-export default async function Portal() {
+export default async function Portal({ searchParams }: PageProps<'/portal'>) {
+  const sp = await searchParams
+  const dias = lerPeriodoAnuncios(typeof sp.anuncios === 'string' ? sp.anuncios : undefined)
   const eu = await exigirCliente()
   const sb = await criarClienteServidor()
   // A RLS entrega só os documentos liberados e só o cadastro do próprio cliente.
   const [docs, cliente] = await Promise.all([
     listarDocumentos(sb).catch(() => []),
-    sb.from('clients').select('meta_page_id').maybeSingle().then((r) => r.data, () => null),
+    sb.from('clients').select('meta_page_id, meta_ad_account_id').maybeSingle().then((r) => r.data, () => null),
   ])
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-4 py-10">
@@ -26,6 +31,11 @@ export default async function Portal() {
         </div>
         <BotaoSair />
       </div>
+      {cliente?.meta_ad_account_id && (
+        <Suspense fallback={<p className="rounded-xl border border-borda bg-white p-4 text-rotulo text-texto-3">Carregando seus anúncios…</p>}>
+          <GaleriaAnuncios contaId={cliente.meta_ad_account_id} dias={dias} mostrarGasto={false} href={(d) => (d === 7 ? '/portal' : `/portal?anuncios=${d}`)} />
+        </Suspense>
+      )}
       <BibliotecaAnuncios paginaId={cliente?.meta_page_id ?? null} />
       <section className="space-y-2">
         <h2 className="text-rotulo font-semibold text-texto-3">Documentos para você</h2>
