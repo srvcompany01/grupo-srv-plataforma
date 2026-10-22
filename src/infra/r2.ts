@@ -49,6 +49,14 @@ export function gerarChaveConteudo(tarefaId: string, mime: string): string {
   return `conteudo/${tarefaId}/${crypto.randomUUID()}.${ext}`
 }
 
+/** Anexos do chat: `chat/<canal>/<uuid>.<ext>`; a extensão vem do mime já validado. */
+export function gerarChaveChat(canalId: string, mime: string): string {
+  const m = normalizarMime(mime)
+  const ext = Object.hasOwn(EXTENSAO_ANEXO, m) ? EXTENSAO_ANEXO[m] : undefined
+  if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
+  return `chat/${canalId}/${crypto.randomUUID()}.${ext}`
+}
+
 /** Capas de cliente: `clientes/<id>/<uuid>.<ext>`; a extensão vem do mime já validado. */
 export function gerarChaveCliente(clienteId: string, mime: string): string {
   const ext = EXTENSAO_CAPA[mime]

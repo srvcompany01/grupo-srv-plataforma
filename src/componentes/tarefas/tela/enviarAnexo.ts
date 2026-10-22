@@ -1,10 +1,11 @@
-import { prepararEnvioAnexoAcao } from '@/app/(app)/tarefas/acoes'
 import { normalizarMime, validarAnexo } from '@/dominio/anexos'
 import type { NovoAnexo } from '@/servicos/comentarios'
 
-/** Envia direto ao R2 pela URL assinada (XMLHttpRequest para ter progresso). Erro → `Error` em português. */
+export type PrepararEnvio = (a: { nome: string; mime: string; tamanho: number }) => Promise<{ chave: string; url: string } | { erro: string }>
+
+/** Envia direto ao R2 pela URL assinada (XMLHttpRequest para ter progresso). `preparar` pede a URL (tarefa, chat…). */
 export async function enviarAnexo(
-  tarefaId: string,
+  preparar: PrepararEnvio,
   arquivo: Blob,
   nome: string,
   aoProgresso: (pct: number) => void,
@@ -13,7 +14,7 @@ export async function enviarAnexo(
   const mime = normalizarMime(arquivo.type)
   const invalido = validarAnexo({ mime, tamanho: arquivo.size })
   if (invalido) throw new Error(invalido)
-  const preparo = await prepararEnvioAnexoAcao(tarefaId, { nome, mime, tamanho: arquivo.size })
+  const preparo = await preparar({ nome, mime, tamanho: arquivo.size })
   if ('erro' in preparo) throw new Error(preparo.erro)
 
   await new Promise<void>((resolve, reject) => {

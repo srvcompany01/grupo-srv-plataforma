@@ -11,6 +11,8 @@ import { lerContaAnuncios, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
+import * as chat from '@/servicos/chat'
+import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import * as campos from '@/servicos/campos-personalizados'
@@ -112,6 +114,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
+        'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
+        'Reuniões (notetaker): a equipe grava a reunião na plataforma e a IA cria um documento "Ata — <assunto> — dd/mm" com as páginas Ata (resumo, participantes, tópicos, decisões, próximos passos) e Transcrição. Para ler, use listar_documentos / buscar_documento.',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
       ],
       prioridades: PRIORIDADES,
@@ -646,6 +650,49 @@ export const FERRAMENTAS: Ferramenta[] = [
         })),
         horasPorSemana: p.semanas.map((s) => ({ semana: s.inicio, horas: horas(s.segundos) })),
       }
+    },
+  }),
+
+  definir({
+    nome: 'listar_canais_chat',
+    descricao: 'Canais do chat da equipe que a pessoa dona do token vê (públicos e privados em que está), com mensagens não lidas.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => (await chat.listarCanais(sb)).map((c) => ({ canal: c.nome, descricao: c.descricao, privado: c.privado, naoLidas: c.naoLidas })),
+  }),
+
+  definir({
+    nome: 'ler_canal_chat',
+    descricao: 'Últimas mensagens de um canal do chat (mais antigas primeiro), com autor, hora, anexos e quantas respostas em tópico cada uma tem. Com mensagemId, lê o tópico (a mensagem e as respostas). Menções aparecem como @Nome.',
+    escrita: false,
+    entrada: { canal: z.string().min(1).max(40).describe('Nome do canal (ex.: geral)'), limite: z.number().int().min(1).max(150).optional().describe('Padrão 50'), mensagemId: id('Mensagem principal para ler o tópico').optional() },
+    executar: async ({ sb }, a) => {
+      const canal = (await chat.listarCanais(sb)).find((c) => c.nome === a.canal.replace(/^#/, ''))
+      if (!canal) throw new Error('Canal não encontrado (ou sem acesso).')
+      const resumo = (m: chat.Mensagem) => ({
+        id: m.id, autor: m.autorNome, em: m.criadoEm, editada: !!m.editadoEm,
+        texto: segmentarTexto(m.texto).map((x) => (x.tipo === 'mencao' ? `@${x.nome}` : x.valor)).join(''),
+        anexos: m.anexos.map((x) => x.nome), respostas: m.respostas.total || undefined,
+      })
+      if (a.mensagemId) {
+        const fio = await chat.fioDaMensagem(sb, a.mensagemId)
+        if (!fio) throw new Error('Mensagem não encontrada.')
+        return { canal: canal.nome, mensagem: resumo(fio.principal), respostas: fio.respostas.map(resumo) }
+      }
+      return { canal: canal.nome, mensagens: (await chat.mensagensDoCanal(sb, canal.id, a.limite ?? 50)).map(resumo) }
+    },
+  }),
+
+  definir({
+    nome: 'enviar_mensagem_chat',
+    descricao: 'Envia uma mensagem num canal do chat da equipe (em nome da pessoa dona do token). Para responder em tópico, informe respostaDe (id de uma mensagem principal). Para mencionar alguém (avisa no sino), escreva @[Nome](id) com o id de listar_equipe. Links de tarefas e documentos da plataforma aparecem com o título.',
+    escrita: true,
+    entrada: { canal: z.string().min(1).max(40).describe('Nome do canal'), texto: z.string().min(1).max(8000), respostaDe: id('Mensagem principal (tópico)').optional() },
+    executar: async ({ sb }, a) => {
+      const canal = (await chat.listarCanais(sb)).find((c) => c.nome === a.canal.replace(/^#/, ''))
+      if (!canal) throw new Error('Canal não encontrado (ou sem acesso).')
+      const mensagemId = await chat.enviarMensagem(sb, { canalId: canal.id, paiId: a.respostaDe ?? null, texto: a.texto.trim(), mencoes: extrairMencoes(a.texto), anexos: [] })
+      return { mensagemId }
     },
   }),
 

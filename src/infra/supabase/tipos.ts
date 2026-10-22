@@ -672,6 +672,89 @@ export type Database = {
           },
         ]
       }
+      chat_channels: {
+        Row: { archived_at: string | null; created_at: string; created_by: string | null; description: string; id: string; is_private: boolean; name: string }
+        Insert: { archived_at?: string | null; created_at?: string; created_by?: string | null; description?: string; id?: string; is_private?: boolean; name: string }
+        Update: { archived_at?: string | null; created_at?: string; created_by?: string | null; description?: string; id?: string; is_private?: boolean; name?: string }
+        Relationships: []
+      }
+      chat_members: {
+        Row: { channel_id: string; last_read_at: string; user_id: string }
+        Insert: { channel_id: string; last_read_at?: string; user_id: string }
+        Update: { channel_id?: string; last_read_at?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "chat_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: { author_id: string; body: string; channel_id: string; created_at: string; edited_at: string | null; id: string; parent_id: string | null }
+        Insert: { author_id?: string; body?: string; channel_id: string; created_at?: string; edited_at?: string | null; id?: string; parent_id?: string | null }
+        Update: { author_id?: string; body?: string; channel_id?: string; created_at?: string; edited_at?: string | null; id?: string; parent_id?: string | null }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_attachments: {
+        Row: { channel_id: string; created_at: string; created_by: string; file_name: string; id: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number }
+        Insert: { channel_id: string; created_at?: string; created_by?: string; file_name: string; id?: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number }
+        Update: { channel_id?: string; created_at?: string; created_by?: string; file_name?: string; id?: string; message_id?: string; mime_type?: string; r2_key?: string; size_bytes?: number }
+        Relationships: [
+          {
+            foreignKeyName: "chat_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_mentions: {
+        Row: { message_id: string; user_id: string }
+        Insert: { message_id: string; user_id: string }
+        Update: { message_id?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "chat_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null
@@ -680,7 +763,8 @@ export type Database = {
           id: string
           kind: string
           read_at: string | null
-          task_id: string
+          task_id: string | null
+          chat_message_id: string | null
           user_id: string
         }
         Insert: {
@@ -690,7 +774,8 @@ export type Database = {
           id?: string
           kind: string
           read_at?: string | null
-          task_id: string
+          task_id?: string | null
+          chat_message_id?: string | null
           user_id: string
         }
         Update: {
@@ -700,7 +785,8 @@ export type Database = {
           id?: string
           kind?: string
           read_at?: string | null
-          task_id?: string
+          task_id?: string | null
+          chat_message_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -709,6 +795,13 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_chat_message_id_fkey"
+            columns: ["chat_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
             referencedColumns: ["id"]
           },
           {
@@ -1511,6 +1604,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      marcar_chat_lido: { Args: { p_canal: string }; Returns: undefined }
       registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
       salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }
       duplicar_lista: { Args: { p_list: string }; Returns: string }

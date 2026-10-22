@@ -10,6 +10,8 @@ import {
   FileText,
   Filter,
   LayoutDashboard,
+  MessagesSquare,
+  Mic,
   PanelLeftClose,
   PenTool,
   Pin,
@@ -33,7 +35,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[] }
+export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
 type IconeLucide = ComponentType<{ className?: string }>
 
 /** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
@@ -163,7 +165,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 }
 
 /** Barra lateral única: atalhos dos módulos no topo e, abaixo, cada departamento (espaço) com as suas listas. */
-export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], acaoTopo }: PropsPainel & { acaoTopo?: ReactNode }) {
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, acaoTopo }: PropsPainel & { acaoTopo?: ReactNode }) {
   const caminho = usePathname()
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
   const recolhimento = useMemo(
@@ -209,10 +211,11 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
     })
   }
 
-  const link = (href: string, rotulo: string, Icone: IconeLucide) => (
+  const link = (href: string, rotulo: string, Icone: IconeLucide, contador = 0) => (
     <Link href={href} draggable={false} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
       <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
+      {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
 
@@ -227,10 +230,12 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
           ordemInicial={ordemInicio}
           itens={[
             { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
+            { id: 'chat', no: link('/chat', 'Chat', MessagesSquare, chatNaoLidas) },
             { id: 'agenda', no: link('/agenda', 'Agenda', CalendarDays) },
             { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
             { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
             { id: 'projetos', no: link('/projetos', 'Projetos', Briefcase) },
+            { id: 'reunioes', no: link('/reunioes', 'Reuniões', Mic) },
             { id: 'documentos', no: link('/documentos', 'Documentos', FileText) },
             { id: 'quadros', no: link('/quadros', 'Quadros', PenTool) },
             { id: 'funis', no: link('/funis', 'Funis', Filter) },

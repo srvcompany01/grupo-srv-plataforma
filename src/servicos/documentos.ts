@@ -107,7 +107,7 @@ export async function buscarPagina(sb: Supabase, paginaId: string, comAlteracoes
 export async function criarDocumento(
   sb: Supabase,
   eu: string,
-  opcoes: { titulo?: string; texto?: string; modelo?: string; listaId?: string; clienteId?: string | null; clienteVisivel?: boolean; visibilidade?: Visibilidade },
+  opcoes: { titulo?: string; texto?: string; modelo?: string; listaId?: string; clienteId?: string | null; clienteVisivel?: boolean; visibilidade?: Visibilidade; paginas?: { titulo: string; conteudo: unknown }[] },
 ): Promise<string> {
   const modelo = MODELOS_DOCUMENTO.find((m) => m.id === opcoes.modelo) ?? MODELOS_DOCUMENTO[0]
   const titulo = opcoes.titulo?.trim() || modelo.titulo
@@ -118,6 +118,16 @@ export async function criarDocumento(
     .single()
   if (error) throw error
   let anterior: string | null = null
+  // Páginas já prontas (ex.: ata do notetaker) no lugar das do modelo.
+  if (opcoes.paginas?.length) {
+    for (const pagina of opcoes.paginas) {
+      anterior = posicaoEntre(anterior, null)
+      const { error: e2 } = await sb.from('document_pages').insert({ document_id: data.id, title: pagina.titulo, position: anterior, content: pagina.conteudo as Json })
+      if (e2) throw e2
+    }
+    if (opcoes.listaId) await vincularLista(sb, data.id, opcoes.listaId)
+    return data.id
+  }
   for (const [i, pagina] of modelo.paginas.entries()) {
     const posicao = posicaoEntre(anterior, null)
     anterior = posicao
