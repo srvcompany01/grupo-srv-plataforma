@@ -57,7 +57,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
             <p className="mt-0.5 whitespace-pre-wrap break-words text-corpo">
               {segmentarTexto(c.texto).map((s, i) =>
                 s.tipo === 'mencao' ? (
-                  <span key={i} className="font-medium text-marca">
+                  <span key={i} className="font-semibold text-[#1d6fe0]">
                     @{s.nome}
                   </span>
                 ) : (
