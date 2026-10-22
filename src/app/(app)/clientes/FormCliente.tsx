@@ -7,7 +7,8 @@ import type { Cliente } from '@/servicos/clientes-plataforma'
 
 type Acao = (estado: Resultado, form: FormData) => Promise<Resultado>
 
-export function FormCliente({ acao, cliente, podeEditar }: { acao: Acao; cliente?: Cliente; podeEditar: boolean }) {
+/** `embutido`: sem moldura própria (quando já está dentro de um módulo da página). */
+export function FormCliente({ acao, cliente, podeEditar, embutido }: { acao: Acao; cliente?: Cliente; podeEditar: boolean; embutido?: boolean }) {
   const [estado, enviar, enviando] = useActionState(acao, null)
   const c = (rotuloCampo: string, nome: string, valor?: string | null, tipo = 'text') => (
     <label className="space-y-1">
@@ -16,7 +17,7 @@ export function FormCliente({ acao, cliente, podeEditar }: { acao: Acao; cliente
     </label>
   )
   return (
-    <form action={enviar} className="space-y-3 rounded-lg border border-borda bg-white p-4">
+    <form action={enviar} className={embutido ? 'space-y-3' : 'space-y-3 rounded-lg border border-borda bg-white p-4'}>
       <div className="grid gap-3 md:grid-cols-2">
         {c('Nome', 'nome', cliente?.nome)}
         {c('Razão social', 'razaoSocial', cliente?.razaoSocial)}

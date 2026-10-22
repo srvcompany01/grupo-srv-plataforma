@@ -1,4 +1,5 @@
-import { ExternalLink, PlayCircle } from 'lucide-react'
+import { ExternalLink, Megaphone, PlayCircle } from 'lucide-react'
+import { Modulo } from '@/componentes/Modulo'
 import Link from 'next/link'
 import { totaisAnuncios, type AnuncioAvaliado, type Desempenho, type Ranking } from '@/dominio/anuncios-meta'
 import { anunciosAtivos } from '@/servicos/meta-anuncios'
@@ -72,14 +73,14 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
 export async function GaleriaAnuncios({ contaId, dias, mostrarGasto, href }: { contaId: string; dias: 7 | 30; mostrarGasto: boolean; href: (dias: 7 | 30) => string }) {
   const r = await anunciosAtivos(contaId, dias)
   const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
+  const periodo = (
+    <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
+      {([7, 30] as const).map((d) => <Link key={d} href={href(d)} scroll={false} className={chip(d === dias)}>Últimos {d} dias</Link>)}
+    </nav>
+  )
   return (
-    <section className="space-y-3" aria-label="Anúncios ativos no Meta">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">Anúncios ativos no Meta</h2>
-        <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
-          {([7, 30] as const).map((d) => <Link key={d} href={href(d)} scroll={false} className={chip(d === dias)}>Últimos {d} dias</Link>)}
-        </nav>
-      </div>
+    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`Facebook e Instagram · resultados dos últimos ${dias} dias, direto do Meta`} acoes={periodo}>
+      <div className="@container space-y-3">
       {'erro' in r ? (
         <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
       ) : r.anuncios.length === 0 ? (
@@ -87,11 +88,12 @@ export async function GaleriaAnuncios({ contaId, dias, mostrarGasto, href }: { c
       ) : (
         <>
           <Resumo anuncios={r.anuncios} mostrarGasto={mostrarGasto} />
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{r.anuncios.map((a) => <Cartao key={a.id} a={a} mostrarGasto={mostrarGasto} />)}</ul>
+          <ul className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4">{r.anuncios.map((a) => <Cartao key={a.id} a={a} mostrarGasto={mostrarGasto} />)}</ul>
           <p className="text-legenda text-texto-3">Dados do Meta, atualizados a cada 30 minutos. &quot;Bom&quot; e &quot;Fraco&quot; comparam o CTR com a média dos anúncios deste cliente e usam o diagnóstico da Meta (com 500+ impressões).</p>
         </>
       )}
-    </section>
+      </div>
+    </Modulo>
   )
 }
 
@@ -109,7 +111,7 @@ function Resumo({ anuncios, mostrarGasto }: { anuncios: AnuncioAvaliado[]; mostr
     ['Bons / fracos', `${bons} / ${fracos}`],
   ]
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 @xl:grid-cols-4 @5xl:grid-cols-7">
       {itens.map(([r, v]) => (
         <div key={r} className="rounded-xl border border-borda bg-white p-2.5">
           <p className="text-micro text-texto-3">{r}</p>

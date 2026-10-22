@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { Modulo } from '@/componentes/Modulo'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { excluirCliente } from '../acoes'
 
@@ -21,11 +22,10 @@ export function ExcluirCliente({ clienteId, nome }: { clienteId: string; nome: s
   }
 
   return (
-    <section className="space-y-2 border-t border-borda pt-4">
-      <h2 className="text-sm font-semibold text-perigo">Zona de perigo</h2>
+    <Modulo icone={Trash2} titulo="Zona de perigo" descricao="Exclusão definitiva. Para só pausar, mude o status no cadastro." perigo>
       <button type="button" disabled={pendente} onClick={excluir} className="inline-flex items-center gap-1.5 rounded-lg border border-perigo/40 px-3 py-1.5 text-corpo font-medium text-perigo hover:bg-perigo/10 disabled:opacity-50">
         <Trash2 className="h-4 w-4" /> Excluir cliente
       </button>
-    </section>
+    </Modulo>
   )
 }
