@@ -39,7 +39,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: P
         </SheetTrigger>
         <SheetContent side="left" className="w-[300px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
           <SheetTitle className="sr-only">Menu</SheetTitle>
-          <PainelEspacos {...painel} />
+          <PainelEspacos {...painel} comAtalhos />
         </SheetContent>
       </Sheet>
 

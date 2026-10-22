@@ -40,6 +40,62 @@ type Opcao = { id: string; nome: string }
 export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
 type IconeLucide = ComponentType<{ className?: string }>
 
+type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
+
+/** Atalhos dos módulos: na faixa de ícones (desktop) e no topo do menu (celular). `curto` = rótulo da faixa. */
+function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
+  return [
+    { id: 'tarefas', href: '/inicio', rotulo: 'Minhas tarefas', curto: 'Tarefas', Icone: CheckSquare },
+    { id: 'chat', href: '/chat', rotulo: 'Chat', curto: 'Chat', Icone: MessagesSquare, contador: chatNaoLidas },
+    { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Agenda', Icone: CalendarDays },
+    { id: 'agendamentos', href: '/agendamentos', rotulo: 'Agendamentos', curto: 'Posts', Icone: CalendarClock },
+    { id: 'painel', href: '/painel-de-gestao', rotulo: 'Painel de Gestão', curto: 'Painel', Icone: LayoutDashboard },
+    { id: 'clientes', href: '/clientes', rotulo: 'Clientes', curto: 'Clientes', Icone: Users },
+    { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
+    { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
+    { id: 'time', href: '/time', rotulo: 'Time', curto: 'Time', Icone: UsersRound },
+    { id: 'documentos', href: '/documentos', rotulo: 'Documentos', curto: 'Docs', Icone: FileText },
+    { id: 'quadros', href: '/quadros', rotulo: 'Quadros', curto: 'Quadros', Icone: PenTool },
+    { id: 'funis', href: '/funis', rotulo: 'Funis', curto: 'Funis', Icone: Filter },
+    ...(papel === 'admin'
+      ? [
+          { id: 'financeiro', href: '/financeiro', rotulo: 'Financeiro', curto: 'Financeiro', Icone: Wallet },
+          { id: 'formularios', href: '/config/formularios', rotulo: 'Formulários', curto: 'Forms', Icone: ClipboardList },
+          { id: 'config', href: '/config', rotulo: 'Configurações', curto: 'Config.', Icone: Settings },
+        ]
+      : []),
+  ]
+}
+
+const estaEm = (caminho: string, href: string) => caminho === href || caminho.startsWith(`${href}/`)
+
+/** Faixa estreita (desktop) com os atalhos dos módulos: ícone e o nome embaixo, compacto. Ordem por arrastar. */
+export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [] }: Pick<PropsPainel, 'papel' | 'chatNaoLidas' | 'ordemInicio'>) {
+  const caminho = usePathname()
+  const atalhos = atalhosDoInicio(papel, chatNaoLidas)
+  // "/config" não acende em "/config/formularios" (que tem o seu próprio atalho).
+  const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
+  return (
+    <nav aria-label="Módulos" className="sticky top-14 z-20 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 overflow-y-auto border-r border-lat-borda bg-lat-bg px-1 py-1.5 md:block">
+      <ListaOrdenavel
+        className="space-y-0.5"
+        cookie={COOKIE_ORDEM_INICIO}
+        ordemInicial={ordemInicio}
+        itens={atalhos.map(({ id, href, rotulo, curto, Icone, contador }) => ({
+          id,
+          no: (
+            <Link href={href} draggable={false} title={rotulo} aria-current={ativoEm(href) ? 'page' : undefined} className={`relative flex flex-col items-center gap-0.5 rounded-md px-0.5 py-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg ${ativoEm(href) ? 'bg-lat-ativo text-lat-fg' : ''}`}>
+              <Icone className="h-4 w-4" />
+              <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{curto}</span>
+              {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
+            </Link>
+          ),
+        }))}
+      />
+    </nav>
+  )
+}
+
 /** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
 const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (id: string) => void; admin: boolean }>({ fechado: () => false, alternar: () => {}, admin: false })
 
@@ -166,8 +222,8 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
   return cartao ? <section className="rounded-xl border border-lat-borda p-1.5">{corpo}</section> : <div>{corpo}</div>
 }
 
-/** Barra lateral única: atalhos dos módulos no topo e, abaixo, cada departamento (espaço) com as suas listas. */
-export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, acaoTopo }: PropsPainel & { acaoTopo?: ReactNode }) {
+/** Barra dos espaços: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos. */
+export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
   const caminho = usePathname()
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
   const recolhimento = useMemo(
@@ -214,7 +270,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
   }
 
   const link = (href: string, rotulo: string, Icone: IconeLucide, contador = 0) => (
-    <Link href={href} draggable={false} className={`${item} ${caminho === href || caminho.startsWith(`${href}/`) ? ativo : ''}`}>
+    <Link href={href} draggable={false} className={`${item} ${estaEm(caminho, href) ? ativo : ''}`}>
       <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
       {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
@@ -225,34 +281,18 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
     <Recolhidos.Provider value={recolhimento}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
-        <TituloSecao>Início</TituloSecao>
-        <ListaOrdenavel
-          className="space-y-0.5"
-          cookie={COOKIE_ORDEM_INICIO}
-          ordemInicial={ordemInicio}
-          itens={[
-            { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
-            { id: 'chat', no: link('/chat', 'Chat', MessagesSquare, chatNaoLidas) },
-            { id: 'agenda', no: link('/agenda', 'Agenda', CalendarDays) },
-            { id: 'agendamentos', no: link('/agendamentos', 'Agendamentos', CalendarClock) },
-            { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
-            { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
-            { id: 'projetos', no: link('/projetos', 'Projetos', Briefcase) },
-            { id: 'reunioes', no: link('/reunioes', 'Reuniões', Mic) },
-            { id: 'time', no: link('/time', 'Time', UsersRound) },
-            { id: 'documentos', no: link('/documentos', 'Documentos', FileText) },
-            { id: 'quadros', no: link('/quadros', 'Quadros', PenTool) },
-            { id: 'funis', no: link('/funis', 'Funis', Filter) },
-            ...(papel === 'admin'
-              ? [
-                  { id: 'financeiro', no: link('/financeiro', 'Financeiro', Wallet) },
-                  { id: 'formularios', no: link('/config/formularios', 'Formulários', ClipboardList) },
-                  { id: 'config', no: link('/config', 'Configurações', Settings) },
-                ]
-              : []),
-          ]}
-        />
-        <div className="mx-2 my-3 border-t border-lat-borda" />
+        {comAtalhos && (
+          <>
+            <TituloSecao>Início</TituloSecao>
+            <ListaOrdenavel
+              className="space-y-0.5"
+              cookie={COOKIE_ORDEM_INICIO}
+              ordemInicial={ordemInicio}
+              itens={atalhosDoInicio(papel, chatNaoLidas).map((a) => ({ id: a.id, no: link(a.href, a.rotulo, a.Icone, a.contador) }))}
+            />
+            <div className="mx-2 my-3 border-t border-lat-borda" />
+          </>
+        )}
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
@@ -299,7 +339,7 @@ function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
 
-/** Camada 2 no desktop: a barra de espaços, abaixo do cabeçalho, recolhível e redimensionável. */
+/** Camada 2 no desktop (ao lado da faixa de atalhos): a barra de espaços, abaixo do cabeçalho, recolhível e redimensionável. */
 export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPainel & { modoInicial: ModoLateral; larguraInicial: number }) {
   const [modo, setModo] = useState(modoInicial)
   const [largura, setLargura] = useState(larguraInicial)
@@ -356,7 +396,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-0 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -366,7 +406,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
         className={`hidden h-[calc(100dvh-3.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
           recolhida
-            ? `fixed bottom-0 left-0 top-14 z-40 shadow-flutuante transition-transform duration-200 ${aberta ? 'translate-x-0' : '-translate-x-full'}`
+            ? `fixed bottom-0 left-16 top-14 z-40 shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
             : 'sticky top-14 z-20 shrink-0'
         }`}
       >
