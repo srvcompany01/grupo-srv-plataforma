@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
+import { lerCollabs, planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
 
 const foto = (n: string, ext = 'jpg'): MidiaPublicavel => ({ tipo: 'imagem', nome: n, chave: `conteudo/t/${n}.${ext}` })
 const video = (n: string): MidiaPublicavel => ({ tipo: 'video', nome: n, chave: `conteudo/t/${n}.mp4` })
@@ -37,5 +37,20 @@ describe('publicação na Meta', () => {
     expect(situacaoPublicacao({ ...base, aprovacao: 'aguardando' }, agora)).toMatch(/horário já passou/)
     expect(situacaoPublicacao({ ...base, aprovacao: 'ajuste' }, agora)).toBe('Ajuste pedido pelo cliente')
     expect(situacaoPublicacao(base, agora)).toBe('Agendado')
+  })
+})
+
+describe('collab', () => {
+  it('lê @, links e separadores; recusa inválido e mais de 3', () => {
+    expect(lerCollabs('@Aurum.Belem, ouroassis https://www.instagram.com/grupo_srv/ @aurum.belem')).toEqual(['aurum.belem', 'ouroassis', 'grupo_srv'])
+    expect(lerCollabs('')).toEqual([])
+    expect(lerCollabs('@a @b @c @d')).toEqual({ erro: 'No máximo 3 perfis na collab.' })
+    expect('erro' in (lerCollabs('perfil-invalido') as object)).toBe(true)
+  })
+  it('só Instagram e não em Stories', () => {
+    const foto = [{ tipo: 'imagem' as const, nome: 'a.jpg', chave: 'x/a.jpg' }]
+    expect(validarPublicacao('feed', ['instagram', 'facebook'], foto, ['ouroassis'])).toBeNull()
+    expect(validarPublicacao('feed', ['facebook'], foto, ['ouroassis'])).toMatch(/só no Instagram/)
+    expect(validarPublicacao('stories', ['instagram'], foto, ['ouroassis'])).toMatch(/Stories/)
   })
 })

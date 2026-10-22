@@ -62,7 +62,7 @@ const parametrosDaMidia = (m: MidiaPublicavel & { url: string }): Record<string,
  * Cria e publica no Instagram. Se o vídeo ainda está processando, devolve o container para continuar na próxima
  * rodada (sem recriar). Stories: cada mídia vira um story.
  */
-async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null): Promise<{ id: string; permalink: string | null } | { pendente: string }> {
+async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null, collabs: string[]): Promise<{ id: string; permalink: string | null } | { pendente: string }> {
   const publicar = async (container: string) => {
     const { id } = await graph<{ id: string }>(`${igId}/media_publish`, { metodo: 'POST', params: { creation_id: container } })
     const { permalink } = await graph<{ permalink?: string }>(id, { params: { fields: 'permalink' } }).catch(() => ({ permalink: undefined }))
@@ -77,12 +77,14 @@ async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (M
     }
     return primeiro!
   }
+  // Collab: os convidados recebem o convite no app do Instagram (feed, Reels e carrossel; Stories não aceitam).
+  const collab: Record<string, string> = collabs.length ? { collaborators: JSON.stringify(collabs) } : {}
   let container = containerSalvo
   if (!container) {
     if (plano.tipo === 'IMAGE') {
-      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { image_url: midias[0].url, caption: legenda } })).id
+      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { image_url: midias[0].url, caption: legenda, ...collab } })).id
     } else if (plano.tipo === 'REELS') {
-      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'REELS', video_url: midias[0].url, caption: legenda, share_to_feed: 'true' } })).id
+      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'REELS', video_url: midias[0].url, caption: legenda, share_to_feed: 'true', ...collab } })).id
     } else {
       const filhos: string[] = []
       for (const m of midias) {
@@ -90,7 +92,7 @@ async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (M
         if ((await esperarContainer(id, 120_000)) !== 'FINISHED') throw new ErroMeta('Um vídeo do carrossel demorou demais para processar. Tente de novo.')
         filhos.push(id)
       }
-      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'CAROUSEL', children: filhos.join(','), caption: legenda } })).id
+      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'CAROUSEL', children: filhos.join(','), caption: legenda, ...collab } })).id
     }
   }
   if ((await esperarContainer(container, 90_000)) !== 'FINISHED') return { pendente: container }
@@ -121,7 +123,7 @@ async function publicarFacebook(paginaId: string, midias: (MidiaPublicavel & { u
 type PostCompleto = {
   task_id: string; format: string; approval: string; current_version: number
   publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string
-  ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null
+  ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null; collaborators: string[] | null
   content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number }[] }[]
   tasks: { clients: { meta_page_id: string | null } | null } | null
 }
@@ -147,7 +149,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
   try {
     const { data, error } = await admin
       .from('content_posts')
-      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, content_versions(number, caption, content_media(kind, r2_key, original_name, position)), tasks(clients(meta_page_id))')
+      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position)), tasks(clients(meta_page_id))')
       .eq('task_id', taskId)
       .single()
     if (error) throw error
@@ -160,7 +162,8 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
     const versao = p.content_versions.find((v) => v.number === p.current_version)
     const midias: MidiaPublicavel[] = [...(versao?.content_media ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ tipo: m.kind as 'imagem' | 'video', nome: m.original_name, chave: m.r2_key }))
     const alvos = p.publish_targets as Alvo[]
-    const invalido = validarPublicacao(p.format as Formato, alvos, midias)
+    const collabs = p.collaborators ?? []
+    const invalido = validarPublicacao(p.format as Formato, alvos, midias, collabs)
     if (invalido) throw new ErroMeta(invalido)
     const paginaId = p.tasks?.clients?.meta_page_id
     if (!paginaId) throw new ErroMeta('O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").')
@@ -171,7 +174,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       const conta = await graph<{ instagram_business_account?: { id: string } }>(paginaId, { params: { fields: 'instagram_business_account' } })
       const igId = conta.instagram_business_account?.id
       if (!igId) throw new ErroMeta('A Página do cliente não tem um Instagram profissional ligado (ou ele não foi atribuído ao usuário do sistema).')
-      const r = await publicarInstagram(igId, planoInstagram(p.format as Formato, midias), comUrl, legenda, p.ig_container_id)
+      const r = await publicarInstagram(igId, planoInstagram(p.format as Formato, midias), comUrl, legenda, p.ig_container_id, collabs)
       if ('pendente' in r) {
         await salvar({ ig_container_id: r.pendente, publish_lock_at: null })
         return { status: 'publicando' }

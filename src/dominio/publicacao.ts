@@ -25,8 +25,10 @@ export type MidiaPublicavel = { tipo: 'imagem' | 'video'; nome: string; chave: s
 const ehJpeg = (m: MidiaPublicavel) => /\.jpe?g$/i.test(m.chave)
 
 /** Regras de cada rede para o formato e as mídias da versão atual. null = pode publicar. */
-export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: MidiaPublicavel[]): string | null {
+export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: MidiaPublicavel[], collabs: string[] = []): string | null {
   if (!alvos.length) return 'Escolha onde publicar (Instagram e/ou Facebook).'
+  if (collabs.length && !alvos.includes('instagram')) return 'Collab é só no Instagram: marque o Instagram ou tire os convidados.'
+  if (collabs.length && formato === 'stories') return 'Stories não aceitam collab: tire os convidados ou mude o formato.'
   if (formato === 'tiktok') return 'Post de TikTok não é publicado pela Meta. Mude o formato ou publique no TikTok.'
   if (!midias.length) return 'Adicione a foto ou o vídeo do post antes de agendar.'
   if (midias.length > 10) return 'No máximo 10 mídias por post.'
@@ -39,6 +41,19 @@ export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: Midia
   }
   if (alvos.includes('facebook') && videos > 0 && midias.length > 1) return 'No Facebook o post é só fotos ou só 1 vídeo (não mistura).'
   return null
+}
+
+/**
+ * Collab no Instagram: até 3 perfis convidados como coautores (feed, Reels e carrossel). Aceita "@a, @b c" ou links
+ * do perfil. O convidado aceita o convite no app; enquanto não aceita, o post sai só no perfil do cliente.
+ */
+export const MAX_COLLABS = 3
+export function lerCollabs(texto: string): string[] | { erro: string } {
+  const nomes = [...new Set(texto.split(/[\s,;]+/).map((t) => t.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/[/?#].*$/, '').replace(/^@/, '').toLowerCase()).filter(Boolean))]
+  const invalido = nomes.find((n) => !/^[a-z0-9._]{1,30}$/.test(n))
+  if (invalido) return { erro: `"${invalido}" não é um @ válido do Instagram.` }
+  if (nomes.length > MAX_COLLABS) return { erro: `No máximo ${MAX_COLLABS} perfis na collab.` }
+  return nomes
 }
 
 /** Forma do post no Instagram. */

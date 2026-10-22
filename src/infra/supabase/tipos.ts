@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      team_presence: {
+        Row: { user_id: string; last_seen_at: string | null; last_active_at: string | null; status: string; status_text: string; status_until: string | null; updated_at: string }
+        Insert: { user_id: string; last_seen_at?: string | null; last_active_at?: string | null; status?: string; status_text?: string; status_until?: string | null; updated_at?: string }
+        Update: { user_id?: string; last_seen_at?: string | null; last_active_at?: string | null; status?: string; status_text?: string; status_until?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      team_activity: {
+        Row: { user_id: string; day: string; active_minutes: number; first_at: string | null; last_at: string | null }
+        Insert: { user_id: string; day: string; active_minutes?: number; first_at?: string | null; last_at?: string | null }
+        Update: { user_id?: string; day?: string; active_minutes?: number; first_at?: string | null; last_at?: string | null }
+        Relationships: []
+      }
       content_media: {
         Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
         Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
@@ -36,9 +48,9 @@ export type Database = {
         ]
       }
       content_posts: {
-        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null }
-        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null }
-        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null }
+        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null; collaborators: string[] }
+        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[] }
+        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[] }
         Relationships: [
           {
             foreignKeyName: "content_posts_task_id_fkey"
@@ -1608,6 +1620,8 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      registrar_presenca: { Args: { p_ativo: boolean }; Returns: undefined }
+      definir_status: { Args: { p_status: string; p_texto: string; p_ate: string | null }; Returns: undefined }
       marcar_chat_lido: { Args: { p_canal: string }; Returns: undefined }
       registrar_midia_conteudo: { Args: { p_key: string; p_kind: string; p_name: string; p_size: number; p_task: string }; Returns: string }
       salvar_texto_conteudo: { Args: { p_caption: string; p_idea: string; p_objective: string; p_task: string }; Returns: number }

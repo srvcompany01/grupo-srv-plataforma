@@ -18,6 +18,7 @@ import {
   Pin,
   Settings,
   Users,
+  UsersRound,
   Wallet,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -238,6 +239,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
             { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
             { id: 'projetos', no: link('/projetos', 'Projetos', Briefcase) },
             { id: 'reunioes', no: link('/reunioes', 'Reuniões', Mic) },
+            { id: 'time', no: link('/time', 'Time', UsersRound) },
             { id: 'documentos', no: link('/documentos', 'Documentos', FileText) },
             { id: 'quadros', no: link('/quadros', 'Quadros', PenTool) },
             { id: 'funis', no: link('/funis', 'Funis', Filter) },

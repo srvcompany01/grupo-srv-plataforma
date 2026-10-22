@@ -3,6 +3,7 @@ import { BarraLateral } from '@/componentes/app/BarraLateral'
 import { CabecalhoTopo } from '@/componentes/app/CabecalhoTopo'
 import { PainelIA } from '@/componentes/app/PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
+import { Presenca } from '@/componentes/time/Presenca'
 import { Toaster } from '@/componentes/ui/sonner'
 import { cssTema } from '@/dominio/tema'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, lerFechados, lerOrdem, lerLarguraLateral, lerModoLateral } from '@/dominio/tema-lateral'
@@ -35,6 +36,7 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
       </div>
       {painelTarefa}
       {papelPodeUsarIA(eu.papel) && <PainelIA />}
+      <Presenca />
       <Toaster position="bottom-right" />
     </div>
   )

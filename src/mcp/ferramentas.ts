@@ -16,6 +16,9 @@ import * as conteudoSvc from '@/servicos/conteudo'
 import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
+import { lerCollabs } from '@/dominio/publicacao'
+import { ROTULO_STATUS_TIME, STATUS_TIME, duracao, minutosDesde, situacao } from '@/dominio/time'
+import * as time from '@/servicos/time'
 import * as campos from '@/servicos/campos-personalizados'
 import { criarComentario } from '@/servicos/comentarios'
 import { listarArvore } from '@/servicos/espacos'
@@ -115,7 +118,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
-        'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário.',
+        'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app.',
+        'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
         'Reuniões (notetaker): a equipe grava a reunião na plataforma e a IA cria um documento "Ata — <assunto> — dd/mm" com as páginas Ata (resumo, participantes, tópicos, decisões, próximos passos) e Transcrição. Para ler, use listar_documentos / buscar_documento.',
         'Documentos: textos da equipe com páginas aninhadas, que podem ser vinculados a listas (visualização Documentos) e a um cliente. Escreva com criar_documento / atualizar_pagina_documento (só acrescenta texto). Nada é apagado por aqui: para tirar uma tarefa do caminho use arquivar_tarefa. A tag de cliente é da TAREFA (não só da lista): defina com clienteId ao criar ou com atualizar_tarefa, que troca a tag da tarefa-mãe e das subtarefas.',
@@ -663,13 +667,13 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       const [post, pub] = await Promise.all([conteudoSvc.buscarConteudo(sb, a.tarefaId), conteudoSvc.buscarPublicacao(sb, a.tarefaId)])
       if (!post || !pub) throw new Error('Post de conteúdo não encontrado (ou falta a migration de publicação).')
-      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
+      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, collab: pub.collabs, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
     },
   }),
 
   definir({
     nome: 'agendar_post',
-    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. Não publica na hora (isso só pela tela).',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela).',
     escrita: true,
     entrada: {
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
@@ -677,16 +681,68 @@ export const FERRAMENTAS: Ferramenta[] = [
       hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Hora HH:MM (Belém)'),
       redes: z.array(z.enum(['instagram', 'facebook'])).min(1).describe('Onde publicar'),
       modo: z.enum(['aprovacao', 'direto']).optional().describe('Padrão: aprovacao'),
+      collab: z.array(z.string()).max(3).optional().describe('@ do Instagram convidados para a collab (até 3)'),
     },
     executar: async ({ sb }, a) => {
-      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes)
+      const collabs = a.collab === undefined ? undefined : lerCollabs(a.collab.join(' '))
+      if (collabs && 'erro' in collabs) throw new Error(collabs.erro)
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, collabs)
       if (problema) throw new Error(problema)
       const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
       const modo = a.modo ?? 'aprovacao'
       if (modo === 'aprovacao' && post?.aprovacao === 'ajuste') throw new Error('O cliente pediu ajuste: edite o post (nasce a versão nova) antes de reenviar.')
       const enviarAoCliente = modo === 'aprovacao' && post?.aprovacao === 'rascunho'
-      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente })
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente, collabs })
       return { ok: true, enviadoAoCliente: enviarAoCliente }
+    },
+  }),
+
+  definir({
+    nome: 'ver_time',
+    descricao: 'Quadro do Time: cada pessoa da equipe com situação (ativo, ocioso, offline), há quanto tempo está inativa, o status escolhido (com detalhe e prazo) e o tempo ativo hoje.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => {
+      const agora = new Date()
+      const quadro = await time.quadroDoTime(sb, dataDeHoje(agora))
+      if (!quadro) throw new Error('Falta a migration do Time.')
+      return quadro.map((m) => {
+        const inativo = minutosDesde(m.ativoEm ?? m.vistoEm, agora)
+        return { nome: m.nome, situacao: situacao(m, agora), inativoHa: situacao(m, agora) === 'ativo' || inativo === null ? null : duracao(inativo), status: ROTULO_STATUS_TIME[m.status], detalhe: m.statusTexto || null, ate: m.statusAte, ativoHoje: duracao(m.minutosHoje) }
+      })
+    },
+  }),
+
+  definir({
+    nome: 'definir_meu_status',
+    descricao: 'Muda o status da pessoa dona do token no Time (disponivel, reuniao, intervalo, foco, gravando, externo, ausente), com detalhe opcional e, se quiser, por quantos minutos (depois volta sozinho a disponível).',
+    escrita: true,
+    entrada: {
+      status: z.enum(STATUS_TIME).describe('Novo status'),
+      detalhe: z.string().max(80).optional().describe('Ex.: almoço, gravação no cliente'),
+      minutos: z.number().int().min(1).max(24 * 60).optional().describe('Por quanto tempo (sem = até mudar)'),
+    },
+    executar: async ({ sb }, a) => {
+      await time.definirStatus(sb, a.status, a.detalhe ?? '', a.minutos && a.status !== 'disponivel' ? new Date(Date.now() + a.minutos * 60_000).toISOString() : null)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'relatorio_time',
+    descricao: 'Minutos ativos na plataforma por pessoa nos últimos N dias (padrão 7): total, dias ativos, média por dia ativo e o detalhe por dia. Admin e gestor veem a equipe toda; os demais só os próprios.',
+    escrita: false,
+    entrada: { dias: z.number().int().min(1).max(90).optional().describe('Padrão 7') },
+    executar: async ({ sb }, a) => {
+      const hoje = dataDeHoje(new Date())
+      const atividade = await time.atividadeDesde(sb, somarDias(hoje, -((a.dias ?? 7) - 1)))
+      const equipe = new Map((await listarEquipe(sb)).map((p) => [p.id, p.nome]))
+      const porPessoa = new Map<string, { dia: string; minutos: number }[]>()
+      for (const x of atividade) porPessoa.set(x.usuarioId, [...(porPessoa.get(x.usuarioId) ?? []), { dia: x.dia, minutos: x.minutos }])
+      return [...porPessoa].map(([id, dias]) => {
+        const total = dias.reduce((s, d) => s + d.minutos, 0)
+        return { nome: equipe.get(id) ?? id, total: duracao(total), totalMinutos: total, diasAtivos: dias.length, mediaPorDia: duracao(total / dias.length), porDia: dias }
+      }).sort((x, y) => y.totalMinutos - x.totalMinutos)
     },
   }),
 

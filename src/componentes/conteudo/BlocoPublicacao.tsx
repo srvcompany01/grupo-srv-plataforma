@@ -9,7 +9,7 @@ import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { dataLocal, horaLocal } from '@/dominio/agenda'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
+import { MAX_COLLABS, ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { PublicacaoDoPost } from '@/servicos/conteudo'
 
@@ -27,15 +27,17 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
   const [data, setData] = useState(p.em ? dataLocal(p.em) : p.dataPrevista ?? hoje)
   const [hora, setHora] = useState(p.em ? horaLocal(p.em) : '18:00')
   const [alvos, setAlvos] = useState<Alvo[]>(p.alvos.length ? p.alvos : [...(temIg ? ['instagram' as const] : []), ...(temFb && formato !== 'stories' ? ['facebook' as const] : [])])
+  const [collabs, setCollabs] = useState(p.collabs.map((c) => `@${c}`).join(' '))
+  const aceitaCollab = alvos.includes('instagram') && formato !== 'stories'
   const situacao = situacaoPublicacao({ status: p.status, em: p.em, modo: p.modo, aprovacao }, new Date())
   const agendado = p.status === 'agendado' || p.status === 'publicando'
   const alternar = (a: Alvo) => setAlvos((v) => (v.includes(a) ? v.filter((x) => x !== a) : [...v, a]))
 
   const rodar = (fn: () => Promise<{ ok?: string; erro?: string } | null>) => iniciar(async () => { if (avisar(await fn(), true)) router.refresh() })
-  const agendar = (modo: 'aprovacao' | 'direto') => rodar(() => agendarPostAcao(tarefaId, { data, hora, alvos, modo }))
+  const agendar = (modo: 'aprovacao' | 'direto') => rodar(() => agendarPostAcao(tarefaId, { data, hora, alvos, modo, collabs: aceitaCollab ? collabs : '' }))
   const agora = async () => {
     if (!(await confirmar({ titulo: 'Publicar agora?', descricao: `O post sai já em ${alvos.map((a) => ROTULO_ALVO[a]).join(' e ')}, sem esperar a aprovação do cliente.`, confirmar: 'Publicar agora' }))) return
-    rodar(() => publicarAgoraAcao(tarefaId, alvos))
+    rodar(() => publicarAgoraAcao(tarefaId, alvos, aceitaCollab ? collabs : ''))
   }
 
   const cor = p.status === 'publicado' ? 'bg-sucesso-fundo text-sucesso-forte' : p.status === 'falhou' ? 'bg-perigo-fundo text-perigo-forte' : agendado ? 'bg-aviso-fundo text-aviso-forte' : 'bg-hover text-texto-2'
@@ -64,13 +66,14 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
           {p.publicadoEm && <p className="text-texto-2">Publicado {quando.format(new Date(p.publicadoEm))}.</p>}
           <div className="flex flex-wrap gap-3">
             {p.igLink && <a href={p.igLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Ver no Instagram <ExternalLink className="h-3 w-3" /></a>}
+            {p.collabs.length > 0 && <span className="text-texto-2">Collab com {p.collabs.map((c) => `@${c}`).join(', ')}</span>}
             {p.fbLink && <a href={p.fbLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Ver no Facebook <ExternalLink className="h-3 w-3" /></a>}
           </div>
         </div>
       ) : (
         <>
           {p.status === 'falhou' && p.erro && <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{p.erro}</p>}
-          {agendado && p.em && <p className="text-rotulo text-texto-2">Marcado para <strong>{quando.format(new Date(p.em))}</strong> em {p.alvos.map((a) => ROTULO_ALVO[a]).join(' e ')}{p.modo === 'aprovacao' ? ', depois da aprovação do cliente' : ', sem aprovação'}.</p>}
+          {agendado && p.em && <p className="text-rotulo text-texto-2">Marcado para <strong>{quando.format(new Date(p.em))}</strong> em {p.alvos.map((a) => ROTULO_ALVO[a]).join(' e ')}{p.collabs.length ? ` (collab com ${p.collabs.map((c) => `@${c}`).join(', ')})` : ''}{p.modo === 'aprovacao' ? ', depois da aprovação do cliente' : ', sem aprovação'}.</p>}
           <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <label className="space-y-1"><span className={rotulo}>Dia</span><input type="date" className={`${campo} h-9`} value={data} onChange={(e) => setData(e.target.value)} /></label>
             <label className="space-y-1"><span className={rotulo}>Hora</span><input type="time" className={`${campo} h-9`} value={hora} onChange={(e) => setHora(e.target.value)} /></label>
@@ -83,6 +86,13 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
               </div>
             </div>
           </div>
+          {aceitaCollab && (
+            <label className="block space-y-1">
+              <span className={rotulo}>Collab no Instagram (opcional, até {MAX_COLLABS} perfis)</span>
+              <input className={`${campo} h-9`} value={collabs} onChange={(e) => setCollabs(e.target.value)} placeholder="@perfil1 @perfil2" />
+              <span className="block text-legenda text-texto-3">O post sai como coautoria: cada perfil recebe o convite no Instagram e, quando aceita, o post aparece nos dois perfis. O perfil convidado precisa ser público.</span>
+            </label>
+          )}
           <div className="flex flex-wrap gap-2">
             <button type="button" className={botaoPrimario} disabled={pendente} onClick={() => agendar('aprovacao')}>
               <Send className="h-3.5 w-3.5" /> {aprovacao === 'aprovado' ? 'Agendar (já aprovado)' : aprovacao === 'aguardando' ? 'Salvar horário (aguardando o cliente)' : 'Enviar para aprovação e agendar'}

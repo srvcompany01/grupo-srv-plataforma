@@ -27,7 +27,7 @@ export default async function PostDoCliente({ params }: PageProps<'/cliente/[slu
     <main className="mx-auto min-h-screen max-w-4xl space-y-5 p-4 py-8">
       <Link href={`/cliente/${cliente.slug}`} className="inline-flex items-center gap-1 text-rotulo text-texto-3 hover:text-texto"><ChevronLeft className="h-4 w-4" /> Voltar</Link>
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,420px)_1fr]">
-        <PreviaPost nome={cliente.nome} formato={post.formato} midias={post.midias} legenda={post.legenda} />
+        <PreviaPost nome={cliente.nome} formato={post.formato} midias={post.midias} legenda={post.legenda} collabs={post.collabs} />
         <section className="space-y-4">
           <div>
             <p className="text-legenda font-semibold uppercase tracking-wide text-texto-3">Post · versão {post.versao}</p>

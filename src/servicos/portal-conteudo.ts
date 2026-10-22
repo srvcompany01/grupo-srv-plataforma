@@ -47,6 +47,8 @@ export type PostPortal = {
   status: StatusPublicacao
   igLink: string | null
   fbLink: string | null
+  /** @ convidados para a collab no Instagram. */
+  collabs: string[]
   respostas: { versao: number; decisao: Decisao; comentario: string; nome: string; em: string }[]
 }
 
@@ -56,13 +58,13 @@ export async function linkDoUsuario(usuarioId: string): Promise<string | null> {
   return data?.clients?.portal_slug ?? null
 }
 
-const CAMPOS = `task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_permalink, fb_permalink,
+const CAMPOS = `task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_permalink, fb_permalink, collaborators,
   tasks!inner(title, client_id, archived_at),
   content_versions(number, caption, content_media(kind, r2_key, position), content_responses(decision, comment, responder_name, created_at))`
 
 type Linha = {
   task_id: string; format: string; approval: string; current_version: number; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string
-  ig_permalink: string | null; fb_permalink: string | null
+  ig_permalink: string | null; fb_permalink: string | null; collaborators: string[] | null
   tasks: { title: string; client_id: string | null; archived_at: string | null }
   content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; position: number }[]; content_responses: { decision: string; comment: string; responder_name: string; created_at: string } | null }[]
 }
@@ -84,6 +86,7 @@ async function paraPost(l: Linha, comMidias: 'todas' | 'capa'): Promise<PostPort
     status: l.publish_status as StatusPublicacao,
     igLink: l.ig_permalink,
     fbLink: l.fb_permalink,
+    collabs: l.collaborators ?? [],
     respostas: l.content_versions
       .filter((v) => v.content_responses)
       .map((v) => ({ versao: v.number, decisao: v.content_responses!.decision as Decisao, comentario: v.content_responses!.comment, nome: v.content_responses!.responder_name, em: v.content_responses!.created_at }))
