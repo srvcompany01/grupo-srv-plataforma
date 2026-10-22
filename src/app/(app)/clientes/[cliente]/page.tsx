@@ -12,6 +12,7 @@ import { buscarCliente, usuariosDoCliente } from '@/servicos/clientes-plataforma
 import { statusDasListas } from '@/servicos/listas'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
+import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { FormConvite } from '../../config/usuarios/FormConvite'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
@@ -58,6 +59,7 @@ export default async function Cliente({ params }: PageProps<'/clientes/[cliente]
         </div>
         {podeGerir && <SeletorCapa clienteId={id} temCapa={!!capa?.url} />}
       </section>
+      <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro abaixo para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
       <section className="space-y-4" aria-label="Trabalho do cliente">
         <h2 className="text-sm font-semibold">Trabalho por departamento</h2>
         {departamentos.length === 0 && <p className="text-corpo text-texto-3">Nenhuma tarefa com a tag deste cliente ainda.</p>}

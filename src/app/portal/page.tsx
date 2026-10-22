@@ -1,5 +1,6 @@
 import { FileText } from 'lucide-react'
 import Link from 'next/link'
+import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { Marca } from '@/componentes/Marca'
 import { BotaoSair } from '@/componentes/app/BotaoSair'
 import { exigirCliente } from '@/infra/supabase/sessao'
@@ -10,8 +11,12 @@ const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', y
 
 export default async function Portal() {
   const eu = await exigirCliente()
-  // A RLS entrega só os documentos que a equipe liberou para este cliente.
-  const docs = await listarDocumentos(await criarClienteServidor()).catch(() => [])
+  const sb = await criarClienteServidor()
+  // A RLS entrega só os documentos liberados e só o cadastro do próprio cliente.
+  const [docs, cliente] = await Promise.all([
+    listarDocumentos(sb).catch(() => []),
+    sb.from('clients').select('meta_page_id').maybeSingle().then((r) => r.data, () => null),
+  ])
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-4 py-10">
       <div className="flex items-center justify-between gap-3">
@@ -21,6 +26,7 @@ export default async function Portal() {
         </div>
         <BotaoSair />
       </div>
+      <BibliotecaAnuncios paginaId={cliente?.meta_page_id ?? null} />
       <section className="space-y-2">
         <h2 className="text-rotulo font-semibold text-texto-3">Documentos para você</h2>
         {docs.length === 0 ? (

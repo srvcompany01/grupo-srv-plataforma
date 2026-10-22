@@ -32,6 +32,11 @@ export function FormCliente({ acao, cliente, podeEditar }: { acao: Acao; cliente
           </select>
         </label>
       </div>
+      <label className="block space-y-1">
+        <span className={rotulo}>Biblioteca de anúncios do Meta</span>
+        <input name="metaPagina" defaultValue={cliente?.metaPaginaId ?? ''} disabled={!podeEditar} className={campo} placeholder="Cole o link da Biblioteca de Anúncios do cliente ou o ID da página" />
+        <span className="block text-legenda text-texto-3">Em facebook.com/ads/library, busque a página do cliente e copie o link (ele tem view_all_page_id=...).</span>
+      </label>
       {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
       {estado?.ok && <p className="text-sm text-sucesso-forte">{estado.ok}</p>}
       {podeEditar && (

@@ -214,6 +214,7 @@ export type Database = {
           id: string
           is_internal: boolean
           legal_name: string | null
+          meta_page_id: string | null
           name: string
           phone: string | null
           status: string
@@ -231,6 +232,7 @@ export type Database = {
           id?: string
           is_internal?: boolean
           legal_name?: string | null
+          meta_page_id?: string | null
           name: string
           phone?: string | null
           status?: string
@@ -248,6 +250,7 @@ export type Database = {
           id?: string
           is_internal?: boolean
           legal_name?: string | null
+          meta_page_id?: string | null
           name?: string
           phone?: string | null
           status?: string

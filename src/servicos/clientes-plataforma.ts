@@ -1,5 +1,6 @@
 import { generateNKeysBetween } from 'fractional-indexing'
 import type { Supabase } from '@/infra/supabase/servidor'
+import { lerPaginaMeta } from '@/dominio/biblioteca-anuncios'
 import { dados } from './resultado'
 
 export type StatusCliente = 'ativo' | 'pausado' | 'encerrado'
@@ -16,9 +17,11 @@ export type Cliente = {
   interno: boolean
   /** Posição na galeria (ordem manual); null = ainda não ordenado. */
   posicaoGaleria: string | null
+  /** ID da página do Facebook (Biblioteca de Anúncios do Meta). */
+  metaPaginaId: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id'
 
 type Linha = {
   id: string
@@ -31,6 +34,7 @@ type Linha = {
   status: string
   is_internal: boolean
   gallery_position: string | null
+  meta_page_id: string | null
 }
 
 const paraCliente = (c: Linha): Cliente => ({
@@ -44,6 +48,7 @@ const paraCliente = (c: Linha): Cliente => ({
   status: c.status as StatusCliente,
   interno: c.is_internal,
   posicaoGaleria: c.gallery_position,
+  metaPaginaId: c.meta_page_id,
 })
 
 export async function listarClientes(sb: Supabase): Promise<Cliente[]> {
@@ -66,10 +71,16 @@ export async function usuariosDoCliente(sb: Supabase, clienteId: string) {
 export const ROTULO_STATUS_CLIENTE: Record<StatusCliente, string> = { ativo: 'Ativo', pausado: 'Pausado', encerrado: 'Encerrado' }
 
 /** Campos do formulário de cliente → colunas. Nome obrigatório; vazios viram null. */
-export function lerFormCliente(form: FormData) {
+/** Campos do formulário do cliente; `erro` quando a página do Meta não foi reconhecida. */
+type CamposFormCliente = { meta_page_id: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
+
+export function lerFormCliente(form: FormData): CamposFormCliente | { erro: string } {
   const texto = (k: string) => String(form.get(k) ?? '').trim() || null
   const status = String(form.get('status') ?? 'ativo')
+  const meta = lerPaginaMeta(String(form.get('metaPagina') ?? ''))
+  if ('erro' in meta) return { erro: meta.erro }
   return {
+    meta_page_id: meta.id,
     name: texto('nome') ?? '',
     legal_name: texto('razaoSocial'),
     document: texto('documento'),
@@ -106,4 +117,11 @@ export async function marcarTrabalhado(sb: Supabase, usuarioId: string, clienteI
     ? await sb.from('client_work_marks').upsert({ user_id: usuarioId, client_id: clienteId, day: dia }, { onConflict: 'user_id,client_id,day', ignoreDuplicates: true })
     : await sb.from('client_work_marks').delete().eq('client_id', clienteId).eq('day', dia)
   if (error) throw error
+}
+
+/** Grava (ou tira, com null) a página do Facebook do cliente para a Biblioteca de Anúncios. Só admin/gestor (RLS). */
+export async function definirPaginaMeta(sb: Supabase, clienteId: string, paginaId: string | null): Promise<void> {
+  const { error, count } = await sb.from('clients').update({ meta_page_id: paginaId }, { count: 'exact' }).eq('id', clienteId)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
 }

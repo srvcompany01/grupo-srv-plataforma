@@ -5,7 +5,8 @@ import { CATALOGO_CAMPOS, TIPOS_CAMPO, type TipoCampoPersonalizado } from '@/dom
 import { PRIORIDADES } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
-import { listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
+import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
+import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
@@ -136,7 +137,20 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao: 'Clientes cadastrados (usados como tag opcional nas tarefas).',
     escrita: false,
     entrada: {},
-    executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status })),
+    executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status, bibliotecaAnuncios: c.metaPaginaId ? urlBibliotecaAnuncios(c.metaPaginaId) : null })),
+  }),
+
+  definir({
+    nome: 'definir_biblioteca_anuncios_cliente',
+    descricao: 'Liga o cliente à página dele no Facebook para a Biblioteca de Anúncios do Meta (link público dos anúncios ativos, mostrado no painel do cliente e no portal). Aceita o link da biblioteca (com view_all_page_id=) ou o ID numérico da página; vazio tira o vínculo. Só admin e gestor.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), pagina: z.string().max(500).describe('Link da Biblioteca de Anúncios do cliente ou ID da página; vazio tira') },
+    executar: async ({ sb }, a) => {
+      const p = lerPaginaMeta(a.pagina)
+      if ('erro' in p) throw new Error(p.erro)
+      await definirPaginaMeta(sb, a.clienteId, p.id)
+      return { bibliotecaAnuncios: p.id ? urlBibliotecaAnuncios(p.id) : null }
+    },
   }),
 
   definir({

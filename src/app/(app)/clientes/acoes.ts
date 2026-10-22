@@ -13,6 +13,7 @@ import { lerFormCliente, marcarTrabalhado, ordenarGaleria } from '@/servicos/cli
 export async function criarCliente(_: Resultado, form: FormData): Promise<Resultado> {
   await exigirEquipe()
   const campos = lerFormCliente(form)
+  if ('erro' in campos) return { erro: campos.erro }
   if (!campos.name) return { erro: 'Informe o nome do cliente.' }
   const sb = await criarClienteServidor()
   let id = ''
@@ -29,6 +30,7 @@ export async function criarCliente(_: Resultado, form: FormData): Promise<Result
 export async function editarCliente(id: string, _: Resultado, form: FormData): Promise<Resultado> {
   await exigirEquipe()
   const campos = lerFormCliente(form)
+  if ('erro' in campos) return { erro: campos.erro }
   if (!campos.name) return { erro: 'Informe o nome do cliente.' }
   const sb = await criarClienteServidor()
   const r = await tentar(async () => {
