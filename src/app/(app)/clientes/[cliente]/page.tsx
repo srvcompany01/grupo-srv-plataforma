@@ -74,13 +74,8 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         {podeGerir && <div className="border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /></div>}
       </header>
 
-      {cliente.metaContaId && (
-        <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
-          <GaleriaAnuncios contaId={cliente.metaContaId} dias={diasAnuncios} mostrarGasto href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
-        </Suspense>
-      )}
-
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-5">
         <Modulo
           icone={ListChecks}
           titulo="Trabalho por departamento"
@@ -111,6 +106,12 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </div>
           )}
         </Modulo>
+        {cliente.metaContaId && (
+          <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
+            <GaleriaAnuncios contaId={cliente.metaContaId} dias={diasAnuncios} mostrarGasto href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+          </Suspense>
+        )}
+        </div>
 
         <div className="space-y-5">
           <Modulo icone={LayoutGrid} titulo="Informações da galeria" descricao="Campos do cliente; os marcados aparecem no cartão da galeria">
