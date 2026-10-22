@@ -9,6 +9,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as conteudo from '@/servicos/conteudo'
+import * as tarefas from '@/servicos/tarefas'
 import { instante } from '@/dominio/agenda'
 import type { Alvo, ModoPublicacao } from '@/dominio/publicacao'
 import { publicarPost } from '@/servicos/publicacao-meta'
@@ -26,16 +27,39 @@ async function executar(fn: (sb: Awaited<ReturnType<typeof criarClienteServidor>
   return r
 }
 
-export async function criarPostAcao(e: { listaId: string; clienteId: string; titulo: string; formato: string; dataPrevista: string }): Promise<Resultado & { id?: string }> {
-  if (!UUID.test(e.listaId) || !UUID.test(e.clienteId)) return { erro: 'Escolha o cliente.' }
+/**
+ * Novo post. Com `paiId`, nasce como SUBTAREFA da tarefa-mãe (lista e cliente vêm dela; o banco já o transforma em post).
+ * Sem `paiId`, é um post avulso na lista (precisa do cliente).
+ */
+export async function criarPostAcao(e: { listaId: string; clienteId: string; titulo: string; formato: string; dataPrevista: string; paiId?: string | null }): Promise<Resultado & { id?: string }> {
+  if (!UUID.test(e.listaId)) return { erro: 'Lista inválida.' }
+  if (e.paiId ? !UUID.test(e.paiId) : !UUID.test(e.clienteId)) return { erro: 'Escolha a tarefa-mãe ou o cliente.' }
   if (!e.titulo.trim()) return { erro: 'Informe o título do post.' }
   if (!(FORMATOS as readonly string[]).includes(e.formato)) return { erro: 'Escolha o formato.' }
   if (!DATA.test(e.dataPrevista)) return { erro: 'Informe a data prevista.' }
+  const eu = await exigirEquipe()
   let id: string | undefined
   const r = await executar(async (sb) => {
-    id = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: e.clienteId, titulo: e.titulo.trim(), formato: e.formato as Formato, dataPrevista: e.dataPrevista })
+    if (e.paiId) {
+      id = await tarefas.criarTarefa(sb, { listaId: e.listaId, titulo: e.titulo.trim(), responsaveis: [eu.id], paiId: e.paiId })
+      await tarefas.atualizarTarefa(sb, id, { prazo: e.dataPrevista })
+      await conteudo.alterarFormato(sb, id, e.formato as Formato)
+    } else {
+      id = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: e.clienteId, titulo: e.titulo.trim(), formato: e.formato as Formato, dataPrevista: e.dataPrevista })
+    }
   }, 'Post criado.')
   return { ...(r ?? {}), id: r?.erro ? undefined : id }
+}
+
+export async function alterarFormatoAcao(tarefaId: string, formato: string): Promise<Resultado> {
+  if (!UUID.test(tarefaId) || !(FORMATOS as readonly string[]).includes(formato)) return { erro: 'Formato inválido.' }
+  return executar((sb) => conteudo.alterarFormato(sb, tarefaId, formato as Formato), 'Formato alterado.')
+}
+
+/** Liga/desliga "lista de conteúdo" (subtarefas viram posts). Só quem gerencia a lista (RLS). */
+export async function definirListaConteudoAcao(listaId: string, conteudoLigado: boolean): Promise<Resultado> {
+  if (!UUID.test(listaId)) return { erro: 'Lista inválida.' }
+  return executar((sb) => conteudo.definirTipoLista(sb, listaId, conteudoLigado ? 'conteudo' : 'tarefas'), conteudoLigado ? 'Pronto: as subtarefas desta lista agora são posts.' : 'A lista voltou a ser de tarefas comuns.')
 }
 
 export async function salvarConteudoAcao(tarefaId: string, t: { ideia: string; objetivo: string; legenda: string }): Promise<Resultado & { versao?: number }> {

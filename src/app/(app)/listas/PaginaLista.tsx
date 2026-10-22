@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { IconeVisual } from '@/componentes/IconeVisual'
+import { ListaConteudoToggle } from '@/componentes/conteudo/ListaConteudoToggle'
 import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
 import { CompartilharLista, CriarTarefaTopo } from '@/componentes/tarefas/AcoesLista'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
@@ -29,6 +30,7 @@ import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos
 import { listarEquipe } from '@/servicos/usuarios'
 import { buscarVisaoSalva } from '@/servicos/visoes'
 import { listarClientes } from '@/servicos/clientes-plataforma'
+import { tarefasMaeDeConteudo } from '@/servicos/conteudo'
 
 /** Tela de uma lista. `caminho` é a rota pública dela (`/listas/<id>` ou a rota fixa da área). `rotuloPainel` nomeia as linhas do Painel. */
 export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: string; caminho: string; sp: Record<string, string | string[] | undefined>; rotuloPainel?: string }) {
@@ -52,6 +54,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
     listarClientes(sb),
   ])
   const tarefas = await carregarValoresPersonalizados(sb, tarefasBrutas, camposDaLista)
+  // Lista de conteúdo: as tarefas-mãe onde os posts nascem como subtarefas.
+  const maes = tipo === 'conteudo' ? (await tarefasMaeDeConteudo(sb).catch(() => [])).filter((m) => m.listaId === id) : []
   const arvore = montarArvore(tarefas)
   const tagsCliente = clientes
     .filter((cliente) => cliente.status !== 'encerrado' || cliente.id === lista.cliente.id)
@@ -107,6 +111,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
             <CompartilharLista nome={lista.nome} />
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
+            {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
           </div>
         </div>
         <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'painel', 'documentos']} abas />
@@ -115,7 +120,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
-        {tipo === 'conteudo' ? <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} /> : <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />}
+        {tipo === 'conteudo' && <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} />}
+        <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
       </div>
       )}
       <main className="p-4 md:p-5">

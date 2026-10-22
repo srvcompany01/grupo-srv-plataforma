@@ -9,8 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FORMATOS, ROTULO_FORMATO } from '@/dominio/conteudo'
 import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
-/** "Novo post" da lista de conteúdo: cria a tarefa, o post em rascunho e a versão 1, e abre o post. */
-export function NovoPostDialog({ listaId, clientes }: { listaId: string; clientes: { id: string; nome: string }[] }) {
+export type TarefaMae = { id: string; titulo: string; listaId: string; cliente: string | null }
+
+/**
+ * "Novo post": com tarefa-mãe (o normal), nasce como subtarefa dela (lista e cliente vêm da mãe);
+ * sem mãe, é um post avulso na lista. Cria o post em rascunho e abre.
+ */
+export function NovoPostDialog({ listaId, clientes, maes = [] }: { listaId: string; clientes: { id: string; nome: string }[]; maes?: TarefaMae[] }) {
+  const [paiId, setPaiId] = useState(maes[0]?.id ?? '')
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [clienteId, setClienteId] = useState(clientes[0]?.id ?? '')
@@ -21,7 +27,8 @@ export function NovoPostDialog({ listaId, clientes }: { listaId: string; cliente
 
   const criar = () =>
     iniciar(async () => {
-      const r = await criarPostAcao({ listaId, clienteId, titulo, formato, dataPrevista: data })
+      const mae = maes.find((m) => m.id === paiId)
+      const r = await criarPostAcao({ listaId: mae?.listaId ?? listaId, clienteId, titulo, formato, dataPrevista: data, paiId: mae?.id ?? null })
       if (!avisar(r, true) || !r?.id) return
       setAberto(false)
       setTitulo('')
@@ -36,14 +43,24 @@ export function NovoPostDialog({ listaId, clientes }: { listaId: string; cliente
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo post</DialogTitle>
-          <DialogDescription>Cria o post em rascunho. Depois você escreve o conteúdo, adiciona as mídias e envia para o cliente aprovar.</DialogDescription>
+          <DialogDescription>O post nasce como subtarefa da tarefa-mãe (com o cliente dela), em rascunho. Depois você escreve, adiciona as mídias e agenda.</DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); criar() }}>
-          <label className="block space-y-1"><span className={rotulo}>Cliente</span>
-            <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}>
-              {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
-          </label>
+          {maes.length > 0 && (
+            <label className="block space-y-1"><span className={rotulo}>Tarefa-mãe (campanha / tema)</span>
+              <select value={paiId} onChange={(e) => setPaiId(e.target.value)} className={campo}>
+                {maes.map((m) => <option key={m.id} value={m.id}>{m.titulo}{m.cliente ? ` · ${m.cliente}` : ''}</option>)}
+                <option value="">Post avulso (sem tarefa-mãe)</option>
+              </select>
+            </label>
+          )}
+          {!paiId && (
+            <label className="block space-y-1"><span className={rotulo}>Cliente</span>
+              <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}>
+                {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </label>
+          )}
           <label className="block space-y-1"><span className={rotulo}>Título</span><input required autoFocus maxLength={200} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Lançamento da coleção" className={campo} /></label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1"><span className={rotulo}>Formato</span>
@@ -55,7 +72,7 @@ export function NovoPostDialog({ listaId, clientes }: { listaId: string; cliente
           </div>
           <div className="flex justify-end gap-2">
             <button type="button" className={botaoSecundario} onClick={() => setAberto(false)}>Cancelar</button>
-            <button disabled={pendente || !titulo.trim() || !clienteId || !data} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar post'}</button>
+            <button disabled={pendente || !titulo.trim() || (!paiId && !clienteId) || !data} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar post'}</button>
           </div>
         </form>
       </DialogContent>

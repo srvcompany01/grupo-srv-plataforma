@@ -3,10 +3,10 @@
 import { ImagePlus, Trash2, TriangleAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
-import { removerMidiaAcao, salvarConteudoAcao } from '@/app/(app)/conteudo/acoes'
+import { alterarFormatoAcao, removerMidiaAcao, salvarConteudoAcao } from '@/app/(app)/conteudo/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { corDoFormato, edicaoCriaNovaVersao, ROTULO_APROVACAO, ROTULO_FORMATO } from '@/dominio/conteudo'
+import { corDoFormato, edicaoCriaNovaVersao, FORMATOS, ROTULO_APROVACAO, ROTULO_FORMATO } from '@/dominio/conteudo'
 import { TIPOS_ACEITOS } from '@/dominio/midias'
 import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { ConteudoDaTarefa, PublicacaoDoPost, VersaoDoPost } from '@/servicos/conteudo'
@@ -101,7 +101,20 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
     <section className="space-y-4 rounded-2xl border border-borda bg-white p-4 shadow-cartao" aria-label="Conteúdo do post">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-corpo font-semibold">Conteúdo do post</h2>
-        <span className="rounded-full px-2 py-0.5 text-legenda font-semibold text-white" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
+        {podeEditar ? (
+          <select
+            aria-label="Formato do post"
+            value={conteudo.formato}
+            disabled={pendente}
+            onChange={(e) => iniciar(async () => { if (avisar(await alterarFormatoAcao(tarefaId, e.target.value), true)) router.refresh() })}
+            className="cursor-pointer rounded-full border-0 px-2 py-0.5 text-legenda font-semibold text-white outline-none"
+            style={{ background: corDoFormato(conteudo.formato) }}
+          >
+            {FORMATOS.map((f) => <option key={f} value={f} className="bg-white text-texto">{ROTULO_FORMATO[f]}</option>)}
+          </select>
+        ) : (
+          <span className="rounded-full px-2 py-0.5 text-legenda font-semibold text-white" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
+        )}
         <span className={`rounded-full px-2 py-0.5 text-legenda font-semibold ${COR_APROVACAO[conteudo.aprovacao]}`}>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
         <span className="ml-auto text-legenda text-texto-3">Versão {conteudo.versaoAtual}</span>
       </div>

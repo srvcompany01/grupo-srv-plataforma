@@ -177,3 +177,24 @@ export async function listarAgendamentos(sb: Supabase): Promise<Agendamento[]> {
     }),
   )
 }
+
+export async function alterarFormato(sb: Supabase, tarefaId: string, formato: Formato): Promise<void> {
+  if (!dados(await sb.from('content_posts').update({ format: formato }).eq('task_id', tarefaId).select('task_id')).length) throw { code: '42501' }
+}
+
+/** Tipo da lista: 'conteudo' faz toda subtarefa virar post (o banco converte as que já existem). */
+export async function definirTipoLista(sb: Supabase, listaId: string, tipo: 'tarefas' | 'conteudo'): Promise<void> {
+  if (!dados(await sb.from('lists').update({ kind: tipo }).eq('id', listaId).select('id')).length) throw { code: '42501' }
+}
+
+/** Tarefas-mãe das listas de conteúdo (onde nascem os posts como subtarefas), com o cliente. */
+export async function tarefasMaeDeConteudo(sb: Supabase): Promise<{ id: string; titulo: string; listaId: string; cliente: string | null }[]> {
+  const listas = dados(await sb.from('lists').select('id').eq('kind', 'conteudo').is('archived_at', null)).map((l) => l.id)
+  if (!listas.length) return []
+  const [maes, posts] = await Promise.all([
+    sb.from('tasks').select('id, title, list_id, clients(name)').in('list_id', listas).is('parent_task_id', null).is('archived_at', null).order('created_at', { ascending: false }).limit(200).then(dados),
+    sb.from('content_posts').select('task_id, tasks!inner(list_id, parent_task_id)').in('tasks.list_id', listas).is('tasks.parent_task_id', null).then(dados),
+  ])
+  const avulsos = new Set(posts.map((p) => p.task_id))
+  return maes.filter((m) => !avulsos.has(m.id)).map((m) => ({ id: m.id, titulo: m.title, listaId: m.list_id, cliente: m.clients?.name ?? null }))
+}
