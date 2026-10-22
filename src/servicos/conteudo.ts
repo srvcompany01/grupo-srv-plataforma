@@ -126,3 +126,54 @@ export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos
   if (!pub.cliente?.paginaId) return 'O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").'
   return validarPublicacao(post.formato, alvos, post.versoes[0].midias.map((m) => ({ tipo: m.tipo, nome: m.nome, chave: m.chave })))
 }
+
+export type Agendamento = {
+  id: string
+  titulo: string
+  formato: Formato
+  aprovacao: Aprovacao
+  em: string | null
+  alvos: Alvo[]
+  modo: ModoPublicacao
+  status: StatusPublicacao
+  erro: string | null
+  igLink: string | null
+  fbLink: string | null
+  publicadoEm: string | null
+  cliente: { id: string; nome: string; cor: string } | null
+  capa: { tipo: TipoMidia; url: string } | null
+}
+
+/** Posts agendados, esperando o cliente, publicados ou com falha (a RLS mostra só os que a pessoa vê). */
+export async function listarAgendamentos(sb: Supabase): Promise<Agendamento[]> {
+  const { data, error } = await sb
+    .from('content_posts')
+    .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, fb_permalink, published_at, tasks!inner(title, archived_at, clients(id, name, color)), content_versions(number, content_media(kind, r2_key, position))')
+    .is('tasks.archived_at', null)
+    .or('publish_status.neq.nao_agendado,approval.in.(aguardando,ajuste)')
+    .order('publish_at', { ascending: true, nullsFirst: false })
+    .limit(300)
+  if (error) throw error
+  return Promise.all(
+    data.map(async (p) => {
+      const midia = [...(p.content_versions.find((v) => v.number === p.current_version)?.content_media ?? [])].sort((a, b) => a.position - b.position)[0]
+      const c = p.tasks.clients
+      return {
+        id: p.task_id,
+        titulo: p.tasks.title,
+        formato: p.format as Formato,
+        aprovacao: p.approval as Aprovacao,
+        em: p.publish_at,
+        alvos: p.publish_targets as Alvo[],
+        modo: p.publish_mode as ModoPublicacao,
+        status: p.publish_status as StatusPublicacao,
+        erro: p.publish_error,
+        igLink: p.ig_permalink,
+        fbLink: p.fb_permalink,
+        publicadoEm: p.published_at,
+        cliente: c ? { id: c.id, nome: c.name, cor: c.color } : null,
+        capa: midia ? { tipo: midia.kind as TipoMidia, url: await urlLeitura(midia.r2_key) } : null,
+      }
+    }),
+  )
+}

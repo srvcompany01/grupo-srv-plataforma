@@ -4,6 +4,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable,
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
   Briefcase,
+  CalendarClock,
   CalendarDays,
   CheckSquare,
   ClipboardList,
@@ -212,7 +213,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
   }
 
   const link = (href: string, rotulo: string, Icone: IconeLucide, contador = 0) => (
-    <Link href={href} draggable={false} className={`${item} ${caminho.startsWith(href) ? ativo : ''}`}>
+    <Link href={href} draggable={false} className={`${item} ${caminho === href || caminho.startsWith(`${href}/`) ? ativo : ''}`}>
       <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
       {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
@@ -232,6 +233,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
             { id: 'tarefas', no: link('/inicio', 'Minhas tarefas', CheckSquare) },
             { id: 'chat', no: link('/chat', 'Chat', MessagesSquare, chatNaoLidas) },
             { id: 'agenda', no: link('/agenda', 'Agenda', CalendarDays) },
+            { id: 'agendamentos', no: link('/agendamentos', 'Agendamentos', CalendarClock) },
             { id: 'painel', no: link('/painel-de-gestao', 'Painel de Gestão', LayoutDashboard) },
             { id: 'clientes', no: link('/clientes', 'Clientes', Users) },
             { id: 'projetos', no: link('/projetos', 'Projetos', Briefcase) },
