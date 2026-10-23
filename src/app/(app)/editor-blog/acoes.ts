@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
+import { SITE, bloqueiosDePublicacao, limparBriefing, type Briefing } from '@/dominio/blog'
 import { validarCapa } from '@/dominio/clientes-galeria'
 import { mensagemErro } from '@/dominio/erros-banco'
 import { gerarChaveBlog, urlUpload } from '@/infra/r2'
@@ -9,6 +11,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as blog from '@/servicos/blog'
 import { gerarRascunho, type Rascunho } from '@/servicos/blog-ia'
+import { avisarIndexNow, validarPublicado, type Verificacao } from '@/servicos/blog-validacao'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -38,17 +41,54 @@ export async function salvarPostAcao(id: string | null, c: blog.CamposPost): Pro
   }
 }
 
-/** `quando`: ISO (agora ou no futuro = agendado) para publicar; null volta para rascunho. */
-export async function publicacaoAcao(id: string, quando: string | null): Promise<Resultado> {
+/**
+ * `quando`: ISO (agora ou no futuro = agendado) para publicar; 'revisao' manda para a revisão humana; null volta para
+ * rascunho. Publicar exige revisão humana aprovada e nada que bloqueie no checklist (H1 extra, marcadores esquecidos).
+ */
+export async function publicacaoAcao(id: string, quando: string | 'revisao' | null): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(id)) return { erro: 'Artigo inválido.' }
-  if (quando && Number.isNaN(Date.parse(quando))) return { erro: 'Data inválida.' }
+  if (quando && quando !== 'revisao' && Number.isNaN(Date.parse(quando))) return { erro: 'Data inválida.' }
   const sb = await criarClienteServidor()
   const post = await blog.postDaEquipe(sb, id)
   if (!post) return { erro: 'Artigo não encontrado.' }
   if (quando && !post.conteudo.trim()) return { erro: 'Escreva o artigo antes de publicar.' }
-  const r = await tentar(() => blog.definirPublicacao(sb, id, quando), !quando ? 'Voltou para rascunho (saiu do ar).' : Date.parse(quando) > Date.now() + 60_000 ? 'Agendado.' : 'Publicado!')
+  if (quando && quando !== 'revisao') {
+    const bloqueios = bloqueiosDePublicacao(await blog.qualidadeDoPost(sb, post))
+    if (bloqueios.length) return { erro: `Ainda não dá para publicar: ${bloqueios.join('; ')}.` }
+  }
+  const agendado = quando && quando !== 'revisao' && Date.parse(quando) > Date.now() + 60_000
+  const r = await tentar(() => blog.definirPublicacao(sb, id, quando), !quando ? 'Voltou para rascunho (saiu do ar).' : quando === 'revisao' ? 'Enviado para revisão.' : agendado ? 'Agendado.' : 'Publicado!')
   atualizarBlog(post.slug)
+  if (r?.ok && quando && quando !== 'revisao' && !agendado && post.indexar) after(() => avisarIndexNow([post.canonical || `${SITE}/blog/${post.slug}`]))
+  return r
+}
+
+/** Revisão humana: aprovar (fica registrado quem e quando) ou desfazer. */
+export async function revisaoAcao(id: string, aprovado: boolean): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (!UUID.test(id)) return { erro: 'Artigo inválido.' }
+  const r = await tentar(async () => blog.definirRevisao(await criarClienteServidor(), id, eu.id, aprovado), aprovado ? 'Revisão aprovada.' : 'Aprovação desfeita.')
+  revalidatePath(`/editor-blog/${id}`)
+  return r
+}
+
+/** Confere o artigo no ar como o Google vê (status, robots, canonical, schema, imagem, sitemap, links). */
+export async function validarAcao(id: string): Promise<Verificacao[] | { erro: string }> {
+  await exigirEquipe()
+  if (!UUID.test(id)) return { erro: 'Artigo inválido.' }
+  const post = await blog.postDaEquipe(await criarClienteServidor(), id)
+  if (!post) return { erro: 'Artigo não encontrado.' }
+  if (post.status !== 'publicado' || !post.publicadoEmBruto || Date.parse(post.publicadoEmBruto) > Date.now()) return { erro: 'A validação é feita no artigo publicado (no ar).' }
+  return validarPublicado(post.slug, post.canonical || `${SITE}/blog/${post.slug}`, post.indexar)
+}
+
+export async function salvarContextoAcao(c: blog.ContextoMarca): Promise<Resultado> {
+  await exigirEquipe()
+  const r = await tentar(async () => blog.salvarContextoMarca(await criarClienteServidor(), c), 'Contexto da marca salvo.')
+  revalidatePath('/blog', 'layout')
+  revalidatePath('/robots.txt')
+  revalidatePath('/editor-blog')
   return r
 }
 
@@ -65,19 +105,22 @@ export async function enviarImagemAcao(mime: string, tamanho: number): Promise<{
   }
 }
 
-export async function gerarRascunhoAcao(p: { tema: string; palavraChave: string; categoriaId: string | null; publico: string }): Promise<Rascunho | { erro: string }> {
+export async function gerarRascunhoAcao(p: { tema: string; palavraChave: string; categoriaId: string | null; publico: string; secundarias: string[]; briefing: Briefing }): Promise<Rascunho | { erro: string }> {
   await exigirEquipe()
   if (!p.tema.trim() || !p.palavraChave.trim()) return { erro: 'Informe o tema e a palavra-chave.' }
   try {
-    const [cats, posts] = await Promise.all([blog.categorias(), blog.publicados({ limite: 30 })])
+    const [cats, posts, marca] = await Promise.all([blog.categorias(), blog.publicados({ limite: 30 }), blog.contextoMarca().catch(() => ({}))])
     const categoria = cats.find((c) => c.id === p.categoriaId)?.nome ?? 'Marketing e vendas'
-    return await gerarRascunho({ tema: p.tema.slice(0, 300), palavraChave: p.palavraChave.slice(0, 80), categoria, publico: p.publico.slice(0, 200), outros: posts.posts.map((x) => ({ titulo: x.titulo, slug: x.slug })) })
+    return await gerarRascunho({
+      tema: p.tema.slice(0, 300), palavraChave: p.palavraChave.slice(0, 80), categoria, publico: p.publico.slice(0, 200), secundarias: p.secundarias.slice(0, 15).map((k) => String(k).slice(0, 80)),
+      briefing: limparBriefing(p.briefing), marca, outros: posts.posts.map((x) => ({ titulo: x.titulo, slug: x.slug })),
+    })
   } catch (e) {
     return { erro: e instanceof Error ? e.message : 'A IA não conseguiu gerar agora.' }
   }
 }
 
-export async function salvarAutorAcao(id: string | null, a: { nome: string; cargo: string; bio: string; fotoChave?: string | null }): Promise<Resultado> {
+export async function salvarAutorAcao(id: string | null, a: { nome: string; cargo: string; bio: string; links?: string[]; fotoChave?: string | null }): Promise<Resultado> {
   await exigirEquipe()
   if (id && !UUID.test(id)) return { erro: 'Autor inválido.' }
   const r = await tentar(async () => blog.salvarAutor(await criarClienteServidor(), id, a), 'Autor salvo.')

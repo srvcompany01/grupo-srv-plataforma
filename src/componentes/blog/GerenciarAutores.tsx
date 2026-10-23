@@ -11,13 +11,13 @@ import type { Autor } from '@/servicos/blog'
 export function GerenciarAutores({ autores }: { autores: Autor[] }) {
   const router = useRouter()
   const [editando, setEditando] = useState<string | 'novo' | null>(null)
-  const [form, setForm] = useState({ nome: '', cargo: '', bio: '' })
+  const [form, setForm] = useState({ nome: '', cargo: '', bio: '', links: '' })
   const [pendente, iniciar] = useTransition()
   const abrir = (a: Autor | null) => {
     setEditando(a?.id ?? 'novo')
-    setForm({ nome: a?.nome ?? '', cargo: a?.cargo ?? '', bio: a?.bio ?? '' })
+    setForm({ nome: a?.nome ?? '', cargo: a?.cargo ?? '', bio: a?.bio ?? '', links: (a?.links ?? []).join('\n') })
   }
-  const salvar = () => iniciar(async () => { if (avisar(await salvarAutorAcao(editando === 'novo' ? null : editando, form), true)) { setEditando(null); router.refresh() } })
+  const salvar = () => iniciar(async () => { if (avisar(await salvarAutorAcao(editando === 'novo' ? null : editando, { ...form, links: form.links.split(/\s+/).filter(Boolean) }), true)) { setEditando(null); router.refresh() } })
   return (
     <div className="space-y-3">
       <ul className="divide-y divide-borda">
@@ -36,6 +36,7 @@ export function GerenciarAutores({ autores }: { autores: Autor[] }) {
           <input className={campo} placeholder="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} maxLength={80} />
           <input className={campo} placeholder="Cargo (ex.: Gestor de tráfego, 8 anos de experiência)" value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} maxLength={80} />
           <textarea className={campo} rows={3} placeholder="Bio curta: experiência, resultados, especialidades" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={800} />
+          <textarea className={campo} rows={2} placeholder="Perfis oficiais (LinkedIn, Instagram, site), um link https:// por linha" value={form.links} onChange={(e) => setForm({ ...form, links: e.target.value })} />
           <div className="flex gap-2">
             <button type="button" onClick={salvar} disabled={pendente || !form.nome.trim()} className={botaoPrimario}>Salvar</button>
             <button type="button" onClick={() => setEditando(null)} className={botaoFantasma}>Cancelar</button>

@@ -104,6 +104,63 @@ const entradaCompromisso = {
   categoriaId: id('Categoria (id de listar_categorias_agenda); null deixa sem categoria').nullable().optional(),
 }
 
+/** Campos de artigo do blog aceitos pelo MCP (criar exige título e conteúdo; atualizar aceita qualquer subconjunto). */
+const CAMPOS_POST_MCP = (criando: boolean) => ({
+  titulo: criando ? z.string().min(1).max(160) : z.string().min(1).max(160).optional(),
+  conteudo: (criando ? z.string().min(1).max(200000) : z.string().max(200000).optional()).describe('Markdown do artigo, sem "# " (o título é o H1)'),
+  subtitulo: z.string().max(200).optional(),
+  slug: z.string().max(90).optional(),
+  palavraChave: z.string().max(80).optional(),
+  palavrasSecundarias: z.array(z.string().max(80)).max(15).optional(),
+  tema: z.string().max(300).optional(),
+  publico: z.string().max(200).optional().describe('Para quem é o artigo'),
+  descricao: z.string().max(300).optional().describe('Meta description / resumo (120 a 160 caracteres)'),
+  seoTitulo: z.string().max(80).optional(),
+  tags: z.array(z.string().max(40)).max(10).optional(),
+  entidades: z.array(z.string().max(80)).max(20).optional(),
+  breadcrumb: z.string().max(60).optional(),
+  canonical: z.string().url().optional(),
+  indexar: z.boolean().optional(),
+  ogTitulo: z.string().max(100).optional(),
+  ogDescricao: z.string().max(300).optional(),
+  capaAlt: z.string().max(200).optional(),
+  capaLegenda: z.string().max(200).optional(),
+  capaCredito: z.string().max(120).optional(),
+  ctaLabel: z.string().max(80).optional(),
+  ctaUrl: z.string().max(300).optional().describe('/maquinadevendas ou https://…'),
+  ctaContexto: z.string().max(300).optional(),
+  cta2Label: z.string().max(80).optional(),
+  cta2Url: z.string().max(300).optional(),
+  ctaPosicao: z.enum(['meio', 'final', 'ambos']).optional(),
+  relacionadosIds: z.array(z.string().uuid()).max(4).optional(),
+  aviso: z.string().max(300).optional().describe('Aviso editorial (uso de IA, parceria)'),
+  notaAtualizacao: z.string().max(300).optional(),
+  revisarEm: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  categoriaId: id('Categoria (de contexto_blog)').optional(),
+  autorId: id('Autor (de contexto_blog)').optional(),
+  guiaCompleto: z.boolean().optional(),
+  briefing: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional().describe('Campos do briefing (chaves de contexto_blog.camposDoBriefing)'),
+})
+type EntradaPostMcp = { [K in keyof ReturnType<typeof CAMPOS_POST_MCP>]?: unknown } & Record<string, unknown>
+
+/** Junta o que veio do MCP com o artigo atual (na atualização, o que não veio continua igual). */
+function camposDoMcp(a: EntradaPostMcp, atual: import('@/servicos/blog').PostEquipe | null): import('@/servicos/blog').CamposPost {
+  const v = <T,>(k: string, padrao: T): T => (a[k] === undefined ? padrao : (a[k] as T))
+  return {
+    titulo: v('titulo', atual?.titulo ?? ''), slug: v('slug', atual?.slug ?? ''), seoTitulo: v('seoTitulo', atual?.seoTitulo ?? ''), resumo: v('descricao', atual?.resumo ?? ''),
+    palavraChave: v('palavraChave', atual?.palavraChave ?? ''), publico: v('publico', atual?.publico ?? ''), tema: v('tema', atual?.tema ?? ''), palavrasSecundarias: v('palavrasSecundarias', atual?.palavrasSecundarias ?? []),
+    conteudo: v('conteudo', atual?.conteudo ?? ''), capaChave: atual?.capaChave ?? null, capaAlt: v('capaAlt', atual?.capaAlt === atual?.titulo ? '' : (atual?.capaAlt ?? '')),
+    categoriaId: v('categoriaId', atual?.categoriaId ?? null), autorId: v('autorId', atual?.autorId ?? null), pilar: v('guiaCompleto', atual?.pilar ?? false),
+    subtitulo: v('subtitulo', atual?.subtitulo ?? ''), tags: v('tags', atual?.tags ?? []), breadcrumb: v('breadcrumb', atual?.breadcrumb ?? ''), canonical: v('canonical', atual?.canonical ?? ''),
+    indexar: v('indexar', atual?.indexar ?? true), ogTitulo: v('ogTitulo', atual?.ogTitulo ?? ''), ogDescricao: v('ogDescricao', atual?.ogDescricao ?? ''),
+    capaLegenda: v('capaLegenda', atual?.capaLegenda ?? ''), capaCredito: v('capaCredito', atual?.capaCredito ?? ''),
+    cta: { label: v('ctaLabel', atual?.cta.label ?? ''), url: v('ctaUrl', atual?.cta.url ?? ''), contexto: v('ctaContexto', atual?.cta.contexto ?? ''), label2: v('cta2Label', atual?.cta.label2 ?? ''), url2: v('cta2Url', atual?.cta.url2 ?? ''), posicao: v('ctaPosicao', atual?.cta.posicao ?? 'ambos') },
+    relacionadosIds: v('relacionadosIds', atual?.relacionadosIds ?? []), entidades: v('entidades', atual?.entidades ?? []),
+    briefing: { ...(atual?.briefing ?? {}), ...((a.briefing as Record<string, string | string[]>) ?? {}) }, aviso: v('aviso', atual?.aviso ?? ''), notaAtualizacao: v('notaAtualizacao', atual?.notaAtualizacao ?? ''),
+    revisarEm: v('revisarEm', atual?.revisarEm ?? null),
+  }
+}
+
 export const FERRAMENTAS: Ferramenta[] = [
   definir({
     nome: 'descrever_plataforma',
@@ -126,7 +183,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
         'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
-        'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Use listar_posts_blog, criar_post_blog (sempre rascunho) e publicar_post_blog. Não há exclusão por aqui.',
+        'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
@@ -274,55 +331,111 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
-    nome: 'listar_posts_blog',
-    descricao: 'Artigos do blog público da Grupo SRV (www.gruposrv.com.br/blog): título, endereço, categoria, palavra-chave, situação (rascunho, agendado, publicado), data e visitas; e as categorias e autores (ids para criar_post_blog).',
+    nome: 'contexto_blog',
+    descricao: 'Contexto para escrever no blog do Grupo SRV: contexto da marca (oferta, promessa, mecanismo, tom, o que nunca prometer), categorias (pilares), autores, os campos do briefing aceitos e os artigos existentes (para links internos e para não repetir palavra-chave). COMECE POR AQUI antes de criar um artigo.',
     escrita: false,
     entrada: {},
     executar: async ({ sb }) => {
       const b = await import('@/servicos/blog')
-      const [posts, cats, auts] = await Promise.all([b.postsDaEquipe(sb), b.categorias(), b.autores(sb)])
-      const agora = Date.now()
+      const { CAMPOS_BRIEFING } = await import('@/dominio/blog')
+      const [marca, cats, auts, posts, chaves] = await Promise.all([b.contextoMarca(), b.categorias(), b.autores(sb), b.postsDaEquipe(sb), b.palavrasChaveDosPosts(sb)])
+      const chave = new Map(chaves.map((c) => [c.id, c.palavraChave]))
       return {
-        categorias: cats.map((c) => ({ id: c.id, nome: c.nome, slug: c.slug })),
-        autores: auts.map((a) => ({ id: a.id, nome: a.nome })),
-        posts: posts.map((p) => ({ id: p.id, titulo: p.titulo, url: `https://www.gruposrv.com.br/blog/${p.slug}`, categoria: p.categoria?.nome, palavraChave: p.palavraChave, situacao: p.status === 'rascunho' ? 'rascunho' : p.publicadoEmBruto && Date.parse(p.publicadoEmBruto) > agora ? 'agendado' : 'publicado', publicadoEm: p.publicadoEmBruto, visitas: p.visitas, guiaCompleto: p.pilar })),
+        marca,
+        categorias: cats.map((c) => ({ id: c.id, nome: c.nome, slug: c.slug, descricao: c.descricao })),
+        autores: auts.map((a) => ({ id: a.id, nome: a.nome, cargo: a.cargo })),
+        camposDoBriefing: CAMPOS_BRIEFING.map((c) => ({ chave: c.chave, rotulo: c.rotulo, tipo: c.tipo, opcoes: c.opcoes })),
+        artigos: posts.map((p) => ({ id: p.id, titulo: p.titulo, url: `/blog/${p.slug}`, palavraChave: chave.get(p.id) ?? '', status: p.status })),
+        regras: ['Artigo novo entra sempre como rascunho; a revisão humana é aprovada por uma pessoa na plataforma.', 'Não use "# " no conteúdo (o título é o H1). Comece pela resposta direta de 40 a 80 palavras. Termine com "## Perguntas frequentes" e perguntas em "### ".', 'Nunca invente cases, números, garantias ou depoimentos; nada de marcadores como [inserir link].'],
       }
     },
   }),
 
   definir({
-    nome: 'criar_post_blog',
-    descricao: 'Cria um artigo do blog como RASCUNHO (a equipe revisa e publica pela aba Blog, ou com publicar_post_blog). conteudo em Markdown, sem o título como "# " (use "## " para as seções). Boas práticas de SEO: título com a palavra-chave, descrição de 120 a 160 caracteres, 900+ palavras, 3+ subtítulos H2, links para /maquinadevendas e para outros artigos (/blog/<slug>).',
-    escrita: true,
-    entrada: {
-      titulo: z.string().min(1).max(160),
-      conteudo: z.string().min(1).max(200000).describe('Markdown do artigo'),
-      palavraChave: z.string().max(80).optional(),
-      descricao: z.string().max(300).optional().describe('Meta description (120 a 160 caracteres)'),
-      seoTitulo: z.string().max(80).optional(),
-      slug: z.string().max(90).optional(),
-      categoriaId: id('Categoria (de listar_posts_blog)').optional(),
-      autorId: id('Autor (de listar_posts_blog)').optional(),
-      guiaCompleto: z.boolean().optional().describe('É o guia completo (pilar) da categoria'),
+    nome: 'listar_posts_blog',
+    descricao: 'Artigos do blog (www.gruposrv.com.br/blog): título, endereço, categoria, palavra-chave, situação (rascunho, em revisão, agendado, publicado), revisão humana, data, visitas e cliques no CTA dos últimos 90 dias.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => {
+      const b = await import('@/servicos/blog')
+      const desde = somarDias(dataDeHoje(new Date()), -90)
+      const [posts, numeros] = await Promise.all([b.postsDaEquipe(sb), b.desempenho(sb, desde)])
+      const agora = Date.now()
+      return posts.map((p) => ({
+        id: p.id, titulo: p.titulo, url: `https://www.gruposrv.com.br/blog/${p.slug}`, categoria: p.categoria?.nome, palavraChave: p.palavraChave,
+        situacao: p.status === 'publicado' && p.publicadoEmBruto && Date.parse(p.publicadoEmBruto) > agora ? 'agendado' : p.status, revisado: p.revisado, revisarEm: p.revisarEm,
+        publicadoEm: p.publicadoEmBruto, visitas: p.visitas, desempenho90dias: numeros.get(p.id) ?? null, guiaCompleto: p.pilar,
+      }))
     },
+  }),
+
+  definir({
+    nome: 'criar_post_blog',
+    descricao: 'Cadastra um artigo do blog como RASCUNHO, com todos os campos do modelo mestre: texto (Markdown, sem "# "), SEO, briefing, CTA, social, capa (textos) e relacionados. Depois use validar_post_blog e enviar o artigo para revisão (publicar_post_blog com revisao=true). Quem aprova a revisão é uma pessoa.',
+    escrita: true,
+    entrada: CAMPOS_POST_MCP(true),
     executar: async ({ sb }, a) => {
       const b = await import('@/servicos/blog')
-      const novo = await b.salvarPost(sb, null, { titulo: a.titulo, slug: a.slug ?? '', seoTitulo: a.seoTitulo ?? '', resumo: a.descricao ?? '', palavraChave: a.palavraChave ?? '', conteudo: a.conteudo, capaChave: null, capaAlt: '', categoriaId: a.categoriaId ?? null, autorId: a.autorId ?? null, pilar: a.guiaCompleto ?? false })
+      const novo = await b.salvarPost(sb, null, camposDoMcp(a as EntradaPostMcp, null))
       return { id: novo, situacao: 'rascunho', editar: `/editor-blog/${novo}` }
     },
   }),
 
   definir({
-    nome: 'publicar_post_blog',
-    descricao: 'Publica um artigo do blog agora, agenda (quando = data e hora futuras, ISO) ou tira do ar (voltarParaRascunho).',
+    nome: 'atualizar_post_blog',
+    descricao: 'Atualiza campos de um artigo do blog (só os informados mudam). Mesmos campos de criar_post_blog. Não publica.',
     escrita: true,
-    entrada: { postId: id('Artigo (de listar_posts_blog)'), quando: z.string().datetime({ offset: true }).optional().describe('ISO 8601; vazio = agora'), voltarParaRascunho: z.boolean().optional() },
+    entrada: { postId: id('Artigo (de listar_posts_blog)'), ...CAMPOS_POST_MCP(false) },
     executar: async ({ sb }, a) => {
       const b = await import('@/servicos/blog')
+      const atual = await b.postDaEquipe(sb, a.postId)
+      if (!atual) throw new Error('Artigo não encontrado.')
+      await b.salvarPost(sb, a.postId, camposDoMcp(a as EntradaPostMcp, atual))
+      const { revalidatePath } = await import('next/cache')
+      revalidatePath('/blog', 'layout')
+      return { ok: true, editar: `/editor-blog/${a.postId}` }
+    },
+  }),
+
+  definir({
+    nome: 'validar_post_blog',
+    descricao: 'Checklist de qualidade do artigo (SEO, conteúdo, conversão, publicação: nota de 0 a 100 e o que bloqueia a publicação) e, se já estiver no ar, a validação técnica da página publicada (status 200, robots, canonical, H1, JSON-LD, og:image, sitemap, links internos), cada item como aprovado ou corrigir.',
+    escrita: false,
+    entrada: { postId: id('Artigo (de listar_posts_blog)') },
+    executar: async ({ sb }, a) => {
+      const b = await import('@/servicos/blog')
+      const { bloqueiosDePublicacao, SITE } = await import('@/dominio/blog')
+      const p = await b.postDaEquipe(sb, a.postId)
+      if (!p) throw new Error('Artigo não encontrado.')
+      const q = await b.qualidadeDoPost(sb, p)
+      const noAr = p.status === 'publicado' && !!p.publicadoEmBruto && Date.parse(p.publicadoEmBruto) <= Date.now()
+      const tecnica = noAr ? await (await import('@/servicos/blog-validacao')).validarPublicado(p.slug, p.canonical || `${SITE}/blog/${p.slug}`, p.indexar) : null
+      return {
+        nota: q.nota, bloqueiosParaPublicar: bloqueiosDePublicacao(q),
+        checklist: q.itens.map((i) => ({ grupo: i.grupo, item: i.texto, situacao: i.ok ? 'aprovado' : 'corrigir', bloqueia: !!i.bloqueia })),
+        validacaoTecnica: tecnica ?? 'não aplicável (o artigo ainda não está no ar)',
+        revisaoHumana: p.revisadoEm ? { aprovadoPor: p.revisadoPor, em: p.revisadoEm } : 'pendente',
+      }
+    },
+  }),
+
+  definir({
+    nome: 'publicar_post_blog',
+    descricao: 'Envia o artigo para revisão (revisao=true), publica agora, agenda (quando = data e hora futuras, ISO) ou tira do ar (voltarParaRascunho). Publicar e agendar só funcionam depois da revisão humana aprovada na plataforma e sem bloqueios do checklist.',
+    escrita: true,
+    entrada: { postId: id('Artigo (de listar_posts_blog)'), revisao: z.boolean().optional().describe('Só enviar para revisão'), quando: z.string().datetime({ offset: true }).optional().describe('ISO 8601; vazio = agora'), voltarParaRascunho: z.boolean().optional() },
+    executar: async ({ sb }, a) => {
+      const b = await import('@/servicos/blog')
+      const { bloqueiosDePublicacao } = await import('@/dominio/blog')
       const post = await b.postDaEquipe(sb, a.postId)
       if (!post) throw new Error('Artigo não encontrado.')
-      if (!a.voltarParaRascunho && !post.conteudo.trim()) throw new Error('O artigo está vazio.')
-      await b.definirPublicacao(sb, a.postId, a.voltarParaRascunho ? null : (a.quando ?? new Date().toISOString()))
+      if (a.voltarParaRascunho) await b.definirPublicacao(sb, a.postId, null)
+      else if (a.revisao) await b.definirPublicacao(sb, a.postId, 'revisao')
+      else {
+        const bloqueios = bloqueiosDePublicacao(await b.qualidadeDoPost(sb, post))
+        if (bloqueios.length) throw new Error(`Ainda não dá para publicar: ${bloqueios.join('; ')}.`)
+        await b.definirPublicacao(sb, a.postId, a.quando ?? new Date().toISOString())
+      }
       const { revalidatePath } = await import('next/cache')
       revalidatePath('/blog', 'layout')
       return { ok: true, url: `https://www.gruposrv.com.br/blog/${post.slug}` }

@@ -44,10 +44,84 @@ export function Newsletter({ origem, compacta }: { origem: string; compacta?: bo
   )
 }
 
-/** Conta a visita do artigo (no navegador, para não atrapalhar o cache da página). */
-export function ContarVisita({ slug }: { slug: string }) {
+/** De onde veio a visita (só a categoria: Google, ChatGPT, Instagram…), pela UTM ou pelo site anterior. */
+function origemDaVisita(): string {
+  const utm = new URLSearchParams(window.location.search).get('utm_source')?.toLowerCase() ?? ''
+  let ref = ''
+  try {
+    ref = document.referrer ? new URL(document.referrer).hostname : ''
+  } catch {}
+  const fonte = `${utm} ${ref}`
+  if (/chatgpt|openai/.test(fonte)) return 'chatgpt'
+  if (/perplexity/.test(fonte)) return 'perplexity'
+  if (/gemini|bard/.test(fonte)) return 'gemini'
+  if (/copilot/.test(fonte)) return 'copilot'
+  if (/google/.test(fonte)) return 'google'
+  if (/bing/.test(fonte)) return 'bing'
+  if (/instagram/.test(fonte)) return 'instagram'
+  if (/facebook|fb\./.test(fonte)) return 'facebook'
+  if (/linkedin|lnkd/.test(fonte)) return 'linkedin'
+  if (/whatsapp|wa\.me/.test(fonte)) return 'whatsapp'
+  if (!fonte.trim() || ref === window.location.hostname) return 'direto'
+  return 'outro'
+}
+
+/**
+ * Medição do artigo (no navegador, para não atrapalhar o cache da página): visita e origem, rolagem 25/50/75/90,
+ * leitura engajada (30 s na página e metade lida), cliques no CTA ([data-cta]) e em links internos.
+ * Os eventos vão juntos ao sair da página (sendBeacon). Nada de dado pessoal.
+ */
+export function MedirLeitura({ slug }: { slug: string }) {
   useEffect(() => {
-    void fetch('/api/blog/visita', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug }), keepalive: true }).catch(() => {})
+    const fila = new Set<string>(['page_view', `origem:${origemDaVisita()}`])
+    const enviados = new Set<string>()
+    const inicio = Date.now()
+    let maior = 0
+    const enviar = () => {
+      const novos = [...fila].filter((e) => !enviados.has(e))
+      if (!novos.length) return
+      novos.forEach((e) => enviados.add(e))
+      const corpo = JSON.stringify({ slug, eventos: novos })
+      if (!navigator.sendBeacon?.('/api/blog/eventos', corpo)) void fetch('/api/blog/eventos', { method: 'POST', body: corpo, keepalive: true }).catch(() => {})
+    }
+    const rolar = () => {
+      const artigo = document.querySelector('[data-artigo]')
+      if (!artigo) return
+      const r = artigo.getBoundingClientRect()
+      const lido = Math.min(1, Math.max(0, (window.innerHeight - r.top) / Math.max(1, r.height)))
+      maior = Math.max(maior, lido)
+      for (const p of [25, 50, 75, 90]) if (maior * 100 >= p) fila.add(`scroll_${p}`)
+      if (maior >= 0.5 && Date.now() - inicio >= 30_000) fila.add('engaged_view')
+    }
+    const clicar = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement).closest('a')
+      if (!a) return
+      const cta = a.getAttribute('data-cta')
+      if (cta === '2') fila.add('cta2_click')
+      else if (cta) fila.add('cta_click')
+      else if (a.getAttribute('href')?.startsWith('/blog/')) fila.add('internal_link_click')
+      enviar()
+    }
+    const sair = () => {
+      if (document.visibilityState === 'hidden') {
+        rolar()
+        enviar()
+      }
+    }
+    enviar()
+    window.addEventListener('scroll', rolar, { passive: true })
+    document.addEventListener('click', clicar)
+    document.addEventListener('visibilitychange', sair)
+    window.addEventListener('pagehide', enviar)
+    const relogio = setInterval(rolar, 10_000)
+    return () => {
+      window.removeEventListener('scroll', rolar)
+      document.removeEventListener('click', clicar)
+      document.removeEventListener('visibilitychange', sair)
+      window.removeEventListener('pagehide', enviar)
+      clearInterval(relogio)
+      enviar()
+    }
   }, [slug])
   return null
 }

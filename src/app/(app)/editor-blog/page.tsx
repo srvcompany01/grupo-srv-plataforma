@@ -1,11 +1,14 @@
-import { Eye, FileText, Mail, Plus, UserPen } from 'lucide-react'
+import { Building2, Eye, FileText, Mail, Plus, UserPen } from 'lucide-react'
 import Link from 'next/link'
+import { ContextoMarca } from '@/componentes/blog/ContextoMarca'
 import { GerenciarAutores } from '@/componentes/blog/GerenciarAutores'
+import { somarDias } from '@/dominio/agenda'
+import { dataDeHoje } from '@/dominio/filtros'
 import { SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { autores, inscritos, postsDaEquipe } from '@/servicos/blog'
+import { CAMPOS_MARCA, autores, contextoMarca, desempenho, inscritos, postsDaEquipe } from '@/servicos/blog'
 import { botaoPrimario } from '@/lib/ui'
 
 const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
@@ -14,9 +17,11 @@ const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digi
 export default async function EditorBlog() {
   await exigirEquipe()
   const sb = await criarClienteServidor()
-  const [posts, listaAutores, lista] = await Promise.all([postsDaEquipe(sb), autores(sb), inscritos(sb)])
   const agora = new Date()
-  const situacao = (p: (typeof posts)[number]) => (p.status === 'rascunho' ? 'Rascunho' : p.publicadoEmBruto && new Date(p.publicadoEmBruto) > agora ? 'Agendado' : 'Publicado')
+  const hoje = dataDeHoje(agora)
+  const [posts, listaAutores, lista, marca, numeros] = await Promise.all([postsDaEquipe(sb), autores(sb), inscritos(sb), contextoMarca(), desempenho(sb, somarDias(hoje, -90))])
+  const situacao = (p: (typeof posts)[number]) => (p.status === 'rascunho' ? 'Rascunho' : p.status === 'revisao' ? 'Em revisão' : p.publicadoEmBruto && new Date(p.publicadoEmBruto) > agora ? 'Agendado' : 'Publicado')
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—')
   const publicados = posts.filter((p) => situacao(p) === 'Publicado')
   return (
     <div className="page-shell">
@@ -31,11 +36,12 @@ export default async function EditorBlog() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {[
           ['Publicados', publicados.length],
           ['Rascunhos e agendados', posts.length - publicados.length],
           ['Visitas (total)', publicados.reduce((s, p) => s + p.visitas, 0)],
+          ['Cliques no CTA (90 dias)', [...numeros.values()].reduce((s, d) => s + d.cliquesCta + d.cliquesCta2, 0)],
           ['Inscritos na newsletter', lista.length],
         ].map(([r, v]) => (
           <div key={r} className="rounded-xl border border-borda bg-white p-3">
@@ -57,22 +63,29 @@ export default async function EditorBlog() {
                   <th className="py-2 pr-3 font-medium">Categoria</th>
                   <th className="py-2 pr-3 font-medium">Situação</th>
                   <th className="py-2 pr-3 font-medium">Data</th>
-                  <th className="py-2 text-right font-medium">Visitas</th>
+                  <th className="py-2 pr-3 text-right font-medium">Visitas</th>
+                  <th className="py-2 pr-3 text-right font-medium" title="Leram pelo menos metade (90 dias)">Leitura 50%</th>
+                  <th className="py-2 text-right font-medium" title="Cliques no CTA ÷ visitas (90 dias)">Taxa do CTA</th>
                 </tr>
               </thead>
               <tbody>
                 {posts.map((p) => {
                   const s = situacao(p)
+                  const d = numeros.get(p.id)
+                  const atrasada = !!p.revisarEm && p.revisarEm <= hoje
                   return (
                     <tr key={p.id} className="border-b border-borda/60 last:border-0">
                       <td className="py-2 pr-3">
                         <Link href={`/editor-blog/${p.id}`} className="font-medium text-texto hover:underline">{p.titulo}</Link>
-                        <p className="text-micro text-texto-3">{p.palavraChave ? `Palavra-chave: ${p.palavraChave}` : 'Sem palavra-chave'}{p.pilar ? ' · Guia completo' : ''}</p>
+                        <p className="text-micro text-texto-3">{p.palavraChave ? `Palavra-chave: ${p.palavraChave}` : 'Sem palavra-chave'}{p.pilar ? ' · Guia completo' : ''}{p.revisado ? ' · ✓ revisado' : ''}{atrasada ? '' : p.revisarEm ? ` · revisar em ${p.revisarEm.split('-').reverse().join('/')}` : ''}</p>
+                        {atrasada && <SeloTom tom="atencao" rotulo="Hora de revisar o conteúdo" />}
                       </td>
                       <td className="py-2 pr-3">{p.categoria ? <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: p.categoria.cor }} />{p.categoria.nome}</span> : '—'}</td>
-                      <td className="py-2 pr-3"><SeloTom tom={s === 'Publicado' ? 'bom' : s === 'Agendado' ? 'atencao' : 'neutro'} rotulo={s} /></td>
+                      <td className="py-2 pr-3"><SeloTom tom={s === 'Publicado' ? 'bom' : s === 'Rascunho' ? 'neutro' : 'atencao'} rotulo={s} /></td>
                       <td className="py-2 pr-3 text-texto-2">{p.publicadoEmBruto && s !== 'Rascunho' ? quando.format(new Date(p.publicadoEmBruto)) : '—'}</td>
-                      <td className="py-2 text-right tabular-nums">{p.visitas.toLocaleString('pt-BR')}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{p.visitas.toLocaleString('pt-BR')}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{d ? pct(d.rolagem['50'], d.visitas) : '—'}</td>
+                      <td className="py-2 text-right tabular-nums">{d ? pct(d.cliquesCta + d.cliquesCta2, d.visitas) : '—'}</td>
                     </tr>
                   )
                 })}
@@ -80,6 +93,10 @@ export default async function EditorBlog() {
             </table>
           </div>
         )}
+      </Modulo>
+
+      <Modulo icone={Building2} titulo="Contexto da marca" descricao="Usado pela IA ao escrever e nos dados da empresa que o Google e as IAs leem. Também define se robôs que só treinam IA podem ler o blog.">
+        <ContextoMarca inicial={marca} campos={CAMPOS_MARCA} />
       </Modulo>
 
       <div className="grid items-start gap-5 xl:grid-cols-2">

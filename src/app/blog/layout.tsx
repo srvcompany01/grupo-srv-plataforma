@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { JsonLd } from '@/componentes/blog/Pecas'
 import { LANDING_PADRAO, SITE } from '@/dominio/blog'
-import { categorias } from '@/servicos/blog'
+import { categorias, contextoMarca } from '@/servicos/blog'
 
 const titulo = Barlow_Condensed({ variable: '--blog-titulo', subsets: ['latin'], weight: ['600', '700', '800'] })
 const texto = Inter({ variable: '--blog-texto', subsets: ['latin'] })
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: 'Blog da Grupo SRV: marketing e vendas para empresas', template: '%s | Blog Grupo SRV' },
   description: 'Guias práticos de tráfego pago, redes sociais, Google e vendas para empresas que querem crescer com previsibilidade.',
-  robots: { index: true, follow: true, 'max-image-preview': 'large' },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
   alternates: { types: { 'application/rss+xml': `${SITE}/blog/feed.xml` } },
   openGraph: { siteName: 'Blog Grupo SRV', locale: 'pt_BR', type: 'website' },
 }
@@ -24,10 +24,25 @@ export const revalidate = 300
 
 /** Casca pública do blog: cabeçalho com as categorias e a chamada para a landing, rodapé institucional. */
 export default async function LayoutBlog({ children }: { children: React.ReactNode }) {
-  const cats = await categorias().catch(() => [])
+  const [cats, marca] = await Promise.all([categorias().catch(() => []), contextoMarca().catch(() => ({}) as Record<string, string | boolean>)])
+  const doc = (k: string) => (typeof marca[k] === 'string' && marca[k] ? String(marca[k]) : undefined)
+  const perfis = (doc('same_as') ?? '').split(/\s+/).filter((l) => /^https:\/\//.test(l))
   return (
     <div className={`${titulo.variable} ${texto.variable} ${mono.variable} min-h-dvh bg-[#f8f8f5] font-[family-name:var(--blog-texto)] text-[15px] text-[#070707]`}>
-      <JsonLd dados={{ '@context': 'https://schema.org', '@type': 'Organization', name: 'Grupo SRV', url: SITE, logo: `${SITE}/marca/simbolo.png` }} />
+      <JsonLd
+        dados={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization', '@id': `${SITE}/#organizacao`, name: doc('brand_name') ?? 'Grupo SRV', url: SITE, logo: `${SITE}/marca/simbolo.png`, description: doc('brand_description'),
+              founder: doc('founder_name') ? { '@type': 'Person', name: doc('founder_name') } : undefined, email: doc('institutional_email'), telephone: doc('institutional_phone'),
+              sameAs: perfis.length ? perfis : undefined, makesOffer: doc('main_product') ? { '@type': 'Offer', itemOffered: { '@type': 'Service', name: doc('main_product'), description: doc('main_offer') } } : undefined,
+            },
+            { '@type': 'WebSite', '@id': `${SITE}/#site`, url: SITE, name: doc('brand_name') ?? 'Grupo SRV', inLanguage: 'pt-BR', publisher: { '@id': `${SITE}/#organizacao` } },
+            { '@type': 'Blog', '@id': `${SITE}/blog#blog`, url: `${SITE}/blog`, name: `Blog ${doc('brand_name') ?? 'Grupo SRV'}`, inLanguage: 'pt-BR', publisher: { '@id': `${SITE}/#organizacao` } },
+          ],
+        }}
+      />
       <header className="sticky top-0 z-40 border-b border-[#e6e6e2] bg-[#f8f8f5]/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
           <Link href="/blog" className="flex shrink-0 items-center gap-2" aria-label="Blog da Grupo SRV, início">

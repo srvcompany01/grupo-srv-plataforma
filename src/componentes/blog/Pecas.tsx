@@ -60,17 +60,26 @@ export function CartaoPost({ p, destaque, semCapa, prioridade }: { p: PostResumo
   )
 }
 
-/** Chamada para a landing (no meio e no fim dos artigos, e na home). */
-export function ChamadaLanding({ slug, variante = 'escura' }: { slug: string; variante?: 'escura' | 'clara' }) {
+/**
+ * Chamada para a landing (no meio e no fim dos artigos, e na home). O artigo pode ter CTA próprio (texto, destino e
+ * contexto); sem ele, vale a chamada padrão da Máquina de Vendas. `data-cta` alimenta a medição de cliques.
+ */
+export function ChamadaLanding({ slug, variante = 'escura', cta }: { slug: string; variante?: 'escura' | 'clara'; cta?: { label: string; url: string; contexto: string; label2?: string; url2?: string } }) {
   const escura = variante === 'escura'
+  const destino = cta?.url ? (cta.url.startsWith('/') ? linkLanding(slug, cta.url) : cta.url) : linkLanding(slug)
   return (
     <aside className={`not-prose my-10 overflow-hidden rounded-2xl p-6 md:p-8 ${escura ? 'bg-[#070707] text-white' : 'border border-[#e6e6e2] bg-white text-[#070707]'}`}>
       <p className="font-[family-name:var(--blog-mono)] text-[11px] font-semibold uppercase tracking-widest text-[#d80d12]">Grupo SRV · Máquina de Vendas</p>
-      <p className="mt-2 font-[family-name:var(--blog-titulo)] text-3xl font-bold uppercase leading-none md:text-4xl">Quer transformar isso em vendas na sua empresa?</p>
-      <p className={`mt-3 max-w-xl text-[15px] ${escura ? 'text-white/75' : 'text-[#4a4a4a]'}`}>A Grupo SRV monta e opera o seu marketing de ponta a ponta: tráfego pago, redes sociais, Google e o processo comercial para atender cada lead.</p>
-      <Link href={linkLanding(slug)} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-[#a2070a]">
-        Quero falar com um especialista <ArrowRight className="h-4 w-4" />
-      </Link>
+      <p className="mt-2 font-[family-name:var(--blog-titulo)] text-3xl font-bold uppercase leading-none md:text-4xl">{cta?.label ? cta.label : 'Quer transformar isso em vendas na sua empresa?'}</p>
+      <p className={`mt-3 max-w-xl text-[15px] ${escura ? 'text-white/75' : 'text-[#4a4a4a]'}`}>{cta?.contexto || 'A Grupo SRV implementa a Máquina de Vendas: um fluxo contínuo, previsível, controlável e escalável de vendas pela internet.'}</p>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Link href={destino} data-cta="1" className="inline-flex items-center gap-2 rounded-full bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-[#a2070a]">
+          {cta?.label || 'Faça o pré-diagnóstico'} <ArrowRight className="h-4 w-4" />
+        </Link>
+        {cta?.label2 && cta.url2 && (
+          <Link href={cta.url2} data-cta="2" className={`text-[14px] font-semibold underline underline-offset-4 ${escura ? 'text-white/85 hover:text-white' : 'text-[#2a2a2a] hover:text-[#d80d12]'}`}>{cta.label2}</Link>
+        )}
+      </div>
     </aside>
   )
 }
