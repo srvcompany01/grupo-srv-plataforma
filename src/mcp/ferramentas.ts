@@ -184,6 +184,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
+        'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
@@ -439,6 +440,47 @@ export const FERRAMENTAS: Ferramenta[] = [
       const { revalidatePath } = await import('next/cache')
       revalidatePath('/blog', 'layout')
       return { ok: true, url: `https://www.gruposrv.com.br/blog/${post.slug}` }
+    },
+  }),
+
+  definir({
+    nome: 'listar_comentarios_redes',
+    descricao: 'Comentários do Instagram e do Facebook dos clientes (posts orgânicos ou anúncios), já classificados pelo tom (positivo, neutro, negativo, agressivo), com as respostas. filtro: todos, sem_resposta, alerta (negativos e agressivos sem decisão), respondidos, ocultos. atualizar=true busca os novos na Meta antes.',
+    escrita: false,
+    entrada: {
+      origem: z.enum(['organico', 'anuncio']).describe('Posts orgânicos ou anúncios'),
+      clienteId: id('Cliente (de listar_clientes); vazio = todos').optional(),
+      filtro: z.enum(['todos', 'sem_resposta', 'alerta', 'respondidos', 'ocultos']).optional(),
+      atualizar: z.boolean().optional(),
+    },
+    executar: async ({ sb }, a) => {
+      const c = await import('@/servicos/comentarios-redes')
+      if (a.atualizar) await c.sincronizarComentarios(a.clienteId ? [a.clienteId] : undefined)
+      const lista = await c.listarComentarios(sb, { origem: a.origem, clienteId: a.clienteId ?? null, filtro: a.filtro ?? 'todos' })
+      if (!lista) throw new Error('Falta a migração dos comentários.')
+      return lista.map((x) => ({ plataforma: x.plataforma, id: x.id, cliente: x.clienteNome, autor: x.autor, texto: x.texto, em: x.criadoEm, tom: x.tom, motivo: x.motivo, respondido: !!x.respondidoEm, oculto: x.oculto, resolvido: !!x.resolvidoEm, post: x.postTexto, anuncio: x.anuncioNome || undefined, link: x.postLink, respostas: x.respostas }))
+    },
+  }),
+
+  definir({
+    nome: 'responder_comentario_rede',
+    descricao: 'Publica uma resposta a um comentário do Instagram ou do Facebook, como o perfil/Página do cliente (fica pública). Use o id e a plataforma de listar_comentarios_redes. Tom educado e profissional; nunca discuta nem exponha dados pessoais.',
+    escrita: true,
+    entrada: { plataforma: z.enum(['instagram', 'facebook']), comentarioId: z.string().regex(/^[0-9_]{1,120}$/), texto: z.string().min(1).max(2000) },
+    executar: async ({ sb, userId }, a) => {
+      await (await import('@/servicos/comentarios-redes')).responderComentario(sb, userId, a.plataforma, a.comentarioId, a.texto)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'ocultar_comentario_rede',
+    descricao: 'Oculta (ou mostra de novo, com ocultar=false) um comentário do Instagram ou do Facebook do cliente. Ocultar não apaga: só quem escreveu e os amigos dele continuam vendo.',
+    escrita: true,
+    entrada: { plataforma: z.enum(['instagram', 'facebook']), comentarioId: z.string().regex(/^[0-9_]{1,120}$/), ocultar: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/comentarios-redes')).ocultarComentario(sb, a.plataforma, a.comentarioId, a.ocultar)
+      return { ok: true }
     },
   }),
 

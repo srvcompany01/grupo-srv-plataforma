@@ -70,7 +70,7 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
               <li key={a.id}>
                 <button disabled={pendente} onClick={() => abrir(a)} className={`block w-full px-3 py-2 text-left text-rotulo hover:bg-hover ${a.lido ? 'text-texto-2' : 'font-bold text-texto'}`}>
                   <span className="block">
-                    {a.atorNome || 'Alguém'} mencionou você em {a.onde}
+                    {a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}
                   </span>
                   <span className="block text-legenda font-normal text-texto-3">{tempoRelativo(a.criadoEm, agora)}</span>
                 </button>

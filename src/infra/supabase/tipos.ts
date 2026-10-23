@@ -35,6 +35,12 @@ export type Database = {
           { foreignKeyName: "blog_posts_author_id_fkey"; columns: ["author_id"]; isOneToOne: false; referencedRelation: "blog_authors"; referencedColumns: ["id"] },
         ]
       }
+      social_comments: {
+        Row: { plataforma: string; id: string; client_id: string; origem: string; post_id: string; post_link: string; post_texto: string; anuncio_nome: string; parent_id: string | null; autor: string; da_marca: boolean; texto: string; criado_em: string; curtidas: number; tom: string; motivo: string; respondido_em: string | null; respondido_por: string | null; oculto: boolean; resolvido_em: string | null; lido_em: string | null }
+        Insert: { plataforma: string; id: string; client_id: string; origem?: string; post_id: string; post_link?: string; post_texto?: string; anuncio_nome?: string; parent_id?: string | null; autor?: string; da_marca?: boolean; texto?: string; criado_em: string; curtidas?: number; tom?: string; motivo?: string; respondido_em?: string | null; respondido_por?: string | null; oculto?: boolean; resolvido_em?: string | null; lido_em?: string | null }
+        Update: { plataforma?: string; id?: string; client_id?: string; origem?: string; post_id?: string; post_link?: string; post_texto?: string; anuncio_nome?: string; parent_id?: string | null; autor?: string; da_marca?: boolean; texto?: string; criado_em?: string; curtidas?: number; tom?: string; motivo?: string; respondido_em?: string | null; respondido_por?: string | null; oculto?: boolean; resolvido_em?: string | null; lido_em?: string | null }
+        Relationships: [{ foreignKeyName: "social_comments_client_id_fkey"; columns: ["client_id"]; isOneToOne: false; referencedRelation: "clients"; referencedColumns: ["id"] }]
+      }
       blog_settings: {
         Row: { id: boolean; data: Json; updated_at: string }
         Insert: { id?: boolean; data?: Json; updated_at?: string }
@@ -834,6 +840,8 @@ export type Database = {
           read_at: string | null
           task_id: string | null
           chat_message_id: string | null
+          message: string | null
+          link: string | null
           user_id: string
         }
         Insert: {
@@ -845,6 +853,8 @@ export type Database = {
           read_at?: string | null
           task_id?: string | null
           chat_message_id?: string | null
+          message?: string | null
+          link?: string | null
           user_id: string
         }
         Update: {
@@ -856,6 +866,8 @@ export type Database = {
           read_at?: string | null
           task_id?: string | null
           chat_message_id?: string | null
+          message?: string | null
+          link?: string | null
           user_id?: string
         }
         Relationships: [

@@ -8,7 +8,7 @@ export function SeletorCliente({ base, clientes, atual, consultaPeriodo }: { bas
   const router = useRouter()
   const ir = (id: string) => {
     const q = [id ? `cliente=${id}` : '', consultaPeriodo].filter(Boolean).join('&')
-    router.push(q ? `${base}?${q}` : base)
+    router.push(q ? `${base}${base.includes('?') ? '&' : '?'}${q}` : base)
   }
   return (
     <label className="flex min-w-0 items-center gap-2">

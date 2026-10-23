@@ -1,10 +1,11 @@
-import { Camera, Eye, Heart, LayoutGrid, MapPin, Radar, Sparkles, UserCheck, Users } from 'lucide-react'
+import { Camera, Eye, Heart, LayoutGrid, MapPin, MessageCircle, Radar, Sparkles, UserCheck, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { BlocoAnalise, Numeros } from '@/componentes/insights/BlocoAnalise'
 import { CORES_SERIE } from '@/componentes/insights/GraficoDiario'
+import { AtualizarComentarios, ListaComentarios } from '@/componentes/insights/ComentariosRedes'
 import { InstagramInsights } from '@/componentes/insights/InstagramInsights'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
@@ -15,6 +16,7 @@ import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type Periodo
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
+import { listarComentarios, resumoComentarios, type FiltroComentarios } from '@/servicos/comentarios-redes'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
 
 export const maxDuration = 60
@@ -42,6 +44,10 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
   const clientes = (await listarClientes(sb)).filter((c) => !c.interno && c.status !== 'encerrado' && c.metaPaginaId)
   const escolhido = clientes.find((c) => c.id === sp.cliente) ?? null
   const seletor = <SeletorPeriodo base={escolhido ? `/insights?cliente=${escolhido.id}` : '/insights'} periodo={periodo} hoje={hoje} />
+  const aba = sp.aba === 'organico' || sp.aba === 'anuncios' ? sp.aba : 'geral'
+  const filtro: FiltroComentarios = ['sem_resposta', 'alerta', 'respondidos', 'ocultos'].includes(String(sp.filtro)) ? (sp.filtro as FiltroComentarios) : 'todos'
+  const resumo = await resumoComentarios(sb, escolhido?.id ?? null).catch(() => null)
+  const linkAba = (a: string, f?: string) => `/insights?${[a !== 'geral' ? `aba=${a}` : '', escolhido ? `cliente=${escolhido.id}` : '', f && f !== 'todos' ? `filtro=${f}` : ''].filter(Boolean).join('&')}`.replace(/\?$/, '')
 
   return (
     <div className="page-shell">
@@ -50,7 +56,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
           <p className="eyebrow">Orgânico</p>
           <h1 className="page-title mt-1">Insights</h1>
         </div>
-        <SeletorCliente base="/insights" clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
+        <SeletorCliente base={aba === 'geral' ? '/insights' : `/insights?aba=${aba}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -62,7 +68,35 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         ))}
       </div>
 
-      {escolhido ? (
+      <nav className="flex flex-wrap gap-1 border-b border-borda" aria-label="Abas de insights">
+        {([['geral', 'Visão geral', null], ['organico', 'Comentários orgânicos', resumo?.organico], ['anuncios', 'Comentários de anúncios', resumo?.anuncio]] as const).map(([a, rotulo, n]) => (
+          <Link key={a} href={linkAba(a)} className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-rotulo font-semibold ${aba === a ? 'border-petroleo text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>
+            {a !== 'geral' && <MessageCircle className="h-3.5 w-3.5" />}{rotulo}
+            {n && n.alertas > 0 && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-white" title="Negativos ou agressivos sem decisão">{n.alertas}</span>}
+            {n && n.semResposta > 0 && <span className="rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-2" title="Sem resposta">{n.semResposta}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {aba !== 'geral' ? (
+        <Modulo
+          icone={MessageCircle}
+          titulo={aba === 'organico' ? 'Comentários nos posts' : 'Comentários nos anúncios'}
+          descricao={`${escolhido ? escolhido.nome : 'Todos os clientes'} · Instagram e Facebook · atualiza sozinho a cada 15 minutos`}
+          acoes={<AtualizarComentarios clienteId={escolhido?.id ?? null} />}
+        >
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-1">
+              {([['todos', 'Todos'], ['sem_resposta', 'Sem resposta'], ['alerta', 'Negativos e agressivos'], ['respondidos', 'Respondidos'], ['ocultos', 'Ocultos']] as const).map(([f, r]) => (
+                <Link key={f} href={linkAba(aba, f)} className={`rounded-full border px-2.5 py-1 text-legenda font-semibold ${filtro === f ? (f === 'alerta' ? 'border-perigo bg-perigo text-white' : 'border-petroleo bg-petroleo text-white') : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>{r}</Link>
+              ))}
+            </div>
+            <Suspense fallback={<p className="py-6 text-center text-rotulo text-texto-3">Carregando os comentários…</p>}>
+              <Comentarios origem={aba === 'organico' ? 'organico' : 'anuncio'} clienteId={escolhido?.id ?? null} filtro={filtro} />
+            </Suspense>
+          </div>
+        </Modulo>
+      ) : escolhido ? (
         <>
           <Suspense fallback={<Carregando titulo={`Instagram de ${escolhido.nome}`} />}>
             <DetalheInstagram cliente={escolhido} periodo={periodo} seletor={seletor} />
@@ -78,6 +112,12 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
       )}
     </div>
   )
+}
+
+async function Comentarios({ origem, clienteId, filtro }: { origem: 'organico' | 'anuncio'; clienteId: string | null; filtro: FiltroComentarios }) {
+  const lista = await listarComentarios(await criarClienteServidor(), { origem, clienteId, filtro })
+  if (!lista) return <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">Falta rodar a migração dos comentários (20261024000055_comentarios_redes.sql) no Supabase.</p>
+  return <ListaComentarios comentarios={lista} />
 }
 
 function Carregando({ titulo }: { titulo: string }) {
