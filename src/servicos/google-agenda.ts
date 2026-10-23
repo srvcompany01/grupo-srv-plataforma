@@ -14,8 +14,8 @@ const API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
 const ESCOPOS = 'openid email https://www.googleapis.com/auth/calendar.events'
 const FUSO = 'America/Belem'
 
-// trim: um espaço ou quebra de linha colado junto na Vercel faz o Google responder "OAuth client was not found".
-export const idCliente = () => process.env.GOOGLE_CLIENT_ID?.trim() ?? ''
+// Limpa o que costuma vir colado junto na Vercel (espaço, quebra de linha, "http://"): o Google responde "OAuth client was not found".
+export const idCliente = () => process.env.GOOGLE_CLIENT_ID?.trim().replace(/^https?:\/\//, '') ?? ''
 export const segredoCliente = () => process.env.GOOGLE_CLIENT_SECRET?.trim() ?? ''
 export const googleConfigurado = () => !!(idCliente() && segredoCliente())
 export const urlDeRetorno = (origem: string) => `${origem}/api/google/retorno`
