@@ -163,3 +163,23 @@ function semNumeros(m: MidiaBruta): PostIG {
   const comentarios = m.comments_count ?? 0
   return { id: m.id, legenda: (m.caption ?? '').trim(), formato: formatoDoPost(m.media_type, m.media_product_type), link: m.permalink ?? '', imagem: null, em: m.timestamp, curtidas, comentarios, alcance: 0, visualizacoes: 0, salvamentos: 0, compartilhamentos: 0, interacoes: curtidas + comentarios }
 }
+
+/** Cliques nos links do perfil do Instagram (link da bio e botões de contato), por mês. Cache de 1 hora. */
+export async function cliquesNoPerfilPorMes(paginaId: string, meses: { mes: string; de: string; ate: string }[]): Promise<Map<string, number> | { erro: string }> {
+  try {
+    const conta = await contaDaPagina(paginaId)
+    if ('erro' in conta) return conta
+    if (!conta.instagram) return { erro: 'A Página do cliente não tem um Instagram profissional ligado.' }
+    const igId = conta.instagram.id
+    const porMes = await Promise.all(meses.map(async (m) => {
+      const totais = await Promise.all(janelas(m.de, m.ate).map((j) =>
+        graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'profile_links_taps', metric_type: 'total_value', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg: CACHE })
+          .then((r) => r.data[0]?.total_value?.value ?? 0, () => 0),
+      ))
+      return [m.mes, totais.reduce((s, x) => s + x, 0)] as const
+    }))
+    return new Map(porMes)
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : 'Não foi possível falar com o Meta agora.' }
+  }
+}

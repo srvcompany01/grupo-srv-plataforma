@@ -35,6 +35,24 @@ export type Database = {
           { foreignKeyName: "blog_posts_author_id_fkey"; columns: ["author_id"]; isOneToOne: false; referencedRelation: "blog_authors"; referencedColumns: ["id"] },
         ]
       }
+      bio_clicks: {
+        Row: { client_id: string; day: string; clicks: number }
+        Insert: { client_id: string; day: string; clicks?: number }
+        Update: { client_id?: string; day?: string; clicks?: number }
+        Relationships: []
+      }
+      lead_confirmations: {
+        Row: { id: string; client_id: string; origem: string; day: string; observacao: string; created_by: string | null; created_at: string }
+        Insert: { id?: string; client_id: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
+        Update: { id?: string; client_id?: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
+      client_monthly_results: {
+        Row: { client_id: string; month: string; revenue: number | null; sales: number | null; notes: string; updated_by: string | null; updated_at: string }
+        Insert: { client_id: string; month: string; revenue?: number | null; sales?: number | null; notes?: string; updated_by?: string | null; updated_at?: string }
+        Update: { client_id?: string; month?: string; revenue?: number | null; sales?: number | null; notes?: string; updated_by?: string | null; updated_at?: string }
+        Relationships: []
+      }
       social_comments: {
         Row: { plataforma: string; id: string; client_id: string; origem: string; post_id: string; post_link: string; post_texto: string; anuncio_nome: string; parent_id: string | null; autor: string; da_marca: boolean; texto: string; criado_em: string; curtidas: number; tom: string; motivo: string; respondido_em: string | null; respondido_por: string | null; oculto: boolean; resolvido_em: string | null; lido_em: string | null }
         Insert: { plataforma: string; id: string; client_id: string; origem?: string; post_id: string; post_link?: string; post_texto?: string; anuncio_nome?: string; parent_id?: string | null; autor?: string; da_marca?: boolean; texto?: string; criado_em: string; curtidas?: number; tom?: string; motivo?: string; respondido_em?: string | null; respondido_por?: string | null; oculto?: boolean; resolvido_em?: string | null; lido_em?: string | null }
@@ -278,6 +296,9 @@ export type Database = {
           is_internal: boolean
           legal_name: string | null
           meta_ad_account_id: string | null
+          whatsapp: string | null
+          bio_slug: string | null
+          bio_mensagem: string
           google_ads_customer_id: string | null
           google_location: string | null
           google_location_title: string | null
@@ -301,6 +322,9 @@ export type Database = {
           is_internal?: boolean
           legal_name?: string | null
           meta_ad_account_id?: string | null
+          whatsapp?: string | null
+          bio_slug?: string | null
+          bio_mensagem?: string
           google_ads_customer_id?: string | null
           google_location?: string | null
           google_location_title?: string | null
@@ -324,6 +348,9 @@ export type Database = {
           is_internal?: boolean
           legal_name?: string | null
           meta_ad_account_id?: string | null
+          whatsapp?: string | null
+          bio_slug?: string | null
+          bio_mensagem?: string
           google_ads_customer_id?: string | null
           google_location?: string | null
           google_location_title?: string | null
@@ -1686,6 +1713,7 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
       blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }
       blog_registrar_eventos: { Args: { p_slug: string; p_eventos: string[] }; Returns: undefined }
       registrar_presenca: { Args: { p_ativo: boolean }; Returns: undefined }

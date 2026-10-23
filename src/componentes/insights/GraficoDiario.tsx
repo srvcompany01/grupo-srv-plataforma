@@ -6,7 +6,7 @@ export const CORES_SERIE = ['#2a78d6', '#eb6834', '#1baf7a'] as const
 
 const diaCurto = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
 
-export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha' }: { titulo: string; dias: string[]; series: { nome: string; valores: number[] }[]; formato: (n: number) => string; tipo?: 'linha' | 'barras' }) {
+export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha', rotulo = diaCurto }: { titulo: string; dias: string[]; series: { nome: string; valores: number[] }[]; formato: (n: number) => string; tipo?: 'linha' | 'barras'; /** Rótulo do eixo (padrão dd/mm; para meses, passe outro). */ rotulo?: (d: string) => string }) {
   const L = 640
   const A = 160
   const M = { cima: 8, baixo: 22, esq: 44, dir: 8 }
@@ -33,11 +33,11 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha' }:
             <text x={M.esq - 6} y={y(maior * f) + 3} textAnchor="end" fontSize={10} fill="#76756f">{formato(maior * f)}</text>
           </g>
         ))}
-        {dias.map((d, i) => i % passo === 0 && <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="#76756f">{diaCurto(d)}</text>)}
+        {dias.map((d, i) => i % passo === 0 && <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="#76756f">{rotulo(d)}</text>)}
         {tipo === 'barras'
           ? series[0]?.valores.map((v, i) => (
               <rect key={dias[i]} x={x(i) - larguraBarra / 2} y={y(v)} width={larguraBarra} height={Math.max(0, M.cima + h - y(v))} rx={Math.min(4, larguraBarra / 2)} fill={CORES_SERIE[0]}>
-                <title>{`${diaCurto(dias[i])}: ${formato(v)}`}</title>
+                <title>{`${rotulo(dias[i])}: ${formato(v)}`}</title>
               </rect>
             ))
           : series.map((s, k) => (
@@ -45,7 +45,7 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha' }:
                 <polyline points={s.valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke={CORES_SERIE[k]} strokeWidth={2} strokeLinejoin="round" />
                 {s.valores.map((v, i) => (
                   <circle key={dias[i]} cx={x(i)} cy={y(v)} r={dias.length > 45 ? 6 : 8} fill="transparent">
-                    <title>{`${diaCurto(dias[i])} · ${s.nome}: ${formato(v)}`}</title>
+                    <title>{`${rotulo(dias[i])} · ${s.nome}: ${formato(v)}`}</title>
                   </circle>
                 ))}
               </g>

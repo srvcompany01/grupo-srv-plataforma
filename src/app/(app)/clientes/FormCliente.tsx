@@ -45,6 +45,11 @@ export function FormCliente({ acao, cliente, podeEditar, embutido }: { acao: Aca
         <span className="block text-legenda text-texto-3">Mostra os anúncios ativos com impressões, cliques, CTR e visualizações aqui e no portal do cliente. A conta precisa estar liberada para o usuário do sistema do Meta.</span>
       </label>
       <label className="block space-y-1">
+        <span className={rotulo}>WhatsApp do cliente</span>
+        <input name="whatsapp" defaultValue={cliente?.whatsapp ?? ''} disabled={!podeEditar} className={campo} placeholder="91 99999-9999" inputMode="tel" />
+        <span className="block text-legenda text-texto-3">Para o link da bio (abre o WhatsApp com mensagem pronta) e para enviar relatórios.</span>
+      </label>
+      <label className="block space-y-1">
         <span className={rotulo}>Conta do Google Ads</span>
         <input name="googleAds" defaultValue={cliente?.googleAdsId ? formatarContaGoogleAds(cliente.googleAdsId) : ''} disabled={!podeEditar} className={campo} placeholder="123-456-7890" />
         <span className="block text-legenda text-texto-3">O número que aparece no topo do Google Ads do cliente. A conta precisa estar ligada à MCC da agência.</span>

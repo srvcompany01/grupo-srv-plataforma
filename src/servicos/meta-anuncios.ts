@@ -1,5 +1,6 @@
 import 'server-only'
 import type { PagoPorDia } from '@/dominio/insights'
+import { leadsDasAcoes } from '@/dominio/performance'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { avaliarAnuncios, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
@@ -74,5 +75,21 @@ export async function nomeDaConta(contaId: string): Promise<string | null> {
     return corpo.name ?? null
   } catch {
     return null
+  }
+}
+
+/** Investimento e leads (formulários e conversas) da conta, mês a mês, entre `de` e `ate`. Cache de 30 min. */
+export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number; formularios: number; conversas: number }> | { erro: string }> {
+  const token = process.env.META_ACCESS_TOKEN
+  if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
+  const q = new URLSearchParams({ level: 'account', time_increment: 'monthly', fields: 'spend,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '100', access_token: token })
+  try {
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, { next: { revalidate: 1800 } })
+    const corpo = (await r.json()) as { data?: { date_start: string; spend?: string; actions?: { action_type: string; value: string }[] }[]; error?: { code?: number; message?: string } }
+    if (!r.ok || corpo.error) return { erro: mensagemDaMeta(corpo) }
+    return new Map((corpo.data ?? []).map((d) => [d.date_start.slice(0, 7), { gasto: Number(d.spend ?? 0), ...leadsDasAcoes(d.actions) }]))
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
   }
 }

@@ -23,6 +23,8 @@ export type Cliente = {
   metaPaginaId: string | null
   /** Conta de anúncios do Meta (números do act_), para a galeria com os resultados. */
   metaContaId: string | null
+  /** WhatsApp do cliente (só números, com DDI): link da bio e relatório pelo WhatsApp. */
+  whatsapp: string | null
   /** Conta do Google Ads (10 dígitos, sem traços). */
   googleAdsId: string | null
   /** Perfil do Google Meu Negócio: accounts/…/locations/… e o nome dele. */
@@ -30,7 +32,7 @@ export type Cliente = {
   googlePerfilNome: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title, whatsapp'
 
 type Linha = {
   id: string
@@ -48,6 +50,7 @@ type Linha = {
   google_ads_customer_id: string | null
   google_location: string | null
   google_location_title: string | null
+  whatsapp: string | null
 }
 
 const paraCliente = (c: Linha): Cliente => ({
@@ -63,6 +66,7 @@ const paraCliente = (c: Linha): Cliente => ({
   posicaoGaleria: c.gallery_position,
   metaPaginaId: c.meta_page_id,
   metaContaId: c.meta_ad_account_id,
+  whatsapp: c.whatsapp,
   googleAdsId: c.google_ads_customer_id,
   googlePerfil: c.google_location,
   googlePerfilNome: c.google_location_title,
@@ -89,7 +93,7 @@ export const ROTULO_STATUS_CLIENTE: Record<StatusCliente, string> = { ativo: 'At
 
 /** Campos do formulário de cliente → colunas. Nome obrigatório; vazios viram null. */
 /** Campos do formulário do cliente; `erro` quando a página do Meta não foi reconhecida. */
-type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; google_ads_customer_id: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
+type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; google_ads_customer_id: string | null; whatsapp: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
 
 export function lerFormCliente(form: FormData): CamposFormCliente | { erro: string } {
   const texto = (k: string) => String(form.get(k) ?? '').trim() || null
@@ -100,10 +104,13 @@ export function lerFormCliente(form: FormData): CamposFormCliente | { erro: stri
   if ('erro' in conta) return { erro: conta.erro }
   const ads = lerContaGoogleAds(String(form.get('googleAds') ?? ''))
   if ('erro' in ads) return { erro: ads.erro }
+  const zap = lerWhatsapp(String(form.get('whatsapp') ?? ''))
+  if (zap === undefined) return { erro: 'WhatsApp inválido: use DDD e número (ex.: 91 99999-9999).' }
   return {
     meta_page_id: meta.id,
     meta_ad_account_id: conta.id,
     google_ads_customer_id: ads.id,
+    whatsapp: zap,
     name: texto('nome') ?? '',
     legal_name: texto('razaoSocial'),
     document: texto('documento'),
@@ -131,6 +138,14 @@ export async function contaRepetida(sb: Supabase, campos: { meta_ad_account_id: 
     if (data?.length) return `${rotulo} informada já está no cadastro de "${data[0].name}". Confira o número: o link do Gerenciador de Anúncios traz a conta que estava aberta.`
   }
   return null
+}
+
+/** WhatsApp → só dígitos com DDI (55 quando vier só DDD + número). Vazio = null; inválido = undefined. */
+export function lerWhatsapp(bruto: string): string | null | undefined {
+  const d = bruto.replace(/\D/g, '')
+  if (!d) return null
+  const n = d.length === 10 || d.length === 11 ? `55${d}` : d
+  return /^[0-9]{12,15}$/.test(n) ? n : undefined
 }
 
 /** Grava a ordem da galeria: a lista inteira, na ordem em que ficou. Só admin/gestor (RLS). */

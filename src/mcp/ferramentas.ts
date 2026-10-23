@@ -184,6 +184,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
+        'Performance (aba Performance): por cliente e mês, investimento e leads pagos (Meta: formulários e conversas no WhatsApp/Direct; Google Ads: conversões), orgânico do Instagram (cliques nos links do perfil e no link da bio da plataforma, www.gruposrv.com.br/l/<cliente>, que abre o WhatsApp do cliente com uma mensagem pronta), leads da bio confirmados pela equipe e o faturamento e as vendas lançados pela equipe; calcula CPL, ROAS, custo por venda, ticket médio e conversão. Use performance_cliente, registrar_resultado_mes e confirmar_lead_bio. Não há exclusão por aqui.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
@@ -480,6 +481,49 @@ export const FERRAMENTAS: Ferramenta[] = [
     entrada: { plataforma: z.enum(['instagram', 'facebook']), comentarioId: z.string().regex(/^[0-9_]{1,120}$/), ocultar: z.boolean() },
     executar: async ({ sb }, a) => {
       await (await import('@/servicos/comentarios-redes')).ocultarComentario(sb, a.plataforma, a.comentarioId, a.ocultar)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'performance_cliente',
+    descricao: 'Performance mês a mês do cliente (até 12 meses terminando em mes): investido na Meta e no Google, formulários, conversas, conversões do Google, cliques nos links do perfil do Instagram, cliques no link da bio, leads da bio confirmados, faturamento e vendas lançados, com CPL, ROAS, custo por venda, ticket médio e conversão de cada mês.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Último mês (AAAA-MM); padrão o mês atual'), meses: z.number().int().min(1).max(12).optional().describe('Quantos meses; padrão 6') },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const d = await import('@/dominio/performance')
+      const p = await import('@/servicos/performance')
+      const hoje = dataDeHoje(new Date())
+      const google = await (await import('@/servicos/google-agencia')).situacaoGoogle()
+      const h = await p.historicoDoCliente(sb, cliente, d.mesesAte(d.lerMes(a.mes, hoje), a.meses ?? 6), hoje, google.conectado)
+      return {
+        cliente: cliente.nome,
+        avisos: h.erros,
+        meses: h.meses.map((m) => ({ ...m, investido: p.investido(m), leadsPagos: p.leadsPagos(m), ...d.indicadores({ investido: p.investido(m), leadsPagos: p.leadsPagos(m), leadsOrganicos: m.leadsConfirmados, faturamento: m.faturamento, vendas: m.vendas }) })),
+      }
+    },
+  }),
+
+  definir({
+    nome: 'registrar_resultado_mes',
+    descricao: 'Lança (ou corrige) o faturamento (R$) e o número de vendas do cliente num mês. null = não informado. Substitui o que havia no mês.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).describe('AAAA-MM'), faturamento: z.number().min(0).nullable(), vendas: z.number().int().min(0).nullable(), notas: z.string().max(500).optional() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/performance')).salvarResultadoMes(sb, a.clienteId, a.mes, { faturamento: a.faturamento, vendas: a.vendas, notas: a.notas ?? '' })
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'confirmar_lead_bio',
+    descricao: 'Confirma um lead que chegou pelo link da bio do Instagram do cliente (conversa no WhatsApp com a mensagem da bio). dia padrão = hoje.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dia: data('Dia em que o lead chegou').optional(), observacao: z.string().max(200).optional() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/performance')).confirmarLead(sb, a.clienteId, a.dia ?? dataDeHoje(new Date()), a.observacao ?? '')
       return { ok: true }
     },
   }),

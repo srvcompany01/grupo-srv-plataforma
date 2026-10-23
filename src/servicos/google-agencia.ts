@@ -144,6 +144,24 @@ export function pagoPorDiaGoogle(contaId: string, periodo: { de: string; ate: st
   })
 }
 
+/** Custo e conversões da conta, mês a mês (segments.month = primeiro dia do mês). */
+export function googlePorMes(contaId: string, de: string, ate: string): Promise<Map<string, { custo: number; conversoes: number }> | { erro: string }> {
+  return comErro(async () => {
+    if (![de, ate].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new ErroGoogle('Período inválido.')
+    const r = await google<{ results?: { segments?: { month?: string }; metrics?: { costMicros?: string; conversions?: number } }[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
+      metodo: 'POST', cabecalhos: cabecalhosAds(), cacheSeg: 1800,
+      corpo: { query: `SELECT segments.month, metrics.cost_micros, metrics.conversions FROM customer WHERE segments.date BETWEEN '${de}' AND '${ate}'` },
+    })
+    const m = new Map<string, { custo: number; conversoes: number }>()
+    for (const x of r.results ?? []) {
+      const mes = (x.segments?.month ?? '').slice(0, 7)
+      const atual = m.get(mes) ?? { custo: 0, conversoes: 0 }
+      m.set(mes, { custo: atual.custo + Number(x.metrics?.costMicros ?? 0) / 1_000_000, conversoes: atual.conversoes + Number(x.metrics?.conversions ?? 0) })
+    }
+    return m
+  })
+}
+
 /** Contas de clientes debaixo da MCC (para escolher no cadastro do cliente). */
 export function contasDaMcc(): Promise<{ id: string; nome: string }[] | { erro: string }> {
   return comErro(async () => {
