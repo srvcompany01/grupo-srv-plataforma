@@ -17,6 +17,7 @@ import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
+import { totaisCampanhas } from '@/dominio/google'
 import { ROTULO_STATUS_TIME, STATUS_TIME, duracao, minutosDesde, situacao } from '@/dominio/time'
 import * as time from '@/servicos/time'
 import * as campos from '@/servicos/campos-personalizados'
@@ -118,7 +119,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
-        'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app.',
+        'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
+        'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
         'Reuniões (notetaker): a equipe grava a reunião na plataforma e a IA cria um documento "Ata — <assunto> — dd/mm" com as páginas Ata (resumo, participantes, tópicos, decisões, próximos passos) e Transcrição. Para ler, use listar_documentos / buscar_documento.',
@@ -190,6 +192,37 @@ export const FERRAMENTAS: Ferramenta[] = [
       const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, a.dias ?? 7)
       if ('erro' in r) throw new Error(r.erro)
       return { cliente: cliente.nome, dias: a.dias ?? 7, totais: totaisAnuncios(r.anuncios), anuncios: r.anuncios }
+    },
+  }),
+
+  definir({
+    nome: 'campanhas_google_ads_cliente',
+    descricao: 'Campanhas ATIVAS do cliente no Google Ads com os números de 7 ou 30 dias: investido, impressões, cliques, CTR, CPC, conversões e valor das conversões, mais os totais. O cliente precisa ter a conta do Google Ads no cadastro e a agência ter conectado o Google (aba Anúncios).',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!cliente.googleAdsId) throw new Error('Este cliente não tem conta do Google Ads cadastrada.')
+      const r = await (await import('@/servicos/google-agencia')).campanhasGoogle(cliente.googleAdsId, a.dias ?? 7)
+      if ('erro' in r) throw new Error(r.erro)
+      return { cliente: cliente.nome, dias: a.dias ?? 7, moeda: r.moeda, totais: totaisCampanhas(r.campanhas), campanhas: r.campanhas }
+    },
+  }),
+
+  definir({
+    nome: 'metricas_google_meu_negocio',
+    descricao: 'Métricas do perfil do Google Meu Negócio do cliente nos últimos 7 ou 30 dias (até ontem): visualizações (na busca e no Maps), ligações, cliques no site, pedidos de rota, conversas e o detalhe por dia. O cliente precisa ter o perfil ligado na página dele.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!cliente.googlePerfil) throw new Error('Este cliente não tem o perfil do Google Meu Negócio ligado.')
+      const ate = somarDias(dataDeHoje(new Date()), -1)
+      const r = await (await import('@/servicos/google-agencia')).metricasDoNegocio(cliente.googlePerfil, somarDias(ate, -((a.dias ?? 7) - 1)), ate)
+      if ('erro' in r) throw new Error(r.erro)
+      return { cliente: cliente.nome, perfil: cliente.googlePerfilNome, dias: a.dias ?? 7, ...r }
     },
   }),
 
@@ -679,7 +712,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
       data: data('Dia da publicação'),
       hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Hora HH:MM (Belém)'),
-      redes: z.array(z.enum(['instagram', 'facebook'])).min(1).describe('Onde publicar'),
+      redes: z.array(z.enum(['instagram', 'facebook', 'google'])).min(1).describe('Onde publicar (google = Google Meu Negócio: texto + primeira foto)'),
       modo: z.enum(['aprovacao', 'direto']).optional().describe('Padrão: aprovacao'),
       collab: z.array(z.string()).max(3).optional().describe('@ do Instagram convidados para a collab (até 3)'),
     },

@@ -4,11 +4,12 @@ import type { Aprovacao, Formato } from './conteudo'
  * Publicação dos posts de conteúdo na Meta: o que pode ir para onde e em que forma, e quando um post está pronto.
  * Instagram: só JPEG em foto; feed com 1 mídia (foto ou vídeo → Reels) ou carrossel (2 a 10); Reels = 1 vídeo;
  * Stories = cada mídia vira um story (só Instagram). Facebook: fotos (até 10) ou 1 vídeo, sem misturar.
+ * Google Meu Negócio: post "Novidade" com o texto (até 1.500 caracteres) e a primeira foto (vídeo não vai pela API).
  */
 
-export const ALVOS = ['instagram', 'facebook'] as const
+export const ALVOS = ['instagram', 'facebook', 'google'] as const
 export type Alvo = (typeof ALVOS)[number]
-export const ROTULO_ALVO: Record<Alvo, string> = { instagram: 'Instagram', facebook: 'Facebook' }
+export const ROTULO_ALVO: Record<Alvo, string> = { instagram: 'Instagram', facebook: 'Facebook', google: 'Google Meu Negócio' }
 
 export type ModoPublicacao = 'aprovacao' | 'direto'
 export type StatusPublicacao = 'nao_agendado' | 'agendado' | 'publicando' | 'publicado' | 'falhou'
@@ -39,6 +40,8 @@ export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: Midia
     const naoJpeg = midias.find((m) => m.tipo === 'imagem' && !ehJpeg(m))
     if (naoJpeg) return `O Instagram só aceita foto em JPG: troque "${naoJpeg.nome}" (as fotos novas já são convertidas no envio).`
   }
+  if (alvos.includes('google') && formato === 'stories') return 'Stories não vão para o Google Meu Negócio. Desmarque o Google.'
+  if (alvos.includes('google') && !fotoParaGoogle(midias)) return 'O Google Meu Negócio precisa de uma foto no post (vídeo não vai pela API). Desmarque o Google ou adicione uma foto.'
   if (alvos.includes('facebook') && videos > 0 && midias.length > 1) return 'No Facebook o post é só fotos ou só 1 vídeo (não mistura).'
   return null
 }
@@ -55,6 +58,9 @@ export function lerCollabs(texto: string): string[] | { erro: string } {
   if (nomes.length > MAX_COLLABS) return { erro: `No máximo ${MAX_COLLABS} perfis na collab.` }
   return nomes
 }
+
+/** No Google Meu Negócio vai só a primeira foto do post. */
+export const fotoParaGoogle = <M extends MidiaPublicavel>(midias: M[]): M | undefined => midias.find((m) => m.tipo === 'imagem')
 
 /** Forma do post no Instagram. */
 export type PlanoInstagram = { tipo: 'IMAGE' | 'REELS' | 'CAROUSEL' | 'STORIES'; midias: MidiaPublicavel[] }

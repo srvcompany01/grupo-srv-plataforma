@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      google_agency_link: {
+        Row: { id: boolean; email: string; refresh_token: string; connected_by: string | null; connected_at: string }
+        Insert: { id?: boolean; email?: string; refresh_token: string; connected_by?: string | null; connected_at?: string }
+        Update: { id?: boolean; email?: string; refresh_token?: string; connected_by?: string | null; connected_at?: string }
+        Relationships: []
+      }
       team_presence: {
         Row: { user_id: string; last_seen_at: string | null; last_active_at: string | null; status: string; status_text: string; status_until: string | null; updated_at: string }
         Insert: { user_id: string; last_seen_at?: string | null; last_active_at?: string | null; status?: string; status_text?: string; status_until?: string | null; updated_at?: string }
@@ -48,9 +54,9 @@ export type Database = {
         ]
       }
       content_posts: {
-        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null; collaborators: string[] }
-        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[] }
-        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[] }
+        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null; collaborators: string[]; gbp_post_name: string | null; gbp_link: string | null }
+        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
+        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
         Relationships: [
           {
             foreignKeyName: "content_posts_task_id_fkey"
@@ -227,6 +233,9 @@ export type Database = {
           is_internal: boolean
           legal_name: string | null
           meta_ad_account_id: string | null
+          google_ads_customer_id: string | null
+          google_location: string | null
+          google_location_title: string | null
           meta_page_id: string | null
           name: string
           portal_slug: string
@@ -247,6 +256,9 @@ export type Database = {
           is_internal?: boolean
           legal_name?: string | null
           meta_ad_account_id?: string | null
+          google_ads_customer_id?: string | null
+          google_location?: string | null
+          google_location_title?: string | null
           meta_page_id?: string | null
           name: string
           portal_slug?: string
@@ -267,6 +279,9 @@ export type Database = {
           is_internal?: boolean
           legal_name?: string | null
           meta_ad_account_id?: string | null
+          google_ads_customer_id?: string | null
+          google_location?: string | null
+          google_location_title?: string | null
           meta_page_id?: string | null
           name?: string
           portal_slug?: string

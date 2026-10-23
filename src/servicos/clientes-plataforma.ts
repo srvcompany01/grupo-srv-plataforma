@@ -1,6 +1,7 @@
 import { generateNKeysBetween } from 'fractional-indexing'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { lerContaAnuncios } from '@/dominio/anuncios-meta'
+import { lerContaGoogleAds } from '@/dominio/google'
 import { lerPaginaMeta } from '@/dominio/biblioteca-anuncios'
 import { dados } from './resultado'
 
@@ -22,9 +23,14 @@ export type Cliente = {
   metaPaginaId: string | null
   /** Conta de anúncios do Meta (números do act_), para a galeria com os resultados. */
   metaContaId: string | null
+  /** Conta do Google Ads (10 dígitos, sem traços). */
+  googleAdsId: string | null
+  /** Perfil do Google Meu Negócio: accounts/…/locations/… e o nome dele. */
+  googlePerfil: string | null
+  googlePerfilNome: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title'
 
 type Linha = {
   id: string
@@ -39,6 +45,9 @@ type Linha = {
   gallery_position: string | null
   meta_page_id: string | null
   meta_ad_account_id: string | null
+  google_ads_customer_id: string | null
+  google_location: string | null
+  google_location_title: string | null
 }
 
 const paraCliente = (c: Linha): Cliente => ({
@@ -54,6 +63,9 @@ const paraCliente = (c: Linha): Cliente => ({
   posicaoGaleria: c.gallery_position,
   metaPaginaId: c.meta_page_id,
   metaContaId: c.meta_ad_account_id,
+  googleAdsId: c.google_ads_customer_id,
+  googlePerfil: c.google_location,
+  googlePerfilNome: c.google_location_title,
 })
 
 export async function listarClientes(sb: Supabase): Promise<Cliente[]> {
@@ -77,7 +89,7 @@ export const ROTULO_STATUS_CLIENTE: Record<StatusCliente, string> = { ativo: 'At
 
 /** Campos do formulário de cliente → colunas. Nome obrigatório; vazios viram null. */
 /** Campos do formulário do cliente; `erro` quando a página do Meta não foi reconhecida. */
-type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
+type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; google_ads_customer_id: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
 
 export function lerFormCliente(form: FormData): CamposFormCliente | { erro: string } {
   const texto = (k: string) => String(form.get(k) ?? '').trim() || null
@@ -86,9 +98,12 @@ export function lerFormCliente(form: FormData): CamposFormCliente | { erro: stri
   if ('erro' in meta) return { erro: meta.erro }
   const conta = lerContaAnuncios(String(form.get('metaConta') ?? ''))
   if ('erro' in conta) return { erro: conta.erro }
+  const ads = lerContaGoogleAds(String(form.get('googleAds') ?? ''))
+  if ('erro' in ads) return { erro: ads.erro }
   return {
     meta_page_id: meta.id,
     meta_ad_account_id: conta.id,
+    google_ads_customer_id: ads.id,
     name: texto('nome') ?? '',
     legal_name: texto('razaoSocial'),
     document: texto('documento'),
@@ -130,6 +145,13 @@ export async function marcarTrabalhado(sb: Supabase, usuarioId: string, clienteI
 /** Grava (ou tira, com null) a página do Facebook do cliente para a Biblioteca de Anúncios. Só admin/gestor (RLS). */
 export async function definirPaginaMeta(sb: Supabase, clienteId: string, campos: { meta_page_id?: string | null; meta_ad_account_id?: string | null }): Promise<void> {
   const { error, count } = await sb.from('clients').update(campos, { count: 'exact' }).eq('id', clienteId)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+}
+
+/** Liga (ou tira, com null) o perfil do Google Meu Negócio do cliente. Só admin/gestor (RLS). */
+export async function definirPerfilGoogle(sb: Supabase, clienteId: string, perfil: { id: string; nome: string } | null): Promise<void> {
+  const { error, count } = await sb.from('clients').update({ google_location: perfil?.id ?? null, google_location_title: perfil?.nome ?? null }, { count: 'exact' }).eq('id', clienteId)
   if (error) throw error
   if (!count) throw { code: '42501' }
 }

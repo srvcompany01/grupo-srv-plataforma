@@ -6,7 +6,8 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import { dataDeHoje } from '@/dominio/filtros'
-import { buscarCliente, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
+import { perfisDoNegocio } from '@/servicos/google-agencia'
+import { buscarCliente, definirPerfilGoogle, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
 // Cliente do usuário: a RLS só permite admin e gestores.
 
@@ -86,6 +87,31 @@ export async function novoLinkAcao(clienteId: string): Promise<Resultado> {
   const cliente = await buscarCliente(sb, clienteId)
   if (!cliente) return { erro: 'Cliente não encontrado.' }
   const r = await tentar(() => novoLinkDoCliente(sb, clienteId, cliente.nome), 'Link novo gerado. O anterior não funciona mais.')
+  revalidatePath(`/clientes/${clienteId}`)
+  return r
+}
+
+/** Perfis do Google Meu Negócio que a conta da agência gerencia (para ligar ao cliente). */
+export async function perfisGoogleAcao(): Promise<{ id: string; nome: string }[] | { erro: string }> {
+  const eu = await exigirEquipe()
+  if (eu.papel !== 'admin' && eu.papel !== 'gestor') return { erro: 'Só admin e gestor ligam o perfil.' }
+  return perfisDoNegocio()
+}
+
+/** Liga (ou tira, com null) o perfil do Meu Negócio ao cliente. O perfil precisa estar entre os da agência. */
+export async function vincularPerfilGoogleAcao(clienteId: string, perfilId: string | null): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (eu.papel !== 'admin' && eu.papel !== 'gestor') return { erro: 'Só admin e gestor ligam o perfil.' }
+  if (!/^[0-9a-f-]{36}$/i.test(clienteId)) return { erro: 'Cliente inválido.' }
+  let perfil: { id: string; nome: string } | null = null
+  if (perfilId !== null) {
+    const perfis = await perfisDoNegocio()
+    if ('erro' in perfis) return perfis
+    perfil = perfis.find((p) => p.id === perfilId) ?? null
+    if (!perfil) return { erro: 'Perfil não encontrado na conta Google da agência.' }
+  }
+  const sb = await criarClienteServidor()
+  const r = await tentar(() => definirPerfilGoogle(sb, clienteId, perfil), perfil ? 'Perfil do Google ligado.' : 'Perfil do Google desligado.')
   revalidatePath(`/clientes/${clienteId}`)
   return r
 }

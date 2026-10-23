@@ -9,7 +9,7 @@ import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { dataLocal, horaLocal } from '@/dominio/agenda'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { MAX_COLLABS, ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
+import { ALVOS, MAX_COLLABS, ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { PublicacaoDoPost } from '@/servicos/conteudo'
 
@@ -50,6 +50,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
         <span className={`rounded-full px-2 py-0.5 text-legenda font-semibold ${cor}`}>{situacao}</span>
       </div>
 
+      {p.cliente?.googlePerfil && <p className="text-legenda text-texto-2">Google Meu Negócio: <strong>perfil ligado</strong> (vai o texto e a primeira foto)</p>}
       {!p.cliente?.paginaId ? (
         <p className="flex items-start gap-2 rounded-lg bg-aviso-fundo px-3 py-2 text-rotulo text-aviso-forte">
           <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -67,6 +68,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
           <div className="flex flex-wrap gap-3">
             {p.igLink && <a href={p.igLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Ver no Instagram <ExternalLink className="h-3 w-3" /></a>}
             {p.collabs.length > 0 && <span className="text-texto-2">Collab com {p.collabs.map((c) => `@${c}`).join(', ')}</span>}
+            {p.googleLink && <a href={p.googleLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Ver no Google <ExternalLink className="h-3 w-3" /></a>}
             {p.fbLink && <a href={p.fbLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Ver no Facebook <ExternalLink className="h-3 w-3" /></a>}
           </div>
         </div>
@@ -79,9 +81,9 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
             <label className="space-y-1"><span className={rotulo}>Hora</span><input type="time" className={`${campo} h-9`} value={hora} onChange={(e) => setHora(e.target.value)} /></label>
             <div className="space-y-1">
               <span className={rotulo}>Onde</span>
-              <div className="flex h-9 items-center gap-3">
-                {(['instagram', 'facebook'] as const).map((a) => (
-                  <label key={a} className="flex items-center gap-1.5 text-rotulo"><input type="checkbox" checked={alvos.includes(a)} onChange={() => alternar(a)} disabled={a === 'facebook' && formato === 'stories'} /> {ROTULO_ALVO[a]}</label>
+              <div className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1">
+                {ALVOS.filter((a) => a !== 'google' || p.cliente?.googlePerfil || alvos.includes('google')).map((a) => (
+                  <label key={a} className="flex items-center gap-1.5 text-rotulo"><input type="checkbox" checked={alvos.includes(a)} onChange={() => alternar(a)} disabled={a !== 'instagram' && formato === 'stories'} /> {ROTULO_ALVO[a]}</label>
                 ))}
               </div>
             </div>

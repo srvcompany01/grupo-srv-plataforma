@@ -10,7 +10,7 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { dataLocal, horaLocal } from '@/dominio/agenda'
-import { ROTULO_ALVO, type Alvo, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
+import { ALVOS, ROTULO_ALVO, type Alvo, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
 import { botaoFantasma, botaoPrimario, campo, rotulo } from '@/lib/ui'
 
 type Props = { id: string; em: string | null; alvos: Alvo[]; modo: ModoPublicacao; status: StatusPublicacao; hoje: string }
@@ -83,8 +83,8 @@ export function AcoesAgendamento({ id, em, alvos, modo, status, hoje }: Props) {
               <label className="space-y-1"><span className={rotulo}>Dia</span><input type="date" className={`${campo} h-9`} value={data} onChange={(e) => setData(e.target.value)} /></label>
               <label className="space-y-1"><span className={rotulo}>Hora</span><input type="time" className={`${campo} h-9`} value={hora} onChange={(e) => setHora(e.target.value)} /></label>
             </div>
-            <div className="flex gap-4">
-              {(['instagram', 'facebook'] as const).map((a) => (
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {ALVOS.map((a) => (
                 <label key={a} className="flex items-center gap-1.5 text-rotulo"><input type="checkbox" checked={redes.includes(a)} onChange={() => setRedes((v) => (v.includes(a) ? v.filter((x) => x !== a) : [...v, a]))} /> {ROTULO_ALVO[a]}</label>
               ))}
             </div>

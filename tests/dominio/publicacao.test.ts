@@ -54,3 +54,12 @@ describe('collab', () => {
     expect(validarPublicacao('stories', ['instagram'], foto, ['ouroassis'])).toMatch(/Stories/)
   })
 })
+
+describe('Google Meu Negócio', () => {
+  it('precisa de foto e não aceita Stories', () => {
+    expect(validarPublicacao('feed', ['google'], [foto('a')])).toBeNull()
+    expect(validarPublicacao('reels', ['google'], [video('v')])).toMatch(/precisa de uma foto/)
+    expect(validarPublicacao('stories', ['instagram', 'google'], [foto('a')])).toMatch(/Stories não vão para o Google/)
+    expect(validarPublicacao('feed', ['google'], [foto('a', 'png')])).toBeNull() // PNG só é problema no Instagram
+  })
+})

@@ -1,8 +1,10 @@
-import { IdCard, KeyRound, LayoutGrid, ListChecks, Megaphone } from 'lucide-react'
+import { IdCard, KeyRound, LayoutGrid, ListChecks, MapPin, Megaphone, Search } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Suspense } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
+import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
+import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
 import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
 import { notFound } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -114,6 +116,16 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             <GaleriaAnuncios contaId={cliente.metaContaId} dias={diasAnuncios} mostrarGasto href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
           </Suspense>
         )}
+        {cliente.googleAdsId && (
+          <Suspense fallback={<Modulo icone={Search} titulo="Google Ads" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as campanhas…</p></Modulo>}>
+            <GoogleAds contaId={cliente.googleAdsId} dias={diasAnuncios} href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+          </Suspense>
+        )}
+        {!cliente.interno && (
+          <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as métricas…</p></Modulo>}>
+            <GoogleNegocio clienteId={id} perfil={cliente.googlePerfil} perfilNome={cliente.googlePerfilNome} dias={diasAnuncios} podeGerir={podeGerir} href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+          </Suspense>
+        )}
         </div>
 
         <div className="space-y-5">
@@ -121,7 +133,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
           </Modulo>
           <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
-          <Modulo icone={IdCard} titulo="Cadastro" descricao="Dados do cliente e as ligações com o Meta">
+          <Modulo icone={IdCard} titulo="Cadastro" descricao="Dados do cliente e as ligações com o Meta e o Google Ads">
             <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={podeGerir} embutido />
           </Modulo>
           {!cliente.interno && linkSlug && (

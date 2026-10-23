@@ -1,5 +1,6 @@
 'use client'
 
+import { formatarContaGoogleAds } from '@/dominio/google'
 import { useActionState } from 'react'
 import { botaoPrimario, campo, rotulo } from '@/lib/ui'
 import type { Resultado } from '@/servicos/acao'
@@ -42,6 +43,11 @@ export function FormCliente({ acao, cliente, podeEditar, embutido }: { acao: Aca
         <span className={rotulo}>Conta de anúncios do Meta</span>
         <input name="metaConta" defaultValue={cliente?.metaContaId ? `act_${cliente.metaContaId}` : ''} disabled={!podeEditar} className={campo} placeholder="act_123456789 ou o link do Gerenciador de Anúncios" />
         <span className="block text-legenda text-texto-3">Mostra os anúncios ativos com impressões, cliques, CTR e visualizações aqui e no portal do cliente. A conta precisa estar liberada para o usuário do sistema do Meta.</span>
+      </label>
+      <label className="block space-y-1">
+        <span className={rotulo}>Conta do Google Ads</span>
+        <input name="googleAds" defaultValue={cliente?.googleAdsId ? formatarContaGoogleAds(cliente.googleAdsId) : ''} disabled={!podeEditar} className={campo} placeholder="123-456-7890" />
+        <span className="block text-legenda text-texto-3">O número que aparece no topo do Google Ads do cliente. A conta precisa estar ligada à MCC da agência.</span>
       </label>
       {estado?.erro && <p className="text-sm text-perigo">{estado.erro}</p>}
       {estado?.ok && <p className="text-sm text-sucesso-forte">{estado.ok}</p>}

@@ -1,7 +1,8 @@
 import 'server-only'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
+import { fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
 import { urlLeitura } from '@/infra/r2'
+import { ErroGoogle, publicarNoNegocio } from './google-agencia'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Database } from '@/infra/supabase/tipos'
 
@@ -125,7 +126,8 @@ type PostCompleto = {
   publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string
   ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null; collaborators: string[] | null
   content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number }[] }[]
-  tasks: { clients: { meta_page_id: string | null } | null } | null
+  gbp_post_name: string | null
+  tasks: { clients: { meta_page_id: string | null; google_location: string | null } | null } | null
 }
 
 /**
@@ -149,7 +151,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
   try {
     const { data, error } = await admin
       .from('content_posts')
-      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position)), tasks(clients(meta_page_id))')
+      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position)), tasks(clients(meta_page_id, google_location))')
       .eq('task_id', taskId)
       .single()
     if (error) throw error
@@ -166,12 +168,12 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
     const invalido = validarPublicacao(p.format as Formato, alvos, midias, collabs)
     if (invalido) throw new ErroMeta(invalido)
     const paginaId = p.tasks?.clients?.meta_page_id
-    if (!paginaId) throw new ErroMeta('O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").')
+    if (!paginaId && alvos.some((a) => a !== 'google')) throw new ErroMeta('O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").')
     const comUrl = await Promise.all(midias.map(async (m) => ({ ...m, url: await urlLeitura(m.chave) })))
     const legenda = versao?.caption ?? ''
 
     if (alvos.includes('instagram') && !p.ig_media_id) {
-      const conta = await graph<{ instagram_business_account?: { id: string } }>(paginaId, { params: { fields: 'instagram_business_account' } })
+      const conta = await graph<{ instagram_business_account?: { id: string } }>(paginaId!, { params: { fields: 'instagram_business_account' } })
       const igId = conta.instagram_business_account?.id
       if (!igId) throw new ErroMeta('A Página do cliente não tem um Instagram profissional ligado (ou ele não foi atribuído ao usuário do sistema).')
       const r = await publicarInstagram(igId, planoInstagram(p.format as Formato, midias), comUrl, legenda, p.ig_container_id, collabs)
@@ -182,14 +184,20 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       await salvar({ ig_media_id: r.id, ig_permalink: r.permalink, ig_container_id: null })
     }
     if (alvos.includes('facebook') && !p.fb_post_id) {
-      const r = await publicarFacebook(paginaId, comUrl, legenda)
+      const r = await publicarFacebook(paginaId!, comUrl, legenda)
       await salvar({ fb_post_id: r.id, fb_permalink: r.permalink })
+    }
+    if (alvos.includes('google') && !p.gbp_post_name) {
+      const perfil = p.tasks?.clients?.google_location
+      if (!perfil) throw new ErroMeta('O cliente não tem o perfil do Google Meu Negócio ligado.')
+      const r = await publicarNoNegocio(perfil, legenda, fotoParaGoogle(comUrl)!.url)
+      await salvar({ gbp_post_name: r.id, gbp_link: r.link })
     }
     await salvar({ publish_status: 'publicado', published_at: new Date().toISOString(), publish_error: null, publish_lock_at: null })
     return { status: 'publicado' }
   } catch (e) {
     console.error('Publicação Meta', taskId, e)
-    const erro = e instanceof ErroMeta ? e.message : 'Erro inesperado ao publicar.'
+    const erro = e instanceof ErroMeta ? e.message : e instanceof ErroGoogle ? `Google Meu Negócio: ${e.message}` : 'Erro inesperado ao publicar.'
     await salvar({ publish_status: 'falhou', publish_error: erro, publish_lock_at: null, ig_container_id: null })
     return { status: 'falhou', erro }
   }
