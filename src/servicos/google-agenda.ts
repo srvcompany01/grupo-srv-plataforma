@@ -14,12 +14,15 @@ const API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
 const ESCOPOS = 'openid email https://www.googleapis.com/auth/calendar.events'
 const FUSO = 'America/Belem'
 
-export const googleConfigurado = () => !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+// trim: um espaço ou quebra de linha colado junto na Vercel faz o Google responder "OAuth client was not found".
+export const idCliente = () => process.env.GOOGLE_CLIENT_ID?.trim() ?? ''
+export const segredoCliente = () => process.env.GOOGLE_CLIENT_SECRET?.trim() ?? ''
+export const googleConfigurado = () => !!(idCliente() && segredoCliente())
 export const urlDeRetorno = (origem: string) => `${origem}/api/google/retorno`
 
 export function urlDeConsentimento(origem: string, estado: string): string {
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: urlDeRetorno(origem), response_type: 'code', scope: ESCOPOS,
+    client_id: idCliente(), redirect_uri: urlDeRetorno(origem), response_type: 'code', scope: ESCOPOS,
     access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true', state: estado,
   })
   return `https://accounts.google.com/o/oauth2/v2/auth?${q}`
@@ -28,7 +31,7 @@ export function urlDeConsentimento(origem: string, estado: string): string {
 async function token(corpo: Record<string, string>): Promise<{ access_token: string; refresh_token?: string; id_token?: string }> {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
-    body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET!, ...corpo }),
+    body: new URLSearchParams({ client_id: idCliente(), client_secret: segredoCliente(), ...corpo }),
   })
   if (!r.ok) throw new Error(`Google token ${r.status}: ${await r.text()}`)
   return r.json()

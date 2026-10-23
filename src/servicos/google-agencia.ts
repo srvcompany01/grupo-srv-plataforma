@@ -2,7 +2,7 @@ import 'server-only'
 import { consultaCampanhas, intervaloNegocio, lerCampanha, lerMetricasNegocio, type Campanha, type CampanhaBruta, type MetricasNegocio, type SerieBruta } from '@/dominio/google'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import { dados } from './resultado'
-import { urlDeRetorno } from './google-agenda'
+import { idCliente, segredoCliente, urlDeRetorno } from './google-agenda'
 
 /**
  * Conta Google da AGÊNCIA (uma só): acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes.
@@ -20,7 +20,7 @@ export class ErroGoogle extends Error {}
 
 export function urlConsentimentoAgencia(origem: string, estado: string): string {
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: urlDeRetorno(origem), response_type: 'code', scope: ESCOPOS,
+    client_id: idCliente(), redirect_uri: urlDeRetorno(origem), response_type: 'code', scope: ESCOPOS,
     access_type: 'offline', prompt: 'consent', state: estado,
   })
   return `https://accounts.google.com/o/oauth2/v2/auth?${q}`
@@ -29,7 +29,7 @@ export function urlConsentimentoAgencia(origem: string, estado: string): string 
 async function token(corpo: Record<string, string>): Promise<{ access_token: string; expires_in?: number; refresh_token?: string; id_token?: string }> {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
-    body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET!, ...corpo }),
+    body: new URLSearchParams({ client_id: idCliente(), client_secret: segredoCliente(), ...corpo }),
   })
   if (!r.ok) {
     console.error('Google token', r.status, await r.text())
