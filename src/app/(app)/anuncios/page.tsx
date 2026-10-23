@@ -2,7 +2,10 @@ import { Megaphone, PlugZap } from 'lucide-react'
 import Link from 'next/link'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
 import { Modulo } from '@/componentes/Modulo'
-import { lerPeriodoAnuncios, totaisAnuncios } from '@/dominio/anuncios-meta'
+import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
+import { totaisAnuncios } from '@/dominio/anuncios-meta'
+import { dataDeHoje } from '@/dominio/filtros'
+import { lerPeriodo, rotuloPeriodo } from '@/dominio/periodo-anuncios'
 import { totaisCampanhas } from '@/dominio/google'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -29,7 +32,8 @@ type Linha = { id: string; nome: string; meta: { gasto: number; impressoes: numb
 export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>) {
   const eu = await exigirEquipe()
   const sp = await searchParams
-  const dias = lerPeriodoAnuncios(typeof sp.dias === 'string' ? sp.dias : undefined)
+  const hoje = dataDeHoje(new Date())
+  const periodo = lerPeriodo(sp, hoje)
   const aviso = typeof sp.google === 'string' ? AVISO_GOOGLE[sp.google] : undefined
   const sb = await criarClienteServidor()
   const [clientes, google] = await Promise.all([listarClientes(sb), situacaoGoogle()])
@@ -38,8 +42,8 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const linhas: Linha[] = await Promise.all(
     comAnuncios.map(async (c) => {
       const [meta, ads] = await Promise.all([
-        c.metaContaId ? anunciosAtivos(c.metaContaId, dias) : null,
-        c.googleAdsId && google.conectado ? campanhasGoogle(c.googleAdsId, dias) : null,
+        c.metaContaId ? anunciosAtivos(c.metaContaId, periodo) : null,
+        c.googleAdsId && google.conectado ? campanhasGoogle(c.googleAdsId, periodo) : null,
       ])
       return {
         id: c.id,
@@ -53,7 +57,6 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const total = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0) + (valor(l.google)?.custo ?? 0), 0)
   const totalMeta = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0), 0)
   const totalGoogle = linhas.reduce((s, l) => s + (valor(l.google)?.custo ?? 0), 0)
-  const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
   const erro = (e: { erro: string }) => <span className="text-perigo" title={e.erro}>erro</span>
 
   return (
@@ -67,12 +70,8 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
       <Modulo
         icone={Megaphone}
         titulo="Investimento e resultados por cliente"
-        descricao={`Meta (anúncios ativos) e Google Ads (campanhas ativas) · últimos ${dias} dias`}
-        acoes={
-          <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período">
-            {([7, 30] as const).map((d) => <Link key={d} href={d === 7 ? '/anuncios' : `/anuncios?dias=${d}`} className={chip(d === dias)}>Últimos {d} dias</Link>)}
-          </nav>
-        }
+        descricao={`Meta (anúncios ativos) e Google Ads (campanhas ativas) · ${rotuloPeriodo(periodo)}`}
+        acoes={<SeletorPeriodo base="/anuncios" periodo={periodo} hoje={hoje} />}
       >
         <div className="mb-3 grid grid-cols-3 gap-2">
           {([['Total investido', total], ['Meta', totalMeta], ['Google Ads', totalGoogle]] as const).map(([r, v]) => (

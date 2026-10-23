@@ -18,6 +18,10 @@ import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
 import { totaisCampanhas } from '@/dominio/google'
+import { lerPeriodo } from '@/dominio/periodo-anuncios'
+
+/** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
+const periodoDaIA = (a: { dias?: 7 | 30; de?: string; ate?: string }) => lerPeriodo({ dias: String(a.dias ?? 7), de: a.de, ate: a.ate }, dataDeHoje(new Date()))
 import { ROTULO_STATUS_TIME, STATUS_TIME, duracao, minutosDesde, situacao } from '@/dominio/time'
 import * as time from '@/servicos/time'
 import * as campos from '@/servicos/campos-personalizados'
@@ -184,14 +188,14 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'anuncios_meta_cliente',
     descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: impressões, alcance, cliques, CTR, CPM, CPC, gasto, frequência, visualizações de vídeo, diagnóstico da Meta (qualidade, engajamento e conversão frente aos concorrentes) e a avaliação da plataforma (bom / médio / fraco / poucos dados, com os motivos). O cliente precisa ter a conta de anúncios cadastrada.',
     escrita: false,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.metaContaId) throw new Error('Este cliente não tem conta de anúncios do Meta cadastrada.')
-      const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, a.dias ?? 7)
+      const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, periodoDaIA(a))
       if ('erro' in r) throw new Error(r.erro)
-      return { cliente: cliente.nome, dias: a.dias ?? 7, totais: totaisAnuncios(r.anuncios), anuncios: r.anuncios }
+      return { cliente: cliente.nome, periodo: periodoDaIA(a), totais: totaisAnuncios(r.anuncios), anuncios: r.anuncios }
     },
   }),
 
@@ -199,14 +203,14 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'campanhas_google_ads_cliente',
     descricao: 'Campanhas ATIVAS do cliente no Google Ads com os números de 7 ou 30 dias: investido, impressões, cliques, CTR, CPC, conversões e valor das conversões, mais os totais. O cliente precisa ter a conta do Google Ads no cadastro e a agência ter conectado o Google (aba Anúncios).',
     escrita: false,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.googleAdsId) throw new Error('Este cliente não tem conta do Google Ads cadastrada.')
-      const r = await (await import('@/servicos/google-agencia')).campanhasGoogle(cliente.googleAdsId, a.dias ?? 7)
+      const r = await (await import('@/servicos/google-agencia')).campanhasGoogle(cliente.googleAdsId, periodoDaIA(a))
       if ('erro' in r) throw new Error(r.erro)
-      return { cliente: cliente.nome, dias: a.dias ?? 7, moeda: r.moeda, totais: totaisCampanhas(r.campanhas), campanhas: r.campanhas }
+      return { cliente: cliente.nome, periodo: periodoDaIA(a), moeda: r.moeda, totais: totaisCampanhas(r.campanhas), campanhas: r.campanhas }
     },
   }),
 
@@ -214,15 +218,15 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'metricas_google_meu_negocio',
     descricao: 'Métricas do perfil do Google Meu Negócio do cliente nos últimos 7 ou 30 dias (até ontem): visualizações (na busca e no Maps), ligações, cliques no site, pedidos de rota, conversas e o detalhe por dia. O cliente precisa ter o perfil ligado na página dele.',
     escrita: false,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Período; padrão 7') },
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.googlePerfil) throw new Error('Este cliente não tem o perfil do Google Meu Negócio ligado.')
-      const ate = somarDias(dataDeHoje(new Date()), -1)
-      const r = await (await import('@/servicos/google-agencia')).metricasDoNegocio(cliente.googlePerfil, somarDias(ate, -((a.dias ?? 7) - 1)), ate)
+      const p = periodoDaIA(a)
+      const r = await (await import('@/servicos/google-agencia')).metricasDoNegocio(cliente.googlePerfil, p.de, p.ate)
       if ('erro' in r) throw new Error(r.erro)
-      return { cliente: cliente.nome, perfil: cliente.googlePerfilNome, dias: a.dias ?? 7, ...r }
+      return { cliente: cliente.nome, perfil: cliente.googlePerfilNome, periodo: p, ...r }
     },
   }),
 

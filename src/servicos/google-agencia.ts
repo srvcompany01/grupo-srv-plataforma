@@ -121,10 +121,10 @@ const comErro = async <T>(fn: () => Promise<T>): Promise<T | { erro: string }> =
 }
 
 /** Campanhas ativas da conta com os números do período (cache de 30 min). */
-export function campanhasGoogle(contaId: string, dias: 7 | 30): Promise<{ campanhas: Campanha[]; moeda: string } | { erro: string }> {
+export function campanhasGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<{ campanhas: Campanha[]; moeda: string } | { erro: string }> {
   return comErro(async () => {
     const r = await google<{ results?: (CampanhaBruta & { customer?: { currencyCode?: string } })[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
-      metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: consultaCampanhas(dias).replace('SELECT ', 'SELECT customer.currency_code, ') }, cacheSeg: 1800,
+      metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: consultaCampanhas(periodo.de, periodo.ate).replace('SELECT ', 'SELECT customer.currency_code, ') }, cacheSeg: 1800,
     })
     const linhas = r.results ?? []
     return { campanhas: linhas.map(lerCampanha), moeda: linhas[0]?.customer?.currencyCode ?? 'BRL' }

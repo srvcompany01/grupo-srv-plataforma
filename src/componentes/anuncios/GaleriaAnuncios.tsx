@@ -1,6 +1,7 @@
 import { ExternalLink, Megaphone, PlayCircle } from 'lucide-react'
 import { Modulo } from '@/componentes/Modulo'
-import Link from 'next/link'
+import type { ReactNode } from 'react'
+import { rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { totaisAnuncios, type AnuncioAvaliado, type Desempenho, type Ranking } from '@/dominio/anuncios-meta'
 import { anunciosAtivos } from '@/servicos/meta-anuncios'
 
@@ -68,18 +69,12 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
 
 /**
  * Anúncios ativos da conta do cliente com os resultados do período, puxados da API de Marketing do Meta.
- * `mostrarGasto` só para a equipe (o cliente vê resultados, não o investimento). `href` troca o período.
+ * `mostrarGasto` só para a equipe (o cliente vê resultados, não o investimento). `seletor` troca o período.
  */
-export async function GaleriaAnuncios({ contaId, dias, mostrarGasto, href }: { contaId: string; dias: 7 | 30; mostrarGasto: boolean; href: (dias: 7 | 30) => string }) {
-  const r = await anunciosAtivos(contaId, dias)
-  const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
-  const periodo = (
-    <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
-      {([7, 30] as const).map((d) => <Link key={d} href={href(d)} scroll={false} className={chip(d === dias)}>Últimos {d} dias</Link>)}
-    </nav>
-  )
+export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode }) {
+  const r = await anunciosAtivos(contaId, periodo)
   return (
-    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`Facebook e Instagram · resultados dos últimos ${dias} dias, direto do Meta`} acoes={periodo}>
+    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`Facebook e Instagram · resultados de ${rotuloPeriodo(periodo)}, direto do Meta`} acoes={seletor}>
       <div className="@container space-y-3">
       {'erro' in r ? (
         <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>

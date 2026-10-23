@@ -5,7 +5,8 @@ import { Suspense } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
 import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
-import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
+import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
+import { lerPeriodo } from '@/dominio/periodo-anuncios'
 import { notFound } from 'next/navigation'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -31,7 +32,6 @@ import { SeletorCapa } from './SeletorCapa'
 export default async function Cliente({ params, searchParams }: PageProps<'/clientes/[cliente]'>) {
   const { cliente: id } = await params
   const sp = await searchParams
-  const diasAnuncios = lerPeriodoAnuncios(typeof sp.anuncios === 'string' ? sp.anuncios : undefined)
   const eu = await exigirEquipe()
   const sb = await criarClienteServidor()
   const cliente = await buscarCliente(sb, id)
@@ -46,6 +46,8 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
 
   // Visão por cliente: o trabalho dele em todos os departamentos, uma seção por departamento (lista).
   const hoje = dataDeHoje(new Date())
+  const periodo = lerPeriodo(sp, hoje)
+  const seletor = <SeletorPeriodo base={`/clientes/${id}`} periodo={periodo} hoje={hoje} />
   const [tarefas, equipe] = await Promise.all([listarTarefas(sb, { todas: true }, { ...lerFiltros({}), clientes: [id] }, hoje), listarEquipe(sb)])
   const statusPorLista = await statusDasListas(sb, [...new Set(tarefas.map((t) => t.listaId))])
   const categoria = (t: { listaId: string; statusId: string }): Categoria => statusPorLista[t.listaId]?.find((s) => s.id === t.statusId)?.categoria ?? 'todo'
@@ -113,17 +115,17 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         </Modulo>
         {cliente.metaContaId && (
           <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
-            <GaleriaAnuncios contaId={cliente.metaContaId} dias={diasAnuncios} mostrarGasto href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+            <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto seletor={seletor} />
           </Suspense>
         )}
         {cliente.googleAdsId && (
           <Suspense fallback={<Modulo icone={Search} titulo="Google Ads" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as campanhas…</p></Modulo>}>
-            <GoogleAds contaId={cliente.googleAdsId} dias={diasAnuncios} href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+            <GoogleAds contaId={cliente.googleAdsId} periodo={periodo} seletor={seletor} />
           </Suspense>
         )}
         {!cliente.interno && (
           <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as métricas…</p></Modulo>}>
-            <GoogleNegocio clienteId={id} perfil={cliente.googlePerfil} perfilNome={cliente.googlePerfilNome} dias={diasAnuncios} podeGerir={podeGerir} href={(d) => (d === 7 ? `/clientes/${id}` : `/clientes/${id}?anuncios=${d}`)} />
+            <GoogleNegocio clienteId={id} perfil={cliente.googlePerfil} perfilNome={cliente.googlePerfilNome} periodo={periodo} seletor={seletor} podeGerir={podeGerir} />
           </Suspense>
         )}
         </div>

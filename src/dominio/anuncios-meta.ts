@@ -32,8 +32,6 @@ export type Anuncio = {
 
 export type AnuncioAvaliado = Anuncio & { desempenho: Desempenho; motivos: string[] }
 
-export const PERIODOS_ANUNCIOS = { 7: 'last_7d', 30: 'last_30d' } as const
-export const lerPeriodoAnuncios = (v: string | undefined): 7 | 30 => (v === '30' ? 30 : 7)
 
 /** Aceita "act_123…", só os números ou um link do Gerenciador de Anúncios (act=123…). Vazio = tirar. */
 export function lerContaAnuncios(bruto: string): { id: string | null } | { erro: string } {

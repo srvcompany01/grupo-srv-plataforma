@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react'
-import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { Modulo } from '@/componentes/Modulo'
+import { rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { formatarContaGoogleAds, totaisCampanhas, type Campanha } from '@/dominio/google'
 import { campanhasGoogle } from '@/servicos/google-agencia'
 
@@ -8,16 +9,10 @@ const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFrac
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
 
 /** Campanhas ativas do Google Ads do cliente com os números do período (pela MCC da agência). */
-export async function GoogleAds({ contaId, dias, href }: { contaId: string; dias: 7 | 30; href: (dias: 7 | 30) => string }) {
-  const r = await campanhasGoogle(contaId, dias)
-  const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
-  const periodo = (
-    <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
-      {([7, 30] as const).map((d) => <Link key={d} href={href(d)} scroll={false} className={chip(d === dias)}>Últimos {d} dias</Link>)}
-    </nav>
-  )
+export async function GoogleAds({ contaId, periodo, seletor }: { contaId: string; periodo: PeriodoAnuncios; seletor: ReactNode }) {
+  const r = await campanhasGoogle(contaId, periodo)
   return (
-    <Modulo icone={Search} titulo="Google Ads" descricao={`Conta ${formatarContaGoogleAds(contaId)} · campanhas ativas, últimos ${dias} dias`} acoes={periodo}>
+    <Modulo icone={Search} titulo="Google Ads" descricao={`Conta ${formatarContaGoogleAds(contaId)} · campanhas ativas, ${rotuloPeriodo(periodo)}`} acoes={seletor}>
       {'erro' in r ? (
         <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
       ) : r.campanhas.length === 0 ? (

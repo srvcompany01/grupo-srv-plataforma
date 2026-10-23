@@ -1,5 +1,6 @@
 import 'server-only'
-import { PERIODOS_ANUNCIOS, avaliarAnuncios, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
+import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { avaliarAnuncios, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 /**
  * API de Marketing do Meta com o token de um usuário do sistema do Gerenciador de Negócios (META_ACCESS_TOKEN, com
@@ -19,12 +20,12 @@ function mensagemDaMeta(corpo: { error?: { code?: number; message?: string } }):
   return `O Meta recusou a consulta${e?.message ? `: ${e.message}` : '.'}`
 }
 
-/** Anúncios ativos da conta com os resultados do período (7 ou 30 dias), já avaliados. */
-export async function anunciosAtivos(contaId: string, dias: 7 | 30): Promise<{ anuncios: AnuncioAvaliado[] } | { erro: string }> {
+/** Anúncios ativos da conta com os resultados do período (datas de Belém, como a conta), já avaliados. */
+export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<{ anuncios: AnuncioAvaliado[] } | { erro: string }> {
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   const q = new URLSearchParams({
-    fields: `id,name,${CRIATIVO},insights.date_preset(${PERIODOS_ANUNCIOS[dias]}){${METRICAS}}`,
+    fields: `id,name,${CRIATIVO},insights.time_range(${JSON.stringify({ since: periodo.de, until: periodo.ate })}){${METRICAS}}`,
     effective_status: '["ACTIVE"]',
     limit: '60',
     access_token: token,

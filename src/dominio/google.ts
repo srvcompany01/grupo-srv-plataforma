@@ -61,9 +61,11 @@ export function totaisCampanhas(cs: Campanha[]) {
   return { ...t, ctr: t.impressoes ? (t.cliques / t.impressoes) * 100 : 0, custoPorConversao: t.conversoes ? t.custo / t.conversoes : 0 }
 }
 
-/** Consulta GAQL das campanhas ativas com os números do período. */
-export const consultaCampanhas = (dias: 7 | 30) =>
-  `SELECT campaign.id, campaign.name, campaign.advertising_channel_type, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date DURING LAST_${dias}_DAYS ORDER BY metrics.cost_micros DESC`
+/** Consulta GAQL das campanhas ativas com os números do período (datas AAAA-MM-DD; outra coisa é recusada). */
+export function consultaCampanhas(de: string, ate: string): string {
+  if (![de, ate].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new Error('Período inválido.')
+  return `SELECT campaign.id, campaign.name, campaign.advertising_channel_type, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date BETWEEN '${de}' AND '${ate}' ORDER BY metrics.cost_micros DESC`
+}
 
 // ---------- Google Meu Negócio ----------
 

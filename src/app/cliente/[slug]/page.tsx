@@ -2,7 +2,9 @@ import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
-import { lerPeriodoAnuncios } from '@/dominio/anuncios-meta'
+import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
+import { dataDeHoje } from '@/dominio/filtros'
+import { lerPeriodo } from '@/dominio/periodo-anuncios'
 import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { notFound } from 'next/navigation'
 import { Marca } from '@/componentes/Marca'
@@ -40,10 +42,11 @@ function CartaoPost({ p, base }: { p: PostPortal; base: string }) {
 export default async function PaginaDoCliente({ params, searchParams }: PageProps<'/cliente/[slug]'>) {
   const { slug } = await params
   const sp = await searchParams
-  const dias = lerPeriodoAnuncios(typeof sp.anuncios === 'string' ? sp.anuncios : undefined)
   const cliente = await clientePorLink(slug).catch(() => null)
   if (!cliente) notFound()
   const base = `/cliente/${cliente.slug}`
+  const hoje = dataDeHoje(new Date())
+  const periodo = lerPeriodo(sp, hoje)
   // Sem a migration de publicação, a lista de posts fica vazia.
   const [posts, docs] = await Promise.all([postsDoCliente(cliente.id).catch(() => []), documentosDoCliente(cliente.id).catch(() => [])])
   const aguardando = posts.filter((p) => p.aprovacao === 'aguardando')
@@ -74,7 +77,7 @@ export default async function PaginaDoCliente({ params, searchParams }: PageProp
       )}
       {cliente.metaContaId && (
         <Suspense fallback={<p className="rounded-xl border border-borda bg-white p-4 text-rotulo text-texto-3">Carregando seus anúncios…</p>}>
-          <GaleriaAnuncios contaId={cliente.metaContaId} dias={dias} mostrarGasto={false} href={(d) => (d === 7 ? base : `${base}?anuncios=${d}`)} />
+          <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto={false} seletor={<SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />} />
         </Suspense>
       )}
       <BibliotecaAnuncios paginaId={cliente.metaPaginaId} />
