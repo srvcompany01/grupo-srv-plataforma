@@ -1,5 +1,6 @@
 import 'server-only'
 import { consultaCampanhas, intervaloNegocio, lerCampanha, lerMetricasNegocio, type Campanha, type CampanhaBruta, type MetricasNegocio, type SerieBruta } from '@/dominio/google'
+import type { PagoPorDia } from '@/dominio/insights'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import { dados } from './resultado'
 import { idCliente, segredoCliente, urlDeRetorno } from './google-agenda'
@@ -128,6 +129,18 @@ export function campanhasGoogle(contaId: string, periodo: { de: string; ate: str
     })
     const linhas = r.results ?? []
     return { campanhas: linhas.map(lerCampanha), moeda: linhas[0]?.customer?.currencyCode ?? 'BRL' }
+  })
+}
+
+/** Investimento, impressões e cliques da conta por dia (alcance não existe no Google Ads: fica 0). */
+export function pagoPorDiaGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<PagoPorDia[] | { erro: string }> {
+  return comErro(async () => {
+    if (![periodo.de, periodo.ate].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new ErroGoogle('Período inválido.')
+    const r = await google<{ results?: { segments?: { date?: string }; metrics?: { costMicros?: string; impressions?: string; clicks?: string } }[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
+      metodo: 'POST', cabecalhos: cabecalhosAds(), cacheSeg: 1800,
+      corpo: { query: `SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks FROM customer WHERE segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` },
+    })
+    return (r.results ?? []).map((x) => ({ dia: x.segments?.date ?? '', gasto: Number(x.metrics?.costMicros ?? 0) / 1_000_000, impressoes: Number(x.metrics?.impressions ?? 0), alcance: 0, cliques: Number(x.metrics?.clicks ?? 0) }))
   })
 }
 

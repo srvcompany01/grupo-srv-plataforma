@@ -18,6 +18,7 @@ import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
 import { totaisCampanhas } from '@/dominio/google'
+import { analisarCombinado, analisarOrganico, analisarPago, porFormato } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 
 /** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
@@ -124,7 +125,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
         'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
-        'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios.',
+        'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
+        'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
         'Reuniões (notetaker): a equipe grava a reunião na plataforma e a IA cria um documento "Ata — <assunto> — dd/mm" com as páginas Ata (resumo, participantes, tópicos, decisões, próximos passos) e Transcrição. Para ler, use listar_documentos / buscar_documento.',
@@ -227,6 +229,46 @@ export const FERRAMENTAS: Ferramenta[] = [
       const r = await (await import('@/servicos/google-agencia')).metricasDoNegocio(cliente.googlePerfil, p.de, p.ate)
       if ('erro' in r) throw new Error(r.erro)
       return { cliente: cliente.nome, perfil: cliente.googlePerfilNome, periodo: p, ...r }
+    },
+  }),
+
+  definir({
+    nome: 'insights_instagram_cliente',
+    descricao: 'Insights do Instagram do cliente no período: seguidores, alcance, visualizações, interações, engajamento, saldo de seguidores, alcance por dia, desempenho por formato, os posts com os números de cada um, e insights e recomendações para o orgânico. O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!cliente.metaPaginaId) throw new Error('Este cliente não tem a Página do Facebook no cadastro.')
+      const p = periodoDaIA(a)
+      const ig = await (await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true)
+      if ('erro' in ig) throw new Error(ig.erro)
+      const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
+      return { cliente: cliente.nome, periodo: p, ...ig, porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias) }
+    },
+  }),
+
+  definir({
+    nome: 'relatorio_cliente_pago_e_organico',
+    descricao: 'Relatório do cliente em três partes, com insights e recomendações: tráfego pago (Meta + Google Ads), orgânico (Instagram) e os dois juntos (investimento e alcance por dia, alcance nos dias com e sem anúncio, custo por seguidor). Mesmo relatório da página do cliente.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const p = periodoDaIA(a)
+      const google = await (await import('@/servicos/google-agencia')).situacaoGoogle()
+      const d = await (await import('@/servicos/relatorio-cliente')).dadosDoCliente(cliente, p, google.conectado)
+      const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
+      return {
+        cliente: cliente.nome,
+        periodo: p,
+        avisos: d.erros,
+        pago: { ...d.pago, analise: analisarPago(d.pago) },
+        organico: d.ig ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, alcance: d.ig.alcance, interacoes: d.ig.interacoes, posts: d.ig.posts.length, analise: analisarOrganico(d.ig, dias) } : null,
+        combinado: { pagoPorDia: d.pagoPorDia, alcanceInstagramPorDia: d.ig?.alcancePorDia ?? [], analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
+      }
     },
   }),
 

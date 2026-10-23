@@ -40,3 +40,10 @@ export function rotuloPeriodo(p: PeriodoAnuncios): string {
   if (p.de === p.ate) return `${dm(p.de)}/${p.de.slice(0, 4)}`
   return p.de.slice(0, 4) === p.ate.slice(0, 4) ? `${dm(p.de)} a ${dm(p.ate)}/${p.ate.slice(0, 4)}` : `${dm(p.de)}/${p.de.slice(0, 4)} a ${dm(p.ate)}/${p.ate.slice(0, 4)}`
 }
+
+/** Todos os dias do período (AAAA-MM-DD), para os gráficos. */
+export function diasDoPeriodo(p: Pick<PeriodoAnuncios, 'de' | 'ate'>): string[] {
+  const dias: string[] = []
+  for (let d = p.de; d <= p.ate && dias.length <= MAX_DIAS_PERIODO; d = somarDias(d, 1)) dias.push(d)
+  return dias
+}

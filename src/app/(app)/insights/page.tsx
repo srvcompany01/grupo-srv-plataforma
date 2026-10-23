@@ -1,0 +1,176 @@
+import { Camera, MapPin, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { Suspense, type ReactNode } from 'react'
+import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
+import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
+import { BlocoAnalise, Numeros } from '@/componentes/insights/BlocoAnalise'
+import { CORES_SERIE } from '@/componentes/insights/GraficoDiario'
+import { InstagramInsights } from '@/componentes/insights/InstagramInsights'
+import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
+import { Modulo } from '@/componentes/Modulo'
+import { dataDeHoje } from '@/dominio/filtros'
+import { analisarOrganico, engajamento, type ResumoInstagram } from '@/dominio/insights'
+import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { exigirEquipe } from '@/infra/supabase/sessao'
+import { criarClienteServidor } from '@/infra/supabase/servidor'
+import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
+import { instagramDoCliente } from '@/servicos/insights-instagram'
+
+export const maxDuration = 60
+
+const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
+
+/** Plataformas orgânicas: as que já funcionam e as que vêm aí. */
+const PLATAFORMAS: { nome: string; situacao: string; ativa: boolean }[] = [
+  { nome: 'Instagram', situacao: 'Ativo', ativa: true },
+  { nome: 'Google Meu Negócio', situacao: 'Aguardando liberação do Google', ativa: false },
+  { nome: 'TikTok', situacao: 'Em breve', ativa: false },
+  { nome: 'YouTube', situacao: 'Em breve', ativa: false },
+  { nome: 'Facebook (Página)', situacao: 'Em breve', ativa: false },
+  { nome: 'LinkedIn', situacao: 'Em breve', ativa: false },
+]
+
+/** Insights orgânicos: panorama de todos os clientes ou, com ?cliente=, o detalhe de um (com recomendações). */
+export default async function Insights({ searchParams }: PageProps<'/insights'>) {
+  await exigirEquipe()
+  const sp = await searchParams
+  const hoje = dataDeHoje(new Date())
+  const periodo = lerPeriodo(sp, hoje)
+  const sb = await criarClienteServidor()
+  const clientes = (await listarClientes(sb)).filter((c) => !c.interno && c.status !== 'encerrado' && c.metaPaginaId)
+  const escolhido = clientes.find((c) => c.id === sp.cliente) ?? null
+  const seletor = <SeletorPeriodo base={escolhido ? `/insights?cliente=${escolhido.id}` : '/insights'} periodo={periodo} hoje={hoje} />
+
+  return (
+    <div className="page-shell">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Orgânico</p>
+          <h1 className="page-title mt-1">Insights</h1>
+        </div>
+        <SeletorCliente base="/insights" clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {PLATAFORMAS.map((p) => (
+          <span key={p.nome} className={`rounded-full border px-2.5 py-1 text-legenda ${p.ativa ? 'border-transparent bg-petroleo font-semibold text-white' : 'border-dashed border-borda text-texto-3'}`}>
+            {p.nome}{!p.ativa && ` · ${p.situacao}`}
+          </span>
+        ))}
+      </div>
+
+      {escolhido ? (
+        <>
+          <Suspense fallback={<Carregando titulo={`Instagram de ${escolhido.nome}`} />}>
+            <DetalheInstagram cliente={escolhido} periodo={periodo} seletor={seletor} />
+          </Suspense>
+          <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando…</p></Modulo>}>
+            <GoogleNegocio clienteId={escolhido.id} perfil={escolhido.googlePerfil} perfilNome={escolhido.googlePerfilNome} periodo={periodo} seletor={seletor} podeGerir={false} />
+          </Suspense>
+        </>
+      ) : (
+        <Suspense fallback={<Carregando titulo="Panorama do Instagram" />}>
+          <Panorama clientes={clientes} periodo={periodo} seletor={seletor} />
+        </Suspense>
+      )}
+    </div>
+  )
+}
+
+function Carregando({ titulo }: { titulo: string }) {
+  return <Modulo icone={Camera} titulo={titulo} descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os insights…</p></Modulo>
+}
+
+async function DetalheInstagram({ cliente, periodo, seletor }: { cliente: Cliente; periodo: PeriodoAnuncios; seletor: ReactNode }) {
+  const ig = await instagramDoCliente(cliente.metaPaginaId!, periodo, true)
+  const dias = diasDoPeriodo(periodo)
+  return (
+    <>
+      <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={`${cliente.nome} · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <InstagramInsights ig={ig} dias={dias} />}
+      </Modulo>
+      {!('erro' in ig) && (
+        <Modulo icone={Sparkles} titulo="Insights e recomendações" descricao="O que os números mostram e o que fazer no orgânico">
+          <div className="space-y-2">
+            <BlocoAnalise analise={analisarOrganico(ig, dias.length)} />
+            <p className="text-legenda text-texto-3">Para cruzar com o tráfego pago, veja o relatório na <Link href={`/clientes/${cliente.id}`} className="font-semibold text-petroleo hover:underline">página do cliente</Link>.</p>
+          </div>
+        </Modulo>
+      )}
+    </>
+  )
+}
+
+async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; periodo: PeriodoAnuncios; seletor: ReactNode }) {
+  const linhas = await Promise.all(clientes.map(async (c) => ({ c, ig: await instagramDoCliente(c.metaPaginaId!, periodo, false) })))
+  const ok = linhas.filter((l): l is { c: Cliente; ig: ResumoInstagram } => !('erro' in l.ig))
+  const soma = (k: 'alcance' | 'interacoes' | 'seguidores' | 'visualizacoes' | 'novosSeguidores') => ok.reduce((s, l) => s + l.ig[k], 0)
+  const posts = ok.reduce((s, l) => s + l.ig.posts.length, 0)
+  const ordenadas = [...linhas].sort((a, b) => ('erro' in b.ig ? -1 : b.ig.alcance) - ('erro' in a.ig ? -1 : a.ig.alcance))
+  const maiorAlcance = Math.max(1, ...ok.map((l) => l.ig.alcance))
+  const q = consultaPeriodo(periodo)
+  return (
+    <Modulo icone={Camera} titulo="Panorama do Instagram" descricao={`Todos os clientes com Instagram ligado · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+      <div className="space-y-4">
+        <Numeros
+          itens={[
+            ['Seguidores somados', numero.format(soma('seguidores')), soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))} no período` : undefined],
+            ['Alcance', numero.format(soma('alcance'))],
+            ['Visualizações', numero.format(soma('visualizacoes'))],
+            ['Interações', numero.format(soma('interacoes')), `${pct(engajamento(soma('interacoes'), soma('alcance')))} do alcance`],
+            ['Posts', String(posts)],
+            ['Perfis', `${ok.length} de ${linhas.length}`],
+          ]}
+        />
+        {linhas.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com a Página do Facebook no cadastro (é por ela que o Instagram profissional é encontrado).</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[48rem] text-rotulo">
+              <thead>
+                <tr className="border-b border-borda text-left text-legenda text-texto-3">
+                  <th className="py-2 pr-3 font-medium">Cliente</th>
+                  <th className="py-2 pr-3 text-right font-medium">Seguidores</th>
+                  <th className="py-2 pr-3 font-medium">Alcance</th>
+                  <th className="py-2 pr-3 text-right font-medium">Interações</th>
+                  <th className="py-2 pr-3 text-right font-medium">Engajamento</th>
+                  <th className="py-2 pr-3 text-right font-medium">Posts</th>
+                  <th className="py-2 text-right font-medium">Novos seguidores</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ordenadas.map(({ c, ig }) => (
+                  <tr key={c.id} className="border-b border-borda/60 last:border-0">
+                    <td className="py-2 pr-3">
+                      <Link href={`/insights?cliente=${c.id}${q ? `&${q}` : ''}`} className="font-medium text-texto hover:underline">{c.nome}</Link>
+                      {!('erro' in ig) && <p className="text-micro text-texto-3">@{ig.usuario}</p>}
+                    </td>
+                    {'erro' in ig ? (
+                      <td colSpan={6} className="py-2 text-legenda text-perigo">{ig.erro}</td>
+                    ) : (
+                      <>
+                        <td className="py-2 pr-3 text-right tabular-nums">{numero.format(ig.seguidores)}</td>
+                        <td className="py-2 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 rounded-sm" style={{ width: `${Math.max(2, (ig.alcance / maiorAlcance) * 96)}px`, background: CORES_SERIE[0] }} />
+                            <span className="tabular-nums">{numero.format(ig.alcance)}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{numero.format(ig.interacoes)}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{pct(engajamento(ig.interacoes, ig.alcance))}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{ig.posts.length}</td>
+                        <td className="py-2 text-right tabular-nums">{ig.novosSeguidores > 0 ? '+' : ''}{numero.format(ig.novosSeguidores)}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="text-legenda text-texto-3">Dados do Instagram pela API do Meta, atualizados a cada hora. Clique no cliente (ou escolha no seletor) para ver os posts, o melhor formato e as recomendações.</p>
+      </div>
+    </Modulo>
+  )
+}

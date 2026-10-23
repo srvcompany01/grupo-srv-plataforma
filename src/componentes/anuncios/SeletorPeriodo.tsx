@@ -15,7 +15,8 @@ export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo:
   const [aberto, setAberto] = useState(false)
   const [de, setDe] = useState(periodo.de)
   const [ate, setAte] = useState(periodo.ate)
-  const url = (p: PeriodoAnuncios) => (consultaPeriodo(p) ? `${base}?${consultaPeriodo(p)}` : base)
+  // `base` pode já ter outros filtros (ex.: ?cliente=…): o período entra junto.
+  const url = (p: PeriodoAnuncios) => (consultaPeriodo(p) ? `${base}${base.includes('?') ? '&' : '?'}${consultaPeriodo(p)}` : base)
   const aplicar = () => {
     setAberto(false)
     router.push(url({ de, ate, atalho: null }), { scroll: false })

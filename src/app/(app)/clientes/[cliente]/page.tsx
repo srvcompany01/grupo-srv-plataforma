@@ -1,10 +1,11 @@
-import { IdCard, KeyRound, LayoutGrid, ListChecks, MapPin, Megaphone, Search } from 'lucide-react'
+import { BarChart3, IdCard, KeyRound, LayoutGrid, ListChecks, MapPin, Megaphone, Search } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Suspense } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
 import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
+import { CarregarRelatorio } from '@/componentes/insights/CarregarRelatorio'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 import { notFound } from 'next/navigation'
@@ -113,6 +114,11 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </div>
           )}
         </Modulo>
+        {!cliente.interno && (cliente.metaPaginaId || cliente.metaContaId || cliente.googleAdsId) && (
+          <Suspense fallback={<Modulo icone={BarChart3} titulo="Relatório do cliente" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Montando o relatório (pago, orgânico e os dois juntos)…</p></Modulo>}>
+            <CarregarRelatorio cliente={cliente} periodo={periodo} seletor={seletor} />
+          </Suspense>
+        )}
         {cliente.metaContaId && (
           <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
             <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto seletor={seletor} />

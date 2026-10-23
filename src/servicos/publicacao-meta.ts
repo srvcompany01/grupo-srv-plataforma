@@ -13,9 +13,9 @@ import type { Database } from '@/infra/supabase/tipos'
  */
 const GRAPH = `https://graph.facebook.com/${process.env.META_API_VERSION || 'v23.0'}`
 
-class ErroMeta extends Error {}
+export class ErroMeta extends Error {}
 
-async function graph<T = Record<string, unknown>>(caminho: string, opcoes: { token?: string; params?: Record<string, string>; metodo?: 'GET' | 'POST'; cacheSeg?: number } = {}): Promise<T> {
+export async function graph<T = Record<string, unknown>>(caminho: string, opcoes: { token?: string; params?: Record<string, string>; metodo?: 'GET' | 'POST'; cacheSeg?: number } = {}): Promise<T> {
   const token = opcoes.token ?? process.env.META_ACCESS_TOKEN
   if (!token) throw new ErroMeta('A integração com o Meta não está configurada (META_ACCESS_TOKEN).')
   const params = new URLSearchParams({ ...opcoes.params, access_token: token })

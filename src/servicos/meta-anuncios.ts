@@ -1,4 +1,5 @@
 import 'server-only'
+import type { PagoPorDia } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { avaliarAnuncios, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
@@ -38,6 +39,25 @@ export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnunc
       return { erro: mensagemDaMeta(corpo) }
     }
     return { anuncios: avaliarAnuncios((corpo.data ?? []).map(lerAnuncio)) }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
+  }
+}
+
+/** Investimento, impressões, alcance e cliques da conta por dia (para cruzar com o orgânico). Cache de 30 min. */
+export async function pagoPorDiaMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<PagoPorDia[] | { erro: string }> {
+  const token = process.env.META_ACCESS_TOKEN
+  if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
+  const q = new URLSearchParams({ level: 'account', time_increment: '1', fields: 'spend,impressions,reach,clicks', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '1000', access_token: token })
+  try {
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, { next: { revalidate: 1800 } })
+    const corpo = (await r.json()) as { data?: { date_start: string; spend?: string; impressions?: string; reach?: string; clicks?: string }[]; error?: { code?: number; message?: string } }
+    if (!r.ok || corpo.error) {
+      console.error('Meta API', r.status, corpo.error)
+      return { erro: mensagemDaMeta(corpo) }
+    }
+    return (corpo.data ?? []).map((d) => ({ dia: d.date_start, gasto: Number(d.spend ?? 0), impressoes: Number(d.impressions ?? 0), alcance: Number(d.reach ?? 0), cliques: Number(d.clicks ?? 0) }))
   } catch (e) {
     console.error(e)
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }

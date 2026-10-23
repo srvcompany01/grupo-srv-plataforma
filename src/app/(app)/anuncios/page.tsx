@@ -1,21 +1,30 @@
-import { Megaphone, PlugZap } from 'lucide-react'
+import { Megaphone, PlugZap, Target } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
-import { Modulo } from '@/componentes/Modulo'
+import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
+import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
-import { totaisAnuncios } from '@/dominio/anuncios-meta'
+import { BlocoAnalise, Numeros } from '@/componentes/insights/BlocoAnalise'
+import { EmBreve } from '@/componentes/insights/EmBreve'
+import { CORES_SERIE, GraficoDiario } from '@/componentes/insights/GraficoDiario'
+import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
+import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
-import { lerPeriodo, rotuloPeriodo } from '@/dominio/periodo-anuncios'
 import { totaisCampanhas } from '@/dominio/google'
+import { analisarPago } from '@/dominio/insights'
+import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { listarClientes } from '@/servicos/clientes-plataforma'
-import { campanhasGoogle, situacaoGoogle } from '@/servicos/google-agencia'
-import { anunciosAtivos } from '@/servicos/meta-anuncios'
+import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
+import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/google-agencia'
+import { pagoPorDiaMeta } from '@/servicos/meta-anuncios'
+import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
 export const maxDuration = 60
 
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const reaisCurto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
 
@@ -26,9 +35,19 @@ const AVISO_GOOGLE: Record<string, string> = {
   'sem-config': 'Falta o app do Google (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET) na Vercel.',
 }
 
-type Linha = { id: string; nome: string; meta: { gasto: number; impressoes: number; cliques: number; ctr: number; ativos: number } | { erro: string } | null; google: { custo: number; cliques: number; conversoes: number } | { erro: string } | null }
+type Erro = { erro: string }
+type Linha = {
+  id: string
+  nome: string
+  meta: { gasto: number; impressoes: number; cliques: number; ctr: number; porDia: Map<string, number> } | Erro | null
+  google: { custo: number; cliques: number; conversoes: number; porDia: Map<string, number> } | Erro | null
+}
+const valor = <T,>(x: T | Erro | null): T | null => (x && !('erro' in (x as object)) ? (x as T) : null)
 
-/** Anúncios de todos os clientes: Meta (anúncios ativos) e Google Ads (campanhas ativas) no mesmo período. */
+/**
+ * Anúncios: panorama de todos os clientes (Meta da conta inteira, inclusive anúncios já pausados no período, e
+ * Google Ads) ou, com ?cliente=, tudo o que um cliente roda, com insights e recomendações.
+ */
 export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>) {
   const eu = await exigirEquipe()
   const sp = await searchParams
@@ -38,48 +57,152 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const sb = await criarClienteServidor()
   const [clientes, google] = await Promise.all([listarClientes(sb), situacaoGoogle()])
   const comAnuncios = clientes.filter((c) => !c.interno && c.status !== 'encerrado' && (c.metaContaId || c.googleAdsId))
-
-  const linhas: Linha[] = await Promise.all(
-    comAnuncios.map(async (c) => {
-      const [meta, ads] = await Promise.all([
-        c.metaContaId ? anunciosAtivos(c.metaContaId, periodo) : null,
-        c.googleAdsId && google.conectado ? campanhasGoogle(c.googleAdsId, periodo) : null,
-      ])
-      return {
-        id: c.id,
-        nome: c.nome,
-        meta: !meta ? null : 'erro' in meta ? meta : { ...totaisAnuncios(meta.anuncios), ativos: meta.anuncios.length },
-        google: !ads ? null : 'erro' in ads ? ads : totaisCampanhas(ads.campanhas),
-      }
-    }),
-  )
-  const valor = <T,>(x: T | { erro: string } | null): T | null => (x && !('erro' in (x as object)) ? (x as T) : null)
-  const total = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0) + (valor(l.google)?.custo ?? 0), 0)
-  const totalMeta = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0), 0)
-  const totalGoogle = linhas.reduce((s, l) => s + (valor(l.google)?.custo ?? 0), 0)
-  const erro = (e: { erro: string }) => <span className="text-perigo" title={e.erro}>erro</span>
+  const escolhido = comAnuncios.find((c) => c.id === sp.cliente) ?? null
+  const base = escolhido ? `/anuncios?cliente=${escolhido.id}` : '/anuncios'
+  const seletorPeriodo = <SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />
 
   return (
     <div className="page-shell">
-      <div>
-        <p className="eyebrow">Tráfego pago</p>
-        <h1 className="page-title mt-1">Anúncios</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Tráfego pago</p>
+          <h1 className="page-title mt-1">Anúncios</h1>
+        </div>
+        <SeletorCliente base="/anuncios" clientes={comAnuncios.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
       </div>
       {aviso && <p className="rounded-lg border border-borda bg-fundo px-3 py-2 text-rotulo text-texto-2">{aviso}</p>}
 
-      <Modulo
-        icone={Megaphone}
-        titulo="Investimento e resultados por cliente"
-        descricao={`Meta (anúncios ativos) e Google Ads (campanhas ativas) · ${rotuloPeriodo(periodo)}`}
-        acoes={<SeletorPeriodo base="/anuncios" periodo={periodo} hoje={hoje} />}
-      >
-        <div className="mb-3 grid grid-cols-3 gap-2">
-          {([['Total investido', total], ['Meta', totalMeta], ['Google Ads', totalGoogle]] as const).map(([r, v]) => (
-            <div key={r} className="rounded-xl border border-borda bg-white p-2.5">
-              <p className="text-micro text-texto-3">{r}</p>
-              <p className="text-destaque font-bold tabular-nums text-texto">{reais.format(v)}</p>
-            </div>
-          ))}
+      {escolhido ? (
+        <>
+          <Suspense fallback={<Modulo icone={Target} titulo="Insights e recomendações" descricao="Analisando…"><p className="py-6 text-center text-rotulo text-texto-3">Analisando as contas…</p></Modulo>}>
+            <AnalisePago cliente={escolhido} periodo={periodo} googleConectado={google.conectado} seletor={seletorPeriodo} />
+          </Suspense>
+          {escolhido.metaContaId && (
+            <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
+              <GaleriaAnuncios contaId={escolhido.metaContaId} periodo={periodo} mostrarGasto seletor={seletorPeriodo} />
+            </Suspense>
+          )}
+          {escolhido.googleAdsId && google.conectado && (
+            <Suspense fallback={<Modulo icone={Megaphone} titulo="Google Ads" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as campanhas…</p></Modulo>}>
+              <GoogleAds contaId={escolhido.googleAdsId} periodo={periodo} seletor={seletorPeriodo} />
+            </Suspense>
+          )}
+          <EmBreve itens={['TikTok Ads', 'LinkedIn Ads']} />
+        </>
+      ) : (
+        <Suspense fallback={<Modulo icone={Megaphone} titulo="Panorama de todos os clientes" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Somando as contas…</p></Modulo>}>
+          <Panorama clientes={comAnuncios} periodo={periodo} googleConectado={google.conectado} seletor={seletorPeriodo} />
+        </Suspense>
+      )}
+
+      <Modulo icone={PlugZap} titulo="Conexão com o Google" descricao="Uma conta Google da agência acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes">
+        <div className="space-y-2 text-rotulo">
+          <p>{google.conectado ? <>Conectado como <strong>{google.email || 'conta Google'}</strong>.</> : 'Ainda não conectado.'}</p>
+          {google.conectado && !google.adsPronto && <p className="text-aviso-forte">Google Ads: falta o número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID) na Vercel.</p>}
+          {eu.papel === 'admin' ? <ConexaoGoogle email={google.conectado ? google.email || 'conta Google' : null} /> : !google.conectado && <p className="text-texto-3">Peça ao admin para conectar.</p>}
+        </div>
+      </Modulo>
+    </div>
+  )
+}
+
+async function AnalisePago({ cliente, periodo, googleConectado, seletor }: { cliente: Cliente; periodo: PeriodoAnuncios; googleConectado: boolean; seletor: React.ReactNode }) {
+  const d = await dadosDoCliente(cliente, periodo, googleConectado, { organico: false })
+  const dias = diasDoPeriodo(periodo)
+  const porDia = new Map(d.pagoPorDia.map((x) => [x.dia, x.gasto]))
+  const total = (d.pago.meta?.gasto ?? 0) + (d.pago.google?.custo ?? 0)
+  return (
+    <Modulo icone={Target} titulo={`${cliente.nome}: insights e recomendações`} descricao={`Meta e Google Ads · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+      <div className="space-y-4">
+        {d.erros.length > 0 && <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-legenda text-aviso-forte">{d.erros.join(' · ')}</p>}
+        <Numeros
+          itens={[
+            ['Investido', reais.format(total)],
+            ['Meta', d.pago.meta ? reais.format(d.pago.meta.gasto) : '—'],
+            ['Google Ads', d.pago.google ? reais.format(d.pago.google.custo) : '—'],
+            ['Impressões (Meta)', numero.format(d.pago.meta?.impressoes ?? 0)],
+            ['Cliques', numero.format((d.pago.meta?.cliques ?? 0) + (d.pago.google?.cliques ?? 0))],
+            ['CTR (Meta)', d.pago.meta ? pct(d.pago.meta.ctr) : '—'],
+          ]}
+        />
+        <GraficoDiario titulo="Investimento por dia" dias={dias} series={[{ nome: 'Investido', valores: dias.map((x) => porDia.get(x) ?? 0) }]} formato={(n) => reaisCurto.format(n)} tipo="barras" />
+        <BlocoAnalise analise={analisarPago(d.pago)} />
+        <p className="text-legenda text-texto-3">Para cruzar com o orgânico (Instagram), veja o relatório na <Link href={`/clientes/${cliente.id}`} className="font-semibold text-petroleo hover:underline">página do cliente</Link>.</p>
+      </div>
+    </Modulo>
+  )
+}
+
+async function Panorama({ clientes, periodo, googleConectado, seletor }: { clientes: Cliente[]; periodo: PeriodoAnuncios; googleConectado: boolean; seletor: React.ReactNode }) {
+  const linhas: Linha[] = await Promise.all(
+    clientes.map(async (c) => {
+      const comGoogle = !!c.googleAdsId && googleConectado
+      const [meta, ads, adsDia] = await Promise.all([
+        c.metaContaId ? pagoPorDiaMeta(c.metaContaId, periodo) : null,
+        comGoogle ? campanhasGoogle(c.googleAdsId!, periodo) : null,
+        comGoogle ? pagoPorDiaGoogle(c.googleAdsId!, periodo) : null,
+      ])
+      const somar = (xs: { gasto: number; impressoes: number; cliques: number }[]) => xs.reduce((s, d) => ({ gasto: s.gasto + d.gasto, impressoes: s.impressoes + d.impressoes, cliques: s.cliques + d.cliques }), { gasto: 0, impressoes: 0, cliques: 0 })
+      const m = meta && !('erro' in meta) ? somar(meta) : null
+      return {
+        id: c.id,
+        nome: c.nome,
+        meta: !meta ? null : 'erro' in meta ? meta : { ...m!, ctr: m!.impressoes ? (m!.cliques / m!.impressoes) * 100 : 0, porDia: new Map(meta.map((d) => [d.dia, d.gasto])) },
+        google: !ads ? null : 'erro' in ads ? ads : { ...totaisCampanhas(ads.campanhas), porDia: new Map((adsDia && !('erro' in adsDia) ? adsDia : []).map((d) => [d.dia, d.gasto])) },
+      }
+    }),
+  )
+  const totalMeta = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0), 0)
+  const totalGoogle = linhas.reduce((s, l) => s + (valor(l.google)?.custo ?? 0), 0)
+  const cliques = linhas.reduce((s, l) => s + (valor(l.meta)?.cliques ?? 0) + (valor(l.google)?.cliques ?? 0), 0)
+  const investindo = linhas.filter((l) => (valor(l.meta)?.gasto ?? 0) + (valor(l.google)?.custo ?? 0) > 0)
+  const dias = diasDoPeriodo(periodo)
+  const ordenadas = [...linhas].sort((a, b) => (valor(b.meta)?.gasto ?? 0) + (valor(b.google)?.custo ?? 0) - (valor(a.meta)?.gasto ?? 0) - (valor(a.google)?.custo ?? 0))
+  const erro = (e: Erro) => <span className="text-perigo" title={e.erro}>erro</span>
+  const vazio = <span className="text-texto-3">—</span>
+
+  return (
+    <Modulo icone={Megaphone} titulo="Panorama de todos os clientes" descricao={`Meta (conta inteira) e Google Ads · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+      <div className="space-y-4">
+        <Numeros
+          itens={[
+            ['Total investido', reais.format(totalMeta + totalGoogle)],
+            ['Meta', reais.format(totalMeta)],
+            ['Google Ads', reais.format(totalGoogle)],
+            ['Clientes investindo', `${investindo.length} de ${linhas.length}`],
+            ['Cliques', numero.format(cliques)],
+            ['Média por cliente', investindo.length ? reais.format((totalMeta + totalGoogle) / investindo.length) : '—'],
+          ]}
+        />
+        <div className="grid gap-4 xl:grid-cols-2">
+          <GraficoDiario
+            titulo="Investimento por dia, todos os clientes"
+            dias={dias}
+            series={[
+              { nome: 'Meta', valores: dias.map((d) => linhas.reduce((s, l) => s + (valor(l.meta)?.porDia.get(d) ?? 0), 0)) },
+              { nome: 'Google Ads', valores: dias.map((d) => linhas.reduce((s, l) => s + (valor(l.google)?.porDia.get(d) ?? 0), 0)) },
+            ]}
+            formato={(n) => reaisCurto.format(n)}
+          />
+          <div>
+            <p className="mb-1 text-legenda font-semibold text-texto">Quem mais investe</p>
+            <ul className="space-y-1.5">
+              {ordenadas.slice(0, 8).map((l) => {
+                const m = valor(l.meta)?.gasto ?? 0
+                const g = valor(l.google)?.custo ?? 0
+                const maior = Math.max(1, ...ordenadas.map((x) => (valor(x.meta)?.gasto ?? 0) + (valor(x.google)?.custo ?? 0)))
+                return (
+                  <li key={l.id} className="text-rotulo">
+                    <div className="flex justify-between gap-2"><span className="truncate text-texto">{l.nome}</span><span className="tabular-nums text-texto-2">{reais.format(m + g)}</span></div>
+                    <div className="mt-0.5 flex h-2 gap-0.5" title={`Meta ${reais.format(m)} · Google ${reais.format(g)}`}>
+                      {m > 0 && <span className="rounded-sm" style={{ width: `${(m / maior) * 100}%`, background: CORES_SERIE[0] }} />}
+                      {g > 0 && <span className="rounded-sm" style={{ width: `${(g / maior) * 100}%`, background: CORES_SERIE[1] }} />}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         </div>
         {linhas.length === 0 ? (
           <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com conta de anúncios no cadastro. Preencha a conta do Meta e/ou do Google Ads na página do cliente.</p>
@@ -99,17 +222,16 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
                 </tr>
               </thead>
               <tbody>
-                {linhas.map((l) => {
+                {ordenadas.map((l) => {
                   const m = valor(l.meta)
                   const g = valor(l.google)
-                  const vazio = <span className="text-texto-3">—</span>
                   return (
                     <tr key={l.id} className="border-b border-borda/60 last:border-0">
-                      <td className="py-2 pr-3"><Link href={`/clientes/${l.id}`} className="font-medium text-texto hover:underline">{l.nome}</Link>{m && <p className="text-micro text-texto-3">{m.ativos} anúncios ativos no Meta</p>}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{m ? reais.format(m.gasto) : l.meta ? erro(l.meta as { erro: string }) : vazio}</td>
+                      <td className="py-2 pr-3"><Link href={`/anuncios?cliente=${l.id}${consultaPeriodo(periodo) ? `&${consultaPeriodo(periodo)}` : ''}`} className="font-medium text-texto hover:underline">{l.nome}</Link></td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{m ? reais.format(m.gasto) : l.meta ? erro(l.meta as Erro) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? numero.format(m.cliques) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? pct(m.ctr) : vazio}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{g ? reais.format(g.custo) : l.google ? erro(l.google as { erro: string }) : vazio}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{g ? reais.format(g.custo) : l.google ? erro(l.google as Erro) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{g ? numero.format(g.cliques) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{g ? g.conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : vazio}</td>
                       <td className="py-2 text-right font-semibold tabular-nums">{reais.format((m?.gasto ?? 0) + (g?.custo ?? 0))}</td>
@@ -120,16 +242,8 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
             </table>
           </div>
         )}
-        <p className="mt-2 text-legenda text-texto-3">Passe o mouse em &quot;erro&quot; para ver o motivo. Clique no cliente para ver os anúncios e campanhas um a um.</p>
-      </Modulo>
-
-      <Modulo icone={PlugZap} titulo="Conexão com o Google" descricao="Uma conta Google da agência acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes">
-        <div className="space-y-2 text-rotulo">
-          <p>{google.conectado ? <>Conectado como <strong>{google.email || 'conta Google'}</strong>.</> : 'Ainda não conectado.'}</p>
-          {google.conectado && !google.adsPronto && <p className="text-aviso-forte">Google Ads: falta o número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID) na Vercel.</p>}
-          {eu.papel === 'admin' ? <ConexaoGoogle email={google.conectado ? google.email || 'conta Google' : null} /> : !google.conectado && <p className="text-texto-3">Peça ao admin para conectar.</p>}
-        </div>
-      </Modulo>
-    </div>
+        <p className="text-legenda text-texto-3">Clique no cliente (ou escolha no seletor acima) para ver tudo o que ele roda, com insights e recomendações. Passe o mouse em &quot;erro&quot; para ver o motivo.</p>
+      </div>
+    </Modulo>
   )
 }
