@@ -3,6 +3,8 @@ import { SLUGS_DAS_LANDINGS } from './src/dominio/landings'
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@electric-sql/pglite'],
+  // O artigo do blog chega como arquivo (.docx/.md, até 3 MB) numa ação do servidor; o padrão é 1 MB.
+  experimental: { serverActions: { bodySizeLimit: '4mb' } },
   // Cada landing é um arquivo estático em public/lp/<slug>/index.html servido em /<slug>.
   async rewrites() {
     return SLUGS_DAS_LANDINGS.map((slug) => ({ source: `/${slug}`, destination: `/lp/${slug}/index.html` }))

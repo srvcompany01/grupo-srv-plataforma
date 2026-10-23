@@ -2,6 +2,7 @@ import { Building2, Eye, FileText, Mail, Plus, UserPen } from 'lucide-react'
 import Link from 'next/link'
 import { ContextoMarca } from '@/componentes/blog/ContextoMarca'
 import { GerenciarAutores } from '@/componentes/blog/GerenciarAutores'
+import { ImportarArtigo } from '@/componentes/blog/ImportarArtigo'
 import { somarDias } from '@/dominio/agenda'
 import { dataDeHoje } from '@/dominio/filtros'
 import { SeloTom } from '@/componentes/insights/tom'
@@ -32,6 +33,7 @@ export default async function EditorBlog() {
         </div>
         <div className="flex gap-2">
           <a href="/blog" target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-borda bg-white px-3 text-rotulo font-medium hover:bg-hover"><Eye className="h-3.5 w-3.5" /> Ver o blog</a>
+          <ImportarArtigo />
           <Link href="/editor-blog/novo" className={botaoPrimario}><Plus className="h-3.5 w-3.5" /> Novo artigo</Link>
         </div>
       </div>

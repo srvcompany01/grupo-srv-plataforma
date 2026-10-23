@@ -261,7 +261,7 @@ export const bloqueiosDePublicacao = (c: ReturnType<typeof checklistSeo>) => c.i
 export type Metadados = {
   titulo?: string; subtitulo?: string; seoTitulo?: string; resumo?: string; slug?: string; palavraChave?: string; palavrasSecundarias?: string; tema?: string; publico?: string
   capaAlt?: string; capaLegenda?: string; capaCredito?: string; categoria?: string; autor?: string; tags?: string; canonical?: string; breadcrumb?: string
-  ogTitulo?: string; ogDescricao?: string; ctaLabel?: string; ctaUrl?: string; ctaContexto?: string; cta2Label?: string; cta2Url?: string; entidades?: string; aviso?: string
+  ogTitulo?: string; ogDescricao?: string; ctaLabel?: string; ctaUrl?: string; ctaContexto?: string; ctaPosicao?: string; cta2Label?: string; cta2Url?: string; entidades?: string; aviso?: string; notaAtualizacao?: string; revisarEm?: string
 }
 
 const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
@@ -270,8 +270,8 @@ const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 // A ordem importa: os mais específicos primeiro ("titulo seo" antes de "titulo").
 const ROTULOS: [keyof Metadados, string[]][] = [
   ['seoTitulo', ['seo seo title', 'seo title', 'titulo seo', 'meta title', 'metatitle', 'title tag', 'titulo para o google', 'meta titulo', 'titulo meta', 'titulo da pagina', 'seo titulo', 'titulo otimizado']],
-  ['ogTitulo', ['social og title', 'og title', 'titulo open graph', 'open graph title', 'social title', 'social twitter title', 'twitter title']],
-  ['ogDescricao', ['social og description', 'og description', 'descricao open graph', 'open graph description', 'social description', 'social twitter description', 'twitter description']],
+  ['ogTitulo', ['social og title', 'og title', 'titulo open graph', 'open graph title', 'social title', 'social twitter title', 'twitter title', 'titulo para redes', 'titulo para redes sociais']],
+  ['ogDescricao', ['social og description', 'og description', 'descricao open graph', 'open graph description', 'social description', 'social twitter description', 'twitter description', 'descricao para redes', 'descricao para redes sociais']],
   ['resumo', ['seo meta description', 'meta description', 'metadescription', 'meta descricao', 'descricao meta', 'descricao seo', 'seo description', 'cms excerpt', 'excerpt', 'resumo', 'descricao', 'description', 'meta desc']],
   ['palavrasSecundarias', ['search strategy secondary keywords', 'secondary keywords', 'palavras chave secundarias', 'palavras chave relacionadas', 'palavra chave secundaria', 'keywords secundarias', 'related keywords', 'lsi keywords', 'palavras chave lsi', 'palavras chave', 'keywords']],
   ['tags', ['cms tags', 'article tags', 'tags', 'etiquetas']],
@@ -287,7 +287,10 @@ const ROTULOS: [keyof Metadados, string[]][] = [
   ['capaCredito', ['cover credit', 'featured image credit', 'credito da imagem', 'credito', 'credit']],
   ['ctaLabel', ['editorial primary cta label', 'primary cta label', 'texto do cta', 'cta principal', 'cta label', 'cta']],
   ['ctaUrl', ['editorial primary cta url', 'primary cta url', 'link do cta', 'cta url']],
-  ['ctaContexto', ['primary cta context', 'contexto do cta']],
+  ['ctaContexto', ['primary cta context', 'contexto do cta', 'por que o cta faz sentido']],
+  ['ctaPosicao', ['cta position', 'posicao do cta', 'onde aparece o cta']],
+  ['notaAtualizacao', ['update note', 'motivo da atualizacao', 'motivo da ultima atualizacao']],
+  ['revisarEm', ['update due date', 'revisar em', 'revisar o conteudo em', 'data de revisao']],
   ['cta2Label', ['editorial secondary cta label', 'secondary cta label', 'cta secundario']],
   ['cta2Url', ['editorial secondary cta url', 'secondary cta url', 'link do cta secundario']],
   ['aviso', ['editorial disclosure', 'aviso editorial', 'disclosure']],
@@ -300,12 +303,13 @@ const ROTULOS: [keyof Metadados, string[]][] = [
 // Chaves do briefing também aceitas pelo rótulo em português e com o prefixo da seção do YAML.
 const APELIDOS_BRIEFING: Record<string, string> = { 'editorial thesis': 'unique_point_of_view', thesis: 'unique_point_of_view', tese: 'unique_point_of_view', 'cover concept': 'cover_concept', 'cover headline': 'cover_headline', 'cover description': 'cover_description', 'cover generation prompt': 'cover_prompt', 'search strategy sources': 'sources', 'seo external sources': 'sources', 'seo internal links in plan': 'internal_links_in_plan' }
 
-function campoDoRotulo(rotulo: string): { campo: keyof Metadados } | { briefing: string } | null {
+function campoDoRotulo(rotulo: string, exato = false): { campo: keyof Metadados } | { briefing: string } | null {
   const r = normalizar(rotulo)
   if (APELIDOS_BRIEFING[r]) return { briefing: APELIDOS_BRIEFING[r] }
   for (const [campo, nomes] of ROTULOS) if (nomes.includes(r)) return { campo }
-  const b = CAMPOS_BRIEFING.find((c) => normalizar(c.chave) === r || normalizar(c.rotulo) === r || r.endsWith(` ${normalizar(c.chave)}`))
+  const b = CAMPOS_BRIEFING.find((c) => normalizar(c.chave) === r || normalizar(c.rotulo) === r || (!exato && r.endsWith(` ${normalizar(c.chave)}`)))
   if (b) return { briefing: b.chave }
+  if (exato) return null
   for (const [campo, nomes] of ROTULOS) if (nomes.some((n) => n.length > 4 && r.startsWith(n))) return { campo }
   return null
 }
@@ -328,7 +332,7 @@ export function lerMetadados(texto: string): { dados: Metadados; briefing: Brief
     const lista = Array.isArray(valor) ? valor.map((x) => (typeof x === 'string' ? limparValor(x) : JSON.stringify(x))).filter(Boolean) : typeof valor === 'string' ? listaInline(valor) : null
     const v = lista ? lista.join(', ') : typeof valor === 'string' ? limparValor(valor) : typeof valor === 'number' ? String(valor) : ''
     if (!v || v === '[]') return
-    const destino = (secao ? campoDoRotulo(`${secao} ${rotulo}`) : null) ?? campoDoRotulo(rotulo)
+    const destino = (secao ? campoDoRotulo(`${secao} ${rotulo}`, true) : null) ?? campoDoRotulo(rotulo)
     if (!destino) return void ignorados.push(secao ? `${secao}.${rotulo.trim()}` : rotulo.trim())
     if ('briefing' in destino) {
       const def = CAMPOS_BRIEFING.find((c) => c.chave === destino.briefing)!

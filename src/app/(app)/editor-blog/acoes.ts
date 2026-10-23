@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { SITE, bloqueiosDePublicacao, limparBriefing, type Briefing } from '@/dominio/blog'
+import { camposDoArquivo, docxParaTexto, lerArquivoDeArtigo } from '@/dominio/blog-modelo'
 import { validarCapa } from '@/dominio/clientes-galeria'
 import { mensagemErro } from '@/dominio/erros-banco'
 import { gerarChaveBlog, urlUpload } from '@/infra/r2'
@@ -126,4 +127,43 @@ export async function salvarAutorAcao(id: string | null, a: { nome: string; carg
   const r = await tentar(async () => blog.salvarAutor(await criarClienteServidor(), id, a), 'Autor salvo.')
   atualizarBlog()
   return r
+}
+
+const LIMITE_ARQUIVO = 3 * 1024 * 1024
+
+/**
+ * Cria um artigo (rascunho) a partir do arquivo do modelo preenchido: Word (.docx), Markdown (.md) ou texto (.txt).
+ * Devolve o id e o que vale conferir (campos não reconhecidos e o que ainda bloqueia a publicação).
+ */
+export async function importarArquivoAcao(form: FormData): Promise<{ id: string; avisos: string[]; pendencias: string[]; nota: number } | { erro: string }> {
+  await exigirEquipe()
+  const arquivo = form.get('arquivo')
+  if (!(arquivo instanceof File) || !arquivo.size) return { erro: 'Escolha o arquivo do artigo.' }
+  if (arquivo.size > LIMITE_ARQUIVO) return { erro: 'O arquivo passa de 3 MB.' }
+  const nome = arquivo.name.toLowerCase()
+  let texto: string
+  try {
+    if (nome.endsWith('.docx')) texto = docxParaTexto(new Uint8Array(await arquivo.arrayBuffer()))
+    else if (/\.(md|markdown|txt)$/.test(nome)) texto = await arquivo.text()
+    else return { erro: 'Use o modelo em Word (.docx), Markdown (.md) ou texto (.txt). No Google Docs: Arquivo → Fazer download → .docx.' }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não consegui ler o arquivo. Confira se é o modelo do blog salvo em .docx, .md ou .txt.' }
+  }
+  const lido = lerArquivoDeArtigo(texto)
+  if (!lido.titulo) return { erro: 'Não encontrei o título. Preencha "Título:" na ficha do modelo.' }
+  if (!lido.artigo.trim()) return { erro: `Não encontrei o texto do artigo. Escreva-o depois da linha "=== ARTIGO ===".` }
+  try {
+    const sb = await criarClienteServidor()
+    const [cats, auts] = await Promise.all([blog.categorias(), blog.autores(sb)])
+    const { campos, avisos } = camposDoArquivo(lido, cats, auts)
+    const id = await blog.salvarPost(sb, null, campos)
+    const post = await blog.postDaEquipe(sb, id)
+    const q = post ? await blog.qualidadeDoPost(sb, post) : null
+    atualizarBlog()
+    return { id, avisos, pendencias: q ? q.itens.filter((i) => !i.ok && !i.texto.startsWith('Revisão humana')).map((i) => i.texto) : [], nota: q?.nota ?? 0 }
+  } catch (e) {
+    console.error(e)
+    return { erro: erroDoSlug(e) }
+  }
 }

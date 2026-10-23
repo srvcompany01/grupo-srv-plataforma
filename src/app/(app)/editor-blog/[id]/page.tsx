@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { EditorArtigo } from '@/componentes/blog/EditorArtigo'
+import { ImportarArtigo } from '@/componentes/blog/ImportarArtigo'
 import { somarDias } from '@/dominio/agenda'
 import { dataDeHoje } from '@/dominio/filtros'
 import { configIA } from '@/ia/modelo'
@@ -31,7 +32,10 @@ export default async function EditarArtigo({ params }: PageProps<'/editor-blog/[
   const chave = new Map(chaves.map((c) => [c.id, c.palavraChave]))
   return (
     <div className="page-shell">
-      <Link href="/editor-blog" className="text-rotulo text-texto-2 hover:text-texto">← Blog</Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link href="/editor-blog" className="text-rotulo text-texto-2 hover:text-texto">← Blog</Link>
+        {novo && <ImportarArtigo />}
+      </div>
       <EditorArtigo
         key={post?.id ?? 'novo'}
         post={post}
