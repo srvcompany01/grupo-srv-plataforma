@@ -208,3 +208,52 @@ export async function publicarNoNegocio(perfil: string, texto: string, fotoUrl: 
   })
   return { id: r.name, link: r.searchUrl ?? null }
 }
+
+// Controle das campanhas (pausar, ativar, orçamento). Sempre pela conta do cliente: o id da campanha só vale nela.
+export type CampanhaControle = { id: string; nome: string; status: 'ENABLED' | 'PAUSED'; tipo: string; orcamento: { recurso: string; diario: number; compartilhado: boolean } | null; custo: number; conversoes: number; cliques: number }
+
+/** Campanhas (ativas e pausadas) com o orçamento diário e os números do período. Sem cache: é a tela de edição. */
+export function estruturaGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<CampanhaControle[] | { erro: string }> {
+  return comErro(async () => {
+    const url = `${ADS}/customers/${contaId}/googleAds:search`
+    type Linha = { campaign: { id: string; name: string; status: 'ENABLED' | 'PAUSED'; advertisingChannelType?: string }; campaignBudget?: { resourceName: string; amountMicros?: string; explicitlyShared?: boolean }; metrics?: { costMicros?: string; conversions?: number; clicks?: string } }
+    const [base, numeros] = await Promise.all([
+      google<{ results?: Linha[] }>(url, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: "SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign_budget.resource_name, campaign_budget.amount_micros, campaign_budget.explicitly_shared FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED') LIMIT 200" } }),
+      google<{ results?: Linha[] }>(url, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: `SELECT campaign.id, metrics.cost_micros, metrics.conversions, metrics.clicks FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED') AND segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` } }),
+    ])
+    const m = new Map((numeros.results ?? []).map((l) => [l.campaign.id, l.metrics]))
+    return (base.results ?? []).map((l) => ({
+      id: l.campaign.id,
+      nome: l.campaign.name,
+      status: l.campaign.status,
+      tipo: l.campaign.advertisingChannelType ?? '',
+      orcamento: l.campaignBudget?.resourceName ? { recurso: l.campaignBudget.resourceName, diario: Number(l.campaignBudget.amountMicros ?? 0) / 1e6, compartilhado: !!l.campaignBudget.explicitlyShared } : null,
+      custo: Number(m.get(l.campaign.id)?.costMicros ?? 0) / 1e6,
+      conversoes: Number(m.get(l.campaign.id)?.conversions ?? 0),
+      cliques: Number(m.get(l.campaign.id)?.clicks ?? 0),
+    }))
+  })
+}
+
+/** Uma campanha da conta (confere que é dela); null se não existir. */
+export async function campanhaGoogle(contaId: string, campanhaId: string): Promise<CampanhaControle | null> {
+  if (!/^\d{1,20}$/.test(campanhaId)) return null
+  const r = await estruturaGoogle(contaId, { de: '2020-01-01', ate: '2020-01-01' })
+  if ('erro' in r) throw new ErroGoogle(r.erro)
+  return r.find((c) => c.id === campanhaId) ?? null
+}
+
+export async function statusCampanhaGoogle(contaId: string, campanhaId: string, ativa: boolean): Promise<void> {
+  await google(`${ADS}/customers/${contaId}/campaigns:mutate`, {
+    metodo: 'POST', cabecalhos: cabecalhosAds(),
+    corpo: { operations: [{ update: { resourceName: `customers/${contaId}/campaigns/${campanhaId}`, status: ativa ? 'ENABLED' : 'PAUSED' }, updateMask: 'status' }] },
+  })
+}
+
+export async function orcamentoGoogle(contaId: string, recurso: string, reaisPorDia: number): Promise<void> {
+  if (!recurso.startsWith(`customers/${contaId}/campaignBudgets/`)) throw new ErroGoogle('Orçamento de outra conta.')
+  await google(`${ADS}/customers/${contaId}/campaignBudgets:mutate`, {
+    metodo: 'POST', cabecalhos: cabecalhosAds(),
+    corpo: { operations: [{ update: { resourceName: recurso, amountMicros: String(Math.round(reaisPorDia * 100) * 10_000) }, updateMask: 'amount_micros' }] },
+  })
+}

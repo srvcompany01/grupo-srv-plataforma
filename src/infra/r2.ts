@@ -64,6 +64,13 @@ export function gerarChaveCliente(clienteId: string, mime: string): string {
   return `clientes/${clienteId}/${crypto.randomUUID()}.${ext}`
 }
 
+/** Criativos de anúncio do cliente: `criativos/<cliente>/<uuid>.<ext>`; a extensão vem do mime já validado. */
+export function gerarChaveCriativo(clienteId: string, mime: string): string {
+  const ext = EXTENSAO_POR_TIPO[mime]
+  if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
+  return `criativos/${clienteId}/${crypto.randomUUID()}.${ext}`
+}
+
 /** Imagens do blog (capas e fotos dos artigos): servidas publicamente por /blog/imagem/<chave>. */
 export function gerarChaveBlog(mime: string): string {
   const ext = EXTENSAO_CAPA[mime]

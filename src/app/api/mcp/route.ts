@@ -2,7 +2,8 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { autenticarApi, clienteDoUsuario } from '@/infra/mcp-auth'
 import { criarServidorMcp } from '@/mcp/servidor'
 
-export const maxDuration = 60
+// Criar campanha com vídeo espera a Meta processar o arquivo.
+export const maxDuration = 300
 
 const naoAutorizado = () =>
   Response.json({ erro: 'Token inválido, revogado ou expirado.' }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })

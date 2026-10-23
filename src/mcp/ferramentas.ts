@@ -185,6 +185,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
         'Performance (aba Performance): por cliente e mês, investimento e leads pagos (Meta: formulários e conversas no WhatsApp/Direct; Google Ads: conversões), orgânico do Instagram (cliques nos links do perfil e no link da bio da plataforma, www.gruposrv.com.br/l/<cliente>, que abre o WhatsApp do cliente com uma mensagem pronta), leads da bio confirmados pela equipe e o faturamento e as vendas lançados pela equipe; calcula CPL, ROAS, custo por venda, ticket médio e conversão. Use performance_cliente, registrar_resultado_mes e confirmar_lead_bio. Não há exclusão por aqui.',
+        'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
@@ -525,6 +526,162 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await (await import('@/servicos/performance')).confirmarLead(sb, a.clienteId, a.dia ?? dataDeHoje(new Date()), a.observacao ?? '')
       return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'estrutura_anuncios_cliente',
+    descricao: 'Campanhas › conjuntos › anúncios da Meta (ativos e pausados) e campanhas do Google Ads do cliente, com ids, status, orçamento (diário ou total, em reais), gasto e leads/conversões do período; mais os pedidos aguardando aprovação e as últimas alterações. Use os ids daqui em pausar_anuncio, propor_alteracao_anuncio e adicionar_anuncio_meta.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Gasto dos últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate)').optional(), ate: data('Fim do período escolhido').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const p = periodoDaIA(a)
+      const ctl = await import('@/servicos/controle-anuncios')
+      const g = await import('@/servicos/google-agencia')
+      const google = await g.situacaoGoogle()
+      const enxuto = (o: Awaited<ReturnType<typeof ctl.estruturaMeta>>[number]): unknown => ({ id: o.id, nivel: o.nivel, nome: o.nome, status: o.status, ligado: o.ligado, orcamentoDiario: o.diario, orcamentoTotal: o.total, gasto: o.gasto, leads: o.leads, ...(o.filhos.length ? { filhos: o.filhos.map(enxuto) } : {}) })
+      const [meta, goog, pendentes, ultimas] = await Promise.all([
+        cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => x.map(enxuto)).catch((e: Error) => ({ erro: e.message })) : null,
+        cliente.googleAdsId && google.conectado ? g.estruturaGoogle(cliente.googleAdsId, p) : null,
+        ctl.propostasPendentes(sb, cliente.id),
+        ctl.historico(sb, cliente.id, 10),
+      ])
+      return { cliente: cliente.nome, periodo: p, meta, google: goog, pedidosPendentes: pendentes, ultimasAlteracoes: ultimas }
+    },
+  }),
+
+  definir({
+    nome: 'listar_criativos_cliente',
+    descricao: 'Criativos (imagens e vídeos) que a equipe subiu na biblioteca do cliente (aba Anúncios → Criativos), com id, nome e tipo. Use o id em criar_campanha_meta e adicionar_anuncio_meta.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => (await import('@/servicos/controle-anuncios')).listarCriativos(sb, a.clienteId).then((l) => l.map((c) => ({ id: c.id, nome: c.nome, tipo: c.tipo, criadoEm: c.criadoEm }))),
+  }),
+
+  definir({
+    nome: 'buscar_locais_meta',
+    descricao: 'Procura cidades e estados do Brasil para o público dos anúncios da Meta. Devolve a chave (use em publico.locais) e o tipo (cidade ou estado).',
+    escrita: false,
+    entrada: { busca: z.string().min(2).max(80).describe('Ex.: Belém, Ananindeua, Pará') },
+    executar: async (_ctx, a) => (await import('@/servicos/controle-anuncios')).buscarLocais(a.busca),
+  }),
+
+  definir({
+    nome: 'buscar_interesses_meta',
+    descricao: 'Procura interesses para segmentar o público dos anúncios da Meta (ex.: odontologia, imóveis, academia). Devolve id, nome e tamanho do público.',
+    escrita: false,
+    entrada: { busca: z.string().min(2).max(80) },
+    executar: async (_ctx, a) => (await import('@/servicos/controle-anuncios')).buscarInteresses(a.busca),
+  }),
+
+  definir({
+    nome: 'listar_formularios_meta',
+    descricao: 'Formulários de cadastro (Lead Ads) da Página do cliente, para campanhas de formulário.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      return (await import('@/servicos/controle-anuncios')).formulariosDoCliente(cliente)
+    },
+  }),
+
+  definir({
+    nome: 'pausar_anuncio',
+    descricao: 'Pausa na hora uma campanha, conjunto ou anúncio da Meta, ou uma campanha do Google Ads (só admin e gestor). Fica no histórico. Ids de estrutura_anuncios_cliente.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), plataforma: z.enum(['meta', 'google']), nivel: z.enum(['campanha', 'conjunto', 'anuncio']), objetoId: z.string().regex(/^\d{1,25}$/) },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      return { ok: true, resultado: await (await import('@/servicos/controle-anuncios')).executarAlteracao(sb, { id: userId, papel }, cliente, { plataforma: a.plataforma, nivel: a.nivel, objetoId: a.objetoId, acao: 'pausar' }, 'ia') }
+    },
+  }),
+
+  definir({
+    nome: 'propor_alteracao_anuncio',
+    descricao: 'Pede para ATIVAR ou MUDAR O ORÇAMENTO (em reais; diário, ou total se o item usar orçamento total) de uma campanha, conjunto ou anúncio (Meta) ou campanha (Google Ads). Não executa: cria um pedido que admin ou gestor aprova na aba Anúncios. Explique o motivo com números.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      plataforma: z.enum(['meta', 'google']),
+      nivel: z.enum(['campanha', 'conjunto', 'anuncio']),
+      objetoId: z.string().regex(/^\d{1,25}$/),
+      acao: z.enum(['ativar', 'orcamento']),
+      valor: z.number().positive().max(50000).optional().describe('Novo orçamento em reais (obrigatório para orcamento)'),
+      motivo: z.string().min(5).max(500),
+    },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (a.acao === 'orcamento' && !a.valor) throw new Error('Informe o valor do novo orçamento.')
+      const id = await (await import('@/servicos/controle-anuncios')).proporAlteracao(sb, cliente, { plataforma: a.plataforma, nivel: a.nivel, objetoId: a.objetoId, acao: a.acao, valor: a.valor, motivo: a.motivo })
+      return { ok: true, pedidoId: id, aviso: 'Pedido criado. Admin ou gestor aprova na aba Anúncios da plataforma.' }
+    },
+  }),
+
+  definir({
+    nome: 'criar_campanha_meta',
+    descricao: 'Cria na Meta uma campanha completa, PAUSADA: campanha + conjunto (orçamento diário e público) + um anúncio por criativo. modo: whatsapp (conversas no WhatsApp ligado à Página), direct (conversas no Direct do Instagram), formulario (cadastro na Meta; precisa de formularioId) ou site (cliques para o link). Criativos: ids de listar_criativos_cliente. Público: locais de buscar_locais_meta (vazio = Brasil), interesses de buscar_interesses_meta. Para ir ao ar, use propor_alteracao_anuncio (ativar) na campanha e no conjunto. Só admin e gestor.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      nome: z.string().min(3).max(120),
+      modo: z.enum(['whatsapp', 'direct', 'formulario', 'site']),
+      orcamentoDiario: z.number().positive().max(50000).describe('Reais por dia'),
+      inicio: data('Início').optional(),
+      fim: data('Fim (opcional)').optional(),
+      publico: z.object({
+        locais: z.array(z.object({ chave: z.string().max(40), tipo: z.enum(['cidade', 'estado']), raioKm: z.number().min(10).max(80).optional() })).max(25).optional(),
+        idadeMin: z.number().int().min(18).max(65).optional(),
+        idadeMax: z.number().int().min(18).max(65).optional(),
+        generos: z.enum(['todos', 'homens', 'mulheres']).optional(),
+        interesses: z.array(z.object({ id: z.string().max(40), nome: z.string().max(120) })).max(25).optional(),
+        advantage: z.boolean().optional().describe('Público Advantage+ (a Meta amplia quando achar melhor)'),
+      }),
+      anuncios: z.array(z.object({
+        criativoId: id('Criativo da biblioteca'),
+        nome: z.string().max(80).optional(),
+        texto: z.string().min(1).max(2200).describe('Texto principal'),
+        titulo: z.string().max(80).optional(),
+        descricao: z.string().max(120).optional(),
+        botao: z.string().regex(/^[A-Z_]{3,40}$/).optional().describe('CTA da Meta para site/formulário, ex.: LEARN_MORE, SIGN_UP, GET_QUOTE, CONTACT_US'),
+      })).min(1).max(6),
+      link: z.string().url().optional().describe('Obrigatório no modo site'),
+      formularioId: z.string().regex(/^\d{1,25}$/).optional().describe('Obrigatório no modo formulario'),
+    },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const r = await (await import('@/servicos/controle-anuncios')).criarCampanhaMeta(sb, { id: userId, papel }, cliente, a)
+      return { ...r, status: 'PAUSADA', proximoPasso: 'Revise no Gerenciador de Anúncios se quiser e use propor_alteracao_anuncio (ativar) na campanha e no conjunto.' }
+    },
+  }),
+
+  definir({
+    nome: 'adicionar_anuncio_meta',
+    descricao: 'Sobe um criativo da biblioteca como anúncio novo, PAUSADO, num conjunto que já existe (o destino segue o do conjunto: WhatsApp, Direct, formulário ou site). Para ir ao ar, proponha ativar o anúncio. Só admin e gestor.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      conjuntoId: z.string().regex(/^\d{1,25}$/),
+      criativoId: id('Criativo da biblioteca'),
+      nome: z.string().max(80).optional(),
+      texto: z.string().min(1).max(2200),
+      titulo: z.string().max(80).optional(),
+      descricao: z.string().max(120).optional(),
+      botao: z.string().regex(/^[A-Z_]{3,40}$/).optional(),
+      link: z.string().url().optional().describe('Para conjuntos de site'),
+      formularioId: z.string().regex(/^\d{1,25}$/).optional().describe('Para conjuntos de formulário'),
+    },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const anuncio = { criativoId: a.criativoId, nome: a.nome, texto: a.texto, titulo: a.titulo, descricao: a.descricao, botao: a.botao }
+      const id = await (await import('@/servicos/controle-anuncios')).adicionarAnuncioMeta(sb, { id: userId, papel }, cliente, { conjuntoId: a.conjuntoId, link: a.link, formularioId: a.formularioId, anuncio })
+      return { ok: true, anuncioId: id, status: 'PAUSADO' }
     },
   }),
 

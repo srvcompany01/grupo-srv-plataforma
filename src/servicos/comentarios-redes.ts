@@ -22,7 +22,7 @@ const CAMPOS_IG = 'id,text,username,timestamp,like_count,replies{id,text,usernam
 const CAMPOS_FB = 'id,message,from,created_time,like_count,comments.limit(25){id,message,from,created_time,like_count}'
 const corta = (s: string | undefined, n: number) => (s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
 
-async function paginaDoCliente(paginaId: string): Promise<{ token: string; ig: { id: string; usuario: string } | null }> {
+export async function paginaDoCliente(paginaId: string): Promise<{ token: string; ig: { id: string; usuario: string } | null }> {
   const p = await graph<{ access_token?: string; instagram_business_account?: { id: string; username: string } }>(paginaId, { params: { fields: 'access_token,instagram_business_account{id,username}' } })
   if (!p.access_token) throw new ErroMeta('Sem acesso à Página do cliente.')
   return { token: p.access_token, ig: p.instagram_business_account ? { id: p.instagram_business_account.id, usuario: p.instagram_business_account.username } : null }

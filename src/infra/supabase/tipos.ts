@@ -47,6 +47,24 @@ export type Database = {
         Update: { id?: string; client_id?: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
         Relationships: []
       }
+      ad_changes: {
+        Row: { id: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome: string; acao: string; antes: string; depois: string; origem: string; created_by: string | null; created_at: string }
+        Insert: { id?: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome?: string; acao: string; antes?: string; depois?: string; origem?: string; created_by?: string | null; created_at?: string }
+        Update: { id?: string; client_id?: string; plataforma?: string; nivel?: string; objeto_id?: string; objeto_nome?: string; acao?: string; antes?: string; depois?: string; origem?: string; created_by?: string | null; created_at?: string }
+        Relationships: [{ foreignKeyName: 'ad_changes_created_by_fkey'; columns: ['created_by']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] }]
+      }
+      ad_proposals: {
+        Row: { id: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome: string; acao: string; valor_atual: number | null; valor_novo: number | null; motivo: string; status: string; erro: string | null; created_by: string | null; created_at: string; decided_by: string | null; decided_at: string | null }
+        Insert: { id?: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome?: string; acao: string; valor_atual?: number | null; valor_novo?: number | null; motivo?: string; status?: string; erro?: string | null; created_by?: string | null; created_at?: string; decided_by?: string | null; decided_at?: string | null }
+        Update: { id?: string; client_id?: string; plataforma?: string; nivel?: string; objeto_id?: string; objeto_nome?: string; acao?: string; valor_atual?: number | null; valor_novo?: number | null; motivo?: string; status?: string; erro?: string | null; created_by?: string | null; created_at?: string; decided_by?: string | null; decided_at?: string | null }
+        Relationships: [{ foreignKeyName: 'ad_proposals_created_by_fkey'; columns: ['created_by']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] }, { foreignKeyName: 'ad_proposals_client_id_fkey'; columns: ['client_id']; isOneToOne: false; referencedRelation: 'clients'; referencedColumns: ['id'] }]
+      }
+      ad_creatives: {
+        Row: { id: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta: Json; created_by: string | null; created_at: string }
+        Insert: { id?: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta?: Json; created_by?: string | null; created_at?: string }
+        Update: { id?: string; client_id?: string; nome?: string; tipo?: string; chave?: string; mime?: string; tamanho?: number; meta?: Json; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
       client_monthly_results: {
         Row: { client_id: string; month: string; revenue: number | null; sales: number | null; notes: string; updated_by: string | null; updated_at: string }
         Insert: { client_id: string; month: string; revenue?: number | null; sales?: number | null; notes?: string; updated_by?: string | null; updated_at?: string }
@@ -1713,6 +1731,7 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
       blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }
       blog_registrar_eventos: { Args: { p_slug: string; p_eventos: string[] }; Returns: undefined }

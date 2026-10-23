@@ -1,4 +1,4 @@
-import { Megaphone, MousePointerClick, PlugZap, Search, Target, Users, Wallet, Eye, Calculator } from 'lucide-react'
+import { Megaphone, MousePointerClick, PlugZap, Search, Target, Users, Wallet, Eye, Calculator, Bot, History, ImagePlus, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
@@ -22,6 +22,11 @@ import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/go
 import { pagoPorDiaMeta } from '@/servicos/meta-anuncios'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 import { NomeCliente } from '@/componentes/NomeCliente'
+import { ArvoreMeta, Criativos, Propostas, TabelaGoogle } from '@/componentes/anuncios/ControleAnuncios'
+import { podeGerirAnuncios } from '@/dominio/controle-anuncios'
+import { urlLeitura } from '@/infra/r2'
+import { estruturaGoogle } from '@/servicos/google-agencia'
+import { estruturaMeta, historico, listarCriativos, propostasPendentes } from '@/servicos/controle-anuncios'
 
 export const maxDuration = 60
 
@@ -62,6 +67,8 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const escolhido = comAnuncios.find((c) => c.id === sp.cliente) ?? null
   const base = escolhido ? `/anuncios?cliente=${escolhido.id}` : '/anuncios'
   const seletorPeriodo = <SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />
+  const podeGerir = podeGerirAnuncios(eu.papel)
+  const propostas = await propostasPendentes(sb, escolhido?.id)
 
   return (
     <div className="page-shell">
@@ -74,8 +81,22 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
       </div>
       {aviso && <p className="rounded-lg border border-borda bg-fundo px-3 py-2 text-rotulo text-texto-2">{aviso}</p>}
 
+      {propostas.length > 0 && (
+        <Modulo icone={Bot} titulo={`Pedidos da IA aguardando aprovação (${propostas.length})`} descricao="Ativar e mudar orçamento pela IA só acontece depois que admin ou gestor aprova">
+          <Propostas propostas={propostas} podeGerir={podeGerir} mostrarCliente={!escolhido} />
+        </Modulo>
+      )}
+
       {escolhido ? (
         <>
+          <Suspense fallback={<Modulo icone={SlidersHorizontal} titulo="Controle das campanhas" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as campanhas…</p></Modulo>}>
+            <Controle cliente={escolhido} periodo={periodo} googleConectado={google.conectado} podeGerir={podeGerir} seletor={seletorPeriodo} />
+          </Suspense>
+          {escolhido.metaContaId && (
+            <Suspense fallback={null}>
+              <BibliotecaCriativos clienteId={escolhido.id} />
+            </Suspense>
+          )}
           <Suspense fallback={<Modulo icone={Target} titulo="Insights e recomendações" descricao="Analisando…"><p className="py-6 text-center text-rotulo text-texto-3">Analisando as contas…</p></Modulo>}>
             <AnalisePago cliente={escolhido} periodo={periodo} googleConectado={google.conectado} seletor={seletorPeriodo} />
           </Suspense>
@@ -89,6 +110,9 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
               <GoogleAds contaId={escolhido.googleAdsId} periodo={periodo} seletor={seletorPeriodo} />
             </Suspense>
           )}
+          <Suspense fallback={null}>
+            <Historico clienteId={escolhido.id} />
+          </Suspense>
           <EmBreve itens={['TikTok Ads', 'LinkedIn Ads']} />
         </>
       ) : (
@@ -105,6 +129,66 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
         </div>
       </Modulo>
     </div>
+  )
+}
+
+/** Liga/desliga e orçamento das campanhas, conjuntos e anúncios (Meta) e das campanhas (Google Ads). */
+async function Controle({ cliente, periodo, googleConectado, podeGerir, seletor }: { cliente: Cliente; periodo: PeriodoAnuncios; googleConectado: boolean; podeGerir: boolean; seletor: React.ReactNode }) {
+  const [meta, goog] = await Promise.all([
+    cliente.metaContaId ? estruturaMeta(cliente.metaContaId, periodo).catch((e: Error) => ({ erro: e.message })) : null,
+    cliente.googleAdsId && googleConectado ? estruturaGoogle(cliente.googleAdsId, periodo) : null,
+  ])
+  const erro = (e: { erro: string }) => <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{e.erro}</p>
+  return (
+    <Modulo icone={SlidersHorizontal} titulo="Controle das campanhas" descricao={<><NomeCliente nome={cliente.nome} /> · ligue, pause e ajuste o orçamento aqui mesmo · gasto de {rotuloPeriodo(periodo)}{!podeGerir && ' · só admin e gestor alteram'}</>} acoes={seletor}>
+      <div className="space-y-5">
+        {meta && (
+          <section className="space-y-2">
+            <h3 className="flex items-center gap-2 text-rotulo font-semibold text-texto"><span className="h-2.5 w-2.5 rounded-full bg-[#0866ff]" aria-hidden /> Meta</h3>
+            {'erro' in meta ? erro(meta) : <ArvoreMeta clienteId={cliente.id} campanhas={meta} podeGerir={podeGerir} />}
+          </section>
+        )}
+        {goog && (
+          <section className="space-y-2">
+            <h3 className="flex items-center gap-2 text-rotulo font-semibold text-texto"><span className="h-2.5 w-2.5 rounded-full bg-[#eb6834]" aria-hidden /> Google Ads</h3>
+            {'erro' in goog ? erro(goog) : <TabelaGoogle clienteId={cliente.id} campanhas={goog} podeGerir={podeGerir} />}
+          </section>
+        )}
+        {!meta && !goog && <p className="text-rotulo text-texto-3">O cliente não tem conta de anúncios ligada (ou o Google da agência não está conectado).</p>}
+        <p className="text-legenda text-texto-3">Criar campanhas, públicos e subir criativos é pela IA (Claude ou Codex, pelo MCP da plataforma): ela monta tudo pausado e os pedidos de ativar ou de orçamento aparecem aqui para aprovar.</p>
+      </div>
+    </Modulo>
+  )
+}
+
+async function BibliotecaCriativos({ clienteId }: { clienteId: string }) {
+  const lista = await listarCriativos(await criarClienteServidor(), clienteId)
+  const criativos = await Promise.all(lista.map(async (c) => ({ id: c.id, nome: c.nome, tipo: c.tipo, url: await urlLeitura(c.chave) })))
+  return (
+    <Modulo icone={ImagePlus} titulo="Criativos" descricao="Biblioteca do cliente para as campanhas da Meta: suba aqui e peça à IA para montar a campanha">
+      <Criativos clienteId={clienteId} criativos={criativos} />
+    </Modulo>
+  )
+}
+
+const ROTULO_ACAO: Record<string, string> = { pausar: 'Pausou', ativar: 'Ativou', orcamento: 'Orçamento', criar: 'Criou' }
+
+async function Historico({ clienteId }: { clienteId: string }) {
+  const itens = await historico(await criarClienteServidor(), clienteId)
+  if (!itens.length) return null
+  return (
+    <Modulo icone={History} titulo="Histórico de alterações" descricao="O que foi mudado nos anúncios pela plataforma e pela IA">
+      <ul className="divide-y divide-borda/60 text-rotulo">
+        {itens.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
+            <span className="w-28 shrink-0 tabular-nums text-legenda text-texto-3">{new Date(a.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}</span>
+            <span className={`rounded-full px-1.5 py-0.5 text-micro font-semibold ${a.acao === 'pausar' ? 'bg-fundo text-texto-2' : a.acao === 'ativar' ? 'bg-sucesso-fundo text-sucesso-forte' : a.acao === 'criar' ? 'bg-[#e6f0fb] text-[#2a78d6]' : 'bg-aviso-fundo text-aviso-forte'}`}>{ROTULO_ACAO[a.acao] ?? a.acao}</span>
+            <span className="min-w-0 flex-1 truncate">{a.plataforma === 'meta' ? 'Meta' : 'Google'} · {a.nome}{a.antes || a.depois ? <span className="text-texto-3"> · {a.antes ? `${a.antes} → ` : ''}{a.depois}</span> : null}</span>
+            <span className="text-legenda text-texto-3">{a.origem === 'ia' ? 'IA · ' : ''}{a.por}</span>
+          </li>
+        ))}
+      </ul>
+    </Modulo>
   )
 }
 
