@@ -142,3 +142,61 @@ export function checklistSeo(p: DadosSeo): { itens: ItemChecklist[]; nota: numbe
 
 /** Link da landing com a origem marcada (para saber qual artigo trouxe o lead). */
 export const linkLanding = (slugArtigo: string, landing = LANDING_PADRAO) => `${landing}?utm_source=blog&utm_medium=artigo&utm_campaign=${encodeURIComponent(slugArtigo)}`
+
+export type Metadados = { titulo?: string; seoTitulo?: string; resumo?: string; slug?: string; palavraChave?: string; capaAlt?: string; categoria?: string }
+
+const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+// Rótulos que as IAs costumam usar (português e inglês), já normalizados. A ordem importa: "titulo seo" antes de "titulo".
+const ROTULOS: [keyof Metadados, string[]][] = [
+  ['seoTitulo', ['titulo seo', 'seo title', 'meta title', 'metatitle', 'title tag', 'titulo para o google', 'meta titulo', 'titulo meta', 'titulo da pagina', 'seo titulo', 'titulo otimizado']],
+  ['resumo', ['meta description', 'metadescription', 'meta descricao', 'descricao meta', 'descricao seo', 'seo description', 'descricao', 'description', 'resumo', 'excerpt', 'meta desc']],
+  ['palavraChave', ['palavra chave foco', 'palavra chave principal', 'palavra chave', 'palavrachave', 'focus keyword', 'focus keyphrase', 'keyword principal', 'main keyword', 'keyword', 'keyphrase', 'frase chave', 'termo principal']],
+  ['slug', ['slug', 'url amigavel', 'url', 'permalink', 'endereco']],
+  ['capaAlt', ['texto alternativo', 'alt text', 'alt da imagem', 'alt da capa', 'alt', 'image alt']],
+  ['categoria', ['categoria', 'category']],
+  ['titulo', ['titulo do artigo', 'titulo h1', 'h1', 'headline', 'titulo', 'title']],
+]
+
+function campoDoRotulo(rotulo: string): keyof Metadados | null {
+  const r = normalizar(rotulo)
+  for (const [campo, nomes] of ROTULOS) if (nomes.includes(r)) return campo
+  for (const [campo, nomes] of ROTULOS) if (nomes.some((n) => n.length > 4 && r.startsWith(n))) return campo
+  return null
+}
+
+/** Tira aspas, negrito e notas como "(155 caracteres)" do valor. */
+const limparValor = (v: string) => v.replace(/\s*\((\d+|aprox\.?\s*\d+)\s*(caracteres|chars?|characters)\)\s*$/i, '').replace(/^[\s"'“”*`]+|[\s"'“”*`]+$/g, '').trim()
+
+/**
+ * Lê os metadados que uma IA entregou junto com o artigo: JSON ({"metaTitle": …}) ou linhas "Rótulo: valor"
+ * (com ou sem negrito, marcador, aspas). Devolve o que reconheceu e os rótulos que não usa (ex.: tags).
+ */
+export function lerMetadados(texto: string): { dados: Metadados; ignorados: string[] } {
+  const dados: Metadados = {}
+  const ignorados: string[] = []
+  const guardar = (rotulo: string, valor: unknown) => {
+    const v = typeof valor === 'string' ? limparValor(valor) : Array.isArray(valor) ? valor.map(String).join(', ') : ''
+    if (!v) return
+    const campo = campoDoRotulo(rotulo)
+    if (!campo) return void ignorados.push(rotulo.trim())
+    if (dados[campo]) return
+    dados[campo] = campo === 'slug' ? slugify(v.replace(/\/+$/, '').split('/').pop() ?? v) : v
+  }
+  const bruto = texto.trim()
+  if (bruto.startsWith('{')) {
+    try {
+      const json = JSON.parse(bruto.replace(/^```(?:json)?|```$/g, '')) as Record<string, unknown>
+      const plano = Object.entries(json).flatMap(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.entries(v as Record<string, unknown>) : [[k, v] as [string, unknown]]))
+      for (const [k, v] of plano) guardar(k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' '), v)
+      return { dados, ignorados }
+    } catch {
+      // não era JSON válido: segue lendo linha a linha
+    }
+  }
+  for (const linha of bruto.split('\n')) {
+    const m = linha.match(/^\s*(?:[-*•>]\s*|\d+[.)]\s*)?(?:\*\*|__)?([^:：\n]{2,45}?)(?:\*\*|__)?\s*[:：]\s*(.+)$/)
+    if (m && !/^https?$/i.test(m[1].trim())) guardar(m[1].replace(/[*_#`]/g, ''), m[2])
+  }
+  return { dados, ignorados }
+}

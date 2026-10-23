@@ -33,3 +33,25 @@ describe('blog', () => {
     expect(bom.nota).toBe(100)
   })
 })
+
+describe('metadados colados de outra IA', () => {
+  it('linhas "Rótulo: valor" em português e inglês', async () => {
+    const { lerMetadados } = await import('@/dominio/blog')
+    const r = lerMetadados(`**Título SEO:** Tráfego pago: guia para pequenas empresas
+- **Meta description:** "Entenda quanto investir em tráfego pago e como medir o retorno." (62 caracteres)
+Slug: /blog/trafego-pago-guia/
+Palavra-chave foco: tráfego pago
+Palavras-chave secundárias: anúncios, meta ads
+Alt da imagem: gestor olhando campanhas
+Categoria: Tráfego pago
+Título: Tráfego pago: o guia completo`)
+    expect(r.dados).toEqual({ seoTitulo: 'Tráfego pago: guia para pequenas empresas', resumo: 'Entenda quanto investir em tráfego pago e como medir o retorno.', slug: 'trafego-pago-guia', palavraChave: 'tráfego pago', capaAlt: 'gestor olhando campanhas', categoria: 'Tráfego pago', titulo: 'Tráfego pago: o guia completo' })
+    expect(r.ignorados).toEqual(['Palavras-chave secundárias'])
+  })
+  it('JSON (inclusive aninhado e em camelCase)', async () => {
+    const { lerMetadados } = await import('@/dominio/blog')
+    const r = lerMetadados('{"seo": {"metaTitle": "Reels que vendem", "metaDescription": "7 formatos."}, "focusKeyword": "reels", "slug": "reels-que-vendem", "tags": ["a"]}')
+    expect(r.dados).toEqual({ seoTitulo: 'Reels que vendem', resumo: '7 formatos.', palavraChave: 'reels', slug: 'reels-que-vendem' })
+    expect(r.ignorados).toEqual(['tags'])
+  })
+})

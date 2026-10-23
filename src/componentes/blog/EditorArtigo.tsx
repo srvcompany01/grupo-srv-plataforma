@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { Markdown } from '@tiptap/markdown'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { Bold, CalendarClock, ExternalLink, Heading2, Heading3, ImagePlus, Italic, Link as IconeLink, List, ListOrdered, Quote, Redo2, Save, Send, Sparkles, Undo2, Upload } from 'lucide-react'
+import { Bold, CalendarClock, ClipboardPaste, ExternalLink, Heading2, Heading3, ImagePlus, Italic, Link as IconeLink, List, ListOrdered, Quote, Redo2, Save, Send, Sparkles, Undo2, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
@@ -13,7 +13,7 @@ import { enviarImagemAcao, gerarRascunhoAcao, publicacaoAcao, salvarPostAcao } f
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { SeloTom } from '@/componentes/insights/tom'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { checklistSeo, contarPalavras, slugify } from '@/dominio/blog'
+import { checklistSeo, contarPalavras, lerMetadados, slugify } from '@/dominio/blog'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { Autor, Categoria, PostEquipe } from '@/servicos/blog'
 
@@ -91,6 +91,7 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao }: 
   const [agendar, setAgendar] = useState('')
   const [ia, setIa] = useState({ aberto: !post, tema: '', publico: '' })
   const [gerando, setGerando] = useState(false)
+  const [colar, setColar] = useState({ aberto: false, metadados: '', artigo: '' })
   const entradaCapa = useRef<HTMLInputElement>(null)
   const entradaImagem = useRef<HTMLInputElement>(null)
 
@@ -189,6 +190,39 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao }: 
     avisar({ ok: 'Rascunho gerado. Revise, ajuste com a experiência da agência e salve.' }, true)
   }
 
+  /** Preenche os campos com os metadados (e, se veio, o texto) que outra IA entregou. */
+  const aplicarColados = async () => {
+    const { dados, ignorados } = lerMetadados(colar.metadados)
+    let artigo = colar.artigo.trim()
+    // O título costuma vir como "# Título" na primeira linha: vira o título do artigo, não um subtítulo.
+    const h1 = artigo.match(/^#\s+(.+)\n+/)
+    if (h1) artigo = artigo.slice(h1[0].length)
+    if (artigo && contarPalavras(conteudo) > 30 && !(await confirmar({ titulo: 'Substituir o texto atual?', descricao: 'O artigo colado entra no lugar do texto que está no editor.', confirmar: 'Substituir', perigo: true }))) return
+    const preenchidos: string[] = []
+    const novoTitulo = dados.titulo ?? h1?.[1].trim()
+    if (novoTitulo) { setTitulo(novoTitulo.slice(0, 160)); preenchidos.push('título') }
+    if (dados.seoTitulo) { setSeoTitulo(dados.seoTitulo.slice(0, 80)); preenchidos.push('título para o Google') }
+    if (dados.resumo) { setResumo(dados.resumo.slice(0, 300)); preenchidos.push('descrição') }
+    if (dados.palavraChave) { setPalavraChave(dados.palavraChave.slice(0, 80)); preenchidos.push('palavra-chave') }
+    if (dados.capaAlt) { setCapaAlt(dados.capaAlt.slice(0, 200)); preenchidos.push('texto alternativo da capa') }
+    if (dados.slug) { setSlug(dados.slug); setSlugManual(true); preenchidos.push('slug') }
+    else if (novoTitulo && !slugManual) setSlug(slugify(novoTitulo))
+    if (dados.categoria) {
+      const alvo = slugify(dados.categoria)
+      const c = categorias.find((x) => slugify(x.nome) === alvo || x.slug === alvo || slugify(x.nome).startsWith(alvo) || alvo.startsWith(x.slug))
+      if (c) { setCategoriaId(c.id); preenchidos.push('categoria') } else ignorados.push(`Categoria "${dados.categoria}" (não existe aqui)`)
+    }
+    if (artigo) {
+      editor?.commands.setContent(artigo, { contentType: 'markdown' })
+      setConteudo(artigo)
+      preenchidos.push('texto do artigo')
+    }
+    if (!preenchidos.length) return void avisar({ erro: 'Não reconheci nenhum metadado. Use linhas como "Meta description: …" ou um JSON.' })
+    setSujo(true)
+    setColar({ aberto: false, metadados: '', artigo: '' })
+    avisar({ ok: `Preenchido: ${preenchidos.join(', ')}.${ignorados.length ? ` Não usado: ${ignorados.join(', ')}.` : ''} Confira e salve.` }, true)
+  }
+
   const seo = checklistSeo({ titulo, seoTitulo, resumo, palavraChave, conteudo, capa: !!capaChave, capaAlt, slug: slug || slugify(titulo) })
   const tomNota = seo.nota >= 80 ? 'bom' : seo.nota >= 50 ? 'atencao' : 'ruim'
 
@@ -212,11 +246,27 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao }: 
           </section>
         )}
 
+        {colar.aberto && (
+          <section className="space-y-3 rounded-xl border border-[#2a78d6]/30 bg-[#2a78d6]/5 p-4">
+            <h2 className="flex items-center gap-2 text-corpo font-semibold text-texto"><ClipboardPaste className="h-4 w-4 text-[#2a78d6]" /> Colar artigo e metadados</h2>
+            <p className="text-legenda text-texto-3">Cole o que outra IA entregou. Metadados podem vir em linhas (ex.: <code>Meta title: …</code>, <code>Meta description: …</code>, <code>Slug: …</code>, <code>Palavra-chave foco: …</code>, <code>Alt da imagem: …</code>, <code>Categoria: …</code>) ou em JSON.</p>
+            <div className="grid gap-2 md:grid-cols-2">
+              <label className="space-y-1"><span className={rotulo}>Metadados</span><textarea className={`${campo} font-mono text-legenda`} rows={9} value={colar.metadados} onChange={(e) => setColar({ ...colar, metadados: e.target.value })} placeholder={'Título SEO: …\nMeta description: …\nSlug: …\nPalavra-chave foco: …'} /></label>
+              <label className="space-y-1"><span className={rotulo}>Texto do artigo em Markdown (opcional)</span><textarea className={`${campo} font-mono text-legenda`} rows={9} value={colar.artigo} onChange={(e) => setColar({ ...colar, artigo: e.target.value })} placeholder={'# Título\n\nIntrodução…\n\n## Primeiro subtítulo\n…'} /></label>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => void aplicarColados()} disabled={!colar.metadados.trim() && !colar.artigo.trim()} className={botaoPrimario}><ClipboardPaste className="h-3.5 w-3.5" /> Preencher os campos</button>
+              <button type="button" onClick={() => setColar({ ...colar, aberto: false })} className={botaoFantasma}>Fechar</button>
+            </div>
+          </section>
+        )}
+
         <input value={titulo} onChange={(e) => mudarTitulo(e.target.value)} placeholder="Título do artigo" maxLength={160} className="w-full bg-transparent text-2xl font-bold text-texto outline-none placeholder:text-texto-3" />
         <div className="flex flex-wrap items-center gap-2 text-legenda text-texto-3">
           <span>www.gruposrv.com.br/blog/</span>
           <input value={slug} onChange={(e) => { setSlug(slugify(e.target.value)); setSlugManual(true); setSujo(true) }} className="min-w-48 flex-1 rounded border border-borda bg-white px-2 py-1 font-mono text-legenda text-texto" />
           {!ia.aberto && <button type="button" onClick={() => setIa({ ...ia, aberto: true })} className="inline-flex items-center gap-1 font-semibold text-[#6250d6] hover:underline"><Sparkles className="h-3 w-3" /> Escrever com IA</button>}
+          {!colar.aberto && <button type="button" onClick={() => setColar({ ...colar, aberto: true })} className="inline-flex items-center gap-1 font-semibold text-[#2a78d6] hover:underline"><ClipboardPaste className="h-3 w-3" /> Colar metadados</button>}
         </div>
 
         <div className="overflow-hidden rounded-xl border border-borda bg-white">
