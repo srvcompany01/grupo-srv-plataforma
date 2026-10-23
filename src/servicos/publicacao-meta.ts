@@ -27,6 +27,7 @@ export async function graph<T = Record<string, unknown>>(caminho: string, opcoes
     const e = corpo.error
     const motivo = e.error_user_msg || e.message || 'erro desconhecido'
     if (e.code === 190) throw new ErroMeta('O token do Meta expirou ou foi revogado.')
+    if ((e.code === 10 || e.code === 200) && /pages_read_engagement|Page Public|pages_show_list|instagram/i.test(motivo)) throw new ErroMeta('O usuário do sistema do Meta não tem acesso a esta Página. No Gerenciador de Negócios: Configurações do negócio → Usuários do sistema → seu usuário → Atribuir ativos → Páginas (e Contas do Instagram) → escolha a Página do cliente com controle total.')
     if (e.code === 10 || e.code === 200) throw new ErroMeta(`Sem permissão na conta do cliente: ${motivo}`)
     throw new ErroMeta(motivo)
   }

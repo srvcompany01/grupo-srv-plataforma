@@ -7,7 +7,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import { dataDeHoje } from '@/dominio/filtros'
 import { perfisDoNegocio } from '@/servicos/google-agencia'
-import { buscarCliente, definirPerfilGoogle, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
+import { buscarCliente, contaRepetida, definirPerfilGoogle, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
 // Cliente do usuário: a RLS só permite admin e gestores.
 
@@ -17,6 +17,8 @@ export async function criarCliente(_: Resultado, form: FormData): Promise<Result
   if ('erro' in campos) return { erro: campos.erro }
   if (!campos.name) return { erro: 'Informe o nome do cliente.' }
   const sb = await criarClienteServidor()
+  const repetida = await contaRepetida(sb, campos, null)
+  if (repetida) return { erro: repetida }
   let id = ''
   const r = await tentar(async () => {
     const { data, error } = await sb.from('clients').insert(campos).select('id').single()
@@ -34,6 +36,8 @@ export async function editarCliente(id: string, _: Resultado, form: FormData): P
   if ('erro' in campos) return { erro: campos.erro }
   if (!campos.name) return { erro: 'Informe o nome do cliente.' }
   const sb = await criarClienteServidor()
+  const repetida = await contaRepetida(sb, campos, id)
+  if (repetida) return { erro: repetida }
   const r = await tentar(async () => {
     const { error, count } = await sb.from('clients').update(campos, { count: 'exact' }).eq('id', id)
     if (error) throw error

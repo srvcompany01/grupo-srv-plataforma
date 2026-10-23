@@ -113,6 +113,26 @@ export function lerFormCliente(form: FormData): CamposFormCliente | { erro: stri
   }
 }
 
+/**
+ * Conta de anúncios, Página ou conta do Google Ads que já está no cadastro de OUTRO cliente (o erro mais comum ao
+ * copiar o link do Gerenciador de Anúncios, que traz a conta que estava aberta). null = nada repetido.
+ */
+export async function contaRepetida(sb: Supabase, campos: { meta_ad_account_id: string | null; meta_page_id: string | null; google_ads_customer_id: string | null }, ignorarId: string | null): Promise<string | null> {
+  const verificar = [
+    ['meta_ad_account_id', campos.meta_ad_account_id, 'A conta de anúncios do Meta'],
+    ['meta_page_id', campos.meta_page_id, 'A Página do Facebook (Biblioteca de Anúncios)'],
+    ['google_ads_customer_id', campos.google_ads_customer_id, 'A conta do Google Ads'],
+  ] as const
+  for (const [coluna, valor, rotulo] of verificar) {
+    if (!valor) continue
+    let q = sb.from('clients').select('name').eq(coluna, valor).limit(1)
+    if (ignorarId) q = q.neq('id', ignorarId)
+    const { data } = await q
+    if (data?.length) return `${rotulo} informada já está no cadastro de "${data[0].name}". Confira o número: o link do Gerenciador de Anúncios traz a conta que estava aberta.`
+  }
+  return null
+}
+
 /** Grava a ordem da galeria: a lista inteira, na ordem em que ficou. Só admin/gestor (RLS). */
 export async function ordenarGaleria(sb: Supabase, ids: string[]): Promise<void> {
   const posicoes = generateNKeysBetween(null, null, ids.length)

@@ -3,7 +3,7 @@ import { Modulo } from '@/componentes/Modulo'
 import type { ReactNode } from 'react'
 import { rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { totaisAnuncios, type AnuncioAvaliado, type Desempenho, type Ranking } from '@/dominio/anuncios-meta'
-import { anunciosAtivos } from '@/servicos/meta-anuncios'
+import { anunciosAtivos, nomeDaConta } from '@/servicos/meta-anuncios'
 
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -72,9 +72,9 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
  * `mostrarGasto` só para a equipe (o cliente vê resultados, não o investimento). `seletor` troca o período.
  */
 export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode }) {
-  const r = await anunciosAtivos(contaId, periodo)
+  const [r, conta] = await Promise.all([anunciosAtivos(contaId, periodo), mostrarGasto ? nomeDaConta(contaId) : Promise.resolve(null)])
   return (
-    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`Facebook e Instagram · resultados de ${rotuloPeriodo(periodo)}, direto do Meta`} acoes={seletor}>
+    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
       <div className="@container space-y-3">
       {'erro' in r ? (
         <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>

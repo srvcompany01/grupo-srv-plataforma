@@ -63,3 +63,16 @@ export async function pagoPorDiaMeta(contaId: string, periodo: Pick<PeriodoAnunc
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
   }
 }
+
+/** Nome da conta de anúncios (para conferir no cadastro que a conta é mesmo do cliente). Cache de 1 hora. */
+export async function nomeDaConta(contaId: string): Promise<string | null> {
+  const token = process.env.META_ACCESS_TOKEN
+  if (!token) return null
+  try {
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}?${new URLSearchParams({ fields: 'name', access_token: token })}`, { next: { revalidate: 3600 } })
+    const corpo = (await r.json()) as { name?: string }
+    return corpo.name ?? null
+  } catch {
+    return null
+  }
+}

@@ -153,7 +153,7 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
     }
   } catch (e) {
     console.error('Instagram insights', paginaId, e instanceof Error ? e.message : e)
-    if (e instanceof ErroMeta) return { erro: /permission|permiss/i.test(e.message) ? `O token do Meta não tem permissão de insights deste Instagram (instagram_manage_insights): ${e.message}` : e.message }
+    if (e instanceof ErroMeta) return { erro: /usuário do sistema/.test(e.message) ? e.message : /permission|permiss/i.test(e.message) ? `O token do Meta não tem permissão de insights deste Instagram (instagram_manage_insights): ${e.message}` : e.message }
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
   }
 }
