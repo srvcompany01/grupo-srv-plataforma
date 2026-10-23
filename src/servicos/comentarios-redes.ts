@@ -42,11 +42,13 @@ async function comentariosDoCliente(c: { id: string; meta_page_id: string; meta_
   const pagina = await paginaDoCliente(c.meta_page_id)
   const linhas: Linha[] = []
   if (pagina.ig) {
-    const midias = await graph<{ data: { id: string; caption?: string; permalink?: string; comments_count?: number }[] }>(`${pagina.ig.id}/media`, { params: { fields: 'id,caption,permalink,comments_count', limit: '15' } })
-    for (const m of midias.data.filter((x) => (x.comments_count ?? 0) > 0)) {
-      const r = await graph<{ data: ComentarioIG[] }>(`${m.id}/comments`, { params: { fields: CAMPOS_IG, limit: '50' } })
+    // Posts e comentários numa consulta só (cada consulta à Meta leva quase 1 segundo).
+    const midias = await graph<{ data: { id: string; caption?: string; permalink?: string; comments?: { data?: ComentarioIG[] } }[] }>(`${pagina.ig.id}/media`, {
+      params: { fields: `id,caption,permalink,comments.limit(50){${CAMPOS_IG}}`, limit: '15' },
+    })
+    for (const m of midias.data) {
       const base = { client_id: c.id, origem: 'organico' as const, post_id: m.id, post_link: m.permalink ?? '', post_texto: corta(m.caption, 300), anuncio_nome: '' }
-      for (const x of r.data) linhas.push(...doIG(x, base, pagina.ig.usuario, null))
+      for (const x of m.comments?.data ?? []) linhas.push(...doIG(x, base, pagina.ig.usuario, null))
     }
   }
   const posts = await graph<{ data: { id: string; message?: string; permalink_url?: string; comments?: { data?: ComentarioFB[] } }[] }>(`${c.meta_page_id}/posts`, {
@@ -60,22 +62,27 @@ async function comentariosDoCliente(c: { id: string; meta_page_id: string; meta_
     const ads = await graph<{ data: { name?: string; creative?: { effective_object_story_id?: string; effective_instagram_media_id?: string; body?: string } }[] }>(`act_${c.meta_ad_account_id}/ads`, {
       params: { fields: 'name,creative{effective_object_story_id,effective_instagram_media_id,body}', effective_status: '["ACTIVE"]', limit: '40' },
     })
+    // Comentários de cada anúncio em paralelo (um anúncio pode repetir o mesmo post: busca uma vez só).
     const vistos = new Set<string>()
+    const tarefas: Promise<void>[] = []
     for (const a of ads.data) {
       const base = { client_id: c.id, origem: 'anuncio' as const, post_texto: corta(a.creative?.body, 300), anuncio_nome: corta(a.name, 200) }
       const igm = a.creative?.effective_instagram_media_id
       if (igm && !vistos.has(igm)) {
         vistos.add(igm)
-        const r = await graph<{ data: ComentarioIG[] }>(`${igm}/comments`, { params: { fields: CAMPOS_IG, limit: '50' } }).catch(() => ({ data: [] }))
-        for (const x of r.data) linhas.push(...doIG(x, { ...base, post_id: igm, post_link: '' }, pagina.ig?.usuario ?? '', null))
+        tarefas.push(graph<{ data: ComentarioIG[] }>(`${igm}/comments`, { params: { fields: CAMPOS_IG, limit: '50' } }).then((r) => {
+          for (const x of r.data) linhas.push(...doIG(x, { ...base, post_id: igm, post_link: '' }, pagina.ig?.usuario ?? '', null))
+        }, () => {}))
       }
       const story = a.creative?.effective_object_story_id
       if (story && !vistos.has(story) && story.startsWith(`${c.meta_page_id}_`)) {
         vistos.add(story)
-        const r = await graph<{ data: ComentarioFB[] }>(`${story}/comments`, { token: pagina.token, params: { fields: CAMPOS_FB, limit: '50' } }).catch(() => ({ data: [] }))
-        for (const x of r.data) linhas.push(...doFB(x, { ...base, post_id: story, post_link: `https://www.facebook.com/${story}` }, c.meta_page_id, null))
+        tarefas.push(graph<{ data: ComentarioFB[] }>(`${story}/comments`, { token: pagina.token, params: { fields: CAMPOS_FB, limit: '50' } }).then((r) => {
+          for (const x of r.data) linhas.push(...doFB(x, { ...base, post_id: story, post_link: `https://www.facebook.com/${story}` }, c.meta_page_id, null))
+        }, () => {}))
       }
     }
+    await Promise.all(tarefas)
   }
   return linhas
 }
@@ -97,7 +104,7 @@ async function refinarComIA(itens: { chave: string; texto: string }[]): Promise<
           { role: 'user', content: lista },
         ],
       }),
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(15_000),
     })
     if (!resp.ok) return r
     const texto = ((await resp.json()) as { choices?: { message?: { content?: string } }[] }).choices?.[0]?.message?.content ?? ''
@@ -125,12 +132,12 @@ export async function sincronizarComentarios(clienteIds?: string[]): Promise<{ n
   const erros: string[] = []
   let novos = 0
   let alertas = 0
-  for (const c of clientes) {
-    let linhas: Linha[]
-    try {
-      linhas = await comentariosDoCliente({ id: c.id, meta_page_id: c.meta_page_id!, meta_ad_account_id: c.meta_ad_account_id })
-    } catch (e) {
-      erros.push(`${c.name}: ${e instanceof Error ? e.message : 'falha na Meta'}`)
+  // Busca na Meta de todos os clientes ao mesmo tempo; depois grava um por um.
+  const lidos = await Promise.all(clientes.map((c) => comentariosDoCliente({ id: c.id, meta_page_id: c.meta_page_id!, meta_ad_account_id: c.meta_ad_account_id }).then((linhas) => ({ linhas, erro: null }), (e: unknown) => ({ linhas: [] as Linha[], erro: e instanceof Error ? e.message : 'falha na Meta' }))))
+  for (const [i, c] of clientes.entries()) {
+    const { linhas, erro } = lidos[i]
+    if (erro) {
+      erros.push(`${c.name}: ${erro}`)
       continue
     }
     if (!linhas.length) continue

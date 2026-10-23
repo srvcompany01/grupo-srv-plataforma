@@ -19,7 +19,8 @@ import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { listarComentarios, resumoComentarios, type FiltroComentarios } from '@/servicos/comentarios-redes'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
 
-export const maxDuration = 60
+// O botão "Atualizar agora" dos comentários lê a Meta de todos os clientes.
+export const maxDuration = 300
 
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
