@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_categories: {
+        Row: { id: string; slug: string; name: string; description: string; color: string; position: number }
+        Insert: { id?: string; slug: string; name: string; description?: string; color?: string; position?: number }
+        Update: { id?: string; slug?: string; name?: string; description?: string; color?: string; position?: number }
+        Relationships: []
+      }
+      blog_authors: {
+        Row: { id: string; slug: string; name: string; role: string; bio: string; avatar_key: string | null; user_id: string | null }
+        Insert: { id?: string; slug: string; name: string; role?: string; bio?: string; avatar_key?: string | null; user_id?: string | null }
+        Update: { id?: string; slug?: string; name?: string; role?: string; bio?: string; avatar_key?: string | null; user_id?: string | null }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: { id: string; slug: string; title: string; seo_title: string; excerpt: string; keyword: string; content: string; cover_key: string | null; cover_alt: string; category_id: string | null; author_id: string | null; is_pillar: boolean; status: string; published_at: string | null; views: number; created_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; slug: string; title: string; seo_title?: string; excerpt?: string; keyword?: string; content?: string; cover_key?: string | null; cover_alt?: string; category_id?: string | null; author_id?: string | null; is_pillar?: boolean; status?: string; published_at?: string | null; views?: number; created_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; slug?: string; title?: string; seo_title?: string; excerpt?: string; keyword?: string; content?: string; cover_key?: string | null; cover_alt?: string; category_id?: string | null; author_id?: string | null; is_pillar?: boolean; status?: string; published_at?: string | null; views?: number; created_by?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "blog_posts_category_id_fkey"; columns: ["category_id"]; isOneToOne: false; referencedRelation: "blog_categories"; referencedColumns: ["id"] },
+          { foreignKeyName: "blog_posts_author_id_fkey"; columns: ["author_id"]; isOneToOne: false; referencedRelation: "blog_authors"; referencedColumns: ["id"] },
+        ]
+      }
+      blog_subscribers: {
+        Row: { id: string; email: string; name: string; source: string; created_at: string; unsubscribed_at: string | null }
+        Insert: { id?: string; email: string; name?: string; source?: string; created_at?: string; unsubscribed_at?: string | null }
+        Update: { id?: string; email?: string; name?: string; source?: string; created_at?: string; unsubscribed_at?: string | null }
+        Relationships: []
+      }
       google_agency_link: {
         Row: { id: boolean; email: string; refresh_token: string; connected_by: string | null; connected_at: string }
         Insert: { id?: boolean; email?: string; refresh_token: string; connected_by?: string | null; connected_at?: string }
@@ -1635,6 +1662,7 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }
       registrar_presenca: { Args: { p_ativo: boolean }; Returns: undefined }
       definir_status: { Args: { p_status: string; p_texto: string; p_ate: string | null }; Returns: undefined }
       marcar_chat_lido: { Args: { p_canal: string }; Returns: undefined }

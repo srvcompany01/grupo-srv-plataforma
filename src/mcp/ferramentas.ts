@@ -126,6 +126,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
         'Conteúdo (posts): nas listas de conteúdo (ex.: Máquina de Conteúdo), a tarefa-mãe é o tema/campanha e TODA subtarefa é um post (criar uma subtarefa já cria o post em rascunho, formato feed). Cada post tem versões, mídias e aprovação do cliente pelo portal. agendar_post agenda no Instagram/Facebook (com aprovação do cliente ou direto) e situacao_publicacao_post mostra como está; a plataforma publica sozinha no horário. Collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não); o convidado aceita no app. Destino google = Google Meu Negócio do cliente (post Novidade com o texto, até 1.500 caracteres, e a primeira foto; vídeo e Stories não vão).',
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
+        'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Use listar_posts_blog, criar_post_blog (sempre rascunho) e publicar_post_blog. Não há exclusão por aqui.',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
         'Chat da equipe: canais (#geral e os que a equipe criar; privados só para membros), mensagens com respostas em tópico, @menções que avisam no sino. Use listar_canais_chat, ler_canal_chat e enviar_mensagem_chat. Não há exclusão por aqui.',
@@ -269,6 +270,62 @@ export const FERRAMENTAS: Ferramenta[] = [
         organico: d.ig ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, alcance: d.ig.alcance, interacoes: d.ig.interacoes, posts: d.ig.posts.length, analise: analisarOrganico(d.ig, dias) } : null,
         combinado: { pagoPorDia: d.pagoPorDia, alcanceInstagramPorDia: d.ig?.alcancePorDia ?? [], analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
       }
+    },
+  }),
+
+  definir({
+    nome: 'listar_posts_blog',
+    descricao: 'Artigos do blog público da Grupo SRV (www.gruposrv.com.br/blog): título, endereço, categoria, palavra-chave, situação (rascunho, agendado, publicado), data e visitas; e as categorias e autores (ids para criar_post_blog).',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb }) => {
+      const b = await import('@/servicos/blog')
+      const [posts, cats, auts] = await Promise.all([b.postsDaEquipe(sb), b.categorias(), b.autores(sb)])
+      const agora = Date.now()
+      return {
+        categorias: cats.map((c) => ({ id: c.id, nome: c.nome, slug: c.slug })),
+        autores: auts.map((a) => ({ id: a.id, nome: a.nome })),
+        posts: posts.map((p) => ({ id: p.id, titulo: p.titulo, url: `https://www.gruposrv.com.br/blog/${p.slug}`, categoria: p.categoria?.nome, palavraChave: p.palavraChave, situacao: p.status === 'rascunho' ? 'rascunho' : p.publicadoEmBruto && Date.parse(p.publicadoEmBruto) > agora ? 'agendado' : 'publicado', publicadoEm: p.publicadoEmBruto, visitas: p.visitas, guiaCompleto: p.pilar })),
+      }
+    },
+  }),
+
+  definir({
+    nome: 'criar_post_blog',
+    descricao: 'Cria um artigo do blog como RASCUNHO (a equipe revisa e publica pela aba Blog, ou com publicar_post_blog). conteudo em Markdown, sem o título como "# " (use "## " para as seções). Boas práticas de SEO: título com a palavra-chave, descrição de 120 a 160 caracteres, 900+ palavras, 3+ subtítulos H2, links para /maquinadevendas e para outros artigos (/blog/<slug>).',
+    escrita: true,
+    entrada: {
+      titulo: z.string().min(1).max(160),
+      conteudo: z.string().min(1).max(200000).describe('Markdown do artigo'),
+      palavraChave: z.string().max(80).optional(),
+      descricao: z.string().max(300).optional().describe('Meta description (120 a 160 caracteres)'),
+      seoTitulo: z.string().max(80).optional(),
+      slug: z.string().max(90).optional(),
+      categoriaId: id('Categoria (de listar_posts_blog)').optional(),
+      autorId: id('Autor (de listar_posts_blog)').optional(),
+      guiaCompleto: z.boolean().optional().describe('É o guia completo (pilar) da categoria'),
+    },
+    executar: async ({ sb }, a) => {
+      const b = await import('@/servicos/blog')
+      const novo = await b.salvarPost(sb, null, { titulo: a.titulo, slug: a.slug ?? '', seoTitulo: a.seoTitulo ?? '', resumo: a.descricao ?? '', palavraChave: a.palavraChave ?? '', conteudo: a.conteudo, capaChave: null, capaAlt: '', categoriaId: a.categoriaId ?? null, autorId: a.autorId ?? null, pilar: a.guiaCompleto ?? false })
+      return { id: novo, situacao: 'rascunho', editar: `/editor-blog/${novo}` }
+    },
+  }),
+
+  definir({
+    nome: 'publicar_post_blog',
+    descricao: 'Publica um artigo do blog agora, agenda (quando = data e hora futuras, ISO) ou tira do ar (voltarParaRascunho).',
+    escrita: true,
+    entrada: { postId: id('Artigo (de listar_posts_blog)'), quando: z.string().datetime({ offset: true }).optional().describe('ISO 8601; vazio = agora'), voltarParaRascunho: z.boolean().optional() },
+    executar: async ({ sb }, a) => {
+      const b = await import('@/servicos/blog')
+      const post = await b.postDaEquipe(sb, a.postId)
+      if (!post) throw new Error('Artigo não encontrado.')
+      if (!a.voltarParaRascunho && !post.conteudo.trim()) throw new Error('O artigo está vazio.')
+      await b.definirPublicacao(sb, a.postId, a.voltarParaRascunho ? null : (a.quando ?? new Date().toISOString()))
+      const { revalidatePath } = await import('next/cache')
+      revalidatePath('/blog', 'layout')
+      return { ok: true, url: `https://www.gruposrv.com.br/blog/${post.slug}` }
     },
   }),
 
