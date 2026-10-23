@@ -5,11 +5,11 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { Markdown } from '@tiptap/markdown'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { BadgeCheck, Bold, CalendarClock, ClipboardPaste, Copy, ExternalLink, Heading2, Heading3, ImagePlus, Italic, Link as IconeLink, List, ListOrdered, Quote, Redo2, Save, Send, ShieldCheck, Sparkles, Undo2, Upload } from 'lucide-react'
+import { BadgeCheck, Bold, Trash2, CalendarClock, ClipboardPaste, Copy, ExternalLink, Heading2, Heading3, ImagePlus, Italic, Link as IconeLink, List, ListOrdered, Quote, Redo2, Save, Send, ShieldCheck, Sparkles, Undo2, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
-import { enviarImagemAcao, gerarRascunhoAcao, publicacaoAcao, revisaoAcao, salvarPostAcao, validarAcao } from '@/app/(app)/editor-blog/acoes'
+import { enviarImagemAcao, excluirPostAcao, gerarRascunhoAcao, publicacaoAcao, revisaoAcao, salvarPostAcao, validarAcao } from '@/app/(app)/editor-blog/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
 import { avisar } from '@/componentes/tarefas/avisar'
@@ -199,6 +199,15 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
       if (!salvo) return
       if (avisar(await revisaoAcao(salvo, aprovado), true)) router.refresh()
     })
+  const excluir = async () => {
+    if (!id) return
+    if (!(await confirmar({ titulo: 'Excluir este artigo?', descricao: 'Ele some da plataforma de vez, com as métricas de leitura. Não dá para desfazer.', confirmar: 'Excluir artigo', perigo: true }))) return
+    iniciar(async () => {
+      if (!avisar(await excluirPostAcao(id), true)) return
+      setSujo(false)
+      router.push('/editor-blog')
+    })
+  }
   const validar = () =>
     iniciar(async () => {
       if (!id) return
@@ -467,6 +476,14 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
               <label className="block space-y-1"><span className={rotulo}>Revisar o conteúdo de novo em</span><input type="date" className={campo} value={f.revisarEm} onChange={(e) => muda('revisarEm', e.target.value)} /></label>
               <label className="block space-y-1"><span className={rotulo}>Aviso editorial (opcional, aparece no fim)</span><input className={campo} value={f.aviso} onChange={(e) => muda('aviso', e.target.value)} maxLength={300} placeholder="Ex.: produzido com apoio de IA e revisado por Fabrício Saraiva" /></label>
             </section>
+
+            {id && (
+              <section className="space-y-2 rounded-xl border border-perigo-borda bg-perigo-fundo/20 p-4">
+                <h2 className="text-corpo font-semibold text-perigo-forte">Excluir artigo</h2>
+                <p className="text-legenda text-texto-2">{situacao === 'Publicado' || situacao === 'Agendado' ? 'Tire do ar antes de excluir: assim ninguém cai num link quebrado vindo do Google.' : 'Apaga o artigo de vez, com as métricas de leitura.'}</p>
+                <button type="button" onClick={() => void excluir()} disabled={pendente || situacao === 'Publicado' || situacao === 'Agendado'} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-perigo px-3 text-rotulo font-semibold text-white hover:bg-perigo-forte disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Excluir artigo</button>
+              </section>
+            )}
 
             {desempenho && (
               <section className="space-y-2 rounded-xl border border-borda bg-white p-4">

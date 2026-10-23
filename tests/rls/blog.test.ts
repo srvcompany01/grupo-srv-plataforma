@@ -48,3 +48,16 @@ describe('blog: revisão, contexto da marca e eventos de leitura', () => {
     expect((await ler<{ data: { brand_name: string } }>(db, null, `select data from blog_settings`))[0].data.brand_name).toBe('Grupo SRV')
   })
 })
+
+describe('blog: excluir', () => {
+  it('equipe exclui rascunho; publicado e cliente não', async () => {
+    const db = await criarBanco()
+    const ana = await criarUsuario(db, { role: 'membro' })
+    const cli = await criarUsuario(db, { role: 'cliente' })
+    await executar(db, ana, `insert into blog_posts (slug, title, status) values ('rascunho', 'R', 'rascunho')`)
+    await executar(db, ana, `insert into blog_posts (slug, title, status, published_at) values ('no-ar', 'N', 'publicado', now())`)
+    expect(await executar(db, cli, `delete from blog_posts`)).toBe(0)
+    expect(await executar(db, ana, `delete from blog_posts where slug = 'no-ar'`)).toBe(0)
+    expect(await executar(db, ana, `delete from blog_posts where slug = 'rascunho'`)).toBe(1)
+  })
+})

@@ -167,3 +167,16 @@ export async function importarArquivoAcao(form: FormData): Promise<{ id: string;
     return { erro: erroDoSlug(e) }
   }
 }
+
+/** Exclui o artigo de vez (rascunho, em revisão ou fora do ar). Artigo no ar precisa sair do ar antes. */
+export async function excluirPostAcao(id: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(id)) return { erro: 'Artigo inválido.' }
+  const sb = await criarClienteServidor()
+  const post = await blog.postDaEquipe(sb, id)
+  if (!post) return { erro: 'Artigo não encontrado.' }
+  if (post.status === 'publicado') return { erro: 'Tire o artigo do ar antes de excluir (evita link quebrado no Google).' }
+  const r = await tentar(() => blog.excluirPost(sb, id), 'Artigo excluído.')
+  atualizarBlog(post.slug)
+  return r
+}

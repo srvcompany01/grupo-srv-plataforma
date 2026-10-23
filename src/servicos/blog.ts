@@ -299,3 +299,10 @@ export async function qualidadeDoPost(sb: Supabase, p: PostEquipe) {
     outrasPalavrasChave: outras, textosExtras: [p.subtitulo, p.ogTitulo, p.ogDescricao, p.cta.contexto, p.aviso],
   })
 }
+
+/** Exclui o artigo de vez (só fora do ar; a RLS também confere). */
+export async function excluirPost(sb: Supabase, id: string): Promise<void> {
+  const { error, count } = await sb.from('blog_posts').delete({ count: 'exact' }).eq('id', id).neq('status', 'publicado')
+  if (error) throw error
+  if (!count) throw { code: 'P0001', message: 'Só dá para excluir um artigo fora do ar: tire do ar antes.' }
+}
