@@ -1,4 +1,4 @@
-import { Camera, MapPin, Sparkles } from 'lucide-react'
+import { Camera, Eye, Heart, LayoutGrid, MapPin, Radar, Sparkles, UserCheck, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
@@ -9,7 +9,8 @@ import { InstagramInsights } from '@/componentes/insights/InstagramInsights'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarOrganico, engajamento, type ResumoInstagram } from '@/dominio/insights'
+import { analisarOrganico, engajamento, tomEngajamento, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
+import { SeloTom } from '@/componentes/insights/tom'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -22,13 +23,13 @@ const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFrac
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
 /** Plataformas orgânicas: as que já funcionam e as que vêm aí. */
-const PLATAFORMAS: { nome: string; situacao: string; ativa: boolean }[] = [
-  { nome: 'Instagram', situacao: 'Ativo', ativa: true },
-  { nome: 'Google Meu Negócio', situacao: 'Aguardando liberação do Google', ativa: false },
-  { nome: 'TikTok', situacao: 'Em breve', ativa: false },
-  { nome: 'YouTube', situacao: 'Em breve', ativa: false },
-  { nome: 'Facebook (Página)', situacao: 'Em breve', ativa: false },
-  { nome: 'LinkedIn', situacao: 'Em breve', ativa: false },
+const PLATAFORMAS: { nome: string; situacao: string; ativa: boolean; cor: string }[] = [
+  { nome: 'Instagram', situacao: 'Ativo', ativa: true, cor: 'linear-gradient(45deg, #f9a825, #e1306c 45%, #833ab4)' },
+  { nome: 'Google Meu Negócio', situacao: 'Aguardando o Google', ativa: false, cor: '#1a73e8' },
+  { nome: 'TikTok', situacao: 'Em breve', ativa: false, cor: '#111111' },
+  { nome: 'YouTube', situacao: 'Em breve', ativa: false, cor: '#ff0033' },
+  { nome: 'Facebook (Página)', situacao: 'Em breve', ativa: false, cor: '#0866ff' },
+  { nome: 'LinkedIn', situacao: 'Em breve', ativa: false, cor: '#0a66c2' },
 ]
 
 /** Insights orgânicos: panorama de todos os clientes ou, com ?cliente=, o detalhe de um (com recomendações). */
@@ -54,7 +55,8 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
 
       <div className="flex flex-wrap gap-1.5">
         {PLATAFORMAS.map((p) => (
-          <span key={p.nome} className={`rounded-full border px-2.5 py-1 text-legenda ${p.ativa ? 'border-transparent bg-petroleo font-semibold text-white' : 'border-dashed border-borda text-texto-3'}`}>
+          <span key={p.nome} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-legenda ${p.ativa ? 'font-semibold text-white shadow-sm' : 'border border-dashed border-borda bg-white text-texto-3'}`} style={p.ativa ? { background: p.cor } : undefined}>
+            {!p.ativa && <span className="h-2 w-2 rounded-full" style={{ background: p.cor }} aria-hidden />}
             {p.nome}{!p.ativa && ` · ${p.situacao}`}
           </span>
         ))}
@@ -115,12 +117,12 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
       <div className="space-y-4">
         <Numeros
           itens={[
-            ['Seguidores somados', numero.format(soma('seguidores')), soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))} no período` : undefined],
-            ['Alcance', numero.format(soma('alcance'))],
-            ['Visualizações', numero.format(soma('visualizacoes'))],
-            ['Interações', numero.format(soma('interacoes')), `${pct(engajamento(soma('interacoes'), soma('alcance')))} do alcance`],
-            ['Posts', String(posts)],
-            ['Perfis', `${ok.length} de ${linhas.length}`],
+            { rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), extra: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '▲ +' : '▼ '}${numero.format(soma('novosSeguidores'))} no período` : undefined, tom: tomVariacao(soma('novosSeguidores')), rotuloTom: soma('novosSeguidores') > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
+            { rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: Radar, cor: '#2a78d6' },
+            { rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: Eye, cor: '#1baf7a' },
+            { rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: `${pct(engajamento(soma('interacoes'), soma('alcance')))} do alcance`, tom: tomEngajamento(engajamento(soma('interacoes'), soma('alcance'))), icone: Heart, cor: '#e87ba4' },
+            { rotulo: 'Posts', valor: String(posts), icone: LayoutGrid, cor: '#eb6834' },
+            { rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, tom: ok.length < linhas.length ? 'atencao' : undefined, extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : undefined, icone: UserCheck, cor: '#eda100' },
           ]}
         />
         {linhas.length === 0 ? (
@@ -158,9 +160,9 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
                           </div>
                         </td>
                         <td className="py-2 pr-3 text-right tabular-nums">{numero.format(ig.interacoes)}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{pct(engajamento(ig.interacoes, ig.alcance))}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums"><span className="inline-flex items-center justify-end gap-1.5">{pct(engajamento(ig.interacoes, ig.alcance))} {tomEngajamento(engajamento(ig.interacoes, ig.alcance)) !== 'neutro' && <SeloTom tom={tomEngajamento(engajamento(ig.interacoes, ig.alcance))} />}</span></td>
                         <td className="py-2 pr-3 text-right tabular-nums">{ig.posts.length}</td>
-                        <td className="py-2 text-right tabular-nums">{ig.novosSeguidores > 0 ? '+' : ''}{numero.format(ig.novosSeguidores)}</td>
+                        <td className={`py-2 text-right font-semibold tabular-nums ${ig.novosSeguidores > 0 ? 'text-sucesso-forte' : ig.novosSeguidores < 0 ? 'text-perigo-forte' : 'text-texto-3'}`}>{ig.novosSeguidores > 0 ? '▲ +' : ig.novosSeguidores < 0 ? '▼ ' : ''}{numero.format(ig.novosSeguidores)}</td>
                       </>
                     )}
                   </tr>

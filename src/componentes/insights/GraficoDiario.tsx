@@ -26,7 +26,7 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha' }:
           <span key={s.nome} className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: CORES_SERIE[i] }} />{s.nome}</span>
         ))}
       </figcaption>
-      <svg viewBox={`0 0 ${L} ${A}`} className="h-auto w-full" role="img" aria-label={titulo}>
+      <svg viewBox={`0 0 ${L} ${A}`} className="h-auto max-h-56 w-full" role="img" aria-label={titulo}>
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
             <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="#e5e4e0" strokeWidth={1} />

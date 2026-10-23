@@ -1,4 +1,4 @@
-import { Megaphone, PlugZap, Target } from 'lucide-react'
+import { Megaphone, MousePointerClick, PlugZap, Search, Target, Users, Wallet, Eye, Calculator } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
@@ -12,7 +12,8 @@ import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
 import { totaisCampanhas } from '@/dominio/google'
-import { analisarPago } from '@/dominio/insights'
+import { analisarPago, tomCtrMeta } from '@/dominio/insights'
+import { SeloTom } from '@/componentes/insights/tom'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -117,12 +118,12 @@ async function AnalisePago({ cliente, periodo, googleConectado, seletor }: { cli
         {d.erros.length > 0 && <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-legenda text-aviso-forte">{d.erros.join(' · ')}</p>}
         <Numeros
           itens={[
-            ['Investido', reais.format(total)],
-            ['Meta', d.pago.meta ? reais.format(d.pago.meta.gasto) : '—'],
-            ['Google Ads', d.pago.google ? reais.format(d.pago.google.custo) : '—'],
-            ['Impressões (Meta)', numero.format(d.pago.meta?.impressoes ?? 0)],
-            ['Cliques', numero.format((d.pago.meta?.cliques ?? 0) + (d.pago.google?.cliques ?? 0))],
-            ['CTR (Meta)', d.pago.meta ? pct(d.pago.meta.ctr) : '—'],
+            { rotulo: 'Investido', valor: reais.format(total), icone: Wallet, cor: '#2a78d6' },
+            { rotulo: 'Meta', valor: d.pago.meta ? reais.format(d.pago.meta.gasto) : '—', extra: d.pago.meta ? `${d.pago.meta.anuncios} anúncios ativos` : undefined, tom: d.pago.meta ? (d.pago.meta.fracos ? 'atencao' : 'bom') : undefined, icone: Megaphone, cor: '#0866ff' },
+            { rotulo: 'Google Ads', valor: d.pago.google ? reais.format(d.pago.google.custo) : '—', extra: d.pago.google ? `${d.pago.google.conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} conversões` : undefined, tom: !d.pago.google ? undefined : d.pago.google.conversoes > 0 ? 'bom' : d.pago.google.custo > 0 ? 'ruim' : undefined, icone: Search, cor: '#eb6834' },
+            { rotulo: 'Impressões (Meta)', valor: numero.format(d.pago.meta?.impressoes ?? 0), icone: Eye, cor: '#1baf7a' },
+            { rotulo: 'Cliques', valor: numero.format((d.pago.meta?.cliques ?? 0) + (d.pago.google?.cliques ?? 0)), icone: MousePointerClick, cor: '#e87ba4' },
+            { rotulo: 'CTR (Meta)', valor: d.pago.meta ? pct(d.pago.meta.ctr) : '—', tom: d.pago.meta ? tomCtrMeta(d.pago.meta.ctr) : undefined, icone: Target, cor: '#6250d6' },
           ]}
         />
         <GraficoDiario titulo="Investimento por dia" dias={dias} series={[{ nome: 'Investido', valores: dias.map((x) => porDia.get(x) ?? 0) }]} formato={(n) => reaisCurto.format(n)} tipo="barras" />
@@ -166,12 +167,12 @@ async function Panorama({ clientes, periodo, googleConectado, seletor }: { clien
       <div className="space-y-4">
         <Numeros
           itens={[
-            ['Total investido', reais.format(totalMeta + totalGoogle)],
-            ['Meta', reais.format(totalMeta)],
-            ['Google Ads', reais.format(totalGoogle)],
-            ['Clientes investindo', `${investindo.length} de ${linhas.length}`],
-            ['Cliques', numero.format(cliques)],
-            ['Média por cliente', investindo.length ? reais.format((totalMeta + totalGoogle) / investindo.length) : '—'],
+            { rotulo: 'Total investido', valor: reais.format(totalMeta + totalGoogle), icone: Wallet, cor: '#2a78d6' },
+            { rotulo: 'Meta', valor: reais.format(totalMeta), icone: Megaphone, cor: '#0866ff' },
+            { rotulo: 'Google Ads', valor: reais.format(totalGoogle), icone: Search, cor: '#eb6834' },
+            { rotulo: 'Clientes investindo', valor: `${investindo.length} de ${linhas.length}`, tom: linhas.length && investindo.length < linhas.length ? 'atencao' : undefined, extra: linhas.length && investindo.length < linhas.length ? `${linhas.length - investindo.length} sem investimento` : undefined, icone: Users, cor: '#6250d6' },
+            { rotulo: 'Cliques', valor: numero.format(cliques), icone: MousePointerClick, cor: '#e87ba4' },
+            { rotulo: 'Média por cliente', valor: investindo.length ? reais.format((totalMeta + totalGoogle) / investindo.length) : '—', icone: Calculator, cor: '#1baf7a' },
           ]}
         />
         <div className="grid gap-4 xl:grid-cols-2">
@@ -230,10 +231,10 @@ async function Panorama({ clientes, periodo, googleConectado, seletor }: { clien
                       <td className="py-2 pr-3"><Link href={`/anuncios?cliente=${l.id}${consultaPeriodo(periodo) ? `&${consultaPeriodo(periodo)}` : ''}`} className="font-medium text-texto hover:underline">{l.nome}</Link></td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? reais.format(m.gasto) : l.meta ? erro(l.meta as Erro) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? numero.format(m.cliques) : vazio}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{m ? pct(m.ctr) : vazio}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{m ? <span className="inline-flex items-center justify-end gap-1.5">{pct(m.ctr)} {tomCtrMeta(m.ctr) !== 'neutro' && <SeloTom tom={tomCtrMeta(m.ctr)} />}</span> : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{g ? reais.format(g.custo) : l.google ? erro(l.google as Erro) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{g ? numero.format(g.cliques) : vazio}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{g ? g.conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : vazio}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{g ? <span className={g.conversoes > 0 ? 'font-semibold text-sucesso-forte' : g.custo > 0 ? 'font-semibold text-perigo-forte' : ''}>{g.conversoes > 0 ? '▲ ' : g.custo > 0 ? '▼ ' : ''}{g.conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</span> : vazio}</td>
                       <td className="py-2 text-right font-semibold tabular-nums">{reais.format((m?.gasto ?? 0) + (g?.custo ?? 0))}</td>
                     </tr>
                   )

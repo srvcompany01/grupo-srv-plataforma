@@ -1,7 +1,11 @@
-import { ExternalLink, PlayCircle } from 'lucide-react'
-import { engajamento, porFormato, type ResumoInstagram } from '@/dominio/insights'
+import { ExternalLink, Eye, Heart, LayoutGrid, MousePointerClick, PlayCircle, Radar, Users } from 'lucide-react'
+import { engajamento, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { Numeros } from './BlocoAnalise'
 import { GraficoDiario } from './GraficoDiario'
+import { SeloTom } from './tom'
+
+/** Cor de cada formato (identidade fixa, a mesma em todos os clientes). */
+export const COR_FORMATO_IG: Record<string, string> = { Reels: '#e87ba4', Carrossel: '#6250d6', Foto: '#2a78d6', 'Vídeo': '#eb6834' }
 
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
@@ -12,16 +16,17 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
   const porDia = new Map(ig.alcancePorDia.map((d) => [d.dia, d.valor]))
   const formatos = porFormato(ig.posts)
   const melhores = [...ig.posts].sort((a, b) => b.interacoes - a.interacoes).slice(0, 6)
+  const porSemana = (ig.posts.length / Math.max(1, dias.length)) * 7
   return (
     <div className="@container space-y-4">
       <Numeros
         itens={[
-          ['Seguidores', numero.format(ig.seguidores), ig.novosSeguidores ? `${ig.novosSeguidores > 0 ? '+' : ''}${numero.format(ig.novosSeguidores)} no período` : undefined],
-          ['Alcance', numero.format(ig.alcance)],
-          ['Visualizações', numero.format(ig.visualizacoes)],
-          ['Interações', numero.format(ig.interacoes), `${pct(engajamento(ig.interacoes, ig.alcance))} do alcance`],
-          ['Posts', String(ig.posts.length)],
-          ['Cliques no perfil', numero.format(ig.cliquesPerfil)],
+          { rotulo: 'Seguidores', valor: numero.format(ig.seguidores), extra: ig.novosSeguidores ? `${ig.novosSeguidores > 0 ? '▲ +' : '▼ '}${numero.format(ig.novosSeguidores)} no período` : undefined, tom: tomVariacao(ig.novosSeguidores), rotuloTom: ig.novosSeguidores > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
+          { rotulo: 'Alcance', valor: numero.format(ig.alcance), extra: ig.seguidores ? `${pct((ig.alcance / ig.seguidores) * 100)} da base` : undefined, tom: tomAlcanceBase(ig.alcance, ig.seguidores), icone: Radar, cor: '#2a78d6' },
+          { rotulo: 'Visualizações', valor: numero.format(ig.visualizacoes), icone: Eye, cor: '#1baf7a' },
+          { rotulo: 'Interações', valor: numero.format(ig.interacoes), extra: `${pct(engajamento(ig.interacoes, ig.alcance))} do alcance`, tom: tomEngajamento(engajamento(ig.interacoes, ig.alcance)), icone: Heart, cor: '#e87ba4' },
+          { rotulo: 'Posts', valor: String(ig.posts.length), extra: `${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana`, tom: tomFrequencia(porSemana), icone: LayoutGrid, cor: '#eb6834' },
+          { rotulo: 'Cliques no perfil', valor: numero.format(ig.cliquesPerfil), icone: MousePointerClick, cor: '#eda100' },
         ]}
       />
       <GraficoDiario titulo="Alcance do perfil por dia" dias={dias} series={[{ nome: 'Alcance', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />
@@ -40,11 +45,11 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
             <tbody>
               {formatos.map((f) => (
                 <tr key={f.formato} className="border-b border-borda/60 last:border-0">
-                  <td className="py-1.5 pr-3 font-medium text-texto">{f.formato}</td>
+                  <td className="py-1.5 pr-3 font-medium text-texto"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: COR_FORMATO_IG[f.formato] }} />{f.formato}</span></td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{f.posts}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{numero.format(f.alcance)}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{numero.format(f.interacoes)}</td>
-                  <td className="py-1.5 text-right tabular-nums">{pct(f.engajamento)}</td>
+                  <td className="py-1.5 text-right tabular-nums"><span className="inline-flex items-center gap-1.5">{pct(f.engajamento)} {tomEngajamento(f.engajamento) !== 'neutro' && <SeloTom tom={tomEngajamento(f.engajamento)} />}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -64,10 +69,11 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
                       <img src={p.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
                     )}
                     {p.formato === 'Reels' && <PlayCircle className="absolute right-1.5 top-1.5 h-5 w-5 text-white drop-shadow" aria-label="Reels" />}
+                    <span className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-micro font-semibold text-white" style={{ background: COR_FORMATO_IG[p.formato] }}>{p.formato}</span>
                   </div>
                   <div className="space-y-0.5 p-2">
-                    <p className="flex items-center justify-between text-micro text-texto-3"><span>{p.formato} · {quando.format(new Date(p.em))}</span><ExternalLink className="h-3 w-3" /></p>
-                    <p className="text-rotulo font-semibold tabular-nums text-texto">{numero.format(p.interacoes)} interações</p>
+                    <p className="flex items-center justify-between text-micro text-texto-3"><span>{quando.format(new Date(p.em))}</span><ExternalLink className="h-3 w-3" /></p>
+                    <p className="flex items-center gap-1 text-rotulo font-semibold tabular-nums text-texto"><Heart className="h-3.5 w-3.5" style={{ color: '#e87ba4' }} aria-hidden />{numero.format(p.interacoes)} interações</p>
                     <p className="text-micro text-texto-3">{numero.format(p.alcance)} de alcance · {numero.format(p.salvamentos)} salvos</p>
                   </div>
                 </a>
