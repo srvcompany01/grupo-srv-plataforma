@@ -15,7 +15,7 @@ const BUSCA_IA = ['OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const host = (await headers()).get('host') ?? ''
   if (host !== 'www.gruposrv.com.br' && host !== 'gruposrv.com.br') return { rules: { userAgent: '*', disallow: '/' } }
-  const publico = { allow: ['/blog', '/maquinadevendas', '/calculadora', '/sobre', '/privacidade', '/marca/', '/lp/'], disallow: ['/', '/blog/busca', '/api/'] }
+  const publico = { allow: ['/blog', '/maquinadevendas', '/calculadora', '/sobre', '/privacidade', '/exclusao-de-dados', '/marca/', '/lp/'], disallow: ['/', '/blog/busca', '/api/'] }
   const treino = (await contextoMarca().catch(() => ({}) as Record<string, unknown>)).allow_ai_training === true
   return {
     rules: [
