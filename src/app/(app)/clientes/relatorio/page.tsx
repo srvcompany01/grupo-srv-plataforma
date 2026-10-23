@@ -5,6 +5,7 @@ import { PERIODOS, diasDoPeriodo, lerPeriodo, rankingDeTrabalho, type LinhaRanki
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const textoParam = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 const semana = (iso: string) => new Intl.DateTimeFormat('pt-BR', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
@@ -23,7 +24,7 @@ function Lista({ titulo, tom, linhas, maior, vazio }: { titulo: string; tom: 'bo
               <div className="flex items-center justify-between gap-2">
                 <Link href={`/clientes/${c.id}`} className="flex min-w-0 items-center gap-2 text-texto hover:underline">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.cor }} />
-                  <span className="truncate">{c.nome}</span>
+                  <NomeCliente nome={c.nome} className="truncate" />
                 </Link>
                 <span className="shrink-0 tabular-nums text-texto-2">
                   {c.dias} {c.dias === 1 ? 'dia' : 'dias'}

@@ -9,6 +9,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { Estrutura as Dados } from '@/servicos/estrutura'
 import { arquivarAcao, criarListaAcao, criarPastaAcao, renomearAcao } from './acoes'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 type Opcao = { id: string; nome: string }
 
@@ -51,7 +52,7 @@ export function Estrutura({ espacoId, dados, clientes }: { espacoId: string; dad
       <List className="h-3.5 w-3.5 text-texto-3" />
       <Nome tabela="lists" id={l.id} nome={l.nome} />
       <span className="text-rotulo text-texto-3">
-        {l.clienteNome}
+        {l.clienteNome && <NomeCliente nome={l.clienteNome} />}
         {l.mes && ` · ${rotuloMes(l.mes)}`}
       </span>
       <Link href={`/listas/${l.id}`} className="text-rotulo text-marca hover:underline">

@@ -68,7 +68,7 @@ export default async function PainelDeGestao({ searchParams }: PageProps<'/paine
 
       <section aria-label="Resumo" className="grid gap-3 lg:grid-cols-2">
         <TabelaResumo titulo="Por departamento" descricao="Onde o trabalho está concentrado" linhas={porDepartamento} href={(l) => `/listas/${l.id}`} />
-        <TabelaResumo titulo="Por cliente" descricao="Quanto cada cliente tem em andamento" linhas={porCliente} href={(l) => `/clientes/${l.id}`} />
+        <TabelaResumo titulo="Por cliente" descricao="Quanto cada cliente tem em andamento" linhas={porCliente} href={(l) => `/clientes/${l.id}`} clientes />
       </section>
 
       <div className="space-y-4">

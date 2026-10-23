@@ -13,6 +13,7 @@ import { NovaTarefa } from './NovaTarefa'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
 import { SeletorTagCliente, type TagCliente } from './SeletorTagCliente'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const COR_PRIORIDADE = { urgente: 'text-perigo', alta: 'text-aviso', normal: 'text-texto-3', baixa: 'text-marca' } as const
 
@@ -134,7 +135,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
               {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
               {tarefa.filhos.length > 0 && <span className="ml-1.5 text-legenda text-texto-3">{tarefa.filhos.length}</span>}
             </Link>
-            {ctx.mostrarLista && <span className="block truncate text-legenda text-texto-3" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}{tarefa.clienteNome && ` · @${tarefa.clienteNome}`}</span>}
+            {ctx.mostrarLista && <span className="block truncate text-legenda text-texto-3" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}{tarefa.clienteNome && <> · <NomeCliente nome={tarefa.clienteNome} arroba /></>}</span>}
           </div>
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente

@@ -14,6 +14,7 @@ import { botaoFantasma, campo } from '@/lib/ui'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
 import type { ListaOpcao } from './TelaTarefa'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { tarefa: TarefaCompleta; listas: ListaOpcao[]; podeGerir: boolean; emJanela: boolean }) {
   const router = useRouter()
@@ -108,7 +109,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
         <Link href={`/listas/${t.lista.id}`} className="hover:text-marca">
           {t.lista.nome}
         </Link>
-        {t.lista.clienteNome && ` · @${t.lista.clienteNome}`}
+        {t.lista.clienteNome && <> · <NomeCliente nome={t.lista.clienteNome} arroba href={t.lista.clienteId ? `/clientes/${t.lista.clienteId}` : undefined} /></>}
         {t.lista.mes && ` · ${rotuloMes(t.lista.mes)}`}
       </div>
 

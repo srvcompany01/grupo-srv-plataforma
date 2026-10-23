@@ -14,6 +14,7 @@ import { listarCompromissos, listarEtiquetas } from '@/servicos/agenda'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { eventosDoGoogle, googleConfigurado, statusGoogle } from '@/servicos/google-agenda'
 import { listarEquipe } from '@/servicos/usuarios'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 type Visao = 'dia' | 'semana' | 'mes'
 
@@ -138,7 +139,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                     <span className="block text-corpo font-semibold text-texto">{o.titulo}</span>
                     <span className="flex flex-wrap items-center gap-x-2 text-legenda text-texto-3">
                       {categoria && <span className="font-medium" style={{ color: categoria.cor }}>{categoria.nome}</span>}
-                      {cliente && <span>{cliente}</span>}
+                      {cliente && <NomeCliente nome={cliente} />}
                       {Icone && <span className="flex items-center gap-1"><Icone className="h-3 w-3" /> criado por {criador}</span>}
                       {!c && <span>Google Agenda</span>}
                     </span>

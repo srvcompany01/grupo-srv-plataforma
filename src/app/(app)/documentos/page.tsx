@@ -7,6 +7,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { listarDocumentos } from '@/servicos/documentos'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 const textoParam = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
@@ -79,7 +80,7 @@ export default async function PaginaDocumentos({ searchParams }: PageProps<'/doc
                         {d.listas.map((l) => <Link key={l.id} href={`/listas/${l.id}?visao=documentos`} className="rounded-full bg-fundo px-2 py-0.5 text-legenda ring-1 ring-borda hover:text-marca">{l.nome}</Link>)}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 text-texto-2">{d.clienteNome ?? '—'}{d.clienteVisivel && <span className="ml-1 text-legenda text-marca" title="O cliente vê este documento">· visível</span>}</td>
+                    <td className="px-2 py-1.5 text-texto-2">{d.clienteNome ? <NomeCliente nome={d.clienteNome} /> : '—'}{d.clienteVisivel && <span className="ml-1 text-legenda text-marca" title="O cliente vê este documento">· visível</span>}</td>
                     <td className="px-2 py-1.5 text-texto-2">{d.donoNome}</td>
                     <td className="px-2 py-1.5 text-texto-2">{dia.format(new Date(d.atualizadoEm))}</td>
                     <td className="px-2 py-1.5 text-texto-2">{d.visualizadoEm ? dia.format(new Date(d.visualizadoEm)) : '—'}</td>

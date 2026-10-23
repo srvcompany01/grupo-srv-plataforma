@@ -14,7 +14,7 @@ const COR_HEX = /^#[0-9a-f]{6}$/i
 function Chip({ tag }: { tag: TagCliente }) {
   return (
     <span
-      className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-legenda font-semibold"
+      className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-legenda font-bold"
       style={{ color: tag.cor, borderColor: `${tag.cor}55`, backgroundColor: `${tag.cor}14` }}
     >
       <Tag className="h-3 w-3 shrink-0" />

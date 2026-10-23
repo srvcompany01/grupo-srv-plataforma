@@ -15,6 +15,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { listarAgendamentos, tarefasMaeDeConteudo, type Agendamento } from '@/servicos/conteudo'
 import { dados } from '@/servicos/resultado'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
 const diaHora = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
@@ -37,7 +38,7 @@ function Linha({ a, agora, soHora, hoje }: { a: Agendamento; agora: Date; soHora
       <div className="min-w-0 flex-1">
         <Link href={`/tarefas/${a.id}`} className="block truncate text-corpo font-semibold text-texto hover:underline">{a.titulo}</Link>
         <p className="flex flex-wrap items-center gap-x-2 text-legenda text-texto-3">
-          {a.cliente && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: a.cliente.cor }} />{a.cliente.nome}</span>}
+          {a.cliente && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></span>}
           <span>{ROTULO_FORMATO[a.formato]}</span>
           {a.alvos.length > 0 && <span>{a.alvos.map((x) => ROTULO_ALVO[x]).join(' + ')}</span>}
           <span className={`font-semibold ${cor}`}>{situacao}</span>

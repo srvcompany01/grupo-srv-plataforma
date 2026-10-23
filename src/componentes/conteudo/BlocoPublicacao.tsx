@@ -1,7 +1,6 @@
 'use client'
 
 import { CalendarClock, ExternalLink, Send, TriangleAlert, Zap } from 'lucide-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { agendarPostAcao, cancelarAgendamentoAcao, publicarAgoraAcao } from '@/app/(app)/conteudo/acoes'
@@ -12,6 +11,7 @@ import type { Aprovacao, Formato } from '@/dominio/conteudo'
 import { ALVOS, MAX_COLLABS, ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { PublicacaoDoPost } from '@/servicos/conteudo'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 export type ContaMeta = { pagina: string; instagram: { id: string; usuario: string } | null } | { erro: string } | null
 
@@ -54,7 +54,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
       {!p.cliente?.paginaId ? (
         <p className="flex items-start gap-2 rounded-lg bg-aviso-fundo px-3 py-2 text-rotulo text-aviso-forte">
           <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{p.cliente ? <>O cliente <Link href={`/clientes/${p.cliente.id}`} className="font-semibold underline">{p.cliente.nome}</Link> ainda não tem a Página do Facebook no cadastro (campo &quot;Biblioteca de anúncios do Meta&quot;).</> : 'Este post não tem cliente.'}</span>
+          <span>{p.cliente ? <>O cliente <NomeCliente nome={p.cliente.nome} href={`/clientes/${p.cliente.id}`} /> ainda não tem a Página do Facebook no cadastro (campo &quot;Biblioteca de anúncios do Meta&quot;).</> : 'Este post não tem cliente.'}</span>
         </p>
       ) : conta && 'erro' in conta ? (
         <p className="rounded-lg bg-perigo-fundo/50 px-3 py-2 text-rotulo text-perigo-forte">Não consegui ler a Página do cliente na Meta: {conta.erro}</p>

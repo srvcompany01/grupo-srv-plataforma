@@ -21,6 +21,7 @@ import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/google-agencia'
 import { pagoPorDiaMeta } from '@/servicos/meta-anuncios'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 export const maxDuration = 60
 
@@ -113,7 +114,7 @@ async function AnalisePago({ cliente, periodo, googleConectado, seletor }: { cli
   const porDia = new Map(d.pagoPorDia.map((x) => [x.dia, x.gasto]))
   const total = (d.pago.meta?.gasto ?? 0) + (d.pago.google?.custo ?? 0)
   return (
-    <Modulo icone={Target} titulo={`${cliente.nome}: insights e recomendações`} descricao={`Meta e Google Ads · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+    <Modulo icone={Target} titulo="Insights e recomendações" descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · Meta e Google Ads · {rotuloPeriodo(periodo)}</>} acoes={seletor}>
       <div className="space-y-4">
         {d.erros.length > 0 && <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-legenda text-aviso-forte">{d.erros.join(' · ')}</p>}
         <Numeros
@@ -194,7 +195,7 @@ async function Panorama({ clientes, periodo, googleConectado, seletor }: { clien
                 const maior = Math.max(1, ...ordenadas.map((x) => (valor(x.meta)?.gasto ?? 0) + (valor(x.google)?.custo ?? 0)))
                 return (
                   <li key={l.id} className="text-rotulo">
-                    <div className="flex justify-between gap-2"><span className="truncate text-texto">{l.nome}</span><span className="tabular-nums text-texto-2">{reais.format(m + g)}</span></div>
+                    <div className="flex justify-between gap-2"><NomeCliente nome={l.nome} className="truncate" /><span className="tabular-nums text-texto-2">{reais.format(m + g)}</span></div>
                     <div className="mt-0.5 flex h-2 gap-0.5" title={`Meta ${reais.format(m)} · Google ${reais.format(g)}`}>
                       {m > 0 && <span className="rounded-sm" style={{ width: `${(m / maior) * 100}%`, background: CORES_SERIE[0] }} />}
                       {g > 0 && <span className="rounded-sm" style={{ width: `${(g / maior) * 100}%`, background: CORES_SERIE[1] }} />}
@@ -228,7 +229,7 @@ async function Panorama({ clientes, periodo, googleConectado, seletor }: { clien
                   const g = valor(l.google)
                   return (
                     <tr key={l.id} className="border-b border-borda/60 last:border-0">
-                      <td className="py-2 pr-3"><Link href={`/anuncios?cliente=${l.id}${consultaPeriodo(periodo) ? `&${consultaPeriodo(periodo)}` : ''}`} className="font-medium text-texto hover:underline">{l.nome}</Link></td>
+                      <td className="py-2 pr-3"><NomeCliente nome={l.nome} href={`/anuncios?cliente=${l.id}${consultaPeriodo(periodo) ? `&${consultaPeriodo(periodo)}` : ''}`} /></td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? reais.format(m.gasto) : l.meta ? erro(l.meta as Erro) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? numero.format(m.cliques) : vazio}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{m ? <span className="inline-flex items-center justify-end gap-1.5">{pct(m.ctr)} {tomCtrMeta(m.ctr) !== 'neutro' && <SeloTom tom={tomCtrMeta(m.ctr)} />}</span> : vazio}</td>

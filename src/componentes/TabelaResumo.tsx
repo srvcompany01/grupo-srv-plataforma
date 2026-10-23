@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import type { LinhaResumo } from '@/dominio/resumo'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 /** Tabela compacta de totais (departamento ou cliente), cada linha leva para a tela correspondente. */
-export function TabelaResumo({ titulo, descricao, linhas, href }: { titulo: string; descricao: string; linhas: LinhaResumo[]; href: (linha: LinhaResumo) => string }) {
+export function TabelaResumo({ titulo, descricao, linhas, href, clientes }: { titulo: string; descricao: string; linhas: LinhaResumo[]; href: (linha: LinhaResumo) => string; /** Linhas são clientes: nome em destaque (negrito e azul). */ clientes?: boolean }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-borda bg-white shadow-cartao">
       <div className="border-b border-borda px-4 py-3">
@@ -25,7 +26,7 @@ export function TabelaResumo({ titulo, descricao, linhas, href }: { titulo: stri
           <tbody>
             {linhas.map((l) => (
               <tr key={l.id} className="border-t border-borda hover:bg-hover">
-                <td className="max-w-0 truncate px-4 py-2"><Link href={href(l)} className="font-medium hover:text-marca">{l.nome}</Link></td>
+                <td className="max-w-0 truncate px-4 py-2">{clientes ? <NomeCliente nome={l.nome} href={href(l)} /> : <Link href={href(l)} className="font-medium hover:text-marca">{l.nome}</Link>}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{l.total}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{l.emAndamento}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{l.concluidas}</td>

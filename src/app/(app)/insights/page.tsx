@@ -18,6 +18,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { listarComentarios, resumoComentarios, type FiltroComentarios } from '@/servicos/comentarios-redes'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 // O botão "Atualizar agora" dos comentários lê a Meta de todos os clientes.
 export const maxDuration = 300
@@ -83,7 +84,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         <Modulo
           icone={MessageCircle}
           titulo={aba === 'organico' ? 'Comentários nos posts' : 'Comentários nos anúncios'}
-          descricao={`${escolhido ? escolhido.nome : 'Todos os clientes'} · Instagram e Facebook · atualiza sozinho a cada 15 minutos`}
+          descricao={<>{escolhido ? <NomeCliente nome={escolhido.nome} /> : 'Todos os clientes'} · Instagram e Facebook · atualiza sozinho a cada 15 minutos</>}
           acoes={<AtualizarComentarios clienteId={escolhido?.id ?? null} />}
         >
           <div className="space-y-3">
@@ -130,7 +131,7 @@ async function DetalheInstagram({ cliente, periodo, seletor }: { cliente: Client
   const dias = diasDoPeriodo(periodo)
   return (
     <>
-      <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={`${cliente.nome} · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+      <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · {rotuloPeriodo(periodo)}</>} acoes={seletor}>
         {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <InstagramInsights ig={ig} dias={dias} />}
       </Modulo>
       {!('erro' in ig) && (
@@ -186,7 +187,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
                 {ordenadas.map(({ c, ig }) => (
                   <tr key={c.id} className="border-b border-borda/60 last:border-0">
                     <td className="py-2 pr-3">
-                      <Link href={`/insights?cliente=${c.id}${q ? `&${q}` : ''}`} className="font-medium text-texto hover:underline">{c.nome}</Link>
+                      <NomeCliente nome={c.nome} href={`/insights?cliente=${c.id}${q ? `&${q}` : ''}`} />
                       {!('erro' in ig) && <p className="text-micro text-texto-3">@{ig.usuario}</p>}
                     </td>
                     {'erro' in ig ? (

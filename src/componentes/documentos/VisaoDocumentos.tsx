@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ROTULO_VISIBILIDADE, type ResumoDocumento } from '@/dominio/documentos'
 import { DesvincularDocumento, VincularExistente } from './VincularExistente'
 import { NovoDocumentoDialog } from './NovoDocumentoDialog'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 
@@ -34,7 +35,7 @@ export function VisaoDocumentos({ listaId, docs, candidatos, clientes, clienteDa
                 </Link>
                 <div className="mt-2 flex items-center gap-2 text-legenda text-texto-3">
                   <span className="inline-flex items-center gap-1" title={ROTULO_VISIBILIDADE[d.visibilidade]}><Icone className="h-3 w-3" /> {ROTULO_VISIBILIDADE[d.visibilidade]}</span>
-                  {d.clienteNome && <span>· {d.clienteNome}{d.clienteVisivel ? ' (vê)' : ''}</span>}
+                  {d.clienteNome && <span>· <NomeCliente nome={d.clienteNome} />{d.clienteVisivel ? ' (vê)' : ''}</span>}
                   <span className="ml-auto"><DesvincularDocumento listaId={listaId} documentoId={d.id} /></span>
                 </div>
               </div>

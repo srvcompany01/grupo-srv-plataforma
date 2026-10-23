@@ -9,6 +9,7 @@ import { ROTULO_TOM, type TomComentario } from '@/dominio/comentarios'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios-redes'
 import { SeloTom } from './tom'
+import { NomeCliente } from '@/componentes/NomeCliente'
 
 const TOM_SELO: Record<TomComentario, 'bom' | 'neutro' | 'atencao' | 'ruim'> = { positivo: 'bom', neutro: 'neutro', negativo: 'atencao', agressivo: 'ruim' }
 const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
@@ -42,7 +43,7 @@ function Cartao({ c }: { c: Comentario }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-full text-micro font-bold text-white" style={{ background: COR_REDE[c.plataforma] }}>{c.plataforma === 'instagram' ? 'IG' : 'FB'}</span>
         <span className="text-rotulo font-semibold text-texto">{c.plataforma === 'instagram' ? '@' : ''}{c.autor || 'alguém'}</span>
-        <span className="text-legenda text-texto-3">{quando.format(new Date(c.criadoEm))} · {c.clienteNome}</span>
+        <span className="text-legenda text-texto-3">{quando.format(new Date(c.criadoEm))} · <NomeCliente nome={c.clienteNome} href={`/clientes/${c.clienteId}`} /></span>
         <span className="ml-auto flex flex-wrap items-center gap-1.5">
           {c.tom !== 'neutro' && <SeloTom tom={TOM_SELO[c.tom]} rotulo={ROTULO_TOM[c.tom]} />}
           {c.respondidoEm && <SeloTom tom="bom" rotulo="Respondido" />}
