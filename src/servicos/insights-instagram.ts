@@ -115,8 +115,14 @@ const soma = (xs: Record<string, number>[], k: string) => xs.reduce((s, x) => s 
 export async function instagramDoCliente(paginaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, detalhado: boolean): Promise<ResumoInstagram | { erro: string }> {
   try {
     const conta = await contaDaPagina(paginaId)
-    if ('erro' in conta) return conta
-    if (!conta.instagram) return { erro: 'A Página do cliente não tem um Instagram profissional ligado.' }
+    if ('erro' in conta) {
+      console.error('Instagram insights: página', paginaId, conta.erro)
+      return conta
+    }
+    if (!conta.instagram) {
+      console.error('Instagram insights: página sem Instagram', paginaId, conta.pagina)
+      return { erro: `A Página "${conta.pagina}" não tem um Instagram profissional ligado (ou ele não foi liberado para o usuário do sistema do Meta).` }
+    }
     const igId = conta.instagram.id
     const js = janelas(periodo.de, periodo.ate)
     const [perfil, tot, saldos, diario, brutos] = await Promise.all([
@@ -146,8 +152,8 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
       posts,
     }
   } catch (e) {
+    console.error('Instagram insights', paginaId, e instanceof Error ? e.message : e)
     if (e instanceof ErroMeta) return { erro: /permission|permiss/i.test(e.message) ? `O token do Meta não tem permissão de insights deste Instagram (instagram_manage_insights): ${e.message}` : e.message }
-    console.error(e)
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
   }
 }
