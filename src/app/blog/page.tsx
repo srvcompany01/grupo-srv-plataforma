@@ -10,8 +10,10 @@ export const metadata: Metadata = { alternates: { canonical: `${SITE}/blog` } }
 
 /** Início do blog: manchete, destaques, mais lidos, últimos, um bloco por categoria, newsletter e chamada para a landing. */
 export default async function InicioBlog() {
-  const [cats, recentes, lidos] = await Promise.all([categorias(), publicados({ limite: 10 }), publicados({ limite: 5, ordem: 'lidos' })])
-  const porCategoria = await Promise.all(cats.map(async (c) => ({ c, posts: (await publicados({ categoriaId: c.id, limite: 4 })).posts })))
+  // Se o banco não responder (ex.: montagem de prévia), mostra o estado vazio; o cache se refaz em 5 minutos.
+  const vazio = { posts: [], total: 0 }
+  const [cats, recentes, lidos] = await Promise.all([categorias().catch(() => []), publicados({ limite: 10 }).catch(() => vazio), publicados({ limite: 5, ordem: 'lidos' }).catch(() => vazio)])
+  const porCategoria = await Promise.all(cats.map(async (c) => ({ c, posts: (await publicados({ categoriaId: c.id, limite: 4 }).catch(() => vazio)).posts })))
   const [manchete, ...resto] = recentes.posts
 
   if (!manchete) {
