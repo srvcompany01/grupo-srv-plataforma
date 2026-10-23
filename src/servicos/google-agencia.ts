@@ -7,8 +7,9 @@ import { urlDeRetorno } from './google-agenda'
 /**
  * Conta Google da AGÊNCIA (uma só): acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes.
  * O admin conecta pelo mesmo app OAuth do Google Agenda (mesmo endereço de retorno). O refresh token fica na
- * tabela fechada google_agency_link. Google Ads também precisa do developer token da MCC (GOOGLE_ADS_DEVELOPER_TOKEN)
- * e do número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID).
+ * tabela fechada google_agency_link. Google Ads precisa do número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID); o nível de
+ * acesso (Básico) é do projeto do Google Cloud. O developer token foi descontinuado em 09/2026: se existir, ainda vai
+ * (o Google ignora) até as versões novas recusarem; aí basta apagar GOOGLE_ADS_DEVELOPER_TOKEN.
  */
 
 const ESCOPOS = 'openid email https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/business.manage'
@@ -51,7 +52,7 @@ export type SituacaoGoogle = { conectado: false } | { conectado: true; email: st
 export async function situacaoGoogle(): Promise<SituacaoGoogle> {
   const { data, error } = await criarClienteAdmin().from('google_agency_link').select('email').maybeSingle()
   if (error || !data) return { conectado: false }
-  return { conectado: true, email: data.email, adsPronto: !!(process.env.GOOGLE_ADS_DEVELOPER_TOKEN && process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID) }
+  return { conectado: true, email: data.email, adsPronto: !!process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID }
 }
 
 export async function desconectarAgencia(): Promise<void> {
@@ -93,7 +94,7 @@ async function google<T>(url: string, o: Opcoes = {}): Promise<T> {
 function mensagemDoGoogle(status: number, corpo: { error?: { message?: string; status?: string; details?: { errors?: { errorCode?: Record<string, string>; message?: string }[] }[] } }): string {
   const e = corpo.error
   const codigoAds = e?.details?.[0]?.errors?.[0]?.errorCode
-  if (codigoAds?.authorizationError === 'DEVELOPER_TOKEN_NOT_APPROVED') return 'O developer token do Google Ads ainda está em modo de teste: peça o acesso básico na central de API da MCC.'
+  if (codigoAds?.authorizationError === 'DEVELOPER_TOKEN_NOT_APPROVED' || /access level|basic access|test account/i.test(e?.message ?? '')) return 'O projeto do Google Cloud ainda não tem o acesso Básico ao Google Ads API (peça na página Google Ads API do Cloud Console, depois da verificação da marca).'
   if (codigoAds?.authorizationError === 'USER_PERMISSION_DENIED') return 'A conta Google da agência não tem acesso a esta conta do Google Ads (ela está ligada à MCC?).'
   if (status === 403 && /has not been used|is disabled/i.test(e?.message ?? '')) return 'Esta API do Google não está ativada no projeto do Google Cloud (ative-a e tente de novo).'
   if (status === 429) return 'Limite de consultas do Google atingido. Tente de novo em alguns minutos (no Meu Negócio, a cota começa em 0 até o Google aprovar o acesso).'
@@ -105,8 +106,8 @@ function mensagemDoGoogle(status: number, corpo: { error?: { message?: string; s
 const cabecalhosAds = () => {
   const dev = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
   const mcc = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, '')
-  if (!dev || !mcc) throw new ErroGoogle('Falta configurar o Google Ads na Vercel (GOOGLE_ADS_DEVELOPER_TOKEN e GOOGLE_ADS_LOGIN_CUSTOMER_ID).')
-  return { 'developer-token': dev, 'login-customer-id': mcc }
+  if (!mcc) throw new ErroGoogle('Falta o número da MCC do Google Ads na Vercel (GOOGLE_ADS_LOGIN_CUSTOMER_ID).')
+  return { 'login-customer-id': mcc, ...(dev ? { 'developer-token': dev } : {}) }
 }
 
 const comErro = async <T>(fn: () => Promise<T>): Promise<T | { erro: string }> => {

@@ -127,7 +127,7 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
       <Modulo icone={PlugZap} titulo="Conexão com o Google" descricao="Uma conta Google da agência acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes">
         <div className="space-y-2 text-rotulo">
           <p>{google.conectado ? <>Conectado como <strong>{google.email || 'conta Google'}</strong>.</> : 'Ainda não conectado.'}</p>
-          {google.conectado && !google.adsPronto && <p className="text-aviso-forte">Google Ads: falta GOOGLE_ADS_DEVELOPER_TOKEN e/ou GOOGLE_ADS_LOGIN_CUSTOMER_ID na Vercel.</p>}
+          {google.conectado && !google.adsPronto && <p className="text-aviso-forte">Google Ads: falta o número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID) na Vercel.</p>}
           {eu.papel === 'admin' ? <ConexaoGoogle email={google.conectado ? google.email || 'conta Google' : null} /> : !google.conectado && <p className="text-texto-3">Peça ao admin para conectar.</p>}
         </div>
       </Modulo>
