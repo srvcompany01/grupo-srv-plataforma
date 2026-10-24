@@ -83,6 +83,9 @@ export type ResultadoFunil = {
  * Propaga os visitantes pelo funil: quem não recebe ligação usa o próprio "visitantes"; os demais recebem,
  * de cada ligação, os visitantes do nó de origem × a taxa. Ligações que fecham um ciclo são ignoradas.
  */
+/** Etapas que são lead: formulário/cadastro e conversa no WhatsApp. */
+export const TIPOS_LEAD: readonly TipoNo[] = ['formulario', 'whatsapp']
+
 export function calcularFunil(d: DadosFunil): ResultadoFunil {
   const porId = new Map(d.nos.map((n) => [n.id, n]))
   const entradas = new Map<string, LigacaoFunil[]>()
@@ -123,10 +126,13 @@ export function calcularFunil(d: DadosFunil): ResultadoFunil {
   const entrada = soma((n) => ((entradas.get(n.id)?.length ?? 0) === 0 ? n.visitantes : 0))
   const custo = soma((n) => n.custo)
   const receita = soma((n) => nos[n.id].receita)
-  const leads = soma((n) => (n.tipo === 'formulario' ? nos[n.id].visitantes : 0))
+  // Lead = a primeira etapa de lead do caminho: formulário → WhatsApp é a mesma pessoa, conta uma vez.
+  const ehLead = (n: NoFunil) => TIPOS_LEAD.includes(n.tipo)
+  const leadAntes = (n: NoFunil) => (entradas.get(n.id) ?? []).some((l) => { const de = porId.get(l.de); return !!de && ehLead(de) })
+  const leads = soma((n) => (ehLead(n) && !leadAntes(n) ? nos[n.id].visitantes : 0))
   const vendas = soma((n) => (n.tipo === 'venda' ? nos[n.id].visitantes : 0))
   const razao = (a: number, b: number) => (b > 0 ? a / b : null)
-  return { nos, fluxo, ciclos: [...ciclos], totais: { entrada, custo, receita, lucro: receita - custo, leads, vendas, cpl: razao(custo, leads), cac: razao(custo, vendas), roas: razao(receita, custo), conversao: razao(vendas, entrada) } }
+  return { nos, fluxo, ciclos: [...ciclos], totais: { entrada, custo, receita, lucro: receita - custo, leads, vendas, cpl: custo > 0 ? razao(custo, leads) : null, cac: custo > 0 ? razao(custo, vendas) : null, roas: razao(receita, custo), conversao: razao(vendas, entrada) } }
 }
 
 const no = (idNo: string, tipo: TipoNo, nome: string, x: number, y: number, extra: Partial<NoFunil> = {}): NoFunil => ({ id: idNo, tipo, nome, x, y, visitantes: 0, custo: 0, valor: 0, ...extra })

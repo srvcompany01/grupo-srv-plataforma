@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FUNIL_MODELO, FUNIL_VAZIO, calcularFunil, lerDadosFunil, type DadosFunil } from '@/dominio/funil'
+import { FUNIL_MODELO, FUNIL_VAZIO, calcularFunil, lerDadosFunil, type DadosFunil, type TipoNo } from '@/dominio/funil'
 
 describe('calcularFunil', () => {
   it('propaga visitantes pelas taxas e calcula receita, custo, CPL, CAC e ROAS (funil modelo)', () => {
@@ -80,5 +80,16 @@ describe('organizarFunil', () => {
   it('não trava com ciclo', () => {
     const d = { nos: FUNIL_MODELO.nos.slice(0, 2), ligacoes: [{ id: 'a', de: 'n1', para: 'n2', taxa: 1 }, { id: 'b', de: 'n2', para: 'n1', taxa: 1 }] }
     expect(organizarFunil(d).nos).toHaveLength(2)
+  })
+
+  it('WhatsApp conta como lead (sem contar duas vezes depois de um formulário) e sem investimento cpl/cac são null', () => {
+    const n = (id: string, tipo: TipoNo, visitantes = 0, custo = 0) => ({ id, tipo, nome: id, x: 0, y: 0, visitantes, custo, valor: tipo === 'venda' ? 100 : 0 })
+    const direto = calcularFunil({ nos: [n('t', 'trafego', 1000), n('w', 'whatsapp'), n('v', 'venda')], ligacoes: [{ id: 'a', de: 't', para: 'w', taxa: 7 }, { id: 'b', de: 'w', para: 'v', taxa: 10 }] })
+    expect(direto.totais.leads).toBeCloseTo(70)
+    expect(direto.totais).toMatchObject({ cpl: null, cac: null })
+    expect(direto.totais.conversao).toBeCloseTo(0.007)
+    const emSequencia = calcularFunil({ nos: [n('t', 'trafego', 1000, 500), n('f', 'formulario'), n('w', 'whatsapp')], ligacoes: [{ id: 'a', de: 't', para: 'f', taxa: 10 }, { id: 'b', de: 'f', para: 'w', taxa: 50 }] })
+    expect(emSequencia.totais.leads).toBeCloseTo(100)
+    expect(emSequencia.totais.cpl).toBeCloseTo(5)
   })
 })

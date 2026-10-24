@@ -1238,7 +1238,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'calcular_funil',
-    descricao: 'Etapas, ligações (taxa de conversão) e o resultado calculado de um funil: visitantes por etapa, leads, vendas, receita, lucro, custo por lead, custo por venda e ROAS. Valores em reais.',
+    descricao: 'Etapas, ligações (taxa de conversão) e o resultado calculado de um funil: visitantes por etapa, leads (etapas Formulário e WhatsApp; a de WhatsApp depois de um formulário não conta de novo), vendas, receita, lucro, custo por lead (cpl) e por venda (cac), ROAS e conversão de entrada em venda (conversao em fração 0 a 1; conversaoPercentual em %). Sem investimento, cpl e cac vêm null. Valores em reais.',
     escrita: false,
     entrada: { funilId: id('Id do funil') },
     executar: async ({ sb }, a) => {
@@ -1250,7 +1250,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         nome: tela.titulo,
         etapas: d.nos.map((n) => ({ id: n.id, nome: n.nome, tipo: n.tipo, visitantes: r.nos[n.id].visitantes, investimento: n.custo, receita: r.nos[n.id].receita })),
         ligacoes: d.ligacoes.map((l) => ({ de: l.de, para: l.para, taxaPercentual: l.taxa, pessoas: r.fluxo[l.id] })),
-        totais: r.totais,
+        // conversao = fração (0 a 1), como na tela; conversaoPercentual = o mesmo em %.
+        totais: { ...r.totais, conversaoPercentual: r.totais.conversao === null ? null : Math.round(r.totais.conversao * 10_000) / 100 },
       }
     },
   }),
