@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avaliarAnuncios, lerAnuncio, lerContaAnuncios, totaisAnuncios, type AnuncioBruto } from '@/dominio/anuncios-meta'
+import { avaliarAnuncios, lerAnuncio, lerContaAnuncios, referencias, totaisAnuncios, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 const bruto = (id: string, ins: Record<string, unknown>, extra: Partial<AnuncioBruto> = {}): AnuncioBruto => ({ id, name: id, creative: { body: 'Texto', image_url: 'https://img/x.jpg' }, insights: { data: [ins as never] }, ...extra })
 
@@ -45,5 +45,22 @@ describe('anúncios do Meta', () => {
     expect(avaliarAnuncios(lista).map((a) => [a.id, a.desempenho])).toEqual([['a', 'bom'], ['b', 'medio'], ['c', 'fraco']])
     expect(lista[0].cliquesLink).toBe(200)
     expect(totaisAnuncios(lista)).toMatchObject({ impressoes: 30000, cliques: 550, resultados: 0 })
+  })
+
+  it('campanha de marca (tráfego/conteúdo) não é comparada com as de lead nem reprovada por não gerar lead', () => {
+    const conversa = (n: number) => [{ action_type: 'onsite_conversion.messaging_conversation_started_7d', value: String(n) }]
+    const camp = (objective: string) => ({ campaign: { name: objective, objective }, creative: { body: 'x' } })
+    const lista = [
+      lerAnuncio(bruto('whats', { impressions: '10000', spend: '130', actions: conversa(10), frequency: '1.2' }, camp('OUTCOME_ENGAGEMENT'))),
+      lerAnuncio(bruto('trafego', { impressions: '20000', spend: '400', inline_link_clicks: '600', frequency: '1.2' }, camp('OUTCOME_TRAFFIC'))),
+    ]
+    const r = avaliarAnuncios(lista)
+    const t = r.find((a) => a.id === 'trafego')!
+    expect(t.papel).toBe('marca')
+    expect(t.desempenho).toBe('bom') // CTR no link de 3%
+    expect(t.motivos[0]).toMatch(/Campanha de marca/)
+    expect(t.motivos.join(' ')).not.toMatch(/sem nenhum resultado/)
+    expect(r.find((a) => a.id === 'whats')!.papel).toBe('lead')
+    expect(referencias(lista).lead.custoPorResultado).toBe(13)
   })
 })

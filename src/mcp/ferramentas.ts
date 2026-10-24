@@ -7,7 +7,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
 import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
-import { lerContaAnuncios, totaisAnuncios } from '@/dominio/anuncios-meta'
+import { lerContaAnuncios, referencias, ROTULO_PAPEL, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
@@ -185,6 +185,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
         'Performance (aba Performance): por cliente e mês, investimento e leads pagos (Meta: formulários e conversas no WhatsApp/Direct; Google Ads: conversões), orgânico do Instagram (cliques nos links do perfil e no link da bio da plataforma, www.gruposrv.com.br/l/<cliente>, que abre o WhatsApp do cliente com uma mensagem pronta), leads da bio confirmados pela equipe e o faturamento e as vendas lançados pela equipe; calcula CPL, ROAS, custo por venda, ticket médio e conversão. Use performance_cliente, registrar_resultado_mes e confirmar_lead_bio. Não há exclusão por aqui.',
+        'Estratégia de tráfego da agência: há dois papéis de campanha. LEAD (conversas no WhatsApp/Direct, formulário): o resultado é a conversa/lead e se avalia pelo custo por resultado. MARCA (campanhas de tráfego/conteúdo para o Instagram, ex.: "CONTEÚDO / TRAF-INSTA", seguidores, reconhecimento): levam pessoas ao perfil, que viram lead depois; o objetivo primário NÃO é lead, então se avaliam pelo custo por clique no link, CTR no link e crescimento de seguidores — nunca as reprove nem as compare com as de lead por não gerarem conversas. anuncios_meta_cliente já traz o papel de cada anúncio e as referências de cada papel.',
         'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. No Google Ads: buscar_locais_google e ideias_palavras_google (volume de buscas e lance) ajudam a montar criar_campanha_google_pesquisa (orçamento, locais, palavras com correspondência, negativas e anúncio responsivo com 3 a 15 títulos de até 30 caracteres e 2 a 4 descrições de até 90), que nasce PAUSADA. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
@@ -251,7 +252,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'anuncios_meta_cliente',
-    descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: campanha e conjunto de cada um, impressões, alcance, cliques, cliques no link, CTR, CPM, CPC, gasto, frequência, resultados (formulários + conversas no WhatsApp/Direct) e custo por resultado, diagnóstico da Meta quando houver e a avaliação da plataforma (bom / médio / fraco / poucos dados, pelo custo por resultado ou, sem resultados, pelo CTR no link). O cliente precisa ter a conta de anúncios cadastrada.',
+    descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: campanha e conjunto de cada um, impressões, alcance, cliques, cliques no link, CTR, CPM, CPC, gasto, frequência, resultados (formulários + conversas no WhatsApp/Direct) e custo por resultado, o papel do anúncio (Geração de leads ou Marca, pelo objetivo da campanha), diagnóstico da Meta quando houver e a avaliação da plataforma (bom / médio / fraco / poucos dados): lead pelo custo por resultado; marca (tráfego/conteúdo para o Instagram) pelo custo por clique e CTR no link, comparando só anúncios do mesmo papel. O cliente precisa ter a conta de anúncios cadastrada.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -261,11 +262,24 @@ export const FERRAMENTAS: Ferramenta[] = [
       const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, periodoDaIA(a))
       if ('erro' in r) throw new Error(r.erro)
       // Sem a URL da imagem (longa e expira) e sem campos vazios: cabe inteiro na resposta.
-      const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, ...x }) => ({
-        ...x, temImagem: !!imagem, texto: texto.slice(0, 160), ...(custoPorResultado !== null ? { custoPorResultado: Math.round(custoPorResultado * 100) / 100 } : {}), ...(visualizacoesVideo ? { visualizacoesVideo } : {}), ...(link ? { link } : {}),
+      const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, cliques, ...x }) => ({
+        ...x, cliquesTodos: cliques, papel: ROTULO_PAPEL[x.papel], temImagem: !!imagem, texto: texto.slice(0, 160), ...(custoPorResultado !== null ? { custoPorResultado: Math.round(custoPorResultado * 100) / 100 } : {}), ...(visualizacoesVideo ? { visualizacoesVideo } : {}), ...(link ? { link } : {}),
         ...(qualidade || engajamento || conversao ? { diagnosticoMeta: { qualidade, engajamento, conversao } } : {}),
       }))
-      return { cliente: cliente.nome, periodo: periodoDaIA(a), totais: totaisAnuncios(r.anuncios), anuncios }
+      const ref = referencias(r.anuncios)
+      const arred = (n: number | null) => (n === null ? null : Math.round(n * 100) / 100)
+      return {
+        cliente: cliente.nome,
+        periodo: periodoDaIA(a),
+        totais: totaisAnuncios(r.anuncios),
+        referencias: {
+          comoCalcula: 'Média de cada papel = gasto ÷ resultados (lead) ou gasto ÷ cliques no link (marca), só com os anúncios de 500+ impressões no período; por isso pode diferir do total da conta.',
+          lead: { ...ref.lead, custoPorResultado: arred(ref.lead.custoPorResultado), custoPorClique: arred(ref.lead.custoPorClique) },
+          marca: { ...ref.marca, custoPorResultado: arred(ref.marca.custoPorResultado), custoPorClique: arred(ref.marca.custoPorClique) },
+        },
+        observacoes: ['cliquesTodos (todos os cliques) e cliquesLink (cliques no link) são contagens separadas da Meta e podem diferir ~1% para mais ou para menos; para tráfego use cliquesLink.'],
+        anuncios,
+      }
     },
   }),
 
@@ -557,7 +571,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       clienteId: id('Cliente (id de listar_clientes)'),
       status: z.enum(['ativos', 'pausados', 'todos']).default('ativos'),
       comGasto: z.boolean().default(false).describe('Só campanhas com gasto no período'),
-      campanhaId: z.string().regex(/^\d{1,25}$/).optional().describe('Abre uma campanha da Meta com os conjuntos e os anúncios'),
+      campanhaId: z.string().regex(/^\d{1,25}$/).optional().describe('Abre uma campanha da Meta com os conjuntos e os anúncios. SEMPRE como texto entre aspas (ids da Meta têm 18 dígitos e perdem precisão como número).'),
+      pagina: z.number().int().min(1).max(20).default(1).describe('Página de 60 campanhas'),
       dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Gasto dos últimos 7 ou 30 dias até ontem; padrão 7'),
       de: data('Início de um período escolhido (com ate)').optional(),
       ate: data('Fim do período escolhido').optional(),
@@ -570,7 +585,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const g = await import('@/servicos/google-agencia')
       const { estruturaParaIA } = await import('@/dominio/controle-anuncios')
       const google = await g.situacaoGoogle()
-      const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId }
+      const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId, pagina: a.pagina }
       const [meta, goog, pendentes, ultimas] = await Promise.all([
         cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => estruturaParaIA(x, filtro)).catch((e: Error) => ({ erro: e.message })) : null,
         !a.campanhaId && cliente.googleAdsId && google.conectado

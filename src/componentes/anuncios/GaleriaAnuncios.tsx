@@ -41,7 +41,15 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>
           <p className="truncate text-rotulo font-semibold text-texto" title={a.nome}>{a.titulo || a.nome}</p>
-          {(a.campanha || a.conjunto) && <p className="truncate text-micro text-texto-3" title={`${a.campanha} › ${a.conjunto}`}>{a.conjunto || a.campanha}</p>}
+          <p className="flex min-w-0 items-center gap-1.5 text-micro text-texto-3">
+            <span
+              className={`shrink-0 rounded-full px-1.5 py-0.5 font-semibold ${a.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}
+              title={a.papel === 'lead' ? 'Gera conversas/leads: avaliado pelo custo por resultado' : 'Tráfego/conteúdo para o Instagram: traz seguidores e visitas que viram lead depois; avaliado pelo custo do clique, não por leads'}
+            >
+              {a.papel === 'lead' ? 'Leads' : 'Marca'}
+            </span>
+            {(a.campanha || a.conjunto) && <span className="truncate" title={`${a.campanha} › ${a.conjunto}`}>{a.conjunto || a.campanha}</span>}
+          </p>
           {a.texto && <p className="line-clamp-2 text-legenda text-texto-2">{a.texto}</p>}
         </div>
         <div className="grid grid-cols-3 gap-2 border-t border-borda pt-2">
@@ -88,7 +96,11 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
         <>
           <Resumo anuncios={r.anuncios} mostrarGasto={mostrarGasto} />
           <ul className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4">{r.anuncios.map((a) => <Cartao key={a.id} a={a} mostrarGasto={mostrarGasto} />)}</ul>
-          <p className="text-legenda text-texto-3">Dados do Meta, atualizados a cada 30 minutos. &quot;Bom&quot; e &quot;Fraco&quot; comparam o CTR com a média dos anúncios deste cliente e usam o diagnóstico da Meta (com 500+ impressões).</p>
+          <p className="text-legenda text-texto-3">
+            Dados do Meta, atualizados a cada 30 minutos. Cada anúncio é avaliado pelo objetivo da campanha, comparando só com os do mesmo tipo (com 500+ impressões):{' '}
+            <strong className="text-sucesso-forte">Leads</strong> (conversas no WhatsApp/Direct, formulário) pelo custo por resultado;{' '}
+            <strong className="text-[#6250d6]">Marca</strong> (tráfego e conteúdo para o Instagram) pelo custo do clique e CTR no link, porque o papel dela é levar pessoas ao perfil, que viram lead depois.
+          </p>
         </>
       )}
       </div>

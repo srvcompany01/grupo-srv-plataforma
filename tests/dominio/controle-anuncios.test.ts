@@ -65,10 +65,12 @@ describe('estrutura enxuta para a IA', () => {
   ]
 
   it('padrão: só ativas, conjuntos ativos e a contagem de anúncios, sem campos nulos', () => {
-    const r = estruturaParaIA(conta, { status: 'ativos', comGasto: false }) as { campanhas: Record<string, unknown>[]; ocultas: number }
+    const r = estruturaParaIA(conta, { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[]; total: number; dica: string }
     expect(r.campanhas.map((c) => c.id)).toEqual(['ativa', 'parada'])
     expect(r.campanhas[0]).toEqual({ id: 'ativa', nome: 'ativa', status: 'ACTIVE', gasto: 10, conjuntos: [{ id: 'c1', nome: 'c1', status: 'ACTIVE', orcamentoDiario: 25, gasto: 10, anuncios: 2 }] })
-    expect(r.ocultas).toBe(1)
+    expect(r.total).toBe(2)
+    expect(r.dica).toMatch(/1 campanha\(s\) ficaram fora do filtro \(pausadas\)/)
+    expect(r.dica).toMatch(/arquivadas ou excluídas/)
     expect((estruturaParaIA(conta, { status: 'todos', comGasto: true }) as { campanhas: unknown[] }).campanhas).toHaveLength(1)
   })
 

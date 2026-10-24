@@ -27,7 +27,7 @@ export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnunc
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   const q = new URLSearchParams({
-    fields: `id,name,campaign{name},adset{name},${CRIATIVO},insights.time_range(${JSON.stringify({ since: periodo.de, until: periodo.ate })}){${METRICAS}}`,
+    fields: `id,name,campaign{name,objective},adset{name},${CRIATIVO},insights.time_range(${JSON.stringify({ since: periodo.de, until: periodo.ate })}){${METRICAS}}`,
     effective_status: '["ACTIVE"]',
     limit: '60',
     access_token: token,

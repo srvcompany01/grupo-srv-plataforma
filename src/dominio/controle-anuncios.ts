@@ -168,7 +168,7 @@ export function operacoesPesquisaGoogle(conta: string, n: NovaPesquisaGoogle) {
 // ───────────────────────────── Resposta enxuta para a IA ─────────────────────────────
 
 export type ItemArvore = { id: string; nome: string; nivel: 'campanha' | 'conjunto' | 'anuncio'; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; filhos: ItemArvore[] }
-export type FiltroEstrutura = { status: 'ativos' | 'pausados' | 'todos'; comGasto: boolean; campanhaId?: string }
+export type FiltroEstrutura = { status: 'ativos' | 'pausados' | 'todos'; comGasto: boolean; campanhaId?: string; pagina?: number }
 
 const passa = (o: Pick<ItemArvore, 'ligado' | 'gasto'>, f: FiltroEstrutura) => (f.status === 'todos' || (f.status === 'ativos') === o.ligado) && (!f.comGasto || o.gasto > 0)
 const arred = (n: number) => Math.round(n * 100) / 100
@@ -183,9 +183,20 @@ export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
     return { campanha: { ...item(c), conjuntos: c.filhos.filter((j) => passa(j, filtro)).map((j) => ({ ...item(j), anuncios: j.filhos.filter((a) => passa(a, filtro)).map(item) })) } }
   }
   const visiveis = campanhas.filter((c) => passa(c, f))
+  const pagina = Math.max(1, f.pagina ?? 1)
+  const nestaPagina = visiveis.slice((pagina - 1) * 60, pagina * 60)
+  const foraDoFiltro = campanhas.length - visiveis.length
+  const outrasPaginas = visiveis.length - nestaPagina.length
   return {
-    campanhas: visiveis.slice(0, 60).map((c) => ({ ...item(c), conjuntos: c.filhos.filter((j) => passa(j, { ...f, comGasto: false })).map((j) => ({ ...item(j), anuncios: j.filhos.length })) })),
-    ocultas: campanhas.length - Math.min(visiveis.length, 60),
-    dica: 'Para ver os anúncios de uma campanha, chame de novo com campanhaId. Use status=todos para incluir as pausadas.',
+    campanhas: nestaPagina.map((c) => ({ ...item(c), conjuntos: c.filhos.filter((j) => passa(j, { ...f, comGasto: false })).map((j) => ({ ...item(j), anuncios: j.filhos.length })) })),
+    total: visiveis.length,
+    pagina,
+    ...(visiveis.length > pagina * 60 ? { proximaPagina: pagina + 1 } : {}),
+    dica: [
+      'Ordem: ativas primeiro, depois maior gasto. Para ver os anúncios de uma campanha, chame de novo com campanhaId (texto).',
+      ...(foraDoFiltro ? [`${foraDoFiltro} campanha(s) ficaram fora do filtro (${f.status === 'ativos' ? 'pausadas' : f.status === 'pausados' ? 'ativas' : 'sem gasto'}${f.comGasto && f.status !== 'todos' ? ' ou sem gasto' : ''}).`] : []),
+      ...(outrasPaginas ? [`${outrasPaginas} campanha(s) em outras páginas (60 por página): use pagina.`] : []),
+      'Campanhas arquivadas ou excluídas na Meta não aparecem.',
+    ].join(' '),
   }
 }
