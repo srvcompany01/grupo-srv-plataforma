@@ -56,3 +56,21 @@ it('schema publicado: estrutura_anuncios_cliente declara campanhaId (texto), sta
     expect(props(ferramenta)[campo]?.type, `${ferramenta}.${campo}`).toBe('string')
   }
 })
+
+it('contrato: toda ferramenta publica exatamente os parâmetros e a descrição da definição usada pelo handler', async () => {
+  const { tools } = await (await conectar('write')).listTools()
+  for (const f of FERRAMENTAS) {
+    const t = tools.find((x) => x.name === f.nome)!
+    expect(Object.keys(t.inputSchema.properties ?? {}).sort(), f.nome).toEqual(Object.keys(f.entrada).sort())
+    expect(t.description, f.nome).toBe(f.descricao)
+  }
+})
+
+it('contrato: todo id de campanha, conjunto, anúncio, formulário ou post da Meta/Google é texto', async () => {
+  const { tools } = await (await conectar('write')).listTools()
+  for (const t of tools) {
+    for (const [campo, def] of Object.entries((t.inputSchema.properties ?? {}) as Record<string, { type?: string }>)) {
+      if (/^(campanhaId|conjuntoId|objetoId|formularioId|comentarioId|anuncioId)$/.test(campo)) expect(def.type, `${t.name}.${campo}`).toBe('string')
+    }
+  }
+})

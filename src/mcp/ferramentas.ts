@@ -161,6 +161,9 @@ function camposDoMcp(a: EntradaPostMcp, atual: import('@/servicos/blog').PostEqu
   }
 }
 
+/** Commit em produção (Vercel); 'local' fora dela. */
+export const VERSAO = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local'
+
 export const FERRAMENTAS: Ferramenta[] = [
   definir({
     nome: 'descrever_plataforma',
@@ -169,6 +172,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     entrada: {},
     executar: async (ctx) => ({
       voce: { nome: ctx.nome, papel: ctx.papel, permissao: ctx.escopo === 'write' ? 'leitura e escrita' : 'somente leitura' },
+      versao: { servidor: VERSAO, aviso: 'Se um parâmetro citado aqui não aparecer no schema das ferramentas, o app está com a lista antiga em cache: reconecte o conector e abra uma conversa nova.' },
       hierarquia: 'Espaço › (Subárea) › Pasta › Lista › Tarefa › Subtarefa. Pastas e listas também podem ficar soltas na raiz. A lista não precisa de cliente; o cliente é uma tag opcional de cada tarefa (a lista pode ter um cliente padrão).',
       regras: [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',

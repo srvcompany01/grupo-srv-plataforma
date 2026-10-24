@@ -1,11 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { revalidatePath } from 'next/cache'
 import { mensagemErro } from '@/dominio/erros-banco'
-import { FERRAMENTAS, type Contexto } from './ferramentas'
+import { FERRAMENTAS, VERSAO, type Contexto } from './ferramentas'
 
 /** Um servidor por requisição (stateless). Tokens de leitura nem veem as ferramentas de escrita. */
 export function criarServidorMcp(ctx: Contexto): McpServer {
-  const servidor = new McpServer({ name: 'grupo-srv-plataforma', version: '1.0.0' })
+  // A versão é o commit em produção: o cliente da IA mostra qual definição das ferramentas está usando.
+  const servidor = new McpServer({ name: 'grupo-srv-plataforma', version: `1.0.0+${VERSAO}` })
   for (const f of FERRAMENTAS) {
     if (f.escrita && ctx.escopo !== 'write') continue
     servidor.registerTool(
