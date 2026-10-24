@@ -80,7 +80,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
         leadsSite: m?.get(mes)?.site ?? 0,
         conversas: m?.get(mes)?.conversas ?? 0,
         conversoesGoogle: g?.get(mes)?.conversoes ?? 0,
-        cliquesPerfilInstagram: i ? (i.get(mes) ?? 0) : null,
+        cliquesPerfilInstagram: i ? (i.get(mes) ?? null) : null,
         cliquesLinkBio: cliquesMes.get(mes) ?? 0,
         leadsConfirmados: confirmadosMes.get(mes) ?? 0,
         faturamento: r?.revenue === null || r?.revenue === undefined ? null : Number(r.revenue),

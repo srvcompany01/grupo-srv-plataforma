@@ -12,6 +12,9 @@ const CACHE = 3600
 const DIA = 86_400
 
 /** Janelas de até 30 dias, em segundos Unix, do início de `de` ao fim de `ate` (meia-noite de Belém = 03:00 UTC). */
+/** Soma das janelas; null se nenhuma janela trouxe o número. */
+export const somaOuNulo = (xs: (number | null)[]) => (xs.some((x) => x !== null) ? xs.reduce<number>((s, x) => s + (x ?? 0), 0) : null)
+
 export function janelas(de: string, ate: string): { since: number; until: number }[] {
   const inicio = Date.parse(`${de}T03:00:00Z`) / 1000
   const fim = Date.parse(`${ate}T03:00:00Z`) / 1000 + DIA
@@ -165,7 +168,8 @@ function semNumeros(m: MidiaBruta): PostIG {
 }
 
 /** Cliques nos links do perfil do Instagram (link da bio e botões de contato), por mês. Cache de 1 hora. */
-export async function cliquesNoPerfilPorMes(paginaId: string, meses: { mes: string; de: string; ate: string }[]): Promise<Map<string, number> | { erro: string }> {
+/** Toques nos links do perfil por mês. null no mês = a Meta não entregou a métrica (diferente de 0, ninguém tocou). */
+export async function cliquesNoPerfilPorMes(paginaId: string, meses: { mes: string; de: string; ate: string }[]): Promise<Map<string, number | null> | { erro: string }> {
   try {
     const conta = await contaDaPagina(paginaId)
     if ('erro' in conta) return conta
@@ -174,9 +178,9 @@ export async function cliquesNoPerfilPorMes(paginaId: string, meses: { mes: stri
     const porMes = await Promise.all(meses.map(async (m) => {
       const totais = await Promise.all(janelas(m.de, m.ate).map((j) =>
         graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'profile_links_taps', metric_type: 'total_value', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg: CACHE })
-          .then((r) => r.data[0]?.total_value?.value ?? 0, () => 0),
+          .then((r) => r.data[0]?.total_value?.value ?? null, () => null),
       ))
-      return [m.mes, totais.reduce((s, x) => s + x, 0)] as const
+      return [m.mes, somaOuNulo(totais)] as const
     }))
     return new Map(porMes)
   } catch (e) {
