@@ -166,6 +166,13 @@ export async function arquivarTarefa(sb: Supabase, id: string) {
   if (!count) throw { code: '42501' }
 }
 
+/** Desarquiva a tarefa e as subtarefas arquivadas junto com ela. Devolve quantas voltaram. */
+export async function desarquivarTarefa(sb: Supabase, id: string): Promise<number> {
+  const { data, error } = await sb.rpc('desarquivar_tarefa', { p_id: id })
+  if (error) throw error
+  return data
+}
+
 /** Arquiva várias tarefas-raiz; o gatilho do banco inclui todas as subtarefas. */
 export async function arquivarTarefas(sb: Supabase, ids: string[]) {
   const { error, count } = await sb

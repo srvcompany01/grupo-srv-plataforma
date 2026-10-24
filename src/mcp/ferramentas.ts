@@ -1102,6 +1102,25 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'desarquivar_tarefa',
+    descricao: 'Desfaz o arquivamento de uma tarefa: ela volta para a lista com as subtarefas que foram arquivadas junto (as arquivadas antes continuam arquivadas).',
+    escrita: true,
+    entrada: { tarefaId: id('Tarefa arquivada') },
+    executar: async ({ sb }, a) => ({ ok: true, tarefasDeVolta: await tarefas.desarquivarTarefa(sb, a.tarefaId) }),
+  }),
+
+  definir({
+    nome: 'mover_tarefa',
+    descricao: 'Move uma tarefa (com as subtarefas) para outra lista (id de listar_arvore). Se o status atual não existir na lista nova, ela vai para o primeiro status "a fazer" de lá. Subtarefa movida vira tarefa principal na lista nova.',
+    escrita: true,
+    entrada: { tarefaId: id('Tarefa'), listaId: id('Lista de destino') },
+    executar: async ({ sb }, a) => {
+      await tarefas.moverParaLista(sb, a.tarefaId, a.listaId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
     nome: 'arquivar_tarefa',
     descricao: 'Arquiva uma tarefa criada por engano (com as subtarefas): ela some das listas, mas continua guardada no banco, nada é apagado de verdade. Use só quando a pessoa pedir.',
     escrita: true,

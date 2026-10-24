@@ -1764,6 +1764,7 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      desarquivar_tarefa: { Args: { p_id: string }; Returns: number }
       arquivos_a_arquivar: { Args: { p_antecedencia_dias?: number }; Returns: { tipo: string; id: string; chave: string; bytes: number; nome: string; vence_em: string }[] }
       uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
