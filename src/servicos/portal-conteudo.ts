@@ -60,13 +60,13 @@ export async function linkDoUsuario(usuarioId: string): Promise<string | null> {
 
 const CAMPOS = `task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_permalink, fb_permalink, collaborators,
   tasks!inner(title, client_id, archived_at),
-  content_versions(number, caption, content_media(kind, r2_key, position), content_responses(decision, comment, responder_name, created_at))`
+  content_versions(number, caption, content_media(kind, r2_key, position, arquivado_em), content_responses(decision, comment, responder_name, created_at))`
 
 type Linha = {
   task_id: string; format: string; approval: string; current_version: number; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string
   ig_permalink: string | null; fb_permalink: string | null; collaborators: string[] | null
   tasks: { title: string; client_id: string | null; archived_at: string | null }
-  content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; position: number }[]; content_responses: { decision: string; comment: string; responder_name: string; created_at: string } | null }[]
+  content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; position: number; arquivado_em: string | null }[]; content_responses: { decision: string; comment: string; responder_name: string; created_at: string } | null }[]
 }
 
 async function paraPost(l: Linha, comMidias: 'todas' | 'capa'): Promise<PostPortal> {
@@ -79,7 +79,7 @@ async function paraPost(l: Linha, comMidias: 'todas' | 'capa'): Promise<PostPort
     aprovacao: l.approval as Aprovacao,
     versao: l.current_version,
     legenda: atual?.caption ?? '',
-    midias: await Promise.all(midias.map(async (m) => ({ tipo: m.kind as 'imagem' | 'video', url: await urlLeitura(m.r2_key) }))),
+    midias: await Promise.all(midias.map(async (m) => ({ tipo: (m.arquivado_em ? 'imagem' : m.kind) as 'imagem' | 'video', url: await urlLeitura(m.r2_key, { arquivado: m.arquivado_em }) }))),
     publicarEm: l.publish_at,
     alvos: l.publish_targets as Alvo[],
     modo: l.publish_mode as ModoPublicacao,

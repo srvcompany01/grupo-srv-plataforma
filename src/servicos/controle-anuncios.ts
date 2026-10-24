@@ -196,7 +196,7 @@ export async function decidirProposta(sb: Supabase, quem: Quem, id: string, apro
 export type Criativo = { id: string; nome: string; tipo: 'imagem' | 'video'; chave: string; criadoEm: string }
 
 export async function listarCriativos(sb: Supabase, clienteId: string): Promise<Criativo[]> {
-  const { data, error } = await sb.from('ad_creatives').select('id, nome, tipo, chave, created_at').eq('client_id', clienteId).order('created_at', { ascending: false }).limit(100)
+  const { data, error } = await sb.from('ad_creatives').select('id, nome, tipo, chave, created_at').eq('client_id', clienteId).is('arquivado_em', null).order('created_at', { ascending: false }).limit(100)
   if (error) return []
   return data.map((c) => ({ id: c.id, nome: c.nome, tipo: c.tipo as Criativo['tipo'], chave: c.chave, criadoEm: c.created_at }))
 }
@@ -205,11 +205,12 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /** Envia o criativo para a conta da Meta (uma vez por conta; depois reaproveita). */
 async function midiaNaMeta(sb: Supabase, clienteId: string, contaId: string, criativoId: string): Promise<{ imagemHash: string } | { videoId: string; capa: string }> {
-  const { data: c, error } = await sb.from('ad_creatives').select('id, tipo, chave, meta').eq('id', criativoId).eq('client_id', clienteId).maybeSingle()
+  const { data: c, error } = await sb.from('ad_creatives').select('id, tipo, chave, meta, arquivado_em').eq('id', criativoId).eq('client_id', clienteId).maybeSingle()
   if (error) throw error
   if (!c) throw falha(`Criativo ${criativoId} não encontrado na biblioteca deste cliente.`)
   const salvos = (c.meta ?? {}) as Record<string, string>
   let ref = salvos[contaId]
+  if (!ref && c.arquivado_em) throw falha(`O criativo ${criativoId} foi arquivado pelo ciclo de renovação. Suba o arquivo de novo.`)
   if (!ref) {
     const url = await urlLeitura(c.chave)
     if (c.tipo === 'imagem') {

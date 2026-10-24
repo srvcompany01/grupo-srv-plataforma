@@ -126,7 +126,7 @@ type PostCompleto = {
   task_id: string; format: string; approval: string; current_version: number
   publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string
   ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null; collaborators: string[] | null
-  content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number }[] }[]
+  content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number; arquivado_em: string | null }[] }[]
   gbp_post_name: string | null
   tasks: { clients: { meta_page_id: string | null; google_location: string | null } | null } | null
 }
@@ -152,7 +152,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
   try {
     const { data, error } = await admin
       .from('content_posts')
-      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position)), tasks(clients(meta_page_id, google_location))')
+      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position, arquivado_em)), tasks(clients(meta_page_id, google_location))')
       .eq('task_id', taskId)
       .single()
     if (error) throw error
@@ -163,6 +163,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       return { status: 'agendado' }
     }
     const versao = p.content_versions.find((v) => v.number === p.current_version)
+    if (versao?.content_media.some((m) => m.arquivado_em)) throw new ErroMeta('As mídias deste post já foram arquivadas pelo ciclo de renovação (prazo vencido). Suba as mídias de novo numa versão nova.')
     const midias: MidiaPublicavel[] = [...(versao?.content_media ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ tipo: m.kind as 'imagem' | 'video', nome: m.original_name, chave: m.r2_key }))
     const alvos = p.publish_targets as Alvo[]
     const collabs = p.collaborators ?? []

@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { EXTENSAO_ANEXO, normalizarMime } from '@/dominio/anexos'
 import { EXTENSAO_CAPA } from '@/dominio/clientes-galeria'
@@ -94,7 +94,12 @@ export async function urlUpload(chave: string, tipoMime: string, tamanhoBytes: n
   return getSignedUrl(s3(), cmd, { expiresIn: EXPIRA_UPLOAD })
 }
 
-export async function urlLeitura(chave: string, opcoes: { download?: string } = {}): Promise<string> {
+/** Imagem mostrada no lugar de um arquivo que o ciclo de renovação já apagou. */
+export const ARQUIVO_ARQUIVADO = '/arquivo-arquivado.svg'
+
+/** `arquivado`: data em que o ciclo apagou o arquivo (aí devolve a imagem de "arquivado"). */
+export async function urlLeitura(chave: string, opcoes: { download?: string; arquivado?: string | null } = {}): Promise<string> {
+  if (opcoes.arquivado) return ARQUIVO_ARQUIVADO
   if (armazenamentoLocal()) {
     return `/api/dev-arquivos/${chave}${opcoes.download ? `?download=${encodeURIComponent(opcoes.download)}` : ''}`
   }
@@ -109,4 +114,33 @@ export async function urlLeitura(chave: string, opcoes: { download?: string } = 
 function dispositionDownload(nome: string): string {
   const ascii = nome.normalize('NFD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '_') || 'arquivo'
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nome)}`
+}
+
+/** Apaga os arquivos (de 1.000 em 1.000). Devolve as chaves que o R2 não conseguiu apagar. */
+export async function apagarArquivos(chaves: string[]): Promise<string[]> {
+  if (armazenamentoLocal()) {
+    const { rm } = await import('node:fs/promises')
+    const path = await import('node:path')
+    await Promise.all(chaves.map((c) => rm(path.join(process.cwd(), '.dados', 'arquivos', c), { force: true })))
+    return []
+  }
+  const falhas: string[] = []
+  for (let i = 0; i < chaves.length; i += 1000) {
+    const r = await s3().send(new DeleteObjectsCommand({ Bucket: exigir('R2_BUCKET'), Delete: { Objects: chaves.slice(i, i + 1000).map((Key) => ({ Key })), Quiet: true } }))
+    falhas.push(...(r.Errors ?? []).map((e) => e.Key ?? ''))
+  }
+  return falhas
+}
+
+/** Arquivos de uma pasta enviados antes de `antes` (para limpar o que não tem registro no banco). */
+export async function arquivosAntigos(prefixo: string, antes: Date): Promise<{ chave: string; bytes: number }[]> {
+  if (armazenamentoLocal()) return []
+  const lista: { chave: string; bytes: number }[] = []
+  let token: string | undefined
+  do {
+    const r = await s3().send(new ListObjectsV2Command({ Bucket: exigir('R2_BUCKET'), Prefix: prefixo, ContinuationToken: token }))
+    for (const o of r.Contents ?? []) if (o.Key && o.LastModified && o.LastModified < antes) lista.push({ chave: o.Key, bytes: o.Size ?? 0 })
+    token = r.NextContinuationToken
+  } while (token)
+  return lista
 }

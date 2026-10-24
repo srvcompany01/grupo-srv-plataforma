@@ -1,5 +1,9 @@
-import { AlertTriangle, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Hourglass, List, Video } from 'lucide-react'
+import { AlertTriangle, BarChart3, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, Columns3, ExternalLink, Hourglass, List, Video } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { MetricasMini, PainelInsight, SeloNota } from '@/componentes/conteudo/InsightPost'
+import type { MetricasPost, Nota } from '@/dominio/insights-post'
+import { metricasDosPosts, notasDosPosts } from '@/servicos/insights-post'
 import { AcoesAgendamento } from '@/componentes/conteudo/AcoesAgendamento'
 import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
@@ -21,7 +25,15 @@ const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digi
 const diaHora = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
-function Linha({ a, agora, soHora, hoje }: { a: Agendamento; agora: Date; soHora?: boolean; hoje: string }) {
+// A análise com IA (botão no painel do post) assiste o vídeo: pode levar 1 ou 2 minutos.
+export const maxDuration = 300
+
+/** Métricas e nota de cada post publicado, e o link do painel de insight. */
+type Extras = { metricas: Map<string, MetricasPost>; notas: Map<string, Nota>; insight: (id: string) => string }
+
+function Linha({ a, agora, soHora, hoje, x }: { a: Agendamento; agora: Date; soHora?: boolean; hoje: string; x: Extras }) {
+  const m = a.igMediaId ? x.metricas.get(a.igMediaId) : undefined
+  const nota = x.notas.get(a.id)
   const situacao = situacaoPublicacao({ status: a.status, em: a.em, modo: a.modo, aprovacao: a.aprovacao }, agora)
   const cor = a.status === 'publicado' ? 'text-sucesso-forte' : a.status === 'falhou' || a.aprovacao === 'ajuste' ? 'text-perigo-forte' : a.modo === 'aprovacao' && a.aprovacao !== 'aprovado' ? 'text-aviso-forte' : 'text-texto-2'
   return (
@@ -44,6 +56,13 @@ function Linha({ a, agora, soHora, hoje }: { a: Agendamento; agora: Date; soHora
           <span className={`font-semibold ${cor}`}>{situacao}</span>
         </p>
         {a.status === 'falhou' && a.erro && <p className="truncate text-legenda text-perigo-forte" title={a.erro}>{a.erro}</p>}
+        {a.status === 'publicado' && (
+          <p className="mt-0.5 flex flex-wrap items-center gap-2">
+            {m ? <MetricasMini m={m} /> : a.igMediaId && <span className="text-legenda text-texto-3">sem métricas do Instagram</span>}
+            {nota && <SeloNota nota={nota} />}
+            {a.igMediaId && <Link href={x.insight(a.id)} scroll={false} className="inline-flex items-center gap-1 text-legenda font-semibold text-[#6250d6] hover:underline"><BarChart3 className="h-3 w-3" /> Insights</Link>}
+          </p>
+        )}
       </div>
       {(a.igLink || a.fbLink) && (
         <div className="flex shrink-0 flex-col items-end gap-0.5 text-legenda">
@@ -56,9 +75,57 @@ function Linha({ a, agora, soHora, hoje }: { a: Agendamento; agora: Date; soHora
   )
 }
 
-const Lista = ({ itens, agora, soHora, hoje }: { itens: Agendamento[]; agora: Date; soHora?: boolean; hoje: string }) => (
-  <ul className="divide-y divide-borda rounded-lg border border-borda">{itens.map((a) => <Linha key={a.id} a={a} agora={agora} soHora={soHora} hoje={hoje} />)}</ul>
+const Lista = ({ itens, agora, soHora, hoje, x }: { itens: Agendamento[]; agora: Date; soHora?: boolean; hoje: string; x: Extras }) => (
+  <ul className="divide-y divide-borda rounded-lg border border-borda">{itens.map((a) => <Linha key={a.id} a={a} agora={agora} soHora={soHora} hoje={hoje} x={x} />)}</ul>
 )
+
+/** Kanban: uma coluna por etapa (atenção, com o cliente, agendado, publicado). */
+function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string; itens: Agendamento[] }[]; agora: Date; x: Extras }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {colunas.map((c) => (
+        <section key={c.titulo} className="flex min-w-0 flex-col rounded-xl border border-borda bg-fundo/50">
+          <h2 className="flex items-center gap-2 border-b border-borda px-3 py-2 text-rotulo font-semibold text-texto">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.cor }} aria-hidden /> {c.titulo}
+            <span className="ml-auto rounded-full bg-white px-1.5 text-micro font-semibold text-texto-2">{c.itens.length}</span>
+          </h2>
+          <ul className="space-y-2 p-2">
+            {c.itens.length === 0 && <li className="py-4 text-center text-legenda text-texto-3">Nada aqui.</li>}
+            {c.itens.map((a) => {
+              const m = a.igMediaId ? x.metricas.get(a.igMediaId) : undefined
+              const nota = x.notas.get(a.id)
+              const quando = a.status === 'publicado' ? a.publicadoEm ?? a.em : a.em
+              return (
+                <li key={a.id} className={`overflow-hidden rounded-lg border-l-4 bg-white shadow-sm ${corDoItem(a)}`}>
+                  <Link href={`/tarefas/${a.id}`} className="flex gap-2 p-2 hover:bg-hover/50">
+                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-fundo">
+                      {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-white drop-shadow" /></> : (
+                        // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
+                        <img src={a.capa.url} alt="" className="h-full w-full object-cover" />
+                      ))}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-rotulo font-semibold text-texto">{a.titulo}</span>
+                      <span className="block text-micro text-texto-3">{ROTULO_FORMATO[a.formato]}{quando ? ` · ${diaHora.format(new Date(quando))}` : ''}</span>
+                      <span className="block text-micro font-semibold text-texto-2">{situacaoPublicacao({ status: a.status, em: a.em, modo: a.modo, aprovacao: a.aprovacao }, agora)}</span>
+                    </span>
+                  </Link>
+                  {(a.cliente || m || nota) && (
+                    <div className="space-y-1 border-t border-borda/60 px-2 py-1.5">
+                      {a.cliente && <p className="flex items-center gap-1 text-legenda"><span className="h-2 w-2 rounded-full" style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></p>}
+                      {(m || nota) && <div className="flex flex-wrap items-center gap-1.5">{m && <MetricasMini m={m} />}{nota && <SeloNota nota={nota} />}</div>}
+                      {a.igMediaId && <Link href={x.insight(a.id)} scroll={false} className="inline-flex items-center gap-1 text-legenda font-semibold text-[#6250d6] hover:underline"><BarChart3 className="h-3 w-3" /> Insights</Link>}
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
 
 const SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const corDoItem = (a: Agendamento) => (a.status === 'publicado' ? 'border-sucesso' : a.status === 'falhou' || a.aprovacao === 'ajuste' ? 'border-perigo' : a.modo === 'aprovacao' && a.aprovacao !== 'aprovado' ? 'border-aviso' : 'border-petroleo')
@@ -127,15 +194,17 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
   const hoje = dataDeHoje(agora)
   const clientes = [...new Map(todos.flatMap((a) => (a.cliente ? [[a.cliente.id, a.cliente]] : []))).values()].sort((a, b) => a.nome.localeCompare(b.nome))
   const filtro = texto(sp.cliente)
-  const visao = texto(sp.visao) === 'calendario' ? 'calendario' : 'lista'
+  const visao = texto(sp.visao) === 'calendario' ? 'calendario' : texto(sp.visao) === 'kanban' ? 'kanban' : 'lista'
+  const postAberto = texto(sp.post)
   const mes = lerMes(texto(sp.mes), hoje)
-  const url = (p: { visao?: string; mes?: string; cliente?: string | null }) => {
+  const url = (p: { visao?: string; mes?: string; cliente?: string | null; post?: string | null }) => {
     const q = new URLSearchParams()
     const v = p.visao ?? visao
-    if (v === 'calendario') q.set('visao', v)
+    if (v !== 'lista') q.set('visao', v)
     if (v === 'calendario' && (p.mes ?? mes) !== hoje.slice(0, 7)) q.set('mes', p.mes ?? mes)
     const c = p.cliente === undefined ? filtro : p.cliente
     if (c) q.set('cliente', c)
+    if (p.post) q.set('post', p.post)
     return q.size ? `/agendamentos?${q}` : '/agendamentos'
   }
   const itens = filtro ? todos.filter((a) => a.cliente?.id === filtro) : todos
@@ -144,6 +213,13 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
   const esperandoCliente = itens.filter((a) => a.aprovacao === 'aguardando' && a.status !== 'publicado' && a.status !== 'falhou')
   const proximos = itens.filter((a) => (a.status === 'agendado' || a.status === 'publicando') && (a.modo === 'direto' || a.aprovacao === 'aprovado'))
   const publicados = itens.filter((a) => a.status === 'publicado').sort((x, y) => (y.publicadoEm ?? '').localeCompare(x.publicadoEm ?? '')).slice(0, 30)
+  // Métricas ao vivo dos publicados (até 60, os mais recentes) e as notas das análises já feitas.
+  const publicadosTodos = itens.filter((a) => a.status === 'publicado' && a.igMediaId).sort((a, b) => (b.publicadoEm ?? '').localeCompare(a.publicadoEm ?? '')).slice(0, 60)
+  const [metricas, notas] = await Promise.all([
+    metricasDosPosts(publicadosTodos.map((a) => ({ igId: a.igMediaId!, formato: a.formato }))).catch(() => new Map<string, MetricasPost>()),
+    notasDosPosts(sb, publicadosTodos.map((a) => a.id)),
+  ])
+  const x: Extras = { metricas, notas, insight: (id) => url({ post: id }) }
   const porDia = new Map<string, Agendamento[]>()
   for (const a of proximos) {
     const dia = a.em ? dataDeHoje(new Date(a.em)) : hoje
@@ -156,11 +232,12 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Conteúdo</p>
-          <h1 className="page-title mt-1">Agendamentos</h1>
+          <h1 className="page-title mt-1">Posts</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Visão">
             <Link href={url({ visao: 'lista' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'lista' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><List className="h-3.5 w-3.5" /> Lista</Link>
+            <Link href={url({ visao: 'kanban' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'kanban' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><Columns3 className="h-3.5 w-3.5" /> Kanban</Link>
             <Link href={url({ visao: 'calendario' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'calendario' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><CalendarDays className="h-3.5 w-3.5" /> Calendário</Link>
           </nav>
           {listaConteudo[0] && <NovoPostDialog listaId={listaConteudo[0].id} maes={maes} clientes={todosClientes.filter((c) => !c.interno && c.status !== 'encerrado').map((c) => ({ id: c.id, nome: c.nome }))} />}
@@ -178,12 +255,23 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
         <Calendario itens={itens} mes={mes} hoje={hoje} href={(m) => url({ mes: m })} />
       ) : itens.length === 0 ? (
         <EstadoVazio icone={CalendarClock} titulo="Nenhum post agendado" descricao='Abra um post da lista de conteúdo e use o bloco "Publicação no Instagram e Facebook".' />
+      ) : visao === 'kanban' ? (
+        <Kanban
+          agora={agora}
+          x={x}
+          colunas={[
+            { titulo: 'Pedindo atenção', cor: '#d64545', itens: atencao },
+            { titulo: 'Aguardando o cliente', cor: '#eda100', itens: esperandoCliente },
+            { titulo: 'Agendados', cor: '#2a78d6', itens: [...proximos].sort((a, b) => (a.em ?? '').localeCompare(b.em ?? '')) },
+            { titulo: 'Publicados', cor: '#1baf7a', itens: publicados },
+          ]}
+        />
       ) : (
         <div className="grid items-start gap-5 xl:grid-cols-2">
           <div className="space-y-5">
             {atencao.length > 0 && (
               <Modulo icone={AlertTriangle} titulo="Pedindo atenção" descricao="Falhou ao publicar ou o cliente pediu ajuste" perigo>
-                <Lista itens={atencao} agora={agora} hoje={hoje} />
+                <Lista itens={atencao} agora={agora} hoje={hoje} x={x} />
               </Modulo>
             )}
             <Modulo icone={Clock} titulo="Próximos" descricao="Prontos para sair (aprovados ou sem aprovação), na ordem">
@@ -192,7 +280,7 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
                   {[...porDia.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dia, lista]) => (
                     <div key={dia} className="space-y-1.5">
                       <p className="text-legenda font-semibold capitalize text-texto-2">{dia < hoje ? 'Atrasados (saem na próxima rodada)' : rotuloDia(dia, hoje)}</p>
-                      <Lista itens={lista} agora={agora} soHora={dia >= hoje} hoje={hoje} />
+                      <Lista itens={lista} agora={agora} soHora={dia >= hoje} hoje={hoje} x={x} />
                     </div>
                   ))}
                 </div>
@@ -201,13 +289,20 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
           </div>
           <div className="space-y-5">
             <Modulo icone={Hourglass} titulo="Aguardando o cliente" descricao="Enviados para aprovação no portal; publicam no horário depois do sim">
-              {esperandoCliente.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nenhum post esperando o cliente.</p> : <Lista itens={esperandoCliente} agora={agora} hoje={hoje} />}
+              {esperandoCliente.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nenhum post esperando o cliente.</p> : <Lista itens={esperandoCliente} agora={agora} hoje={hoje} x={x} />}
             </Modulo>
             <Modulo icone={CheckCircle2} titulo="Publicados" descricao="Os 30 mais recentes">
-              {publicados.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nada publicado pela plataforma ainda.</p> : <Lista itens={publicados} agora={agora} hoje={hoje} />}
+              {publicados.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nada publicado pela plataforma ainda.</p> : <Lista itens={publicados} agora={agora} hoje={hoje} x={x} />}
             </Modulo>
           </div>
         </div>
+      )}
+      {postAberto && (
+        <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-xl overflow-y-auto border-l border-borda bg-white p-4 shadow-2xl sm:p-5" aria-label="Insight do post">
+          <Suspense key={postAberto} fallback={<p className="py-10 text-center text-rotulo text-texto-3">Buscando as métricas no Instagram…</p>}>
+            <PainelInsight id={postAberto} fechar={url({ post: null })} />
+          </Suspense>
+        </aside>
       )}
     </div>
   )

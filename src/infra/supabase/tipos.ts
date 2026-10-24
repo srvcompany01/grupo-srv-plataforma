@@ -47,6 +47,18 @@ export type Database = {
         Update: { id?: string; client_id?: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
         Relationships: []
       }
+      post_insights: {
+        Row: { task_id: string; nota: string; tipo: string; resumo: string; deu_certo: Json; nao_deu_certo: Json; replicar: Json; evitar: Json; metricas: Json; referencia: Json; assistiu_video: boolean; analisado_por: string | null; analisado_em: string }
+        Insert: { task_id: string; nota: string; tipo?: string; resumo?: string; deu_certo?: Json; nao_deu_certo?: Json; replicar?: Json; evitar?: Json; metricas?: Json; referencia?: Json; assistiu_video?: boolean; analisado_por?: string | null; analisado_em?: string }
+        Update: { task_id?: string; nota?: string; tipo?: string; resumo?: string; deu_certo?: Json; nao_deu_certo?: Json; replicar?: Json; evitar?: Json; metricas?: Json; referencia?: Json; assistiu_video?: boolean; analisado_por?: string | null; analisado_em?: string }
+        Relationships: []
+      }
+      file_cleanups: {
+        Row: { id: string; tipo: string; arquivos: number; bytes: number; created_at: string }
+        Insert: { id?: string; tipo: string; arquivos: number; bytes?: number; created_at?: string }
+        Update: { id?: string; tipo?: string; arquivos?: number; bytes?: number; created_at?: string }
+        Relationships: []
+      }
       ad_changes: {
         Row: { id: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome: string; acao: string; antes: string; depois: string; origem: string; created_by: string | null; created_at: string }
         Insert: { id?: string; client_id: string; plataforma: string; nivel: string; objeto_id: string; objeto_nome?: string; acao: string; antes?: string; depois?: string; origem?: string; created_by?: string | null; created_at?: string }
@@ -60,9 +72,9 @@ export type Database = {
         Relationships: [{ foreignKeyName: 'ad_proposals_created_by_fkey'; columns: ['created_by']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] }, { foreignKeyName: 'ad_proposals_client_id_fkey'; columns: ['client_id']; isOneToOne: false; referencedRelation: 'clients'; referencedColumns: ['id'] }]
       }
       ad_creatives: {
-        Row: { id: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta: Json; created_by: string | null; created_at: string }
-        Insert: { id?: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta?: Json; created_by?: string | null; created_at?: string }
-        Update: { id?: string; client_id?: string; nome?: string; tipo?: string; chave?: string; mime?: string; tamanho?: number; meta?: Json; created_by?: string | null; created_at?: string }
+        Row: { id: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta: Json; created_by: string | null; created_at: string; arquivado_em: string | null }
+        Insert: { id?: string; client_id: string; nome: string; tipo: string; chave: string; mime: string; tamanho: number; meta?: Json; created_by?: string | null; created_at?: string; arquivado_em?: string | null }
+        Update: { id?: string; client_id?: string; nome?: string; tipo?: string; chave?: string; mime?: string; tamanho?: number; meta?: Json; created_by?: string | null; created_at?: string; arquivado_em?: string | null }
         Relationships: []
       }
       client_monthly_results: {
@@ -114,9 +126,9 @@ export type Database = {
         Relationships: []
       }
       content_media: {
-        Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
-        Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string }
-        Update: { id?: string; kind?: string; original_name?: string; position?: number; r2_key?: string; size_bytes?: number; task_id?: string; version_id?: string }
+        Row: { id: string; kind: string; original_name: string; position: number; r2_key: string; size_bytes: number; task_id: string; version_id: string; arquivado_em: string | null }
+        Insert: { id?: string; kind: string; original_name: string; position?: number; r2_key: string; size_bytes: number; task_id: string; version_id: string; arquivado_em?: string | null }
+        Update: { id?: string; kind?: string; original_name?: string; position?: number; r2_key?: string; size_bytes?: number; task_id?: string; version_id?: string; arquivado_em?: string | null }
         Relationships: [
           {
             foreignKeyName: "content_media_version_id_fkey"
@@ -407,6 +419,7 @@ export type Database = {
           size_bytes: number
           task_id: string
           uploaded_by: string
+          arquivado_em: string | null
         }
         Insert: {
           comment_id: string
@@ -419,6 +432,7 @@ export type Database = {
           size_bytes: number
           task_id: string
           uploaded_by?: string
+          arquivado_em?: string | null
         }
         Update: {
           comment_id?: string
@@ -431,6 +445,7 @@ export type Database = {
           size_bytes?: number
           task_id?: string
           uploaded_by?: string
+          arquivado_em?: string | null
         }
         Relationships: [
           {
@@ -848,9 +863,9 @@ export type Database = {
         ]
       }
       chat_attachments: {
-        Row: { channel_id: string; created_at: string; created_by: string; file_name: string; id: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number }
-        Insert: { channel_id: string; created_at?: string; created_by?: string; file_name: string; id?: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number }
-        Update: { channel_id?: string; created_at?: string; created_by?: string; file_name?: string; id?: string; message_id?: string; mime_type?: string; r2_key?: string; size_bytes?: number }
+        Row: { channel_id: string; created_at: string; created_by: string; file_name: string; id: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number; arquivado_em: string | null }
+        Insert: { channel_id: string; created_at?: string; created_by?: string; file_name: string; id?: string; message_id: string; mime_type: string; r2_key: string; size_bytes: number; arquivado_em?: string | null }
+        Update: { channel_id?: string; created_at?: string; created_by?: string; file_name?: string; id?: string; message_id?: string; mime_type?: string; r2_key?: string; size_bytes?: number; arquivado_em?: string | null }
         Relationships: [
           {
             foreignKeyName: "chat_attachments_message_id_fkey"
@@ -1731,6 +1746,8 @@ export type Database = {
     }
     Functions: {
       chat_nao_lidas: { Args: Record<PropertyKey, never>; Returns: { channel_id: string; nao_lidas: number }[] }
+      arquivos_a_arquivar: { Args: { p_antecedencia_dias?: number }; Returns: { tipo: string; id: string; chave: string; bytes: number; nome: string; vence_em: string }[] }
+      uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
       blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }

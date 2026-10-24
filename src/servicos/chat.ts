@@ -37,18 +37,20 @@ export async function totalNaoLidas(sb: Supabase): Promise<number> {
   return (data ?? []).reduce((s, l) => s + Number(l.nao_lidas), 0)
 }
 
-const CAMPOS = 'id, author_id, body, created_at, edited_at, parent_id, profiles!chat_messages_author_id_fkey(full_name, avatar_url), chat_attachments(id, r2_key, file_name, mime_type, size_bytes)'
+const CAMPOS = 'id, author_id, body, created_at, edited_at, parent_id, profiles!chat_messages_author_id_fkey(full_name, avatar_url), chat_attachments(id, r2_key, file_name, mime_type, size_bytes, arquivado_em)'
 type Linha = {
   id: string; author_id: string; body: string; created_at: string; edited_at: string | null; parent_id: string | null
   profiles: { full_name: string; avatar_url: string | null } | null
-  chat_attachments: { id: string; r2_key: string; file_name: string; mime_type: string; size_bytes: number }[]
+  chat_attachments: { id: string; r2_key: string; file_name: string; mime_type: string; size_bytes: number; arquivado_em: string | null }[]
 }
 /** Anexos com link assinado (imagens abrem na tela; os demais baixam com o nome original). */
 const anexosComUrl = (l: Linha) =>
   Promise.all(l.chat_attachments.map(async (a): Promise<AnexoComentario> => {
-    const tipo = tipoDoAnexo(a.mime_type)
-    const baixar = tipo === 'arquivo' && !a.mime_type.startsWith('image/')
-    return { id: a.id, nome: a.file_name, mime: a.mime_type, tamanho: a.size_bytes, tipo, url: await urlLeitura(a.r2_key, baixar ? { download: a.file_name } : {}) }
+    // Arquivado pelo ciclo de renovação: mostra a imagem de "arquivado" no lugar.
+    const mime = a.arquivado_em ? 'image/svg+xml' : a.mime_type
+    const tipo = tipoDoAnexo(mime)
+    const baixar = tipo === 'arquivo' && !mime.startsWith('image/')
+    return { id: a.id, nome: a.file_name, mime, tamanho: a.size_bytes, tipo, url: await urlLeitura(a.r2_key, { download: baixar ? a.file_name : undefined, arquivado: a.arquivado_em }) }
   }))
 
 const paraMensagem = async (l: Linha): Promise<Mensagem> => ({

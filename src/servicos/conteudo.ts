@@ -25,7 +25,7 @@ export async function buscarConteudo(sb: Supabase, tarefaId: string): Promise<Co
     .select(
       `format, approval, current_version,
        content_versions(id, number, idea, objective, caption,
-         content_media(id, position, kind, r2_key, original_name, size_bytes),
+         content_media(id, position, kind, r2_key, original_name, size_bytes, arquivado_em),
          content_responses(decision, comment, responder_name, created_at))`,
     )
     .eq('task_id', tarefaId)
@@ -46,7 +46,7 @@ export async function buscarConteudo(sb: Supabase, tarefaId: string): Promise<Co
           midias: await Promise.all(
             [...v.content_media]
               .sort((a, b) => a.position - b.position)
-              .map(async (m) => ({ id: m.id, tipo: m.kind as TipoMidia, nome: m.original_name, tamanho: m.size_bytes, url: await urlLeitura(m.r2_key), chave: m.r2_key })),
+              .map(async (m) => ({ id: m.id, tipo: (m.arquivado_em ? 'imagem' : m.kind) as TipoMidia, nome: m.original_name, tamanho: m.size_bytes, url: await urlLeitura(m.r2_key, { arquivado: m.arquivado_em }), chave: m.r2_key })),
           ),
           resposta: r ? { decisao: r.decision as Decisao, comentario: r.comment, nome: r.responder_name, em: r.created_at } : null,
         }
@@ -148,6 +148,8 @@ export type Agendamento = {
   igLink: string | null
   fbLink: string | null
   publicadoEm: string | null
+  /** Id do post no Instagram (para as métricas). */
+  igMediaId: string | null
   cliente: { id: string; nome: string; cor: string } | null
   capa: { tipo: TipoMidia; url: string } | null
 }
@@ -156,7 +158,7 @@ export type Agendamento = {
 export async function listarAgendamentos(sb: Supabase): Promise<Agendamento[]> {
   const { data, error } = await sb
     .from('content_posts')
-    .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, fb_permalink, published_at, tasks!inner(title, archived_at, clients(id, name, color)), content_versions(number, content_media(kind, r2_key, position))')
+    .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, ig_media_id, fb_permalink, published_at, tasks!inner(title, archived_at, clients(id, name, color)), content_versions(number, content_media(kind, r2_key, position, arquivado_em))')
     .is('tasks.archived_at', null)
     .or('publish_status.neq.nao_agendado,approval.in.(aguardando,ajuste)')
     .order('publish_at', { ascending: true, nullsFirst: false })
@@ -179,8 +181,9 @@ export async function listarAgendamentos(sb: Supabase): Promise<Agendamento[]> {
         igLink: p.ig_permalink,
         fbLink: p.fb_permalink,
         publicadoEm: p.published_at,
+        igMediaId: p.ig_media_id,
         cliente: c ? { id: c.id, nome: c.name, cor: c.color } : null,
-        capa: midia ? { tipo: midia.kind as TipoMidia, url: await urlLeitura(midia.r2_key) } : null,
+        capa: midia ? { tipo: (midia.arquivado_em ? 'imagem' : midia.kind) as TipoMidia, url: await urlLeitura(midia.r2_key, { arquivado: midia.arquivado_em }) } : null,
       }
     }),
   )

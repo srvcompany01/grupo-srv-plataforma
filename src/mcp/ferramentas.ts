@@ -186,6 +186,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
         'Performance (aba Performance): por cliente e mês, investimento e leads pagos (Meta: formulários e conversas no WhatsApp/Direct; Google Ads: conversões), orgânico do Instagram (cliques nos links do perfil e no link da bio da plataforma, www.gruposrv.com.br/l/<cliente>, que abre o WhatsApp do cliente com uma mensagem pronta), leads da bio confirmados pela equipe e o faturamento e as vendas lançados pela equipe; calcula CPL, ROAS, custo por venda, ticket médio e conversão. Use performance_cliente, registrar_resultado_mes e confirmar_lead_bio. Não há exclusão por aqui.',
         'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
+        'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
+        'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
@@ -683,6 +685,36 @@ export const FERRAMENTAS: Ferramenta[] = [
       const id = await (await import('@/servicos/controle-anuncios')).adicionarAnuncioMeta(sb, { id: userId, papel }, cliente, { conjuntoId: a.conjuntoId, link: a.link, formularioId: a.formularioId, anuncio })
       return { ok: true, anuncioId: id, status: 'PAUSADO' }
     },
+  }),
+
+  definir({
+    nome: 'posts_publicados',
+    descricao: 'Posts publicados no Instagram pela plataforma (os 60 mais recentes), com as métricas atuais (visualizações, alcance, interações, salvamentos, compartilhamentos) e a nota da análise, se já houver. Use o id em insight_post e analisar_post.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (de listar_clientes); vazio = todos').optional() },
+    executar: async ({ sb }, a) => {
+      const ip = await import('@/servicos/insights-post')
+      const todos = (await conteudoSvc.listarAgendamentos(sb)).filter((p) => p.status === 'publicado' && p.igMediaId && (!a.clienteId || p.cliente?.id === a.clienteId))
+      const posts = todos.sort((x, y) => (y.publicadoEm ?? '').localeCompare(x.publicadoEm ?? '')).slice(0, 60)
+      const [m, notas] = await Promise.all([ip.metricasDosPosts(posts.map((p) => ({ igId: p.igMediaId!, formato: p.formato }))), ip.notasDosPosts(sb, posts.map((p) => p.id))])
+      return posts.map((p) => ({ id: p.id, titulo: p.titulo, cliente: p.cliente?.nome, formato: p.formato, publicadoEm: p.publicadoEm, link: p.igLink, metricas: m.get(p.igMediaId!) ?? null, nota: notas.get(p.id) ?? null }))
+    },
+  }),
+
+  definir({
+    nome: 'insight_post',
+    descricao: 'Métricas atuais de um post publicado, a comparação com a mediana dos posts dos últimos 90 dias do perfil (nota bom, mediano ou ruim, com os motivos) e a última análise da IA (o que deu certo, o que não deu, replicar, evitar).',
+    escrita: false,
+    entrada: { postId: id('Post (id de posts_publicados)') },
+    executar: async ({ sb }, a) => (await import('@/servicos/insights-post')).insightDoPost(sb, a.postId),
+  }),
+
+  definir({
+    nome: 'analisar_post',
+    descricao: 'Faz a IA (Gemini) assistir o vídeo ou a imagem do post publicado, cruzar com as métricas e a média do perfil, e guardar a análise: tipo de conteúdo, resumo, o que deu certo, o que não deu, o que replicar e o que evitar. Leva até 1 ou 2 minutos em vídeos.',
+    escrita: true,
+    entrada: { postId: id('Post (id de posts_publicados)') },
+    executar: async ({ sb }, a) => (await import('@/servicos/insights-post')).analisarPost(sb, a.postId),
   }),
 
   definir({

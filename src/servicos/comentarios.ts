@@ -25,7 +25,7 @@ export async function listarComentarios(sb: Supabase, tarefaId: string): Promise
       .select(
         `id, author_id, body, is_internal, created_at, edited_at, profiles!comments_author_id_fkey(full_name),
          comment_mentions(user_id),
-         comment_attachments(id, r2_key, file_name, mime_type, size_bytes, kind, created_at)`,
+         comment_attachments(id, r2_key, file_name, mime_type, size_bytes, kind, created_at, arquivado_em)`,
       )
       .eq('task_id', tarefaId)
       .order('created_at'),
@@ -44,15 +44,17 @@ export async function listarComentarios(sb: Supabase, tarefaId: string): Promise
         [...c.comment_attachments]
           .sort((a, b) => a.created_at.localeCompare(b.created_at))
           .map(async (a): Promise<AnexoComentario> => {
-            const tipo = tipoDoAnexo(a.mime_type)
-            const baixar = tipo === 'arquivo' && !a.mime_type.startsWith('image/')
+            // Arquivado pelo ciclo de renovação: mostra a imagem de "arquivado" no lugar.
+            const mime = a.arquivado_em ? 'image/svg+xml' : a.mime_type
+            const tipo = tipoDoAnexo(mime)
+            const baixar = tipo === 'arquivo' && !mime.startsWith('image/')
             return {
               id: a.id,
               nome: a.file_name,
-              mime: a.mime_type,
+              mime,
               tamanho: a.size_bytes,
               tipo,
-              url: await urlLeitura(a.r2_key, baixar ? { download: a.file_name } : {}),
+              url: await urlLeitura(a.r2_key, { download: baixar ? a.file_name : undefined, arquivado: a.arquivado_em }),
             }
           }),
       ),

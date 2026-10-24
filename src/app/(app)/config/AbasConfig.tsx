@@ -10,6 +10,7 @@ const ABAS = [
   ['/config/formularios', 'Formulários'],
   ['/config/campos-clientes', 'Campos de cliente'],
   ['/config/integracoes', 'Integrações'],
+  ['/config/armazenamento', 'Armazenamento'],
   ['/config/personalizacao', 'Personalização'],
 ] as const
 
