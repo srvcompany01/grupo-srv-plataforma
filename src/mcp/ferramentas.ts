@@ -721,7 +721,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_campanha_google_pesquisa',
-    descricao: 'Cria no Google Ads uma campanha de PESQUISA completa, PAUSADA: orçamento diário, estratégia (cliques = Maximizar cliques, para conta sem conversões; conversoes = Maximizar conversões), locais, idioma português, um grupo com as palavras-chave (ampla, frase ou exata), negativas e um anúncio responsivo (3 a 15 títulos de até 30 caracteres, 2 a 4 descrições de até 90, URL https). Tudo numa transação: se algo falhar, nada é criado. Para ir ao ar, propor_alteracao_anuncio (ativar, plataforma google, nível campanha). Só admin e gestor.',
+    descricao: 'Cria no Google Ads uma campanha de PESQUISA completa, PAUSADA: orçamento diário, estratégia (cliques = Maximizar cliques, para conta sem conversões; conversoes = Maximizar conversões), locais, idioma português, um grupo com as palavras-chave (ampla, frase ou exata), negativas e um anúncio responsivo (3 a 15 títulos de até 30 caracteres, 2 a 4 descrições de até 90, URL https). Opcionais: cpcMaximo (teto de CPC em cliques), cpaDesejado (em conversoes), sitelinks e telefone (extensão de chamada). Tudo numa transação: se algo falhar, nada é criado. Para ir ao ar, propor_alteracao_anuncio (ativar, plataforma google, nível campanha). Só admin e gestor.',
     escrita: true,
     entrada: {
       clienteId: id('Cliente (id de listar_clientes)'),
@@ -736,6 +736,10 @@ export const FERRAMENTAS: Ferramenta[] = [
       url: z.string().url(),
       caminho1: z.string().max(15).optional(),
       caminho2: z.string().max(15).optional(),
+      cpcMaximo: z.number().positive().max(1000).optional().describe('Só em estrategia=cliques: teto do CPC em reais'),
+      cpaDesejado: z.number().positive().max(100000).optional().describe('Só em estrategia=conversoes: CPA desejado em reais'),
+      sitelinks: z.array(z.object({ texto: z.string().min(1).max(25), url: z.string().url(), descricao1: z.string().max(35).optional(), descricao2: z.string().max(35).optional() })).max(8).optional().describe('Extensões de sitelink (até 8)'),
+      telefone: z.string().max(20).optional().describe('Extensão de chamada: DDD + número'),
     },
     executar: async ({ sb, userId, papel }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)

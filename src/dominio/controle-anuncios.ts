@@ -120,6 +120,13 @@ export type NovaPesquisaGoogle = {
   url: string
   caminho1?: string
   caminho2?: string
+  /** Maximizar cliques: teto do CPC (reais). */
+  cpcMaximo?: number
+  /** Maximizar conversões: CPA desejado (reais). */
+  cpaDesejado?: number
+  /** Extensões: sitelinks (texto até 25, descrições até 35) e chamada (telefone com DDD). */
+  sitelinks?: { texto: string; url: string; descricao1?: string; descricao2?: string }[]
+  telefone?: string
 }
 
 /** Regras do anúncio responsivo de pesquisa do Google; devolve o primeiro problema ou null. */
@@ -139,6 +146,12 @@ export function problemaPesquisaGoogle(n: NovaPesquisaGoogle): string | null {
   if ([n.caminho1, n.caminho2].some((c) => c && c.length > 15)) return 'Os caminhos da URL têm até 15 caracteres.'
   if (!/^https:\/\/[^\s]+\.[^\s]+/.test(n.url)) return 'A URL final precisa começar com https://.'
   if (n.locais.some((l) => !/^geoTargetConstants\/\d+$/.test(l))) return 'Local inválido (use buscar_locais_google).'
+  if (n.cpcMaximo !== undefined && n.estrategia !== 'cliques') return 'cpcMaximo vale só para a estratégia cliques.'
+  if (n.cpaDesejado !== undefined && n.estrategia !== 'conversoes') return 'cpaDesejado vale só para a estratégia conversoes.'
+  if ((n.sitelinks?.length ?? 0) > 8) return 'Até 8 sitelinks.'
+  const sl = n.sitelinks?.find((x) => !x.texto.trim() || x.texto.length > 25 || (x.descricao1?.length ?? 0) > 35 || (x.descricao2?.length ?? 0) > 35 || !/^https:\/\//.test(x.url) || !x.descricao1 !== !x.descricao2)
+  if (sl) return `Sitelink inválido: "${sl.texto}" (texto até 25 caracteres, URL https, descrições até 35 e as duas juntas ou nenhuma).`
+  if (n.telefone !== undefined && !/^\d{10,11}$/.test(n.telefone.replace(/\D/g, ''))) return 'Telefone da extensão de chamada: DDD + número (10 ou 11 dígitos).'
   return null
 }
 
@@ -159,7 +172,9 @@ export function operacoesPesquisaGoogle(conta: string, n: NovaPesquisaGoogle) {
           resourceName: camp, name: n.nome, status: 'PAUSED', advertisingChannelType: 'SEARCH', campaignBudget: orc,
           networkSettings: { targetGoogleSearch: true, targetSearchNetwork: false, targetContentNetwork: false, targetPartnerSearchNetwork: false },
           containsEuPoliticalAdvertising: 'DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING',
-          ...(n.estrategia === 'conversoes' ? { maximizeConversions: {} } : { targetSpend: {} }),
+          ...(n.estrategia === 'conversoes'
+            ? { maximizeConversions: n.cpaDesejado ? { targetCpaMicros: String(centavos(n.cpaDesejado) * 10_000) } : {} }
+            : { targetSpend: n.cpcMaximo ? { cpcBidCeilingMicros: String(centavos(n.cpcMaximo) * 10_000) } : {} }),
         },
       },
     },
@@ -168,6 +183,20 @@ export function operacoesPesquisaGoogle(conta: string, n: NovaPesquisaGoogle) {
     ...(n.negativas ?? []).filter((x) => x.trim()).slice(0, 200).map((x) => ({ campaignCriterionOperation: { create: { campaign: camp, negative: true, keyword: { text: x.trim().slice(0, 80), matchType: 'BROAD' } } } })),
     { adGroupOperation: { create: { resourceName: grupo, campaign: camp, name: `${n.nome} · Grupo 1`, status: 'ENABLED', type: 'SEARCH_STANDARD' } } },
     ...n.palavras.map((p) => ({ adGroupCriterionOperation: { create: { adGroup: grupo, status: 'ENABLED', keyword: { text: p.texto.trim(), matchType: CORRESPONDENCIA[p.correspondencia] } } } })),
+    // Extensões (recursos): sitelinks e chamada, ligados à campanha. Ids temporários a partir de -10.
+    ...(n.sitelinks ?? []).flatMap((x, i) => {
+      const asset = `${c}/assets/${-10 - i}`
+      return [
+        { assetOperation: { create: { resourceName: asset, finalUrls: [x.url], sitelinkAsset: { linkText: x.texto.trim(), ...(x.descricao1 ? { description1: x.descricao1, description2: x.descricao2 } : {}) } } } },
+        { campaignAssetOperation: { create: { campaign: camp, asset, fieldType: 'SITELINK' } } },
+      ]
+    }),
+    ...(n.telefone
+      ? [
+          { assetOperation: { create: { resourceName: `${c}/assets/-30`, callAsset: { countryCode: 'BR', phoneNumber: n.telefone.replace(/\D/g, '') } } } },
+          { campaignAssetOperation: { create: { campaign: camp, asset: `${c}/assets/-30`, fieldType: 'CALL' } } },
+        ]
+      : []),
     {
       adGroupAdOperation: {
         create: {

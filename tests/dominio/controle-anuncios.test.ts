@@ -149,3 +149,23 @@ describe('P2-7: criar_campanha_meta', () => {
     expect(() => montarCriativo({ modo: 'perfil_instagram', paginaId: 'p', instagramId: null, midia: { imagemHash: 'h' }, anuncio: { texto: 'x' } })).toThrow(/Instagram profissional/)
   })
 })
+
+describe('P2-8: lances e extensões no Google', () => {
+  const ok = { nome: 'Clareamento', orcamentoDiario: 40, estrategia: 'cliques' as const, locais: [], palavras: [{ texto: 'clareamento dental', correspondencia: 'frase' as const }], titulos: ['Clareamento em Belém', 'Agende sua avaliação', 'Resultado natural'], descricoes: ['Clínica com 10 anos de experiência.', 'Agende pelo WhatsApp hoje.'], url: 'https://clinica.com.br' }
+
+  it('teto de CPC em cliques, CPA em conversões e validação cruzada', () => {
+    expect(operacoesPesquisaGoogle('1', { ...ok, cpcMaximo: 2.5 })[1]).toMatchObject({ campaignOperation: { create: { targetSpend: { cpcBidCeilingMicros: '2500000' } } } })
+    expect(operacoesPesquisaGoogle('1', { ...ok, estrategia: 'conversoes', cpaDesejado: 30 })[1]).toMatchObject({ campaignOperation: { create: { maximizeConversions: { targetCpaMicros: '30000000' } } } })
+    expect(problemaPesquisaGoogle({ ...ok, cpaDesejado: 30 })).toMatch(/só para a estratégia conversoes/)
+  })
+
+  it('sitelinks e chamada viram recursos ligados à campanha', () => {
+    const ops = operacoesPesquisaGoogle('1', { ...ok, sitelinks: [{ texto: 'Agendar', url: 'https://clinica.com.br/agenda' }], telefone: '(91) 99999-0000' })
+    const tipos = ops.map((o) => Object.keys(o)[0])
+    expect(tipos.filter((t) => t === 'assetOperation')).toHaveLength(2)
+    expect(ops).toContainEqual({ campaignAssetOperation: { create: { campaign: 'customers/1/campaigns/-2', asset: 'customers/1/assets/-10', fieldType: 'SITELINK' } } })
+    expect(ops).toContainEqual(expect.objectContaining({ assetOperation: { create: { resourceName: 'customers/1/assets/-30', callAsset: { countryCode: 'BR', phoneNumber: '91999990000' } } } }))
+    expect(problemaPesquisaGoogle({ ...ok, sitelinks: [{ texto: 'x'.repeat(26), url: 'https://a.com' }] })).toMatch(/Sitelink inválido/)
+    expect(problemaPesquisaGoogle({ ...ok, telefone: '123' })).toMatch(/Telefone/)
+  })
+})
