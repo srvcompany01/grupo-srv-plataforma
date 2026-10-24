@@ -192,11 +192,17 @@ export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
     const alerta = alertaSemGasto(o, f.periodo)
     return { id: o.id, nome: o.nome, status: o.status, ...(o.diario ? { orcamentoDiario: o.diario } : {}), ...(o.total ? { orcamentoTotal: o.total } : {}), gasto: arred(o.gasto), ...(o.leads ? { leads: o.leads } : {}), ...(alerta ? { alerta } : {}) }
   }
+  // Dentro de uma campanha o filtro de status não esconde quem gastou (ex.: conjunto ligado numa campanha pausada).
+  const filho = (o: ItemArvore) => (f.comGasto ? o.gasto > 0 : passa(o, { ...f, comGasto: false }) || o.gasto > 0)
+  const fecha = (c: ItemArvore, listados: ItemArvore[]) => {
+    const fora = arred(c.gasto - listados.reduce((s, j) => s + j.gasto, 0))
+    return fora > 0.01 ? { gastoForaDosConjuntos: { valor: fora, motivo: 'gasto de conjuntos arquivados ou excluídos, ou de conjuntos fora do filtro (use status=todos)' } } : {}
+  }
   if (f.campanhaId) {
     const c = campanhas.find((x) => x.id === f.campanhaId)
     if (!c) return { erro: 'Campanha não encontrada nesta conta.' }
-    const filtro = { ...f, comGasto: false }
-    return { campanha: { ...item(c), conjuntos: c.filhos.filter((j) => passa(j, filtro)).map((j) => ({ ...item(j), anuncios: j.filhos.filter((a) => passa(a, filtro)).map(item) })) } }
+    const conjuntos = c.filhos.filter(filho)
+    return { campanha: { ...item(c), ...fecha(c, conjuntos), conjuntos: conjuntos.map((j) => ({ ...item(j), anuncios: j.filhos.filter(filho).map(item) })) } }
   }
   const visiveis = campanhas.filter((c) => passa(c, f))
   const pagina = Math.max(1, f.pagina ?? 1)
@@ -204,7 +210,10 @@ export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
   const foraDoFiltro = campanhas.length - visiveis.length
   const outrasPaginas = visiveis.length - nestaPagina.length
   return {
-    campanhas: nestaPagina.map((c) => ({ ...item(c), conjuntos: c.filhos.filter((j) => passa(j, { ...f, comGasto: false })).map((j) => ({ ...item(j), anuncios: j.filhos.length })) })),
+    campanhas: nestaPagina.map((c) => {
+      const conjuntos = c.filhos.filter(filho)
+      return { ...item(c), ...fecha(c, conjuntos), conjuntos: conjuntos.map((j) => ({ ...item(j), anuncios: j.filhos.length })) }
+    }),
     total: visiveis.length,
     pagina,
     ...(visiveis.length > pagina * 60 ? { proximaPagina: pagina + 1 } : {}),

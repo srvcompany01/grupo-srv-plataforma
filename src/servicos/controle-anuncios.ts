@@ -48,18 +48,26 @@ export async function estruturaMeta(contaId: string, periodo: { de: string; ate:
   return comMensagem(async () => {
     const act = `act_${contaId}`
     // ponytail: só a primeira página de cada lista (100 campanhas / 300 conjuntos / 500 anúncios); paginar se alguma conta passar disso.
-    const [camps, conjs, ads, ins] = await Promise.all([
+    const insights = (level: string, campo: string) =>
+      graph<{ data: ({ spend?: string; actions?: { action_type: string; value: string }[] } & Record<string, string>)[] }>(`${act}/insights`, { params: { level, fields: `${campo},spend,actions`, time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '500' } })
+    const [camps, conjs, ads, ins, insCamp, insConj] = await Promise.all([
       graph<{ data: Bruto[] }>(`${act}/campaigns`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget', effective_status: '["ACTIVE","PAUSED"]', limit: '100' } }),
       graph<{ data: Bruto[] }>(`${act}/adsets`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget,campaign_id', effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED"]', limit: '300' } }),
       graph<{ data: Bruto[] }>(`${act}/ads`, { params: { fields: 'id,name,status,effective_status,adset_id,creative{thumbnail_url}', effective_status: '["ACTIVE","PAUSED","ADSET_PAUSED","CAMPAIGN_PAUSED","PENDING_REVIEW","DISAPPROVED","WITH_ISSUES","IN_PROCESS"]', limit: '500' } }),
-      graph<{ data: { ad_id: string; spend?: string; actions?: { action_type: string; value: string }[] }[] }>(`${act}/insights`, { params: { level: 'ad', fields: 'ad_id,spend,actions', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '500' } }),
+      insights('ad', 'ad_id'),
+      // Gasto de campanha e conjunto direto da Meta: inclui anúncios e conjuntos arquivados que gastaram no período.
+      insights('campaign', 'campaign_id'),
+      insights('adset', 'adset_id'),
     ])
-    const numeros = new Map(ins.data.map((i) => {
+    const ler = (lista: typeof ins.data, chave: string) => new Map(lista.map((i) => {
       const l = leadsDasAcoes(i.actions)
-      return [i.ad_id, { gasto: Number(i.spend ?? 0), leads: l.formularios + l.conversas }]
+      return [i[chave], { gasto: Number(i.spend ?? 0), leads: l.formularios + l.conversas }]
     }))
+    const numeros = ler(ins.data, 'ad_id')
+    const porCampanha = ler(insCamp.data, 'campaign_id')
+    const porConjunto = ler(insConj.data, 'adset_id')
     const obj = (b: Bruto, nivel: Nivel, filhos: ObjetoMeta[]): ObjetoMeta => {
-      const n = nivel === 'anuncio' ? (numeros.get(b.id) ?? { gasto: 0, leads: 0 }) : { gasto: filhos.reduce((s, f) => s + f.gasto, 0), leads: filhos.reduce((s, f) => s + f.leads, 0) }
+      const n = (nivel === 'anuncio' ? numeros : nivel === 'conjunto' ? porConjunto : porCampanha).get(b.id) ?? (nivel === 'anuncio' ? { gasto: 0, leads: 0 } : { gasto: filhos.reduce((s, f) => s + f.gasto, 0), leads: filhos.reduce((s, f) => s + f.leads, 0) })
       return { id: b.id, nome: b.name, nivel, status: b.effective_status, ligado: b.status === 'ACTIVE', diario: reaisDe(b.daily_budget), total: reaisDe(b.lifetime_budget), ...n, miniatura: b.creative?.thumbnail_url ?? null, criadaEm: b.created_time ?? null, filhos }
     }
     const anunciosDe = (conj: string) => ads.data.filter((a) => a.adset_id === conj).map((a) => obj(a, 'anuncio', []))

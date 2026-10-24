@@ -98,3 +98,21 @@ describe('alerta de ligada sem gasto', () => {
     expect(alertaSemGasto({ ...base, nivel: 'conjunto', diario: 25 }, periodo)).toMatch(/há 7 dias/)
   })
 })
+
+describe('P1-1: conjuntos fecham com a campanha', () => {
+  const o = (id: string, nivel: ItemArvore['nivel'], ligado: boolean, gasto: number, filhos: ItemArvore[] = []): ItemArvore => ({ id, nome: id, nivel, status: ligado ? 'ACTIVE' : 'PAUSED', ligado, diario: null, total: null, gasto, leads: 0, filhos })
+  // Campanha pausada; o conjunto que gastou continua "ligado" (status próprio ACTIVE, efetivo CAMPAIGN_PAUSED).
+  const conta = [o('pausada', 'campanha', false, 187.04, [o('gastou', 'conjunto', true, 187.04), o('parado', 'conjunto', false, 0)])]
+
+  it('status=pausados mostra o conjunto que gastou mesmo ligado; comGasto esconde conjunto sem gasto', () => {
+    const r = estruturaParaIA(conta, { status: 'pausados', comGasto: true }) as unknown as { campanhas: { gasto: number; conjuntos: { id: string; gasto: number }[] }[] }
+    expect(r.campanhas[0].conjuntos.map((j) => j.id)).toEqual(['gastou'])
+    expect(r.campanhas[0].conjuntos.reduce((s, j) => s + j.gasto, 0)).toBeCloseTo(r.campanhas[0].gasto)
+  })
+
+  it('explica a diferença quando o gasto da campanha não fecha com os conjuntos listados', () => {
+    const arquivado = [o('c', 'campanha', true, 100, [o('j', 'conjunto', true, 60)])]
+    const r = estruturaParaIA(arquivado, { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[] }
+    expect(r.campanhas[0].gastoForaDosConjuntos).toEqual({ valor: 40, motivo: expect.stringMatching(/arquivados ou excluídos/) })
+  })
+})
