@@ -74,3 +74,17 @@ it('contrato: todo id de campanha, conjunto, anúncio, formulário ou post da Me
     }
   }
 })
+
+it('P2-2: atualizar_lancamento converte reais em centavos e só manda o que mudou', async () => {
+  const chamadas: Record<string, unknown>[] = []
+  const sb = { from: () => ({ update: (c: Record<string, unknown>) => { chamadas.push(c); return { eq: () => ({ select: async () => ({ data: [{ id: 'x' }], error: null }) }) } } }) } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'admin', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const r = await cli.callTool({ name: 'atualizar_lancamento', arguments: { lancamentoId: '00000000-0000-4000-8000-000000000001', pago: true, valor: 1500.5 } })
+  expect(r.isError).toBeFalsy()
+  expect(chamadas).toEqual([{ paid: true, amount_cents: 150050 }])
+  const vazio = await cli.callTool({ name: 'atualizar_lancamento', arguments: { lancamentoId: '00000000-0000-4000-8000-000000000001' } })
+  expect(vazio.isError).toBe(true)
+})

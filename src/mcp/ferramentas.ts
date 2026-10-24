@@ -1276,6 +1276,28 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'atualizar_lancamento',
+    descricao: 'Corrige um lançamento financeiro (só o admin): marcar como pago ou pendente, valor (reais), data, categoria, descrição, tipo ou cliente. Só os campos informados mudam. Id de listar_lancamentos. Não há exclusão por aqui.',
+    escrita: true,
+    entrada: {
+      lancamentoId: id('Lançamento (id de listar_lancamentos)'),
+      pago: z.boolean().optional(),
+      valor: z.number().positive().max(999999999).optional().describe('Reais'),
+      data: data('Nova data').optional(),
+      categoria: z.string().min(1).max(60).optional(),
+      descricao: z.string().max(200).optional(),
+      tipo: z.enum(TIPOS_LANCAMENTO).optional(),
+      clienteId: id('Cliente ligado (use null para tirar)').nullable().optional(),
+    },
+    executar: async ({ sb }, a) => {
+      const { lancamentoId, valor, ...resto } = a
+      if (valor === undefined && !Object.values(resto).some((v) => v !== undefined)) throw new Error('Nada para alterar.')
+      await financeiro.atualizarLancamento(sb, lancamentoId, { ...resto, ...(valor !== undefined ? { centavos: Math.round(valor * 100) } : {}) })
+      return { ok: true }
+    },
+  }),
+
+  definir({
     nome: 'listar_funis',
     descricao: 'Funis visuais da equipe (nome, id e quando mudou).',
     escrita: false,
