@@ -589,13 +589,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       const p = periodoDaIA(a)
       const ctl = await import('@/servicos/controle-anuncios')
       const g = await import('@/servicos/google-agencia')
-      const { estruturaParaIA } = await import('@/dominio/controle-anuncios')
+      const { estruturaParaIA, googleParaIA } = await import('@/dominio/controle-anuncios')
       const google = await g.situacaoGoogle()
       const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId, pagina: a.pagina, periodo: p }
       const [meta, goog, pendentes, ultimas] = await Promise.all([
         cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => estruturaParaIA(x, filtro)).catch((e: Error) => ({ erro: e.message })) : null,
         !a.campanhaId && cliente.googleAdsId && google.conectado
-          ? g.estruturaGoogle(cliente.googleAdsId, p).then((x) => ('erro' in x ? x : x.filter((c) => (a.status === 'todos' || (a.status === 'ativos') === (c.status === 'ENABLED')) && (!a.comGasto || c.custo > 0)).map(({ orcamento, ...c }) => ({ ...c, custo: Math.round(c.custo * 100) / 100, ...(orcamento ? { orcamentoDiario: orcamento.diario, ...(orcamento.compartilhado ? { orcamentoCompartilhado: true } : {}) } : {}) }))))
+          ? g.estruturaGoogle(cliente.googleAdsId, p).then((x) => ('erro' in x ? x : googleParaIA(x, filtro)))
           : null,
         ctl.propostasPendentes(sb, cliente.id),
         a.campanhaId ? Promise.resolve([]) : ctl.historico(sb, cliente.id, 10),

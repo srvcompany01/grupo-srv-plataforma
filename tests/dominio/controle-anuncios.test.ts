@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, googleParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -114,5 +114,15 @@ describe('P1-1: conjuntos fecham com a campanha', () => {
     const arquivado = [o('c', 'campanha', true, 100, [o('j', 'conjunto', true, 60)])]
     const r = estruturaParaIA(arquivado, { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[] }
     expect(r.campanhas[0].gastoForaDosConjuntos).toEqual({ valor: 40, motivo: expect.stringMatching(/arquivados ou excluídos/) })
+  })
+})
+
+describe('P1-2: alerta no Google', () => {
+  it('campanha ENABLED com R$ 20/dia e zero de custo no período ganha alerta; pausada não', () => {
+    const c = (status: 'ENABLED' | 'PAUSED', custo: number) => ({ id: '24284106360', nome: 'Pesquisa | Concorrentes', status, tipo: 'SEARCH', orcamento: { diario: 20, compartilhado: false }, custo, conversoes: 0, cliques: 0 })
+    const periodo = { de: '2026-10-16', ate: '2026-10-22' }
+    expect(googleParaIA([c('ENABLED', 0)], { status: 'ativos', comGasto: false, periodo })[0]).toMatchObject({ orcamentoDiario: 20, alerta: expect.stringMatching(/há 7 dias/) })
+    expect(googleParaIA([c('ENABLED', 5)], { status: 'ativos', comGasto: false, periodo })[0]).not.toHaveProperty('alerta')
+    expect(googleParaIA([c('PAUSED', 0)], { status: 'todos', comGasto: false, periodo })[0]).not.toHaveProperty('alerta')
   })
 })

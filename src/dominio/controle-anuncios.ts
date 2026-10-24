@@ -225,3 +225,15 @@ export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
     ].join(' '),
   }
 }
+
+export type CampanhaGoogleIA = { id: string; nome: string; status: 'ENABLED' | 'PAUSED'; tipo: string; orcamento: { diario: number; compartilhado: boolean } | null; custo: number; conversoes: number; cliques: number }
+
+/** Campanhas do Google para a IA: mesmo filtro da Meta, orçamento achatado e alerta de ligada sem gasto. */
+export function googleParaIA(campanhas: CampanhaGoogleIA[], f: FiltroEstrutura) {
+  return campanhas
+    .filter((c) => passa({ ligado: c.status === 'ENABLED', gasto: c.custo }, f))
+    .map(({ orcamento, ...c }) => {
+      const alerta = alertaSemGasto({ ligado: c.status === 'ENABLED', gasto: c.custo, nivel: 'campanha', diario: orcamento?.diario ?? null, total: null }, f.periodo)
+      return { ...c, custo: arred(c.custo), ...(orcamento ? { orcamentoDiario: orcamento.diario, ...(orcamento.compartilhado ? { orcamentoCompartilhado: true } : {}) } : {}), ...(alerta ? { alerta } : {}) }
+    })
+}
