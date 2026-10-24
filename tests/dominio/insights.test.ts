@@ -10,7 +10,8 @@ describe('insights', () => {
     expect(formatoDoPost('CAROUSEL_ALBUM', 'FEED')).toBe('Carrossel')
     const ps = [post('a', 'Reels', 100, '2026-10-05T15:00:00Z'), post('b', 'Foto', 10, '2026-10-06T15:00:00Z'), post('c', 'Reels', 80, '2026-10-12T15:00:00Z')]
     expect(porFormato(ps)[0]).toMatchObject({ formato: 'Reels', posts: 2, interacoes: 90 })
-    expect(melhorDiaDaSemana(ps)).toEqual({ dia: 'segunda', interacoes: 90 })
+    expect(melhorDiaDaSemana(ps)).toBeNull() // só 2 segundas: abaixo do mínimo de 3
+    expect(melhorDiaDaSemana([...ps, post('d', 'Foto', 90, '2026-10-19T15:00:00Z')])).toEqual({ dia: 'segunda', interacoes: 90 })
   })
   it('orgânico sem posts recomenda frequência', () => {
     const a = analisarOrganico(ig([]), 30)
@@ -26,7 +27,8 @@ describe('insights', () => {
     expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/maior parte do alcance da conta veio de anúncios/)
   })
   it('orgânico com formatos destaca o melhor', () => {
-    const a = analisarOrganico(ig([post('a', 'Reels', 300, '2026-10-05T15:00:00Z'), post('b', 'Foto', 10, '2026-10-06T15:00:00Z'), post('c', 'Foto', 12, '2026-10-07T15:00:00Z')]), 7)
+    const cinco = (formato: PostIG['formato'], interacoes: number, dia: number) => Array.from({ length: 5 }, (_, i) => post(`${formato}${i}`, formato, interacoes, `2026-10-${String(dia + i).padStart(2, '0')}T15:00:00Z`))
+    const a = analisarOrganico(ig([...cinco('Reels', 300, 1), ...cinco('Foto', 10, 10)]), 30)
     expect(a.destaques).toContainEqual({ tom: 'bom', texto: expect.stringMatching(/Reels é o formato que mais engaja/) })
     expect(a.recomendacoes.map((r) => r.texto).join(' ')).toMatch(/impulsionar/)
   })
@@ -53,5 +55,23 @@ describe('tons (limites iguais em toda a plataforma)', () => {
     expect([tomCtrGoogle(4), tomCtrGoogle(2.5), tomCtrGoogle(1)]).toEqual(['bom', 'atencao', 'ruim'])
     expect([tomVariacao(3), tomVariacao(0), tomVariacao(-2)]).toEqual(['bom', 'neutro', 'ruim'])
     expect([tomFrequencia(4), tomFrequencia(2), tomFrequencia(0.5)]).toEqual(['bom', 'atencao', 'ruim'])
+  })
+})
+
+describe('P1-5: amostra mínima e sem contradição', () => {
+  const p = (id: string, formato: PostIG['formato'], interacoes: number, em: string): PostIG => ({ id, legenda: id, formato, link: '', imagem: null, em, curtidas: interacoes, comentarios: 0, alcance: 50, visualizacoes: 0, salvamentos: 0, compartilhamentos: 0, interacoes })
+  const poucos = { usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 0, cliquesPerfil: 0, alcancePorDia: [], posts: [p('a', 'Foto', 30, '2026-10-07T15:00:00Z'), p('b', 'Foto', 28, '2026-10-14T15:00:00Z'), p('c', 'Reels', 3, '2026-10-08T15:00:00Z'), p('d', 'Reels', 2, '2026-10-09T15:00:00Z')] }
+
+  it('com menos de 5 posts por formato não recomenda formato, nem dia com menos de 3 posts', () => {
+    const a = analisarOrganico(poucos, 14)
+    const recs = a.recomendacoes.map((r) => r.texto).join(' | ')
+    expect(recs).not.toMatch(/Aumente a proporção/)
+    expect(recs).not.toMatch(/Concentre os posts/)
+    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/poucos posts para comparar formatos/)
+  })
+
+  it('não manda priorizar um formato que contradiga o melhor formato', () => {
+    const recs = analisarOrganico(poucos, 14).recomendacoes.map((r) => r.texto).join(' | ')
+    expect(recs).not.toMatch(/priorize Reels/)
   })
 })

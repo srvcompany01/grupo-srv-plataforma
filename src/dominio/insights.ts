@@ -99,13 +99,17 @@ export function porFormato(posts: PostIG[]): { formato: FormatoIG; posts: number
 }
 
 /** Dia da semana (Belém) com mais interações por post (só dias com 2+ posts). */
+/** Amostra mínima para recomendar: posts por formato comparado e posts no mesmo dia da semana. */
+export const MINIMO_POR_FORMATO = 5
+export const MINIMO_POR_DIA = 3
+
 export function melhorDiaDaSemana(posts: PostIG[]): { dia: string; interacoes: number } | null {
   const grupos = new Map<number, number[]>()
   for (const p of posts) {
     const d = new Date(Date.parse(p.em) - 3 * 3_600_000).getUTCDay()
     grupos.set(d, [...(grupos.get(d) ?? []), p.interacoes])
   }
-  const candidatos = [...grupos].filter(([, xs]) => xs.length >= 2).map(([d, xs]) => ({ dia: DIAS_SEMANA[d], interacoes: media(xs) }))
+  const candidatos = [...grupos].filter(([, xs]) => xs.length >= MINIMO_POR_DIA).map(([d, xs]) => ({ dia: DIAS_SEMANA[d], interacoes: media(xs) }))
   return candidatos.sort((a, b) => b.interacoes - a.interacoes)[0] ?? null
 }
 
@@ -129,7 +133,8 @@ export function analisarOrganico(ig: ResumoInstagram, dias: number): Analise {
   }
   destaques.push(it(tomEngajamento(taxa), `Engajamento orgânico de ${pct(taxa)} sobre o alcance dos posts.`))
   destaques.push(it(tomFrequencia(porSemana), `${posts.length} posts (${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana).`))
-  const formatos = porFormato(posts)
+  const formatos = porFormato(posts).filter((f) => f.posts >= MINIMO_POR_FORMATO)
+  if (porFormato(posts).length > 1 && formatos.length < 2) destaques.push(it('neutro', `Ainda há poucos posts para comparar formatos (mínimo ${MINIMO_POR_FORMATO} de cada): continue variando antes de concluir.`))
   if (formatos.length > 1) {
     const [melhor, pior] = [formatos[0], formatos[formatos.length - 1]]
     destaques.push(it('bom', `${melhor.formato} é o formato que mais engaja: ${num(melhor.interacoes)} interações por post, contra ${num(pior.interacoes)} em ${pior.formato}.`))
@@ -147,7 +152,7 @@ export function analisarOrganico(ig: ResumoInstagram, dias: number): Analise {
   const salvar = ig.interacoes ? ((ig.salvamentos + ig.compartilhamentos) / ig.interacoes) * 100 : 0
   if (ig.interacoes && salvar < 10) recomendacoes.push(it('atencao', 'Poucos salvamentos e compartilhamentos: inclua conteúdos úteis (dicas, listas, antes e depois) que dão motivo para salvar e enviar.'))
   if (taxa && taxa < 2) recomendacoes.push(it('ruim', 'Engajamento abaixo de 2% do alcance: use ganchos nos 3 primeiros segundos e chamadas para comentar.'))
-  if (ig.seguidores && alcancePosts / posts.length < ig.seguidores * 0.3) recomendacoes.push(it('atencao', 'O alcance está abaixo de 30% da base: priorize Reels e colaborações (collab) para chegar a quem ainda não segue.'))
+  if (ig.seguidores && alcancePosts / posts.length < ig.seguidores * 0.3) recomendacoes.push(it('atencao', 'O alcance por post está abaixo de 30% da base: use colaborações (collab) e o formato que mais alcança no perfil para chegar a quem ainda não segue.'))
   return { destaques, recomendacoes }
 }
 
