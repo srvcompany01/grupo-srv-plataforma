@@ -67,7 +67,7 @@ describe('estrutura enxuta para a IA', () => {
   it('padrão: só ativas, conjuntos ativos e a contagem de anúncios, sem campos nulos', () => {
     const r = estruturaParaIA(conta, { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[]; total: number; dica: string }
     expect(r.campanhas.map((c) => c.id)).toEqual(['ativa', 'parada'])
-    expect(r.campanhas[0]).toEqual({ id: 'ativa', nome: 'ativa', status: 'ACTIVE', gasto: 10, conjuntos: [{ id: 'c1', nome: 'c1', status: 'ACTIVE', orcamentoDiario: 25, gasto: 10, anuncios: 2 }] })
+    expect(r.campanhas[0]).toEqual({ id: 'ativa', nome: 'ativa', status: 'ACTIVE', gasto: 10, leads: 0, conjuntos: [{ id: 'c1', nome: 'c1', status: 'ACTIVE', orcamentoDiario: 25, gasto: 10, leads: 0, anuncios: 2 }] })
     expect(r.total).toBe(2)
     expect(r.dica).toMatch(/1 campanha\(s\) ficaram fora do filtro \(pausadas\)/)
     expect(r.dica).toMatch(/arquivadas ou excluídas/)
@@ -124,5 +124,13 @@ describe('P1-2: alerta no Google', () => {
     expect(googleParaIA([c('ENABLED', 0)], { status: 'ativos', comGasto: false, periodo })[0]).toMatchObject({ orcamentoDiario: 20, alerta: expect.stringMatching(/há 7 dias/) })
     expect(googleParaIA([c('ENABLED', 5)], { status: 'ativos', comGasto: false, periodo })[0]).not.toHaveProperty('alerta')
     expect(googleParaIA([c('PAUSED', 0)], { status: 'todos', comGasto: false, periodo })[0]).not.toHaveProperty('alerta')
+  })
+})
+
+describe('P1-3: formato estável', () => {
+  it('leads vem sempre, inclusive 0', () => {
+    const c: ItemArvore = { id: 'x', nome: 'x', nivel: 'campanha', status: 'ACTIVE', ligado: true, diario: null, total: null, gasto: 0, leads: 0, filhos: [] }
+    const r = estruturaParaIA([c], { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[] }
+    expect(r.campanhas[0]).toHaveProperty('leads', 0)
   })
 })

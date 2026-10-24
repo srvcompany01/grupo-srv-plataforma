@@ -190,7 +190,7 @@ export function alertaSemGasto(o: Pick<ItemArvore, 'ligado' | 'gasto' | 'criadaE
 export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
   const item = (o: ItemArvore) => {
     const alerta = alertaSemGasto(o, f.periodo)
-    return { id: o.id, nome: o.nome, status: o.status, ...(o.diario ? { orcamentoDiario: o.diario } : {}), ...(o.total ? { orcamentoTotal: o.total } : {}), gasto: arred(o.gasto), ...(o.leads ? { leads: o.leads } : {}), ...(alerta ? { alerta } : {}) }
+    return { id: o.id, nome: o.nome, status: o.status, ...(o.diario ? { orcamentoDiario: o.diario } : {}), ...(o.total ? { orcamentoTotal: o.total } : {}), gasto: arred(o.gasto), leads: o.leads, ...(alerta ? { alerta } : {}) }
   }
   // Dentro de uma campanha o filtro de status não esconde quem gastou (ex.: conjunto ligado numa campanha pausada).
   const filho = (o: ItemArvore) => (f.comGasto ? o.gasto > 0 : passa(o, { ...f, comGasto: false }) || o.gasto > 0)
