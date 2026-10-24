@@ -524,7 +524,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_comentarios_redes',
-    descricao: 'Comentários do Instagram e do Facebook dos clientes (posts orgânicos ou anúncios), já classificados pelo tom (positivo, neutro, negativo, agressivo), com as respostas. filtro: todos, sem_resposta, alerta (negativos e agressivos sem decisão), respondidos, ocultos. atualizar=true busca os novos na Meta antes.',
+    descricao: 'Comentários do Instagram e do Facebook dos clientes (posts orgânicos ou anúncios), já classificados pelo tom (positivo, neutro, negativo, agressivo), com as respostas. filtro: todos, sem_resposta, alerta (negativos e agressivos sem decisão), respondidos, ocultos. atualizar=true busca os novos na Meta antes (grava no banco: só com token de escrita; prefira atualizar_comentarios_redes).',
     escrita: false,
     entrada: {
       origem: z.enum(['organico', 'anuncio']).describe('Posts orgânicos ou anúncios'),
@@ -532,13 +532,22 @@ export const FERRAMENTAS: Ferramenta[] = [
       filtro: z.enum(['todos', 'sem_resposta', 'alerta', 'respondidos', 'ocultos']).optional(),
       atualizar: z.boolean().optional(),
     },
-    executar: async ({ sb }, a) => {
+    executar: async ({ sb, escopo }, a) => {
+      if (a.atualizar && escopo !== 'write') throw new Error('atualizar=true grava os comentários novos no banco: precisa de token de escrita (ou chame sem atualizar).')
       const c = await import('@/servicos/comentarios-redes')
       if (a.atualizar) await c.sincronizarComentarios(a.clienteId ? [a.clienteId] : undefined)
       const lista = await c.listarComentarios(sb, { origem: a.origem, clienteId: a.clienteId ?? null, filtro: a.filtro ?? 'todos' })
       if (!lista) throw new Error('Falta a migração dos comentários.')
       return lista.map((x) => ({ plataforma: x.plataforma, id: x.id, cliente: x.clienteNome, autor: x.autor, texto: x.texto, em: x.criadoEm, tom: x.tom, motivo: x.motivo, respondido: !!x.respondidoEm, oculto: x.oculto, resolvido: !!x.resolvidoEm, post: x.postTexto, anuncio: x.anuncioNome || undefined, link: x.postLink, respostas: x.respostas }))
     },
+  }),
+
+  definir({
+    nome: 'atualizar_comentarios_redes',
+    descricao: 'Busca na Meta os comentários novos do Instagram e do Facebook (de um cliente ou de todos), classifica o tom e grava; negativos e agressivos avisam no sino. A rotina já faz isso a cada 15 minutos. Depois, leia com listar_comentarios_redes.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (de listar_clientes); vazio = todos').optional() },
+    executar: async (_ctx, a) => (await import('@/servicos/comentarios-redes')).sincronizarComentarios(a.clienteId ? [a.clienteId] : undefined),
   }),
 
   definir({
@@ -1529,9 +1538,9 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'enviar_mensagem_chat',
     descricao: 'Envia uma mensagem num canal do chat da equipe (em nome da pessoa dona do token). Para responder em tópico, informe respostaDe (id de uma mensagem principal). Para mencionar alguém (avisa no sino), escreva @[Nome](id) com o id de listar_equipe. Links de tarefas e documentos da plataforma aparecem com o título.',
     escrita: true,
-    entrada: { canal: z.string().min(1).max(40).describe('Nome do canal'), texto: z.string().min(1).max(8000), respostaDe: id('Mensagem principal (tópico)').optional() },
+    entrada: { canal: z.string().min(1).max(40).describe('Nome do canal (ex.: geral) ou o id dele (de listar_canais_chat), que não muda se o canal for renomeado'), texto: z.string().min(1).max(8000), respostaDe: id('Mensagem principal (tópico)').optional() },
     executar: async ({ sb }, a) => {
-      const canal = (await chat.listarCanais(sb)).find((c) => c.nome === a.canal.replace(/^#/, ''))
+      const canal = (await chat.listarCanais(sb)).find((c) => c.id === a.canal || c.nome === a.canal.replace(/^#/, ''))
       if (!canal) throw new Error('Canal não encontrado (ou sem acesso).')
       const mensagemId = await chat.enviarMensagem(sb, { canalId: canal.id, paiId: a.respostaDe ?? null, texto: a.texto.trim(), mencoes: extrairMencoes(a.texto), anexos: [] })
       return { mensagemId }

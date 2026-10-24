@@ -112,3 +112,11 @@ it('P2-6: cancelar_agendamento_post explica quando o post não está agendado', 
   expect(r.isError).toBe(true)
   expect((r.content as { text: string }[])[0].text).toMatch(/não está agendado/)
 })
+
+it('P3: listar_comentarios_redes com atualizar=true recusa token de leitura (gravaria no banco)', async () => {
+  const r = await (await conectar('read')).callTool({ name: 'listar_comentarios_redes', arguments: { origem: 'organico', atualizar: true } })
+  expect(r.isError).toBe(true)
+  expect((r.content as { text: string }[])[0].text).toMatch(/token de escrita/)
+  const leitura = (await (await conectar('read')).listTools()).tools.map((t) => t.name)
+  expect(leitura).not.toContain('atualizar_comentarios_redes')
+})
