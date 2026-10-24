@@ -1404,8 +1404,21 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'cancelar_agendamento_post',
+    descricao: 'Tira um post da fila de publicação (agendado ou que falhou): ele volta para "não agendado", com o texto e as mídias. Post já publicado não é afetado. Para reagendar, use agendar_post.',
+    escrita: true,
+    entrada: { tarefaId: id('Post (id da tarefa da lista de conteúdo)') },
+    executar: async ({ sb }, a) => {
+      await conteudoSvc.cancelarAgendamento(sb, a.tarefaId).catch((e: { code?: string }) => {
+        throw new Error(e?.code === '42501' ? 'Este post não está agendado (ou já foi publicado), ou você não tem acesso a ele.' : 'Não foi possível cancelar o agendamento.')
+      })
+      return { ok: true, status: 'nao_agendado' }
+    },
+  }),
+
+  definir({
     nome: 'agendar_post',
-    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela).',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
     escrita: true,
     entrada: {
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),

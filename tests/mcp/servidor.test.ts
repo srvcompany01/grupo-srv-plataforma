@@ -100,3 +100,15 @@ it('P2-5: lancar_tempo chama lancar_tempo no banco com os minutos', async () => 
   expect(r.isError).toBeFalsy()
   expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined }]])
 })
+
+it('P2-6: cancelar_agendamento_post explica quando o post não está agendado', async () => {
+  const vazio = { update: () => ({ eq: () => ({ in: () => ({ select: async () => ({ data: [], error: null }) }) }) }) }
+  const sb = { from: () => vazio } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const r = await cli.callTool({ name: 'cancelar_agendamento_post', arguments: { tarefaId: '00000000-0000-4000-8000-000000000001' } })
+  expect(r.isError).toBe(true)
+  expect((r.content as { text: string }[])[0].text).toMatch(/não está agendado/)
+})
