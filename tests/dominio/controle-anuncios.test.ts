@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, podeGerirAnuncios } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -32,5 +32,26 @@ describe('controle de anúncios', () => {
     expect(centavos(49.9)).toBe(4990)
     expect(() => centavos(0)).toThrow()
     expect(() => centavos(60_000)).toThrow()
+  })
+})
+
+describe('campanha de pesquisa no Google', () => {
+  const ok = { nome: 'Clareamento', orcamentoDiario: 40, estrategia: 'cliques' as const, locais: ['geoTargetConstants/1001773'], palavras: [{ texto: 'clareamento dental belém', correspondencia: 'frase' as const }], negativas: ['grátis'], titulos: ['Clareamento em Belém', 'Agende sua avaliação', 'Resultado natural'], descricoes: ['Clínica com 10 anos de experiência.', 'Agende pelo WhatsApp hoje.'], url: 'https://clinica.com.br' }
+
+  it('valida títulos, descrições, palavras e url', () => {
+    expect(problemaPesquisaGoogle(ok)).toBeNull()
+    expect(problemaPesquisaGoogle({ ...ok, titulos: ['a', 'b'] })).toMatch(/3 a 15/)
+    expect(problemaPesquisaGoogle({ ...ok, titulos: [...ok.titulos.slice(0, 2), 'x'.repeat(31)] })).toMatch(/30 caracteres/)
+    expect(problemaPesquisaGoogle({ ...ok, descricoes: ['só uma'] })).toMatch(/2 a 4/)
+    expect(problemaPesquisaGoogle({ ...ok, url: 'http://site.com' })).toMatch(/https/)
+    expect(problemaPesquisaGoogle({ ...ok, locais: ['Belém'] })).toMatch(/Local/)
+  })
+
+  it('monta orçamento, campanha pausada, local, idioma, negativa, grupo, palavra e anúncio', () => {
+    const ops = operacoesPesquisaGoogle('123', ok)
+    expect(ops.map((o) => Object.keys(o)[0])).toEqual(['campaignBudgetOperation', 'campaignOperation', 'campaignCriterionOperation', 'campaignCriterionOperation', 'campaignCriterionOperation', 'adGroupOperation', 'adGroupCriterionOperation', 'adGroupAdOperation'])
+    expect(ops[0]).toMatchObject({ campaignBudgetOperation: { create: { amountMicros: '40000000' } } })
+    expect(ops[1]).toMatchObject({ campaignOperation: { create: { status: 'PAUSED', targetSpend: {} } } })
+    expect(operacoesPesquisaGoogle('123', { ...ok, locais: [] })[2]).toMatchObject({ campaignCriterionOperation: { create: { location: { geoTargetConstant: 'geoTargetConstants/2076' } } } })
   })
 })

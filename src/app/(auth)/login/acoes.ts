@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { opcoesRealtime } from '@/infra/supabase/realtime'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -33,6 +34,13 @@ export async function entrar(_: Estado, form: FormData): Promise<Estado> {
   const sb = await criarClienteServidor()
   const { error } = await sb.auth.signInWithPassword({ email, password: senha })
   if (error) return { erro: 'E-mail ou senha incorretos.' }
+  // Veio da tela de autorização do app do Claude (OAuth do MCP): volta para ela.
+  const pote = await cookies()
+  const voltar = pote.get('voltar')?.value
+  if (voltar?.startsWith('/oauth/autorizar?')) {
+    pote.delete('voltar')
+    redirect(voltar)
+  }
   redirect('/')
 }
 

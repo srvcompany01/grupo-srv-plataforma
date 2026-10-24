@@ -185,7 +185,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Anúncios e Google: a aba Anúncios junta o investimento de todos os clientes (Meta e Google Ads). Por cliente: anuncios_meta_cliente (Meta, pela conta act_ do cadastro), campanhas_google_ads_cliente (Google Ads, pela conta de 10 dígitos do cadastro, via MCC da agência) e metricas_google_meu_negocio (perfil do Meu Negócio ligado na página do cliente). O Google usa UMA conta Google da agência, conectada pelo admin na aba Anúncios. A aba Anúncios tem o panorama de todos os clientes e um seletor para ver um cliente só, com insights e recomendações.',
         'Blog (www.gruposrv.com.br/blog): blog público da agência para atrair clientes pelo Google, em 4 categorias (tráfego pago, redes sociais e conteúdo, vendas e marketing, Google e presença local), cada uma com um guia completo (pilar). Todo artigo leva para a landing /maquinadevendas. A equipe escreve na aba Blog (com checklist de SEO e rascunho pela IA). Fluxo do modelo mestre: contexto_blog (marca, categorias, autores, briefing, artigos) → criar_post_blog (sempre rascunho, com briefing, SEO, CTA, social e capa) → validar_post_blog (checklist e, no ar, validação técnica) → publicar_post_blog com revisao=true. A revisão humana é aprovada por uma pessoa na plataforma; só depois dá para publicar ou agendar. Não há exclusão por aqui.',
         'Performance (aba Performance): por cliente e mês, investimento e leads pagos (Meta: formulários e conversas no WhatsApp/Direct; Google Ads: conversões), orgânico do Instagram (cliques nos links do perfil e no link da bio da plataforma, www.gruposrv.com.br/l/<cliente>, que abre o WhatsApp do cliente com uma mensagem pronta), leads da bio confirmados pela equipe e o faturamento e as vendas lançados pela equipe; calcula CPL, ROAS, custo por venda, ticket médio e conversão. Use performance_cliente, registrar_resultado_mes e confirmar_lead_bio. Não há exclusão por aqui.',
-        'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
+        'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. No Google Ads: buscar_locais_google e ideias_palavras_google (volume de buscas e lance) ajudam a montar criar_campanha_google_pesquisa (orçamento, locais, palavras com correspondência, negativas e anúncio responsivo com 3 a 15 títulos de até 30 caracteres e 2 a 4 descrições de até 90), que nasce PAUSADA. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
@@ -587,6 +587,64 @@ export const FERRAMENTAS: Ferramenta[] = [
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       return (await import('@/servicos/controle-anuncios')).formulariosDoCliente(cliente)
+    },
+  }),
+
+  definir({
+    nome: 'buscar_locais_google',
+    descricao: 'Procura cidades, estados e regiões do Brasil para segmentar campanhas do Google Ads. Devolve o recurso (geoTargetConstants/…) para usar em locais.',
+    escrita: false,
+    entrada: { busca: z.string().min(2).max(80).describe('Ex.: Belém, Pará, Ananindeua') },
+    executar: async (_ctx, a) => {
+      const r = await (await import('@/servicos/google-agencia')).buscarLocaisGoogle(a.busca)
+      if ('erro' in r) throw new Error(r.erro)
+      return r
+    },
+  }),
+
+  definir({
+    nome: 'ideias_palavras_google',
+    descricao: 'Ideias de palavras-chave do Planejador do Google Ads para o cliente: buscas por mês, concorrência e faixa de lance (R$) no topo da página. Parta de palavras e/ou do site do cliente.',
+    escrita: false,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      palavras: z.array(z.string().min(2).max(80)).max(10).default([]),
+      url: z.string().url().optional().describe('Site do cliente (opcional)'),
+      locais: z.array(z.string().regex(/^geoTargetConstants\/\d+$/)).max(10).default([]).describe('De buscar_locais_google; vazio = Brasil'),
+    },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente?.googleAdsId) throw new Error('Cliente sem conta do Google Ads no cadastro.')
+      if (!a.palavras.length && !a.url) throw new Error('Informe palavras ou o site.')
+      const r = await (await import('@/servicos/google-agencia')).ideiasDePalavras(cliente.googleAdsId, a)
+      if ('erro' in r) throw new Error(r.erro)
+      return r.slice(0, 50)
+    },
+  }),
+
+  definir({
+    nome: 'criar_campanha_google_pesquisa',
+    descricao: 'Cria no Google Ads uma campanha de PESQUISA completa, PAUSADA: orçamento diário, estratégia (cliques = Maximizar cliques, para conta sem conversões; conversoes = Maximizar conversões), locais, idioma português, um grupo com as palavras-chave (ampla, frase ou exata), negativas e um anúncio responsivo (3 a 15 títulos de até 30 caracteres, 2 a 4 descrições de até 90, URL https). Tudo numa transação: se algo falhar, nada é criado. Para ir ao ar, propor_alteracao_anuncio (ativar, plataforma google, nível campanha). Só admin e gestor.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      nome: z.string().min(3).max(120),
+      orcamentoDiario: z.number().positive().max(50000).describe('Reais por dia'),
+      estrategia: z.enum(['cliques', 'conversoes']),
+      locais: z.array(z.string().regex(/^geoTargetConstants\/\d+$/)).max(25).default([]),
+      palavras: z.array(z.object({ texto: z.string().min(1).max(80), correspondencia: z.enum(['ampla', 'frase', 'exata']) })).min(1).max(80),
+      negativas: z.array(z.string().min(1).max(80)).max(200).optional(),
+      titulos: z.array(z.string().min(1).max(30)).min(3).max(15),
+      descricoes: z.array(z.string().min(1).max(90)).min(2).max(4),
+      url: z.string().url(),
+      caminho1: z.string().max(15).optional(),
+      caminho2: z.string().max(15).optional(),
+    },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const r = await (await import('@/servicos/controle-anuncios')).criarCampanhaGoogle(sb, { id: userId, papel }, cliente, a)
+      return { ...r, status: 'PAUSADA', proximoPasso: 'Revise e use propor_alteracao_anuncio (ativar, plataforma google, nível campanha) para ir ao ar.' }
     },
   }),
 

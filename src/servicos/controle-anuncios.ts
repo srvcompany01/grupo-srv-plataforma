@@ -1,5 +1,5 @@
 import 'server-only'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, podeGerirAnuncios, type Modo, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
 import { leadsDasAcoes } from '@/dominio/performance'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -7,7 +7,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import type { Cliente } from './clientes-plataforma'
 import { paginaDoCliente } from './comentarios-redes'
-import { campanhaGoogle, ErroGoogle, orcamentoGoogle, statusCampanhaGoogle } from './google-agencia'
+import { campanhaGoogle, ErroGoogle, mutarGoogle, orcamentoGoogle, situacaoGoogle, statusCampanhaGoogle } from './google-agencia'
 import { ErroMeta, graph } from './publicacao-meta'
 import { dados } from './resultado'
 
@@ -335,5 +335,21 @@ export async function formulariosDoCliente(cliente: Cliente): Promise<{ id: stri
     const p = await paginaDoCliente(cliente.metaPaginaId!)
     const r = await graph<{ data: { id: string; name: string; status: string }[] }>(`${cliente.metaPaginaId}/leadgen_forms`, { token: p.token, params: { fields: 'id,name,status', limit: '50' } })
     return r.data.map((f) => ({ id: f.id, nome: f.name, status: f.status }))
+  })
+}
+
+// ───────────────────────────── Criação no Google Ads (IA) ─────────────────────────────
+
+/** Campanha de Pesquisa completa (orçamento, locais, idioma, grupo, palavras, negativas e anúncio), PAUSADA. */
+export async function criarCampanhaGoogle(sb: Supabase, quem: Quem, cliente: Cliente, n: NovaPesquisaGoogle): Promise<{ campanhaId: string }> {
+  if (!podeGerirAnuncios(quem.papel)) throw falha('Só admin e gestor criam campanhas.')
+  if (!cliente.googleAdsId) throw falha('O cliente não tem conta do Google Ads no cadastro.')
+  if (!(await situacaoGoogle()).conectado) throw falha('A conta Google da agência não está conectada (aba Anúncios).')
+  const problema = problemaPesquisaGoogle(n)
+  if (problema) throw falha(problema)
+  return comMensagem(async () => {
+    const id = await mutarGoogle(cliente.googleAdsId!, operacoesPesquisaGoogle(cliente.googleAdsId!, n))
+    await registrar(sb, cliente.id, { plataforma: 'google', nivel: 'campanha', objetoId: id || 'novo', acao: 'criar', nome: n.nome, depois: `pausada · ${reais(n.orcamentoDiario)}/dia · ${n.palavras.length} palavras`, origem: 'ia' })
+    return { campanhaId: id }
   })
 }

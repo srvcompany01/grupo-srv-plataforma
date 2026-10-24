@@ -89,3 +89,78 @@ export const ROTULO_STATUS: Record<string, string> = {
   ACTIVE: 'Ativo', PAUSED: 'Pausado', CAMPAIGN_PAUSED: 'Campanha pausada', ADSET_PAUSED: 'Conjunto pausado', IN_PROCESS: 'Processando',
   WITH_ISSUES: 'Com problema', PENDING_REVIEW: 'Em análise', DISAPPROVED: 'Reprovado', PREAPPROVED: 'Pré-aprovado', ENABLED: 'Ativo',
 }
+
+// ───────────────────────────── Google Ads: campanha de Pesquisa ─────────────────────────────
+
+export type NovaPesquisaGoogle = {
+  nome: string
+  orcamentoDiario: number
+  /** cliques = Maximizar cliques (conta nova, sem conversões); conversoes = Maximizar conversões. */
+  estrategia: 'cliques' | 'conversoes'
+  /** geoTargetConstants/… de buscar_locais_google; vazio = Brasil. */
+  locais: string[]
+  palavras: { texto: string; correspondencia: 'ampla' | 'frase' | 'exata' }[]
+  negativas?: string[]
+  titulos: string[]
+  descricoes: string[]
+  url: string
+  caminho1?: string
+  caminho2?: string
+}
+
+/** Regras do anúncio responsivo de pesquisa do Google; devolve o primeiro problema ou null. */
+export function problemaPesquisaGoogle(n: NovaPesquisaGoogle): string | null {
+  const titulos = n.titulos.map((t) => t.trim()).filter(Boolean)
+  const descricoes = n.descricoes.map((d) => d.trim()).filter(Boolean)
+  if (titulos.length < 3 || titulos.length > 15) return 'O anúncio precisa de 3 a 15 títulos.'
+  const longo = titulos.find((t) => t.length > 30)
+  if (longo) return `Título com mais de 30 caracteres: "${longo}".`
+  if (new Set(titulos.map((t) => t.toLowerCase())).size !== titulos.length) return 'Há títulos repetidos.'
+  if (descricoes.length < 2 || descricoes.length > 4) return 'O anúncio precisa de 2 a 4 descrições.'
+  const longa = descricoes.find((d) => d.length > 90)
+  if (longa) return `Descrição com mais de 90 caracteres: "${longa.slice(0, 40)}…".`
+  if (!n.palavras.length || n.palavras.length > 80) return 'Informe de 1 a 80 palavras-chave.'
+  const ruim = n.palavras.find((p) => !p.texto.trim() || p.texto.length > 80 || p.texto.split(/\s+/).length > 10)
+  if (ruim) return `Palavra-chave inválida: "${ruim.texto}" (até 80 caracteres e 10 palavras).`
+  if ([n.caminho1, n.caminho2].some((c) => c && c.length > 15)) return 'Os caminhos da URL têm até 15 caracteres.'
+  if (!/^https:\/\/[^\s]+\.[^\s]+/.test(n.url)) return 'A URL final precisa começar com https://.'
+  if (n.locais.some((l) => !/^geoTargetConstants\/\d+$/.test(l))) return 'Local inválido (use buscar_locais_google).'
+  return null
+}
+
+const CORRESPONDENCIA = { ampla: 'BROAD', frase: 'PHRASE', exata: 'EXACT' } as const
+
+/** Operações do googleAds:mutate (tudo numa transação, com ids temporários negativos). Campanha PAUSADA. */
+export function operacoesPesquisaGoogle(conta: string, n: NovaPesquisaGoogle) {
+  const c = `customers/${conta}`
+  const orc = `${c}/campaignBudgets/-1`
+  const camp = `${c}/campaigns/-2`
+  const grupo = `${c}/adGroups/-3`
+  const locais = n.locais.length ? n.locais : ['geoTargetConstants/2076']
+  return [
+    { campaignBudgetOperation: { create: { resourceName: orc, name: `${n.nome} · orçamento ${Date.now()}`, amountMicros: String(centavos(n.orcamentoDiario) * 10_000), deliveryMethod: 'STANDARD', explicitlyShared: false } } },
+    {
+      campaignOperation: {
+        create: {
+          resourceName: camp, name: n.nome, status: 'PAUSED', advertisingChannelType: 'SEARCH', campaignBudget: orc,
+          networkSettings: { targetGoogleSearch: true, targetSearchNetwork: false, targetContentNetwork: false, targetPartnerSearchNetwork: false },
+          containsEuPoliticalAdvertising: 'DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING',
+          ...(n.estrategia === 'conversoes' ? { maximizeConversions: {} } : { targetSpend: {} }),
+        },
+      },
+    },
+    ...locais.map((l) => ({ campaignCriterionOperation: { create: { campaign: camp, location: { geoTargetConstant: l } } } })),
+    { campaignCriterionOperation: { create: { campaign: camp, language: { languageConstant: 'languageConstants/1014' } } } },
+    ...(n.negativas ?? []).filter((x) => x.trim()).slice(0, 200).map((x) => ({ campaignCriterionOperation: { create: { campaign: camp, negative: true, keyword: { text: x.trim().slice(0, 80), matchType: 'BROAD' } } } })),
+    { adGroupOperation: { create: { resourceName: grupo, campaign: camp, name: `${n.nome} · Grupo 1`, status: 'ENABLED', type: 'SEARCH_STANDARD' } } },
+    ...n.palavras.map((p) => ({ adGroupCriterionOperation: { create: { adGroup: grupo, status: 'ENABLED', keyword: { text: p.texto.trim(), matchType: CORRESPONDENCIA[p.correspondencia] } } } })),
+    {
+      adGroupAdOperation: {
+        create: {
+          adGroup: grupo, status: 'ENABLED',
+          ad: { finalUrls: [n.url], responsiveSearchAd: { headlines: n.titulos.map((t) => t.trim()).filter(Boolean).map((text) => ({ text })), descriptions: n.descricoes.map((d) => d.trim()).filter(Boolean).map((text) => ({ text })), ...(n.caminho1 ? { path1: n.caminho1 } : {}), ...(n.caminho2 ? { path2: n.caminho2 } : {}) } },
+        },
+      },
+    },
+  ]
+}

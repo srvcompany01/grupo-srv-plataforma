@@ -1,17 +1,19 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 import { autenticarApi, clienteDoUsuario } from '@/infra/mcp-auth'
 import { criarServidorMcp } from '@/mcp/servidor'
+import { CORS, origem } from '@/lib/oauth-http'
 
 // Criar campanha com vídeo espera a Meta processar o arquivo.
 export const maxDuration = 300
 
-const naoAutorizado = () =>
-  Response.json({ erro: 'Token inválido, revogado ou expirado.' }, { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } })
+// O WWW-Authenticate aponta os metadados do OAuth: o app do Claude descobre sozinho como pedir o login.
+const naoAutorizado = (req: Request) =>
+  Response.json({ erro: 'Token inválido, revogado ou expirado.' }, { status: 401, headers: { ...CORS, 'WWW-Authenticate': `Bearer resource_metadata="${origem(req)}/.well-known/oauth-protected-resource"` } })
 
 /** Endpoint MCP (Streamable HTTP, sem sessão). Autenticação: `Authorization: Bearer srv_…` gerado em Configurações. */
 export async function POST(req: Request) {
   const sessao = await autenticarApi(req)
-  if (!sessao) return naoAutorizado()
+  if (!sessao) return naoAutorizado(req)
   let sb
   try {
     sb = await clienteDoUsuario(sessao.userId)

@@ -47,6 +47,24 @@ export type Database = {
         Update: { id?: string; client_id?: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
         Relationships: []
       }
+      oauth_clients: {
+        Row: { client_id: string; name: string; redirect_uris: string[]; created_at: string }
+        Insert: { client_id: string; name?: string; redirect_uris: string[]; created_at?: string }
+        Update: { client_id?: string; name?: string; redirect_uris?: string[]; created_at?: string }
+        Relationships: []
+      }
+      oauth_codes: {
+        Row: { code_hash: string; client_id: string; user_id: string; redirect_uri: string; code_challenge: string; scope: string; expires_at: string; used_at: string | null }
+        Insert: { code_hash: string; client_id: string; user_id: string; redirect_uri: string; code_challenge: string; scope: string; expires_at: string; used_at?: string | null }
+        Update: { code_hash?: string; client_id?: string; user_id?: string; redirect_uri?: string; code_challenge?: string; scope?: string; expires_at?: string; used_at?: string | null }
+        Relationships: []
+      }
+      oauth_refresh_tokens: {
+        Row: { token_hash: string; client_id: string; user_id: string; api_token_id: string | null; scope: string; expires_at: string; revoked_at: string | null; created_at: string }
+        Insert: { token_hash: string; client_id: string; user_id: string; api_token_id?: string | null; scope: string; expires_at: string; revoked_at?: string | null; created_at?: string }
+        Update: { token_hash?: string; client_id?: string; user_id?: string; api_token_id?: string | null; scope?: string; expires_at?: string; revoked_at?: string | null; created_at?: string }
+        Relationships: []
+      }
       post_insights: {
         Row: { task_id: string; nota: string; tipo: string; resumo: string; deu_certo: Json; nao_deu_certo: Json; replicar: Json; evitar: Json; metricas: Json; referencia: Json; assistiu_video: boolean; analisado_por: string | null; analisado_em: string }
         Insert: { task_id: string; nota: string; tipo?: string; resumo?: string; deu_certo?: Json; nao_deu_certo?: Json; replicar?: Json; evitar?: Json; metricas?: Json; referencia?: Json; assistiu_video?: boolean; analisado_por?: string | null; analisado_em?: string }

@@ -257,3 +257,34 @@ export async function orcamentoGoogle(contaId: string, recurso: string, reaisPor
     corpo: { operations: [{ update: { resourceName: recurso, amountMicros: String(Math.round(reaisPorDia * 100) * 10_000) }, updateMask: 'amount_micros' }] },
   })
 }
+
+// Criação (pela IA, via MCP): busca de locais e de palavras e a campanha de Pesquisa, sempre PAUSADA.
+
+export function buscarLocaisGoogle(busca: string): Promise<{ recurso: string; nome: string; tipo: string }[] | { erro: string }> {
+  return comErro(async () => {
+    type R = { geoTargetConstantSuggestions?: { geoTargetConstant: { resourceName: string; canonicalName?: string; name: string; targetType?: string } }[] }
+    const r = await google<R>(`${ADS}/geoTargetConstants:suggest`, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { locale: 'pt', countryCode: 'BR', locationNames: { names: [busca] } } })
+    return (r.geoTargetConstantSuggestions ?? []).slice(0, 15).map((s) => ({ recurso: s.geoTargetConstant.resourceName, nome: s.geoTargetConstant.canonicalName ?? s.geoTargetConstant.name, tipo: s.geoTargetConstant.targetType ?? '' }))
+  })
+}
+
+export function ideiasDePalavras(contaId: string, o: { palavras: string[]; url?: string; locais: string[] }): Promise<{ texto: string; buscasMes: number; concorrencia: string; lanceMin: number | null; lanceMax: number | null }[] | { erro: string }> {
+  return comErro(async () => {
+    type R = { results?: { text: string; keywordIdeaMetrics?: { avgMonthlySearches?: string; competition?: string; lowTopOfPageBidMicros?: string; highTopOfPageBidMicros?: string } }[] }
+    const semente = o.url ? (o.palavras.length ? { keywordAndUrlSeed: { keywords: o.palavras, url: o.url } } : { urlSeed: { url: o.url } }) : { keywordSeed: { keywords: o.palavras } }
+    const r = await google<R>(`${ADS}/customers/${contaId}:generateKeywordIdeas`, {
+      metodo: 'POST', cabecalhos: cabecalhosAds(),
+      corpo: { language: 'languageConstants/1014', geoTargetConstants: o.locais.length ? o.locais : ['geoTargetConstants/2076'], keywordPlanNetwork: 'GOOGLE_SEARCH', pageSize: 50, ...semente },
+    })
+    const micros = (v?: string) => (v ? Number(v) / 1e6 : null)
+    return (r.results ?? []).map((x) => ({ texto: x.text, buscasMes: Number(x.keywordIdeaMetrics?.avgMonthlySearches ?? 0), concorrencia: x.keywordIdeaMetrics?.competition ?? '', lanceMin: micros(x.keywordIdeaMetrics?.lowTopOfPageBidMicros), lanceMax: micros(x.keywordIdeaMetrics?.highTopOfPageBidMicros) })).sort((a, b) => b.buscasMes - a.buscasMes)
+  })
+}
+
+/** Executa as operações numa transação só (se uma falhar, nada é criado). Devolve o id da campanha criada. */
+export async function mutarGoogle(contaId: string, operacoes: unknown[]): Promise<string> {
+  type R = { mutateOperationResponses?: { campaignResult?: { resourceName: string } }[] }
+  const r = await google<R>(`${ADS}/customers/${contaId}/googleAds:mutate`, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { mutateOperations: operacoes } })
+  const camp = r.mutateOperationResponses?.find((x) => x.campaignResult)?.campaignResult?.resourceName
+  return camp?.split('/').pop() ?? ''
+}
