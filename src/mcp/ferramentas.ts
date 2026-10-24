@@ -534,6 +534,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const semFaturamento = h.meses.filter((m) => m.faturamento === null && p.investido(m) > 0).map((m) => m.mes)
       const avisos = [
         ...h.erros,
+        'formularios = todos os leads da Meta: leadsNaMeta (formulário instantâneo e leads em mensagens) + leadsSite (evento Lead do pixel do site).',
         'investidoMeta é o gasto da CONTA inteira na Meta (todas as campanhas, de qualquer objetivo) e investidoGoogle o da conta do Google Ads.',
         ...(h.meses.some((m) => m.mes === hoje.slice(0, 7)) ? [`${hoje.slice(0, 7)} está em andamento: o gasto de hoje é parcial, e a Meta e o Google recalculam os últimos dias (cliques inválidos, reprocessamento), então o valor pode subir ou cair alguns reais entre leituras. Mês fechado também pode receber ajuste da plataforma nas semanas seguintes.`] : []),
         ...(semFaturamento.length ? [`Faturamento e vendas não lançados em ${semFaturamento.join(', ')}: ROAS, custo por venda, ticket médio e conversão ficam nulos. Lance com registrar_resultado_mes (ou na aba Performance).`] : []),
@@ -631,7 +632,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_formularios_meta',
-    descricao: 'Formulários de cadastro (Lead Ads) da Página do cliente, para campanhas de formulário.',
+    descricao: 'Formulários de cadastro (Lead Ads, formulário instantâneo) da Página do cliente, para campanhas de formulário. Lista vazia = a Página não tem formulário instantâneo (o token tem leads_retrieval). Os "formularios" de performance_cliente também contam o evento Lead do pixel do site (leadsSite), então podem existir sem formulário na Página.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)') },
     executar: async ({ sb }, a) => {

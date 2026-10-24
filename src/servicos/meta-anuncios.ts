@@ -79,7 +79,7 @@ export async function nomeDaConta(contaId: string): Promise<string | null> {
 }
 
 /** Investimento e leads (formulários e conversas) da conta, mês a mês, entre `de` e `ate`. Cache de 30 min. */
-export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number; formularios: number; conversas: number }> | { erro: string }> {
+export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number; formularios: number; conversas: number; naMeta: number; site: number }> | { erro: string }> {
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   const q = new URLSearchParams({ level: 'account', time_increment: 'monthly', fields: 'spend,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '100', access_token: token })

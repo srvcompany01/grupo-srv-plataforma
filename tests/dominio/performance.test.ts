@@ -3,9 +3,9 @@ import { indicadores, intervaloDoMes, leadsDasAcoes, lerMes, mesesAte } from '@/
 
 describe('performance', () => {
   it('leads do Meta: formulários (sem dobrar) e conversas', () => {
-    expect(leadsDasAcoes([{ action_type: 'lead', value: '10' }, { action_type: 'onsite_conversion.lead_grouped', value: '6' }, { action_type: 'onsite_conversion.messaging_conversation_started_7d', value: '42' }])).toEqual({ formularios: 10, conversas: 42 })
-    expect(leadsDasAcoes([{ action_type: 'onsite_conversion.lead_grouped', value: '6' }, { action_type: 'offsite_conversion.fb_pixel_lead', value: '3' }])).toEqual({ formularios: 9, conversas: 0 })
-    expect(leadsDasAcoes(undefined)).toEqual({ formularios: 0, conversas: 0 })
+    expect(leadsDasAcoes([{ action_type: 'lead', value: '10' }, { action_type: 'onsite_conversion.lead_grouped', value: '6' }, { action_type: 'onsite_conversion.messaging_conversation_started_7d', value: '42' }])).toEqual({ formularios: 10, conversas: 42, naMeta: 6, site: 0 })
+    expect(leadsDasAcoes([{ action_type: 'onsite_conversion.lead_grouped', value: '6' }, { action_type: 'offsite_conversion.fb_pixel_lead', value: '3' }])).toEqual({ formularios: 9, conversas: 0, naMeta: 6, site: 3 })
+    expect(leadsDasAcoes(undefined)).toEqual({ formularios: 0, conversas: 0, naMeta: 0, site: 0 })
   })
   it('meses', () => {
     expect(lerMes('2026-09', '2026-10-24')).toBe('2026-09')

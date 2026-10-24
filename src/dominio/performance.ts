@@ -8,12 +8,16 @@ import { somarDias } from './agenda'
 type Acao = { action_type: string; value: string }
 
 /** Formulários e conversas a partir das "actions" do Meta (sem contar o mesmo lead duas vezes). */
-export function leadsDasAcoes(acoes: Acao[] | undefined): { formularios: number; conversas: number } {
+/**
+ * `formularios` = todos os leads da Meta (ação "lead"): formulário instantâneo e leads em mensagens (`naMeta`) mais o evento
+ * Lead do pixel do site (`site`). Por isso pode haver "formulários" sem nenhum formulário instantâneo na Página.
+ */
+export function leadsDasAcoes(acoes: Acao[] | undefined): { formularios: number; conversas: number; naMeta: number; site: number } {
   const v = (t: string) => Number(acoes?.find((a) => a.action_type === t)?.value ?? 0)
   // "lead" já soma os leads do site (pixel) e os do próprio Meta; sem ele, soma as partes.
   const formularios = v('lead') || v('onsite_conversion.lead_grouped') + v('offsite_conversion.fb_pixel_lead')
   const conversas = v('onsite_conversion.messaging_conversation_started_7d')
-  return { formularios, conversas }
+  return { formularios, conversas, naMeta: v('onsite_conversion.lead_grouped'), site: v('offsite_conversion.fb_pixel_lead') }
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/

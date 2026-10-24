@@ -221,6 +221,8 @@ async function Panorama({ clientes, mes, hoje }: { clientes: Cliente[]; mes: str
     investidoMeta: somaN((m) => m.investidoMeta) ?? 0,
     investidoGoogle: somaN((m) => m.investidoGoogle) ?? 0,
     formularios: somaN((m) => m.formularios) ?? 0,
+    leadsNaMeta: somaN((m) => m.leadsNaMeta) ?? 0,
+    leadsSite: somaN((m) => m.leadsSite) ?? 0,
     conversas: somaN((m) => m.conversas) ?? 0,
     conversoesGoogle: somaN((m) => m.conversoesGoogle) ?? 0,
     cliquesPerfilInstagram: somaN((m) => m.cliquesPerfilInstagram),
