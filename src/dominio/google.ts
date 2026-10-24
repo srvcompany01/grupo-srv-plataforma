@@ -134,3 +134,10 @@ export function intervaloNegocio(de: string, ate: string): [string, string][] {
 
 /** Texto do post do Meu Negócio: até 1.500 caracteres. */
 export const LIMITE_TEXTO_NEGOCIO = 1500
+
+/** O que falta na conta para ler o resultado (sem isso o 0 parece desempenho ruim). */
+export function avisosGoogle(t: { custo: number; conversoes: number; valorConversoes: number }): string[] {
+  if (t.custo > 0 && t.conversoes === 0) return ['Nenhuma conversão registrada no período: confira se a conta tem ação de conversão configurada (WhatsApp, formulário, ligação). Sem ela, custo por conversão e ROAS ficam indisponíveis.']
+  if (t.conversoes > 0 && t.valorConversoes === 0) return ['Conversões sem valor configurado: o ROAS do Google fica indisponível. Para ter ROAS, defina um valor na ação de conversão ou use o faturamento lançado em performance_cliente.']
+  return []
+}

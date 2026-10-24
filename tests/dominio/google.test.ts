@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { intervaloNegocio, lerCampanha, lerContaGoogleAds, lerMetricasNegocio, totaisCampanhas } from '@/dominio/google'
+import { avisosGoogle, intervaloNegocio, lerCampanha, lerContaGoogleAds, lerMetricasNegocio, totaisCampanhas } from '@/dominio/google'
 
 describe('google', () => {
   it('conta do Google Ads', () => {
@@ -23,5 +23,13 @@ describe('google', () => {
     expect(m).toMatchObject({ buscas: 10, mapas: 5, visualizacoes: 15, ligacoes: 3 })
     expect(m.porDia).toEqual([{ dia: '2026-10-01', visualizacoes: 15, acoes: 0 }, { dia: '2026-10-02', visualizacoes: 0, acoes: 3 }])
     expect(intervaloNegocio('2026-10-01', '2026-10-07')).toContainEqual(['dailyRange.end_date.day', '7'])
+  })
+})
+
+describe('P1-8: avisos do Google Ads', () => {
+  it('conversão sem valor e gasto sem conversão viram aviso; conta ok fica sem aviso', () => {
+    expect(avisosGoogle({ custo: 100, conversoes: 12, valorConversoes: 0 })[0]).toMatch(/sem valor configurado/)
+    expect(avisosGoogle({ custo: 100, conversoes: 0, valorConversoes: 0 })[0]).toMatch(/Nenhuma conversão/)
+    expect(avisosGoogle({ custo: 100, conversoes: 12, valorConversoes: 3000 })).toEqual([])
   })
 })

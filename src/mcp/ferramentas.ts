@@ -17,7 +17,7 @@ import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
-import { totaisCampanhas } from '@/dominio/google'
+import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 
@@ -299,7 +299,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!cliente.googleAdsId) throw new Error('Este cliente não tem conta do Google Ads cadastrada.')
       const r = await (await import('@/servicos/google-agencia')).campanhasGoogle(cliente.googleAdsId, periodoDaIA(a))
       if ('erro' in r) throw new Error(r.erro)
-      return { cliente: cliente.nome, periodo: periodoDaIA(a), moeda: r.moeda, totais: totaisCampanhas(r.campanhas), campanhas: r.campanhas }
+      const totais = totaisCampanhas(r.campanhas)
+      return { cliente: cliente.nome, periodo: periodoDaIA(a), moeda: r.moeda, totais, avisos: avisosGoogle(totais), campanhas: r.campanhas }
     },
   }),
 
