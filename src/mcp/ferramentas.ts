@@ -781,12 +781,12 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_campanha_meta',
-    descricao: 'Cria na Meta uma campanha completa, PAUSADA: campanha + conjunto (orçamento diário e público) + um anúncio por criativo. modo: whatsapp (conversas no WhatsApp ligado à Página), direct (conversas no Direct do Instagram), formulario (cadastro na Meta; precisa de formularioId) ou site (cliques para o link). Criativos: ids de listar_criativos_cliente. Público: locais de buscar_locais_meta (vazio = Brasil), interesses de buscar_interesses_meta. Para ir ao ar, use propor_alteracao_anuncio (ativar) na campanha e no conjunto. Só admin e gestor.',
+    descricao: 'Cria na Meta uma campanha completa, PAUSADA: campanha + conjunto (orçamento diário e público) + um anúncio por criativo. modo: whatsapp (conversas no WhatsApp ligado à Página), direct (conversas no Direct do Instagram), formulario (cadastro na Meta; precisa de formularioId), site (cliques para o link) ou perfil_instagram (papel MARCA: tráfego para o perfil do Instagram do cliente, otimizado para visitas ao perfil). Idade mínima maior que a máxima é recusada. Um conjunto por campanha, com orçamento no conjunto (ABO). Criativos: ids de listar_criativos_cliente. Público: locais de buscar_locais_meta (vazio = Brasil), interesses de buscar_interesses_meta. Para ir ao ar, use propor_alteracao_anuncio (ativar) na campanha e no conjunto. Só admin e gestor.',
     escrita: true,
     entrada: {
       clienteId: id('Cliente (id de listar_clientes)'),
       nome: z.string().min(3).max(120),
-      modo: z.enum(['whatsapp', 'direct', 'formulario', 'site']),
+      modo: z.enum(['whatsapp', 'direct', 'formulario', 'site', 'perfil_instagram']).describe('perfil_instagram = MARCA: tráfego para o perfil do Instagram (visitas e seguidores)'),
       orcamentoDiario: z.number().positive().max(50000).describe('Reais por dia'),
       inicio: data('Início').optional(),
       fim: data('Fim (opcional)').optional(),

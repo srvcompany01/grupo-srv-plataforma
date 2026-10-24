@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, googleParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, googleParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, problemaPublico, type ItemArvore } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -132,5 +132,20 @@ describe('P1-3: formato estável', () => {
     const c: ItemArvore = { id: 'x', nome: 'x', nivel: 'campanha', status: 'ACTIVE', ligado: true, diario: null, total: null, gasto: 0, leads: 0, filhos: [] }
     const r = estruturaParaIA([c], { status: 'ativos', comGasto: false }) as unknown as { campanhas: Record<string, unknown>[] }
     expect(r.campanhas[0]).toHaveProperty('leads', 0)
+  })
+})
+
+describe('P2-7: criar_campanha_meta', () => {
+  it('recusa idade mínima maior que a máxima (antes era corrigida em silêncio)', () => {
+    expect(problemaPublico({ idadeMin: 25, idadeMax: 20 })).toMatch(/maior que a máxima/)
+    expect(problemaPublico({ idadeMin: 20, idadeMax: 45 })).toBeNull()
+  })
+
+  it('modo perfil_instagram (MARCA): tráfego para o perfil, link e botão do perfil', () => {
+    expect(configDoModo('perfil_instagram')).toEqual({ objetivo: 'OUTCOME_TRAFFIC', destino: 'INSTAGRAM_PROFILE', otimizacao: 'VISIT_INSTAGRAM_PROFILE' })
+    expect(modoDoDestino('INSTAGRAM_PROFILE', 'OUTCOME_TRAFFIC')).toBe('perfil_instagram')
+    const c = montarCriativo({ modo: 'perfil_instagram', paginaId: 'p', instagramId: 'ig', instagramUsuario: 'aurumbelem', midia: { imagemHash: 'h' }, anuncio: { texto: 'Siga' } })
+    expect(c).toMatchObject({ instagram_user_id: 'ig', link_data: { link: 'https://www.instagram.com/aurumbelem/', call_to_action: { type: 'VIEW_INSTAGRAM_PROFILE' } } })
+    expect(() => montarCriativo({ modo: 'perfil_instagram', paginaId: 'p', instagramId: null, midia: { imagemHash: 'h' }, anuncio: { texto: 'x' } })).toThrow(/Instagram profissional/)
   })
 })

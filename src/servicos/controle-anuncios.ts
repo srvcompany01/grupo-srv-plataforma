@@ -1,5 +1,5 @@
 import 'server-only'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, problemaPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
 import { leadsDasAcoes } from '@/dominio/performance'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -249,14 +249,14 @@ async function contexto(cliente: Cliente) {
   if (!cliente.metaContaId) throw falha('O cliente não tem conta de anúncios da Meta no cadastro.')
   if (!cliente.metaPaginaId) throw falha('O cliente não tem a Página do Facebook no cadastro.')
   const pagina = await paginaDoCliente(cliente.metaPaginaId)
-  return { contaId: cliente.metaContaId, paginaId: cliente.metaPaginaId, instagramId: pagina.ig?.id ?? null }
+  return { contaId: cliente.metaContaId, paginaId: cliente.metaPaginaId, instagramId: pagina.ig?.id ?? null, instagramUsuario: pagina.ig?.usuario ?? null }
 }
 
 type NovoAnuncio = TextoAnuncio & { criativoId: string; nome?: string }
 
 async function criarAnuncio(sb: Supabase, cliente: Cliente, ctx: Awaited<ReturnType<typeof contexto>>, o: { modo: Modo; conjuntoId: string; anuncio: NovoAnuncio; link?: string; formularioId?: string }): Promise<string> {
   const midia = await midiaNaMeta(sb, cliente.id, ctx.contaId, o.anuncio.criativoId)
-  const spec = montarCriativo({ modo: o.modo, paginaId: ctx.paginaId, instagramId: ctx.instagramId, midia, anuncio: o.anuncio, link: o.link, formularioId: o.formularioId })
+  const spec = montarCriativo({ modo: o.modo, paginaId: ctx.paginaId, instagramId: ctx.instagramId, instagramUsuario: ctx.instagramUsuario, midia, anuncio: o.anuncio, link: o.link, formularioId: o.formularioId })
   const nome = (o.anuncio.nome || o.anuncio.titulo || o.anuncio.texto).slice(0, 80)
   const criativo = await graph<{ id: string }>(`act_${ctx.contaId}/adcreatives`, { metodo: 'POST', params: { name: nome, object_story_spec: JSON.stringify(spec) } })
   const ad = await graph<{ id: string }>(`act_${ctx.contaId}/ads`, { metodo: 'POST', params: { name: nome, adset_id: o.conjuntoId, creative: JSON.stringify({ creative_id: criativo.id }), status: 'PAUSED' } })
@@ -270,6 +270,8 @@ export type NovaCampanha = { nome: string; modo: Modo; orcamentoDiario: number; 
 export async function criarCampanhaMeta(sb: Supabase, quem: Quem, cliente: Cliente, n: NovaCampanha): Promise<{ campanhaId: string; conjuntoId: string; anuncios: string[]; erros: string[] }> {
   if (!podeGerirAnuncios(quem.papel)) throw falha('Só admin e gestor criam campanhas.')
   if (!n.anuncios.length) throw falha('Informe ao menos um anúncio (criativo + texto).')
+  const publicoRuim = problemaPublico(n.publico)
+  if (publicoRuim) throw falha(publicoRuim)
   return comMensagem(async () => {
     const ctx = await contexto(cliente)
     const cfg = configDoModo(n.modo)

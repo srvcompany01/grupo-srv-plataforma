@@ -5,8 +5,11 @@
 
 export const podeGerirAnuncios = (papel: string) => papel === 'admin' || papel === 'gestor'
 
-/** Destino do anúncio: conversa no WhatsApp, no Direct, formulário de cadastro (Meta) ou site. */
-export const MODOS = ['whatsapp', 'direct', 'formulario', 'site'] as const
+/**
+ * Destino do anúncio: conversa no WhatsApp, no Direct, formulário de cadastro (Meta), site ou o perfil do Instagram
+ * (papel MARCA: traz visitas e seguidores, que viram lead depois).
+ */
+export const MODOS = ['whatsapp', 'direct', 'formulario', 'site', 'perfil_instagram'] as const
 export type Modo = (typeof MODOS)[number]
 
 export function configDoModo(modo: Modo) {
@@ -19,11 +22,14 @@ export function configDoModo(modo: Modo) {
       return { objetivo: 'OUTCOME_LEADS', destino: 'ON_AD', otimizacao: 'LEAD_GENERATION' }
     case 'site':
       return { objetivo: 'OUTCOME_TRAFFIC', destino: 'WEBSITE', otimizacao: 'LINK_CLICKS' }
+    case 'perfil_instagram':
+      return { objetivo: 'OUTCOME_TRAFFIC', destino: 'INSTAGRAM_PROFILE', otimizacao: 'VISIT_INSTAGRAM_PROFILE' }
   }
 }
 
 /** Modo de um conjunto já existente (para subir um anúncio novo nele). */
 export function modoDoDestino(destino: string | undefined, objetivo: string | undefined): Modo | null {
+  if (destino === 'INSTAGRAM_PROFILE') return 'perfil_instagram'
   if (destino === 'WHATSAPP') return 'whatsapp'
   if (destino === 'INSTAGRAM_DIRECT') return 'direct'
   if (destino === 'ON_AD' || objetivo === 'OUTCOME_LEADS') return 'formulario'
@@ -41,6 +47,12 @@ export type Publico = {
   interesses?: { id: string; nome: string }[]
   /** Público Advantage+: a Meta amplia além do que foi pedido quando acha melhor. */
   advantage?: boolean
+}
+
+/** Problema no público pedido (antes, idade mínima maior que a máxima era corrigida em silêncio). null = ok. */
+export function problemaPublico(p: Publico): string | null {
+  if (p.idadeMin !== undefined && p.idadeMax !== undefined && p.idadeMin > p.idadeMax) return `Idade mínima (${p.idadeMin}) maior que a máxima (${p.idadeMax}).`
+  return null
 }
 
 export function montarPublico(p: Publico) {
@@ -61,15 +73,17 @@ export type TextoAnuncio = { texto: string; titulo?: string; descricao?: string;
 const LINK_WHATSAPP = 'https://api.whatsapp.com/send'
 
 /** object_story_spec do criativo (imagem pelo hash, vídeo pelo id + capa). */
-export function montarCriativo(o: { modo: Modo; paginaId: string; instagramId: string | null; midia: { imagemHash: string } | { videoId: string; capa: string }; anuncio: TextoAnuncio; link?: string; formularioId?: string }) {
+export function montarCriativo(o: { modo: Modo; paginaId: string; instagramId: string | null; instagramUsuario?: string | null; midia: { imagemHash: string } | { videoId: string; capa: string }; anuncio: TextoAnuncio; link?: string; formularioId?: string }) {
   const { modo, anuncio } = o
-  const link = modo === 'whatsapp' ? LINK_WHATSAPP : modo === 'formulario' ? 'http://fb.me/' : modo === 'direct' ? 'https://www.instagram.com/' : o.link
+  if (modo === 'perfil_instagram' && !o.instagramUsuario) throw new Error('A Página do cliente não tem um Instagram profissional ligado.')
+  const link = modo === 'whatsapp' ? LINK_WHATSAPP : modo === 'formulario' ? 'http://fb.me/' : modo === 'direct' ? 'https://www.instagram.com/' : modo === 'perfil_instagram' ? `https://www.instagram.com/${o.instagramUsuario}/` : o.link
   if (!link) throw new Error('Informe o link do site.')
   if (modo === 'formulario' && !o.formularioId) throw new Error('Informe o formulário de cadastro (listar_formularios_meta).')
   const cta =
     modo === 'whatsapp' ? { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP', link } }
     : modo === 'direct' ? { type: 'INSTAGRAM_MESSAGE', value: { app_destination: 'INSTAGRAM_DIRECT' } }
     : modo === 'formulario' ? { type: anuncio.botao || 'SIGN_UP', value: { lead_gen_form_id: o.formularioId } }
+    : modo === 'perfil_instagram' ? { type: anuncio.botao || 'VIEW_INSTAGRAM_PROFILE', value: { link } }
     : { type: anuncio.botao || 'LEARN_MORE', value: { link } }
   const base = { page_id: o.paginaId, ...(o.instagramId ? { instagram_user_id: o.instagramId } : {}) }
   if ('imagemHash' in o.midia) {
