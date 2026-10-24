@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avaliarAnuncios, lerAnuncio, lerContaAnuncios, referencias, totaisAnuncios, type AnuncioBruto } from '@/dominio/anuncios-meta'
+import { avaliarAnuncios, lerAnuncio, lerContaAnuncios, referencias, taxasDoAnuncio, totaisAnuncios, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 const bruto = (id: string, ins: Record<string, unknown>, extra: Partial<AnuncioBruto> = {}): AnuncioBruto => ({ id, name: id, creative: { body: 'Texto', image_url: 'https://img/x.jpg' }, insights: { data: [ins as never] }, ...extra })
 
@@ -62,5 +62,9 @@ describe('anúncios do Meta', () => {
     expect(t.motivos.join(' ')).not.toMatch(/sem nenhum resultado/)
     expect(r.find((a) => a.id === 'whats')!.papel).toBe('lead')
     expect(referencias(lista).lead.custoPorResultado).toBe(13)
+  })
+
+  it('P1-4: CTR e CPC por todos os cliques e pelos cliques no link', () => {
+    expect(taxasDoAnuncio({ impressoes: 10000, cliques: 40, cliquesLink: 0, gasto: 20 })).toEqual({ ctrTodos: 0.4, cpcTodos: 0.5, ctrLink: 0, cpcLink: null })
   })
 })

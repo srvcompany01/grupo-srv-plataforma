@@ -7,7 +7,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
 import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
-import { lerContaAnuncios, referencias, ROTULO_PAPEL, totaisAnuncios } from '@/dominio/anuncios-meta'
+import { lerContaAnuncios, referencias, ROTULO_PAPEL, taxasDoAnuncio, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
@@ -267,7 +267,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       if ('erro' in r) throw new Error(r.erro)
       // Sem a URL da imagem (longa e expira) e sem campos vazios: cabe inteiro na resposta.
       const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, cliques, ...x }) => ({
-        ...x, cliquesTodos: cliques, papel: ROTULO_PAPEL[x.papel], temImagem: !!imagem, texto: texto.slice(0, 160), ...(custoPorResultado !== null ? { custoPorResultado: Math.round(custoPorResultado * 100) / 100 } : {}), ...(visualizacoesVideo ? { visualizacoesVideo } : {}), ...(link ? { link } : {}),
+        // ctr e cpc (como a Meta devolve) usam todos os cliques; ctrLink/cpcLink usam só os cliques no link.
+        ...x, cliquesTodos: cliques, ...taxasDoAnuncio({ ...x, cliques }), papel: ROTULO_PAPEL[x.papel], temImagem: !!imagem, texto: texto.slice(0, 160), ...(custoPorResultado !== null ? { custoPorResultado: Math.round(custoPorResultado * 100) / 100 } : {}), ...(visualizacoesVideo ? { visualizacoesVideo } : {}), ...(link ? { link } : {}),
         ...(qualidade || engajamento || conversao ? { diagnosticoMeta: { qualidade, engajamento, conversao } } : {}),
       }))
       const ref = referencias(r.anuncios)
@@ -281,7 +282,7 @@ export const FERRAMENTAS: Ferramenta[] = [
           lead: { ...ref.lead, custoPorResultado: arred(ref.lead.custoPorResultado), custoPorClique: arred(ref.lead.custoPorClique) },
           marca: { ...ref.marca, custoPorResultado: arred(ref.marca.custoPorResultado), custoPorClique: arred(ref.marca.custoPorClique) },
         },
-        observacoes: ['cliquesTodos (todos os cliques) e cliquesLink (cliques no link) são contagens separadas da Meta e podem diferir ~1% para mais ou para menos; para tráfego use cliquesLink.'],
+        observacoes: ['cliquesTodos (todos os cliques) e cliquesLink (cliques no link) são contagens separadas da Meta e podem diferir ~1% para mais ou para menos; para tráfego use cliquesLink.', 'ctr e cpc (iguais a ctrTodos e cpcTodos) usam todos os cliques; a avaliação e as referências usam ctrLink e cpcLink.'],
         anuncios,
       }
     },

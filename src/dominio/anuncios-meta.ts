@@ -188,3 +188,14 @@ export function totaisAnuncios(anuncios: Anuncio[]) {
   const resultados = anuncios.reduce((x, a) => x + a.resultados, 0)
   return { ...t, ctr: t.impressoes ? (t.cliques / t.impressoes) * 100 : 0, resultados, custoPorResultado: resultados ? t.gasto / resultados : null }
 }
+
+/** CTR e CPC pelas duas contagens da Meta: todos os cliques (o `ctr`/`cpc` que a Meta devolve) e só os cliques no link. */
+export function taxasDoAnuncio(a: Pick<Anuncio, 'impressoes' | 'cliques' | 'cliquesLink' | 'gasto'>) {
+  const r = (n: number) => Math.round(n * 100) / 100
+  return {
+    ctrTodos: a.impressoes ? r((a.cliques / a.impressoes) * 100) : 0,
+    cpcTodos: a.cliques ? r(a.gasto / a.cliques) : null,
+    ctrLink: a.impressoes ? r((a.cliquesLink / a.impressoes) * 100) : 0,
+    cpcLink: a.cliquesLink ? r(a.gasto / a.cliquesLink) : null,
+  }
+}
