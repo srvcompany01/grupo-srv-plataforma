@@ -18,7 +18,7 @@ import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
 import { totaisCampanhas } from '@/dominio/google'
-import { analisarCombinado, analisarOrganico, analisarPago, porFormato } from '@/dominio/insights'
+import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 
 /** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
@@ -251,7 +251,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'anuncios_meta_cliente',
-    descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: impressões, alcance, cliques, CTR, CPM, CPC, gasto, frequência, visualizações de vídeo, diagnóstico da Meta (qualidade, engajamento e conversão frente aos concorrentes) e a avaliação da plataforma (bom / médio / fraco / poucos dados, com os motivos). O cliente precisa ter a conta de anúncios cadastrada.',
+    descricao: 'Anúncios ATIVOS do cliente no Meta (Facebook/Instagram) com os resultados de 7 ou 30 dias: campanha e conjunto de cada um, impressões, alcance, cliques, cliques no link, CTR, CPM, CPC, gasto, frequência, resultados (formulários + conversas no WhatsApp/Direct) e custo por resultado, diagnóstico da Meta quando houver e a avaliação da plataforma (bom / médio / fraco / poucos dados, pelo custo por resultado ou, sem resultados, pelo CTR no link). O cliente precisa ter a conta de anúncios cadastrada.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -260,7 +260,12 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!cliente.metaContaId) throw new Error('Este cliente não tem conta de anúncios do Meta cadastrada.')
       const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, periodoDaIA(a))
       if ('erro' in r) throw new Error(r.erro)
-      return { cliente: cliente.nome, periodo: periodoDaIA(a), totais: totaisAnuncios(r.anuncios), anuncios: r.anuncios }
+      // Sem a URL da imagem (longa e expira) e sem campos vazios: cabe inteiro na resposta.
+      const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, ...x }) => ({
+        ...x, temImagem: !!imagem, texto: texto.slice(0, 160), ...(custoPorResultado !== null ? { custoPorResultado: Math.round(custoPorResultado * 100) / 100 } : {}), ...(visualizacoesVideo ? { visualizacoesVideo } : {}), ...(link ? { link } : {}),
+        ...(qualidade || engajamento || conversao ? { diagnosticoMeta: { qualidade, engajamento, conversao } } : {}),
+      }))
+      return { cliente: cliente.nome, periodo: periodoDaIA(a), totais: totaisAnuncios(r.anuncios), anuncios }
     },
   }),
 
@@ -308,7 +313,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       const ig = await (await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true)
       if ('erro' in ig) throw new Error(ig.erro)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
-      return { cliente: cliente.nome, periodo: p, ...ig, porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias) }
+      const avisos = [
+        'alcance, visualizações e interações da CONTA somam orgânico e anúncios (o Instagram não separa); o engajamento orgânico é o engajamentoPosts.',
+        ...(ig.posts.length ? [] : ['Nenhum post de feed/Reels no período (Stories não entram nesta conta).']),
+        ...(ig.alcancePorDia.length < dias ? ['O Instagram leva até 48 horas para fechar o dia: os últimos dias podem faltar em alcancePorDia.'] : []),
+        ...(ig.cliquesPerfil === 0 ? ['cliquesPerfil = toques nos botões e links do perfil; 0 pode ser real ou a Meta não ter entregue a métrica.'] : []),
+      ]
+      return { cliente: cliente.nome, periodo: p, ...ig, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
     },
   }),
 
@@ -500,10 +511,17 @@ export const FERRAMENTAS: Ferramenta[] = [
       const p = await import('@/servicos/performance')
       const hoje = dataDeHoje(new Date())
       const google = await (await import('@/servicos/google-agencia')).situacaoGoogle()
-      const h = await p.historicoDoCliente(sb, cliente, d.mesesAte(d.lerMes(a.mes, hoje), a.meses ?? 6), hoje, google.conectado)
+      const [h, bio] = await Promise.all([p.historicoDoCliente(sb, cliente, d.mesesAte(d.lerMes(a.mes, hoje), a.meses ?? 6), hoje, google.conectado), p.linkBioDoCliente(sb, cliente.id)])
+      const semFaturamento = h.meses.filter((m) => m.faturamento === null && p.investido(m) > 0).map((m) => m.mes)
+      const avisos = [
+        ...h.erros,
+        ...(semFaturamento.length ? [`Faturamento e vendas não lançados em ${semFaturamento.join(', ')}: ROAS, custo por venda, ticket médio e conversão ficam nulos. Lance com registrar_resultado_mes (ou na aba Performance).`] : []),
+        ...(!bio?.whatsapp ? ['O cliente não tem WhatsApp no cadastro: sem ele não dá para criar o link da bio.'] : !bio.slug ? ['O link da bio ainda não foi criado (aba Performance → cliente → Link da bio): cliquesLinkBio fica 0.'] : h.meses.every((m) => !m.cliquesLinkBio) ? [`Nenhum clique no link da bio (www.gruposrv.com.br/l/${bio.slug}) no período: confira se ele está na bio do Instagram.`] : []),
+        ...(!cliente.metaPaginaId ? ['Sem a Página do Facebook no cadastro: cliquesPerfilInstagram fica nulo.'] : h.meses.every((m) => !m.cliquesPerfilInstagram) ? ['cliquesPerfilInstagram = toques nos botões e links do perfil; zerado pode ser real ou a Meta não ter entregue a métrica.'] : []),
+      ]
       return {
         cliente: cliente.nome,
-        avisos: h.erros,
+        avisos,
         meses: h.meses.map((m) => ({ ...m, investido: p.investido(m), leadsPagos: p.leadsPagos(m), ...d.indicadores({ investido: p.investido(m), leadsPagos: p.leadsPagos(m), leadsOrganicos: m.leadsConfirmados, faturamento: m.faturamento, vendas: m.vendas }) })),
       }
     },
@@ -533,24 +551,35 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'estrutura_anuncios_cliente',
-    descricao: 'Campanhas › conjuntos › anúncios da Meta (ativos e pausados) e campanhas do Google Ads do cliente, com ids, status, orçamento (diário ou total, em reais), gasto e leads/conversões do período; mais os pedidos aguardando aprovação e as últimas alterações. Use os ids daqui em pausar_anuncio, propor_alteracao_anuncio e adicionar_anuncio_meta.',
+    descricao: 'Campanhas da Meta (com os conjuntos e a quantidade de anúncios) e campanhas do Google Ads do cliente, com ids, status, orçamento (reais), gasto e leads do período; mais os pedidos aguardando aprovação e as últimas alterações. Padrão: só as ATIVAS. status=pausados ou todos inclui as pausadas; comGasto=true esconde as sem gasto no período. Para ver os anúncios de uma campanha (ids para adicionar_anuncio_meta, pausar_anuncio, propor_alteracao_anuncio), chame com campanhaId.',
     escrita: false,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Gasto dos últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate)').optional(), ate: data('Fim do período escolhido').optional() },
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      status: z.enum(['ativos', 'pausados', 'todos']).default('ativos'),
+      comGasto: z.boolean().default(false).describe('Só campanhas com gasto no período'),
+      campanhaId: z.string().regex(/^\d{1,25}$/).optional().describe('Abre uma campanha da Meta com os conjuntos e os anúncios'),
+      dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Gasto dos últimos 7 ou 30 dias até ontem; padrão 7'),
+      de: data('Início de um período escolhido (com ate)').optional(),
+      ate: data('Fim do período escolhido').optional(),
+    },
     executar: async ({ sb }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       const p = periodoDaIA(a)
       const ctl = await import('@/servicos/controle-anuncios')
       const g = await import('@/servicos/google-agencia')
+      const { estruturaParaIA } = await import('@/dominio/controle-anuncios')
       const google = await g.situacaoGoogle()
-      const enxuto = (o: Awaited<ReturnType<typeof ctl.estruturaMeta>>[number]): unknown => ({ id: o.id, nivel: o.nivel, nome: o.nome, status: o.status, ligado: o.ligado, orcamentoDiario: o.diario, orcamentoTotal: o.total, gasto: o.gasto, leads: o.leads, ...(o.filhos.length ? { filhos: o.filhos.map(enxuto) } : {}) })
+      const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId }
       const [meta, goog, pendentes, ultimas] = await Promise.all([
-        cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => x.map(enxuto)).catch((e: Error) => ({ erro: e.message })) : null,
-        cliente.googleAdsId && google.conectado ? g.estruturaGoogle(cliente.googleAdsId, p) : null,
+        cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => estruturaParaIA(x, filtro)).catch((e: Error) => ({ erro: e.message })) : null,
+        !a.campanhaId && cliente.googleAdsId && google.conectado
+          ? g.estruturaGoogle(cliente.googleAdsId, p).then((x) => ('erro' in x ? x : x.filter((c) => (a.status === 'todos' || (a.status === 'ativos') === (c.status === 'ENABLED')) && (!a.comGasto || c.custo > 0)).map(({ orcamento, ...c }) => ({ ...c, custo: Math.round(c.custo * 100) / 100, ...(orcamento ? { orcamentoDiario: orcamento.diario, ...(orcamento.compartilhado ? { orcamentoCompartilhado: true } : {}) } : {}) }))))
+          : null,
         ctl.propostasPendentes(sb, cliente.id),
-        ctl.historico(sb, cliente.id, 10),
+        a.campanhaId ? Promise.resolve([]) : ctl.historico(sb, cliente.id, 10),
       ])
-      return { cliente: cliente.nome, periodo: p, meta, google: goog, pedidosPendentes: pendentes, ultimasAlteracoes: ultimas }
+      return { cliente: cliente.nome, periodo: p, meta, google: goog, pedidosPendentes: pendentes.map((x) => ({ id: x.id, plataforma: x.plataforma, nivel: x.nivel, objetoId: x.objetoId, nome: x.nome, acao: x.acao, valorAtual: x.valorAtual, valorNovo: x.valorNovo, motivo: x.motivo, em: x.em })), ultimasAlteracoes: ultimas.map((x) => ({ plataforma: x.plataforma, nome: x.nome, acao: x.acao, antes: x.antes, depois: x.depois, origem: x.origem, por: x.por, em: x.em })) }
     },
   }),
 
@@ -1149,7 +1178,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'resumir_financeiro',
-    descricao: 'Resumo do mês: entradas, despesas, saldo (só o que foi pago), a receber, a pagar, previsto e totais por categoria. Só o admin tem acesso. Valores em reais.',
+    descricao: 'Resumo do mês: entradas e despesas PAGAS, saldo (só o que foi pago), a receber, a pagar, previsto (pago + pendente) e, por categoria, previsto, pago e pendente. Só o admin tem acesso. Valores em reais.',
     escrita: false,
     entrada: { mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Mês (AAAA-MM); padrão: o mês atual') },
     executar: async ({ sb }, a) => {
@@ -1157,7 +1186,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const { de, ate } = limitesDoMes(mes)
       const r = resumir(await financeiro.listarLancamentos(sb, de, ate))
       const reais = (c: number) => c / 100
-      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, valor: reais(c.centavos) })) }
+      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, previsto: reais(c.centavos), pago: reais(c.pagos), pendente: reais(c.pendentes) })) }
     },
   }),
 

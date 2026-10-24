@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, estruturaParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -53,5 +53,27 @@ describe('campanha de pesquisa no Google', () => {
     expect(ops[0]).toMatchObject({ campaignBudgetOperation: { create: { amountMicros: '40000000' } } })
     expect(ops[1]).toMatchObject({ campaignOperation: { create: { status: 'PAUSED', targetSpend: {} } } })
     expect(operacoesPesquisaGoogle('123', { ...ok, locais: [] })[2]).toMatchObject({ campaignCriterionOperation: { create: { location: { geoTargetConstant: 'geoTargetConstants/2076' } } } })
+  })
+})
+
+describe('estrutura enxuta para a IA', () => {
+  const o = (id: string, nivel: ItemArvore['nivel'], ligado: boolean, gasto: number, filhos: ItemArvore[] = []): ItemArvore => ({ id, nome: id, nivel, status: ligado ? 'ACTIVE' : 'PAUSED', ligado, diario: nivel === 'conjunto' ? 25 : null, total: null, gasto, leads: 0, filhos })
+  const conta = [
+    o('ativa', 'campanha', true, 10, [o('c1', 'conjunto', true, 10, [o('a1', 'anuncio', true, 10), o('a2', 'anuncio', false, 0)]), o('c2', 'conjunto', false, 0)]),
+    o('parada', 'campanha', true, 0),
+    o('velha', 'campanha', false, 0),
+  ]
+
+  it('padrão: só ativas, conjuntos ativos e a contagem de anúncios, sem campos nulos', () => {
+    const r = estruturaParaIA(conta, { status: 'ativos', comGasto: false }) as { campanhas: Record<string, unknown>[]; ocultas: number }
+    expect(r.campanhas.map((c) => c.id)).toEqual(['ativa', 'parada'])
+    expect(r.campanhas[0]).toEqual({ id: 'ativa', nome: 'ativa', status: 'ACTIVE', gasto: 10, conjuntos: [{ id: 'c1', nome: 'c1', status: 'ACTIVE', orcamentoDiario: 25, gasto: 10, anuncios: 2 }] })
+    expect(r.ocultas).toBe(1)
+    expect((estruturaParaIA(conta, { status: 'todos', comGasto: true }) as { campanhas: unknown[] }).campanhas).toHaveLength(1)
+  })
+
+  it('campanhaId abre os anúncios', () => {
+    expect(estruturaParaIA(conta, { status: 'ativos', comGasto: false, campanhaId: 'ativa' })).toMatchObject({ campanha: { conjuntos: [{ id: 'c1', anuncios: [{ id: 'a1' }] }] } })
+    expect(estruturaParaIA(conta, { status: 'ativos', comGasto: false, campanhaId: 'x' })).toHaveProperty('erro')
   })
 })

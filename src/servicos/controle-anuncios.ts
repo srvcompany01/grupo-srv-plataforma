@@ -353,3 +353,45 @@ export async function criarCampanhaGoogle(sb: Supabase, quem: Quem, cliente: Cli
     return { campanhaId: id }
   })
 }
+
+// ───────────────────────────── Alerta: campanha ativa sem gasto ─────────────────────────────
+
+/** Campanhas ligadas (Meta e Google) que não gastaram nada nos 2 últimos dias completos, de cada cliente. */
+export async function campanhasParadas(cliente: Cliente, googleConectado: boolean, hoje: string): Promise<string[]> {
+  const ontem = new Date(Date.parse(`${hoje}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+  const anteontem = new Date(Date.parse(`${hoje}T12:00:00Z`) - 2 * 86_400_000).toISOString().slice(0, 10)
+  const limite = Date.parse(`${anteontem}T03:00:00Z`)
+  const nomes: string[] = []
+  if (cliente.metaContaId) {
+    const r = await graph<{ data: { name: string; created_time: string; insights?: { data: { spend?: string }[] } }[] }>(`act_${cliente.metaContaId}/campaigns`, {
+      params: { fields: `name,created_time,insights.time_range(${JSON.stringify({ since: anteontem, until: ontem })}){spend}`, effective_status: '["ACTIVE"]', limit: '100' },
+    }).catch(() => null)
+    for (const c of r?.data ?? []) if (Date.parse(c.created_time) < limite && !Number(c.insights?.data?.[0]?.spend ?? 0)) nomes.push(`Meta: ${c.name}`)
+  }
+  if (cliente.googleAdsId && googleConectado) {
+    const { estruturaGoogle } = await import('./google-agencia')
+    const g = await estruturaGoogle(cliente.googleAdsId, { de: anteontem, ate: ontem })
+    if (!('erro' in g)) for (const c of g) if (c.status === 'ENABLED' && c.custo === 0) nomes.push(`Google: ${c.nome}`)
+  }
+  return nomes
+}
+
+/** Rotina diária: avisa admin e gestor (no sino) das campanhas ligadas sem gasto; não repete o mesmo aviso por 3 dias. */
+export async function avisarCampanhasParadas(clientes: Cliente[], hoje: string): Promise<number> {
+  const admin = criarClienteAdmin()
+  const google = (await situacaoGoogle()).conectado
+  const { data: gestores } = await admin.from('profiles').select('id').in('role', ['admin', 'gestor']).eq('active', true)
+  if (!gestores?.length) return 0
+  let avisos = 0
+  for (const c of clientes.filter((x) => !x.interno && x.status !== 'encerrado' && (x.metaContaId || x.googleAdsId))) {
+    const nomes = await campanhasParadas(c, google, hoje).catch(() => [])
+    if (!nomes.length) continue
+    const link = `/anuncios?cliente=${c.id}`
+    const { count } = await admin.from('notifications').select('id', { count: 'exact', head: true }).eq('kind', 'alerta').eq('link', link).like('message', '%sem gasto%').gte('created_at', new Date(Date.now() - 3 * 86_400_000).toISOString())
+    if (count) continue
+    const message = `${c.nome}: ${nomes.length} campanha(s) ligada(s) sem gasto há 2 dias (${nomes.slice(0, 3).join('; ')}${nomes.length > 3 ? '…' : ''}). Veja se os anúncios estão em revisão, reprovados, com público pequeno demais ou com problema de pagamento.`.slice(0, 300)
+    await admin.from('notifications').insert(gestores.map((g) => ({ user_id: g.id, kind: 'alerta', message, link })))
+    avisos++
+  }
+  return avisos
+}

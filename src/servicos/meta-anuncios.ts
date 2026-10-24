@@ -12,7 +12,7 @@ const VERSAO = process.env.META_API_VERSION || 'v23.0'
 export const metaConfigurado = () => !!process.env.META_ACCESS_TOKEN
 
 const CRIATIVO = 'creative.thumbnail_width(720).thumbnail_height(720){title,body,thumbnail_url,image_url,video_id,object_type,effective_object_story_id,instagram_permalink_url}'
-const METRICAS = 'impressions,reach,clicks,ctr,cpm,cpc,spend,frequency,actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking'
+const METRICAS = 'impressions,reach,clicks,inline_link_clicks,ctr,cpm,cpc,spend,frequency,actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking'
 
 function mensagemDaMeta(corpo: { error?: { code?: number; message?: string } }): string {
   const e = corpo.error
@@ -27,7 +27,7 @@ export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnunc
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   const q = new URLSearchParams({
-    fields: `id,name,${CRIATIVO},insights.time_range(${JSON.stringify({ since: periodo.de, until: periodo.ate })}){${METRICAS}}`,
+    fields: `id,name,campaign{name},adset{name},${CRIATIVO},insights.time_range(${JSON.stringify({ since: periodo.de, until: periodo.ate })}){${METRICAS}}`,
     effective_status: '["ACTIVE"]',
     limit: '60',
     access_token: token,

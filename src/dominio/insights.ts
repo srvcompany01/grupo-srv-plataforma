@@ -81,6 +81,12 @@ export function formatoDoPost(mediaType: string | undefined, produto: string | u
 /** Taxa de engajamento: interações ÷ alcance (em %). */
 export const engajamento = (interacoes: number, alcance: number) => (alcance ? (interacoes / alcance) * 100 : 0)
 
+/** Engajamento orgânico: interações ÷ alcance dos POSTS (o alcance da conta inclui anúncios). null sem números por post. */
+export function engajamentoOrganico(ig: Pick<ResumoInstagram, 'posts'>): number | null {
+  const alcance = ig.posts.reduce((s, p) => s + p.alcance, 0)
+  return alcance ? engajamento(ig.posts.reduce((s, p) => s + p.interacoes, 0), alcance) : null
+}
+
 /** Média de interações por formato, do melhor para o pior. */
 export function porFormato(posts: PostIG[]): { formato: FormatoIG; posts: number; interacoes: number; alcance: number; engajamento: number }[] {
   const grupos = new Map<FormatoIG, PostIG[]>()
@@ -107,16 +113,21 @@ export function analisarOrganico(ig: ResumoInstagram, dias: number): Analise {
   const destaques: Item[] = []
   const recomendacoes: Item[] = []
   const posts = ig.posts
-  const taxa = engajamento(ig.interacoes, ig.alcance)
+  // O alcance da CONTA soma orgânico e anúncios (o Instagram não separa): o engajamento orgânico sai dos posts.
+  const alcancePosts = posts.reduce((x, p) => x + p.alcance, 0)
+  const taxa = alcancePosts ? engajamento(posts.reduce((x, p) => x + p.interacoes, 0), alcancePosts) : 0
   const porSemana = (posts.length / Math.max(1, dias)) * 7
-  destaques.push(it(tomEngajamento(taxa), `${num(ig.alcance)} contas alcançadas e ${num(ig.interacoes)} interações no período (engajamento de ${pct(taxa)} sobre o alcance).`))
-  if (ig.seguidores) destaques.push(it(tomAlcanceBase(ig.alcance, ig.seguidores), `Alcance equivalente a ${pct((ig.alcance / ig.seguidores) * 100)} da base de ${num(ig.seguidores)} seguidores.`))
+  const pagoDomina = ig.alcance > 0 && alcancePosts < ig.alcance * 0.3
+  destaques.push(it('neutro', `${num(ig.alcance)} contas alcançadas pela conta no período (orgânico + anúncios) e ${num(ig.interacoes)} interações.`))
+  if (pagoDomina) destaques.push(it('atencao', `Os posts do período alcançaram ${num(alcancePosts)} contas: a maior parte do alcance da conta veio de anúncios${posts.length ? '' : ' e Stories'}.`))
+  if (ig.seguidores && alcancePosts) destaques.push(it(tomAlcanceBase(alcancePosts / Math.max(1, posts.length), ig.seguidores), `Cada post alcançou em média ${num(alcancePosts / posts.length)} contas, ${pct((alcancePosts / posts.length / ig.seguidores) * 100)} da base de ${num(ig.seguidores)} seguidores.`))
   if (ig.novosSeguidores) destaques.push(it(ig.novosSeguidores > 0 ? 'bom' : 'ruim', `${ig.novosSeguidores > 0 ? '+' : ''}${num(ig.novosSeguidores)} seguidores no período.`))
 
   if (!posts.length) {
-    recomendacoes.push(it('ruim', 'Nenhum post no período: retome a frequência (no mínimo 3 posts por semana) para o perfil voltar a ser entregue.'))
+    recomendacoes.push(it('ruim', 'Nenhum post no feed nem Reels no período (Stories não entram nesta conta): retome a frequência, no mínimo 3 posts por semana, para o perfil voltar a ser entregue.'))
     return { destaques, recomendacoes }
   }
+  destaques.push(it(tomEngajamento(taxa), `Engajamento orgânico de ${pct(taxa)} sobre o alcance dos posts.`))
   destaques.push(it(tomFrequencia(porSemana), `${posts.length} posts (${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana).`))
   const formatos = porFormato(posts)
   if (formatos.length > 1) {
@@ -136,7 +147,7 @@ export function analisarOrganico(ig: ResumoInstagram, dias: number): Analise {
   const salvar = ig.interacoes ? ((ig.salvamentos + ig.compartilhamentos) / ig.interacoes) * 100 : 0
   if (ig.interacoes && salvar < 10) recomendacoes.push(it('atencao', 'Poucos salvamentos e compartilhamentos: inclua conteúdos úteis (dicas, listas, antes e depois) que dão motivo para salvar e enviar.'))
   if (taxa && taxa < 2) recomendacoes.push(it('ruim', 'Engajamento abaixo de 2% do alcance: use ganchos nos 3 primeiros segundos e chamadas para comentar.'))
-  if (ig.seguidores && ig.alcance < ig.seguidores * 0.3) recomendacoes.push(it('atencao', 'O alcance está abaixo de 30% da base: priorize Reels e colaborações (collab) para chegar a quem ainda não segue.'))
+  if (ig.seguidores && alcancePosts / posts.length < ig.seguidores * 0.3) recomendacoes.push(it('atencao', 'O alcance está abaixo de 30% da base: priorize Reels e colaborações (collab) para chegar a quem ainda não segue.'))
   return { destaques, recomendacoes }
 }
 

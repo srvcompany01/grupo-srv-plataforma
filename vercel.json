@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/arquivos",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/anuncios",
+      "schedule": "0 12 * * *"
     }
   ]
 }

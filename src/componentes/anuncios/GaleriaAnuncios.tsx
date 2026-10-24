@@ -41,6 +41,7 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>
           <p className="truncate text-rotulo font-semibold text-texto" title={a.nome}>{a.titulo || a.nome}</p>
+          {(a.campanha || a.conjunto) && <p className="truncate text-micro text-texto-3" title={`${a.campanha} › ${a.conjunto}`}>{a.conjunto || a.campanha}</p>}
           {a.texto && <p className="line-clamp-2 text-legenda text-texto-2">{a.texto}</p>}
         </div>
         <div className="grid grid-cols-3 gap-2 border-t border-borda pt-2">
@@ -50,6 +51,9 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
           <Metrica rotulo="Cliques" valor={numero.format(a.cliques)} />
           <Metrica rotulo={a.video ? 'Visualizações' : 'Frequência'} valor={a.video ? numero.format(a.visualizacoesVideo) : a.frequencia.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} />
           {mostrarGasto ? <Metrica rotulo="Investido" valor={reais.format(a.gasto)} /> : <Metrica rotulo="CPM" valor={reais.format(a.cpm)} />}
+          <Metrica rotulo="Resultados" valor={numero.format(a.resultados)} />
+          {mostrarGasto && <Metrica rotulo="Custo/resultado" valor={a.custoPorResultado === null ? '—' : reais.format(a.custoPorResultado)} />}
+          <Metrica rotulo="Cliques no link" valor={numero.format(a.cliquesLink)} />
         </div>
         {(a.motivos.length > 0 || diag.length > 0) && (
           <ul className="space-y-0.5 text-micro text-texto-2">

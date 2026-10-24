@@ -10,8 +10,7 @@ import { InstagramInsights } from '@/componentes/insights/InstagramInsights'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarOrganico, engajamento, tomEngajamento, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
-import { SeloTom } from '@/componentes/insights/tom'
+import { analisarOrganico, engajamento, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -162,7 +161,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
             { rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), extra: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '▲ +' : '▼ '}${numero.format(soma('novosSeguidores'))} no período` : undefined, tom: tomVariacao(soma('novosSeguidores')), rotuloTom: soma('novosSeguidores') > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
             { rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: Radar, cor: '#2a78d6' },
             { rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: Eye, cor: '#1baf7a' },
-            { rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: `${pct(engajamento(soma('interacoes'), soma('alcance')))} do alcance`, tom: tomEngajamento(engajamento(soma('interacoes'), soma('alcance'))), icone: Heart, cor: '#e87ba4' },
+            { rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: 'alcance da conta inclui anúncios', icone: Heart, cor: '#e87ba4' },
             { rotulo: 'Posts', valor: String(posts), icone: LayoutGrid, cor: '#eb6834' },
             { rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, tom: ok.length < linhas.length ? 'atencao' : undefined, extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : undefined, icone: UserCheck, cor: '#eda100' },
           ]}
@@ -178,7 +177,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
                   <th className="py-2 pr-3 text-right font-medium">Seguidores</th>
                   <th className="py-2 pr-3 font-medium">Alcance</th>
                   <th className="py-2 pr-3 text-right font-medium">Interações</th>
-                  <th className="py-2 pr-3 text-right font-medium">Engajamento</th>
+                  <th className="py-2 pr-3 text-right font-medium">Interações ÷ alcance</th>
                   <th className="py-2 pr-3 text-right font-medium">Posts</th>
                   <th className="py-2 text-right font-medium">Novos seguidores</th>
                 </tr>
@@ -202,7 +201,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
                           </div>
                         </td>
                         <td className="py-2 pr-3 text-right tabular-nums">{numero.format(ig.interacoes)}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums"><span className="inline-flex items-center justify-end gap-1.5">{pct(engajamento(ig.interacoes, ig.alcance))} {tomEngajamento(engajamento(ig.interacoes, ig.alcance)) !== 'neutro' && <SeloTom tom={tomEngajamento(engajamento(ig.interacoes, ig.alcance))} />}</span></td>
+                        <td className="py-2 pr-3 text-right tabular-nums text-texto-2" title="Interações ÷ alcance da conta (o alcance da conta inclui anúncios; o engajamento dos posts fica no detalhe do cliente)">{pct(engajamento(ig.interacoes, ig.alcance))}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">{ig.posts.length}</td>
                         <td className={`py-2 text-right font-semibold tabular-nums ${ig.novosSeguidores > 0 ? 'text-sucesso-forte' : ig.novosSeguidores < 0 ? 'text-perigo-forte' : 'text-texto-3'}`}>{ig.novosSeguidores > 0 ? '▲ +' : ig.novosSeguidores < 0 ? '▼ ' : ''}{numero.format(ig.novosSeguidores)}</td>
                       </>

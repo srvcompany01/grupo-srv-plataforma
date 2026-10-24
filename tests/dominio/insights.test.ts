@@ -15,6 +15,15 @@ describe('insights', () => {
   it('orgânico sem posts recomenda frequência', () => {
     const a = analisarOrganico(ig([]), 30)
     expect(a.recomendacoes[0]).toEqual({ tom: 'ruim', texto: expect.stringMatching(/Nenhum post/) })
+    // Alcance da conta sem posts = anúncios/Stories: avisa e não calcula engajamento orgânico.
+    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/veio de anúncios e Stories/)
+    expect(a.destaques.map((d) => d.texto).join(' ')).not.toMatch(/Engajamento orgânico/)
+  })
+  it('engajamento orgânico sai dos posts, não do alcance da conta (que inclui anúncios)', () => {
+    const conta = { ...ig([post('a', 'Reels', 10, '2026-10-05T15:00:00Z')]), alcance: 100_000, interacoes: 500 }
+    const a = analisarOrganico(conta, 7)
+    expect(a.destaques).toContainEqual({ tom: 'bom', texto: expect.stringMatching(/Engajamento orgânico de 10%/) })
+    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/maior parte do alcance da conta veio de anúncios/)
   })
   it('orgânico com formatos destaca o melhor', () => {
     const a = analisarOrganico(ig([post('a', 'Reels', 300, '2026-10-05T15:00:00Z'), post('b', 'Foto', 10, '2026-10-06T15:00:00Z'), post('c', 'Foto', 12, '2026-10-07T15:00:00Z')]), 7)

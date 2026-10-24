@@ -68,12 +68,13 @@ export type ResumoFinanceiro = {
   aPagar: number
   /** Resultado previsto: tudo o que está lançado no mês, pago ou não. */
   previsto: number
-  porCategoria: { tipo: TipoLancamento; categoria: string; centavos: number }[]
+  /** `centavos` = previsto (pago + pendente); `pagos` e `pendentes` separam. */
+  porCategoria: { tipo: TipoLancamento; categoria: string; centavos: number; pagos: number; pendentes: number }[]
 }
 
 export function resumir(lancamentos: Lancamento[]): ResumoFinanceiro {
   const r: ResumoFinanceiro = { entradas: 0, despesas: 0, saldo: 0, aReceber: 0, aPagar: 0, previsto: 0, porCategoria: [] }
-  const categorias = new Map<string, number>()
+  const categorias = new Map<string, { pagos: number; pendentes: number }>()
   for (const l of lancamentos) {
     const sinal = l.tipo === 'entrada' ? 1 : -1
     r.previsto += sinal * l.centavos
@@ -84,9 +85,12 @@ export function resumir(lancamentos: Lancamento[]): ResumoFinanceiro {
     } else if (l.tipo === 'entrada') r.aReceber += l.centavos
     else r.aPagar += l.centavos
     const chave = `${l.tipo}|${l.categoria}`
-    categorias.set(chave, (categorias.get(chave) ?? 0) + l.centavos)
+    const c = categorias.get(chave) ?? { pagos: 0, pendentes: 0 }
+    if (l.pago) c.pagos += l.centavos
+    else c.pendentes += l.centavos
+    categorias.set(chave, c)
   }
-  r.porCategoria = [...categorias].map(([chave, centavos]) => ({ tipo: chave.split('|')[0] as TipoLancamento, categoria: chave.slice(chave.indexOf('|') + 1), centavos })).sort((a, b) => b.centavos - a.centavos)
+  r.porCategoria = [...categorias].map(([chave, c]) => ({ tipo: chave.split('|')[0] as TipoLancamento, categoria: chave.slice(chave.indexOf('|') + 1), centavos: c.pagos + c.pendentes, ...c })).sort((a, b) => b.centavos - a.centavos)
   return r
 }
 

@@ -49,6 +49,7 @@ describe('resumir', () => {
   })
   it('soma por categoria, da maior para a menor', () => {
     expect(resumir(itens).porCategoria.map((c) => [c.categoria, c.centavos])).toEqual([['Mensalidade', 15000], ['Equipe', 4500], ['Tráfego pago', 1000]])
+    expect(resumir(itens).porCategoria[0]).toMatchObject({ categoria: 'Mensalidade', centavos: 15000, pagos: 10000, pendentes: 5000 })
   })
   it('mesmo nome de categoria em entrada e saída não se mistura', () => {
     const r = resumir([l({ categoria: 'Outros', centavos: 3 }), l({ tipo: 'saida', categoria: 'Outros', centavos: 4 })])

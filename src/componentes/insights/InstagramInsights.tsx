@@ -1,5 +1,5 @@
 import { ExternalLink, Eye, Heart, LayoutGrid, MousePointerClick, PlayCircle, Radar, Users } from 'lucide-react'
-import { engajamento, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
+import { engajamentoOrganico, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { Numeros } from './BlocoAnalise'
 import { GraficoDiario } from './GraficoDiario'
 import { SeloTom } from './tom'
@@ -24,7 +24,7 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
           { rotulo: 'Seguidores', valor: numero.format(ig.seguidores), extra: ig.novosSeguidores ? `${ig.novosSeguidores > 0 ? '▲ +' : '▼ '}${numero.format(ig.novosSeguidores)} no período` : undefined, tom: tomVariacao(ig.novosSeguidores), rotuloTom: ig.novosSeguidores > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
           { rotulo: 'Alcance', valor: numero.format(ig.alcance), extra: ig.seguidores ? `${pct((ig.alcance / ig.seguidores) * 100)} da base` : undefined, tom: tomAlcanceBase(ig.alcance, ig.seguidores), icone: Radar, cor: '#2a78d6' },
           { rotulo: 'Visualizações', valor: numero.format(ig.visualizacoes), icone: Eye, cor: '#1baf7a' },
-          { rotulo: 'Interações', valor: numero.format(ig.interacoes), extra: `${pct(engajamento(ig.interacoes, ig.alcance))} do alcance`, tom: tomEngajamento(engajamento(ig.interacoes, ig.alcance)), icone: Heart, cor: '#e87ba4' },
+          { rotulo: 'Interações', valor: numero.format(ig.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento nos posts`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },
           { rotulo: 'Posts', valor: String(ig.posts.length), extra: `${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana`, tom: tomFrequencia(porSemana), icone: LayoutGrid, cor: '#eb6834' },
           { rotulo: 'Cliques no perfil', valor: numero.format(ig.cliquesPerfil), icone: MousePointerClick, cor: '#eda100' },
         ]}
