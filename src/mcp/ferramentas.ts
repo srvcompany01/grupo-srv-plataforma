@@ -1586,7 +1586,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'atualizar_compromisso',
-    descricao: 'Altera um compromisso (só quem criou, ou o admin). Informe só o que muda; o resto continua igual. Vale para todas as repetições de um fixo.',
+    descricao: 'Altera um compromisso (só quem criou, ou o admin). Informe só o que muda; o resto continua igual. Vale para todas as repetições de um fixo. Para CANCELAR as próximas ocorrências de um fixo, defina repetirAte com o último dia que ainda acontece (sincroniza com o Google Agenda). Cancelar uma ocorrência só, ou apagar o compromisso, é pela tela da Agenda.',
     escrita: true,
     entrada: { compromissoId: id('Compromisso (compromissoId de listar_agenda)'), ...z.object(entradaCompromisso).partial().shape },
     executar: async (ctx, { compromissoId, ...a }) => {
