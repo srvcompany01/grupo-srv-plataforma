@@ -5,7 +5,7 @@ import { CATALOGO_CAMPOS, TIPOS_CAMPO, type TipoCampoPersonalizado } from '@/dom
 import { PRIORIDADES } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
-import { definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
+import { atualizarCadastro, buscarCliente, conexoesDoCliente, definirPaginaMeta, listarClientes, marcasDeTrabalhoDesde } from '@/servicos/clientes-plataforma'
 import { lerPaginaMeta, urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
 import { lerContaAnuncios, referencias, ROTULO_PAPEL, taxasDoAnuncio, totaisAnuncios } from '@/dominio/anuncios-meta'
 import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
@@ -221,10 +221,54 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_clientes',
-    descricao: 'Clientes cadastrados (usados como tag opcional nas tarefas).',
+    descricao: 'Clientes cadastrados (usados como tag opcional nas tarefas), com o que está ligado em cada um (WhatsApp, Página do Facebook, conta de anúncios da Meta, Google Ads, Meu Negócio). Detalhe e o que falta: ver_cliente.',
     escrita: false,
     entrada: {},
-    executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status, bibliotecaAnuncios: c.metaPaginaId ? urlBibliotecaAnuncios(c.metaPaginaId) : null })),
+    executar: async ({ sb }) => (await listarClientes(sb)).map((c) => ({ id: c.id, nome: c.nome, status: c.status, bibliotecaAnuncios: c.metaPaginaId ? urlBibliotecaAnuncios(c.metaPaginaId) : null, ligado: conexoesDoCliente(c).ligado })),
+  }),
+
+  definir({
+    nome: 'ver_cliente',
+    descricao: 'Cadastro de um cliente: contato, status, WhatsApp, Página do Facebook (e o Instagram ligado a ela), conta de anúncios act_, conta do Google Ads, Meu Negócio, link da bio, e a lista do que falta ligar para cada recurso funcionar.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => {
+      const c = await buscarCliente(sb, a.clienteId)
+      if (!c) throw new Error('Cliente não encontrado.')
+      const [pagina, bio] = await Promise.all([
+        c.metaPaginaId ? (await import('@/servicos/publicacao-meta')).contaDaPagina(c.metaPaginaId) : null,
+        (await import('@/servicos/performance')).linkBioDoCliente(sb, c.id),
+      ])
+      return {
+        id: c.id, nome: c.nome, status: c.status, interno: c.interno, email: c.email, telefone: c.telefone, razaoSocial: c.razaoSocial, documento: c.documento,
+        whatsapp: c.whatsapp, paginaFacebook: c.metaPaginaId, instagram: pagina && !('erro' in pagina) ? pagina.instagram : null, ...(pagina && 'erro' in pagina ? { erroPagina: pagina.erro } : {}),
+        contaAnunciosMeta: c.metaContaId ? `act_${c.metaContaId}` : null, googleAds: c.googleAdsId, meuNegocio: c.googlePerfil ? { id: c.googlePerfil, nome: c.googlePerfilNome } : null,
+        linkBio: bio?.slug ? `https://www.gruposrv.com.br/l/${bio.slug}` : null,
+        ...conexoesDoCliente(c),
+      }
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_cliente',
+    descricao: 'Edita o cadastro do cliente (só os campos informados; texto vazio tira o valor): nome, WhatsApp (DDD + número), Página do Facebook (id ou link), conta de anúncios (act_123 ou link do Gerenciador), conta do Google Ads (10 dígitos), e-mail, telefone e status. Recusa conta ou Página que já está em outro cliente. O Meu Negócio é ligado na página do cliente.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      nome: z.string().max(120).optional(),
+      whatsapp: z.string().max(30).optional(),
+      paginaMeta: z.string().max(300).optional().describe('Id ou link da Página do Facebook'),
+      contaMeta: z.string().max(300).optional().describe('act_123… ou link do Gerenciador de Anúncios'),
+      googleAds: z.string().max(20).optional().describe('Conta do Google Ads (123-456-7890)'),
+      email: z.string().max(200).optional(),
+      telefone: z.string().max(30).optional(),
+      status: z.enum(['ativo', 'pausado', 'encerrado']).optional(),
+    },
+    executar: async ({ sb }, a) => {
+      const { clienteId, ...m } = a
+      const c = await atualizarCadastro(sb, clienteId, m)
+      return { ok: true, cliente: { id: c.id, nome: c.nome, status: c.status, whatsapp: c.whatsapp, paginaFacebook: c.metaPaginaId, contaAnunciosMeta: c.metaContaId, googleAds: c.googleAdsId }, ...conexoesDoCliente(c) }
+    },
   }),
 
   definir({

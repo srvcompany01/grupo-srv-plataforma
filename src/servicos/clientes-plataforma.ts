@@ -208,3 +208,57 @@ export async function novoLinkDoCliente(sb: Supabase, clienteId: string, nome: s
   if (!count) throw { code: '42501' }
   return slug
 }
+
+export type MudancaCadastro = { nome?: string; whatsapp?: string; paginaMeta?: string; contaMeta?: string; googleAds?: string; email?: string; telefone?: string; status?: StatusCliente }
+
+/**
+ * Edita só os campos informados do cadastro, com as mesmas regras da tela (Página, act_, Google Ads, WhatsApp e
+ * conta repetida em outro cliente). Texto vazio tira o valor. Devolve o cliente atualizado.
+ */
+export async function atualizarCadastro(sb: Supabase, id: string, m: MudancaCadastro): Promise<Cliente> {
+  const falha = (message: string) => Object.assign(new Error(message), { code: 'P0001' })
+  const campos: Partial<CamposFormCliente> = {}
+  if (m.nome !== undefined) {
+    if (!m.nome.trim()) throw falha('O nome do cliente não pode ficar vazio.')
+    campos.name = m.nome.trim().slice(0, 120)
+  }
+  if (m.paginaMeta !== undefined) {
+    const r = lerPaginaMeta(m.paginaMeta)
+    if ('erro' in r) throw falha(r.erro)
+    campos.meta_page_id = r.id
+  }
+  if (m.contaMeta !== undefined) {
+    const r = lerContaAnuncios(m.contaMeta)
+    if ('erro' in r) throw falha(r.erro)
+    campos.meta_ad_account_id = r.id
+  }
+  if (m.googleAds !== undefined) {
+    const r = lerContaGoogleAds(m.googleAds)
+    if ('erro' in r) throw falha(r.erro)
+    campos.google_ads_customer_id = r.id
+  }
+  if (m.whatsapp !== undefined) {
+    const z = lerWhatsapp(m.whatsapp)
+    if (z === undefined) throw falha('WhatsApp inválido: use DDD e número (ex.: 91 99999-9999).')
+    campos.whatsapp = z
+  }
+  if (m.email !== undefined) campos.email = m.email.trim() || null
+  if (m.telefone !== undefined) campos.phone = m.telefone.trim() || null
+  if (m.status !== undefined) campos.status = m.status
+  if (!Object.keys(campos).length) throw falha('Nada para alterar.')
+  const atual = await buscarCliente(sb, id)
+  if (!atual) throw falha('Cliente não encontrado.')
+  const repetida = await contaRepetida(sb, { meta_ad_account_id: campos.meta_ad_account_id !== undefined ? campos.meta_ad_account_id : atual.metaContaId, meta_page_id: campos.meta_page_id !== undefined ? campos.meta_page_id : atual.metaPaginaId, google_ads_customer_id: campos.google_ads_customer_id !== undefined ? campos.google_ads_customer_id : atual.googleAdsId }, id)
+  if (repetida) throw falha(repetida)
+  const { error, count } = await sb.from('clients').update(campos, { count: 'exact' }).eq('id', id)
+  if (error) throw error
+  if (!count) throw { code: '42501' }
+  return (await buscarCliente(sb, id))!
+}
+
+/** O que está ligado no cliente e o que falta (para a IA saber antes de tentar). */
+export function conexoesDoCliente(c: Cliente) {
+  const ligado = { whatsapp: !!c.whatsapp, paginaFacebook: !!c.metaPaginaId, contaAnunciosMeta: !!c.metaContaId, googleAds: !!c.googleAdsId, meuNegocio: !!c.googlePerfil }
+  const FALTA: Record<keyof typeof ligado, string> = { whatsapp: 'WhatsApp (link da bio e relatório)', paginaFacebook: 'Página do Facebook (Instagram, posts, comentários e insights)', contaAnunciosMeta: 'conta de anúncios act_ (Meta Ads)', googleAds: 'conta do Google Ads', meuNegocio: 'perfil do Google Meu Negócio' }
+  return { ligado, falta: (Object.keys(ligado) as (keyof typeof ligado)[]).filter((k) => !ligado[k]).map((k) => FALTA[k]) }
+}
