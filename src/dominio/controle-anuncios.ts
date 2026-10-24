@@ -167,15 +167,31 @@ export function operacoesPesquisaGoogle(conta: string, n: NovaPesquisaGoogle) {
 
 // ───────────────────────────── Resposta enxuta para a IA ─────────────────────────────
 
-export type ItemArvore = { id: string; nome: string; nivel: 'campanha' | 'conjunto' | 'anuncio'; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; filhos: ItemArvore[] }
-export type FiltroEstrutura = { status: 'ativos' | 'pausados' | 'todos'; comGasto: boolean; campanhaId?: string; pagina?: number }
+export type ItemArvore = { id: string; nome: string; nivel: 'campanha' | 'conjunto' | 'anuncio'; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; criadaEm?: string | null; filhos: ItemArvore[] }
+export type FiltroEstrutura = { status: 'ativos' | 'pausados' | 'todos'; comGasto: boolean; campanhaId?: string; pagina?: number; /** Período do gasto (para o alerta de ligada sem gasto). */ periodo?: { de: string; ate: string } }
 
 const passa = (o: Pick<ItemArvore, 'ligado' | 'gasto'>, f: FiltroEstrutura) => (f.status === 'todos' || (f.status === 'ativos') === o.ligado) && (!f.comGasto || o.gasto > 0)
 const arred = (n: number) => Math.round(n * 100) / 100
 
+/**
+ * Ligada (status ACTIVE) e sem gasto em todo o período: "ativa sem gasto há N dias" (contando da criação, se for depois
+ * do início do período). Campanhas e conjuntos com orçamento; anúncio dentro de conjunto que gasta não entra.
+ */
+export function alertaSemGasto(o: Pick<ItemArvore, 'ligado' | 'gasto' | 'criadaEm' | 'nivel' | 'diario' | 'total'>, periodo?: { de: string; ate: string }): string | null {
+  if (!periodo || !o.ligado || o.gasto > 0 || o.nivel === 'anuncio') return null
+  if (o.nivel === 'conjunto' && !o.diario && !o.total) return null
+  const fim = Date.parse(`${periodo.ate}T23:59:59-03:00`)
+  const inicio = Math.max(Date.parse(`${periodo.de}T00:00:00-03:00`), o.criadaEm ? Date.parse(o.criadaEm) : 0)
+  const dias = Math.floor((fim - inicio) / 86_400_000) + 1
+  return dias >= 2 ? `ativa sem gasto há ${dias} dias (em revisão, reprovada, público pequeno ou pagamento?)` : null
+}
+
 /** Só o que a IA precisa: sem nulos, campanhas com os conjuntos; anúncios só ao abrir uma campanha (campanhaId). */
 export function estruturaParaIA(campanhas: ItemArvore[], f: FiltroEstrutura) {
-  const item = (o: ItemArvore) => ({ id: o.id, nome: o.nome, status: o.status, ...(o.diario ? { orcamentoDiario: o.diario } : {}), ...(o.total ? { orcamentoTotal: o.total } : {}), gasto: arred(o.gasto), ...(o.leads ? { leads: o.leads } : {}) })
+  const item = (o: ItemArvore) => {
+    const alerta = alertaSemGasto(o, f.periodo)
+    return { id: o.id, nome: o.nome, status: o.status, ...(o.diario ? { orcamentoDiario: o.diario } : {}), ...(o.total ? { orcamentoTotal: o.total } : {}), gasto: arred(o.gasto), ...(o.leads ? { leads: o.leads } : {}), ...(alerta ? { alerta } : {}) }
+  }
   if (f.campanhaId) {
     const c = campanhas.find((x) => x.id === f.campanhaId)
     if (!c) return { erro: 'Campanha não encontrada nesta conta.' }

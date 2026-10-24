@@ -38,9 +38,9 @@ const reais = (n: number | null) => (n === null ? '—' : n.toLocaleString('pt-B
 
 // ───────────────────────────── Meta: leitura ─────────────────────────────
 
-export type ObjetoMeta = { id: string; nome: string; nivel: Nivel; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; miniatura: string | null; filhos: ObjetoMeta[] }
+export type ObjetoMeta = { id: string; nome: string; nivel: Nivel; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; miniatura: string | null; criadaEm: string | null; filhos: ObjetoMeta[] }
 
-type Bruto = { id: string; name: string; status: string; effective_status: string; daily_budget?: string; lifetime_budget?: string; campaign_id?: string; adset_id?: string; creative?: { thumbnail_url?: string } }
+type Bruto = { id: string; name: string; status: string; effective_status: string; created_time?: string; daily_budget?: string; lifetime_budget?: string; campaign_id?: string; adset_id?: string; creative?: { thumbnail_url?: string } }
 const reaisDe = (centavos?: string) => (centavos && Number(centavos) > 0 ? Number(centavos) / 100 : null)
 
 /** Campanhas › conjuntos › anúncios (ativos e pausados) com orçamento, gasto e leads do período. Sem cache. */
@@ -49,8 +49,8 @@ export async function estruturaMeta(contaId: string, periodo: { de: string; ate:
     const act = `act_${contaId}`
     // ponytail: só a primeira página de cada lista (100 campanhas / 300 conjuntos / 500 anúncios); paginar se alguma conta passar disso.
     const [camps, conjs, ads, ins] = await Promise.all([
-      graph<{ data: Bruto[] }>(`${act}/campaigns`, { params: { fields: 'id,name,status,effective_status,daily_budget,lifetime_budget', effective_status: '["ACTIVE","PAUSED"]', limit: '100' } }),
-      graph<{ data: Bruto[] }>(`${act}/adsets`, { params: { fields: 'id,name,status,effective_status,daily_budget,lifetime_budget,campaign_id', effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED"]', limit: '300' } }),
+      graph<{ data: Bruto[] }>(`${act}/campaigns`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget', effective_status: '["ACTIVE","PAUSED"]', limit: '100' } }),
+      graph<{ data: Bruto[] }>(`${act}/adsets`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget,campaign_id', effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED"]', limit: '300' } }),
       graph<{ data: Bruto[] }>(`${act}/ads`, { params: { fields: 'id,name,status,effective_status,adset_id,creative{thumbnail_url}', effective_status: '["ACTIVE","PAUSED","ADSET_PAUSED","CAMPAIGN_PAUSED","PENDING_REVIEW","DISAPPROVED","WITH_ISSUES","IN_PROCESS"]', limit: '500' } }),
       graph<{ data: { ad_id: string; spend?: string; actions?: { action_type: string; value: string }[] }[] }>(`${act}/insights`, { params: { level: 'ad', fields: 'ad_id,spend,actions', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '500' } }),
     ])
@@ -60,7 +60,7 @@ export async function estruturaMeta(contaId: string, periodo: { de: string; ate:
     }))
     const obj = (b: Bruto, nivel: Nivel, filhos: ObjetoMeta[]): ObjetoMeta => {
       const n = nivel === 'anuncio' ? (numeros.get(b.id) ?? { gasto: 0, leads: 0 }) : { gasto: filhos.reduce((s, f) => s + f.gasto, 0), leads: filhos.reduce((s, f) => s + f.leads, 0) }
-      return { id: b.id, nome: b.name, nivel, status: b.effective_status, ligado: b.status === 'ACTIVE', diario: reaisDe(b.daily_budget), total: reaisDe(b.lifetime_budget), ...n, miniatura: b.creative?.thumbnail_url ?? null, filhos }
+      return { id: b.id, nome: b.name, nivel, status: b.effective_status, ligado: b.status === 'ACTIVE', diario: reaisDe(b.daily_budget), total: reaisDe(b.lifetime_budget), ...n, miniatura: b.creative?.thumbnail_url ?? null, criadaEm: b.created_time ?? null, filhos }
     }
     const anunciosDe = (conj: string) => ads.data.filter((a) => a.adset_id === conj).map((a) => obj(a, 'anuncio', []))
     const conjuntosDe = (camp: string) => conjs.data.filter((c) => c.campaign_id === camp).map((c) => obj(c, 'conjunto', anunciosDe(c.id)))
@@ -367,6 +367,14 @@ export async function campanhasParadas(cliente: Cliente, googleConectado: boolea
       params: { fields: `name,created_time,insights.time_range(${JSON.stringify({ since: anteontem, until: ontem })}){spend}`, effective_status: '["ACTIVE"]', limit: '100' },
     }).catch(() => null)
     for (const c of r?.data ?? []) if (Date.parse(c.created_time) < limite && !Number(c.insights?.data?.[0]?.spend ?? 0)) nomes.push(`Meta: ${c.name}`)
+    // Conjuntos com orçamento próprio: num conjunto de campanha com orçamento (CBO) gasto zero pode ser só a otimização da Meta.
+    const conj = await graph<{ data: { name: string; created_time: string; daily_budget?: string; lifetime_budget?: string; campaign?: { name?: string }; insights?: { data: { spend?: string }[] } }[] }>(`act_${cliente.metaContaId}/adsets`, {
+      params: { fields: `name,created_time,daily_budget,lifetime_budget,campaign{name},insights.time_range(${JSON.stringify({ since: anteontem, until: ontem })}){spend}`, effective_status: '["ACTIVE"]', limit: '200' },
+    }).catch(() => null)
+    for (const j of conj?.data ?? []) {
+      const proprio = Number(j.daily_budget ?? 0) > 0 || Number(j.lifetime_budget ?? 0) > 0
+      if (proprio && Date.parse(j.created_time) < limite && !Number(j.insights?.data?.[0]?.spend ?? 0) && !nomes.includes(`Meta: ${j.campaign?.name}`)) nomes.push(`Meta (conjunto): ${j.name}`)
+    }
   }
   if (cliente.googleAdsId && googleConectado) {
     const { estruturaGoogle } = await import('./google-agencia')
@@ -389,7 +397,7 @@ export async function avisarCampanhasParadas(clientes: Cliente[], hoje: string):
     const link = `/anuncios?cliente=${c.id}`
     const { count } = await admin.from('notifications').select('id', { count: 'exact', head: true }).eq('kind', 'alerta').eq('link', link).like('message', '%sem gasto%').gte('created_at', new Date(Date.now() - 3 * 86_400_000).toISOString())
     if (count) continue
-    const message = `${c.nome}: ${nomes.length} campanha(s) ligada(s) sem gasto há 2 dias (${nomes.slice(0, 3).join('; ')}${nomes.length > 3 ? '…' : ''}). Veja se os anúncios estão em revisão, reprovados, com público pequeno demais ou com problema de pagamento.`.slice(0, 300)
+    const message = `${c.nome}: ${nomes.length} campanha(s)/conjunto(s) ligado(s) sem gasto há 2 dias (${nomes.slice(0, 3).join('; ')}${nomes.length > 3 ? '…' : ''}). Veja se os anúncios estão em revisão, reprovados, com público pequeno demais ou com problema de pagamento.`.slice(0, 300)
     await admin.from('notifications').insert(gestores.map((g) => ({ user_id: g.id, kind: 'alerta', message, link })))
     avisos++
   }

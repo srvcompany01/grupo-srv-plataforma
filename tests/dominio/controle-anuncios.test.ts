@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, estruturaParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type ItemArvore } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -77,5 +77,24 @@ describe('estrutura enxuta para a IA', () => {
   it('campanhaId abre os anúncios', () => {
     expect(estruturaParaIA(conta, { status: 'ativos', comGasto: false, campanhaId: 'ativa' })).toMatchObject({ campanha: { conjuntos: [{ id: 'c1', anuncios: [{ id: 'a1' }] }] } })
     expect(estruturaParaIA(conta, { status: 'ativos', comGasto: false, campanhaId: 'x' })).toHaveProperty('erro')
+  })
+})
+
+describe('alerta de ligada sem gasto', () => {
+  const periodo = { de: '2026-10-16', ate: '2026-10-22' }
+  const base = { ligado: true, gasto: 0, criadaEm: '2026-09-01T10:00:00-0300', nivel: 'campanha' as const, diario: null, total: null }
+
+  it('campanha ligada sem gasto no período inteiro', () => {
+    expect(alertaSemGasto(base, periodo)).toMatch(/há 7 dias/)
+    expect(alertaSemGasto({ ...base, criadaEm: '2026-10-21T10:00:00-0300' }, periodo)).toMatch(/há 2 dias/)
+    expect(alertaSemGasto({ ...base, criadaEm: '2026-10-22T10:00:00-0300' }, periodo)).toBeNull() // criada ontem
+  })
+
+  it('não alerta pausada, com gasto, anúncio ou conjunto sem orçamento próprio (CBO)', () => {
+    expect(alertaSemGasto({ ...base, ligado: false }, periodo)).toBeNull()
+    expect(alertaSemGasto({ ...base, gasto: 1 }, periodo)).toBeNull()
+    expect(alertaSemGasto({ ...base, nivel: 'anuncio' }, periodo)).toBeNull()
+    expect(alertaSemGasto({ ...base, nivel: 'conjunto' }, periodo)).toBeNull()
+    expect(alertaSemGasto({ ...base, nivel: 'conjunto', diario: 25 }, periodo)).toMatch(/há 7 dias/)
   })
 })

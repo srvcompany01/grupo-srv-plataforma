@@ -44,3 +44,15 @@ it('entrada inválida é recusada antes de tocar no banco', async () => {
   const r = await (await conectar('write')).callTool({ name: 'criar_tarefa', arguments: { listaId: 'não-é-uuid', titulo: 'x' } })
   expect(r.isError).toBe(true)
 })
+
+it('schema publicado: estrutura_anuncios_cliente declara campanhaId (texto), status e pagina; ids de anúncio são sempre texto', async () => {
+  const { tools } = await (await conectar('write')).listTools()
+  const props = (nome: string) => (tools.find((t) => t.name === nome)?.inputSchema.properties ?? {}) as Record<string, { type?: string; enum?: string[]; pattern?: string }>
+  const e = props('estrutura_anuncios_cliente')
+  expect(e.campanhaId).toMatchObject({ type: 'string', pattern: '^\\d{1,25}$' })
+  expect(e.status).toMatchObject({ type: 'string', enum: ['ativos', 'pausados', 'todos'] })
+  expect(e.pagina).toMatchObject({ type: 'integer' })
+  for (const [ferramenta, campo] of [['pausar_anuncio', 'objetoId'], ['propor_alteracao_anuncio', 'objetoId'], ['adicionar_anuncio_meta', 'conjuntoId'], ['criar_campanha_meta', 'formularioId']] as const) {
+    expect(props(ferramenta)[campo]?.type, `${ferramenta}.${campo}`).toBe('string')
+  }
+})

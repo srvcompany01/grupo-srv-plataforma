@@ -529,6 +529,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       const semFaturamento = h.meses.filter((m) => m.faturamento === null && p.investido(m) > 0).map((m) => m.mes)
       const avisos = [
         ...h.erros,
+        'investidoMeta é o gasto da CONTA inteira na Meta (todas as campanhas, de qualquer objetivo) e investidoGoogle o da conta do Google Ads.',
+        ...(h.meses.some((m) => m.mes === hoje.slice(0, 7)) ? [`${hoje.slice(0, 7)} está em andamento: o gasto de hoje é parcial, e a Meta e o Google recalculam os últimos dias (cliques inválidos, reprocessamento), então o valor pode subir ou cair alguns reais entre leituras. Mês fechado também pode receber ajuste da plataforma nas semanas seguintes.`] : []),
         ...(semFaturamento.length ? [`Faturamento e vendas não lançados em ${semFaturamento.join(', ')}: ROAS, custo por venda, ticket médio e conversão ficam nulos. Lance com registrar_resultado_mes (ou na aba Performance).`] : []),
         ...(!bio?.whatsapp ? ['O cliente não tem WhatsApp no cadastro: sem ele não dá para criar o link da bio.'] : !bio.slug ? ['O link da bio ainda não foi criado (aba Performance → cliente → Link da bio): cliquesLinkBio fica 0.'] : h.meses.every((m) => !m.cliquesLinkBio) ? [`Nenhum clique no link da bio (www.gruposrv.com.br/l/${bio.slug}) no período: confira se ele está na bio do Instagram.`] : []),
         ...(!cliente.metaPaginaId ? ['Sem a Página do Facebook no cadastro: cliquesPerfilInstagram fica nulo.'] : h.meses.every((m) => !m.cliquesPerfilInstagram) ? ['cliquesPerfilInstagram = toques nos botões e links do perfil; zerado pode ser real ou a Meta não ter entregue a métrica.'] : []),
@@ -565,7 +567,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'estrutura_anuncios_cliente',
-    descricao: 'Campanhas da Meta (com os conjuntos e a quantidade de anúncios) e campanhas do Google Ads do cliente, com ids, status, orçamento (reais), gasto e leads do período; mais os pedidos aguardando aprovação e as últimas alterações. Padrão: só as ATIVAS. status=pausados ou todos inclui as pausadas; comGasto=true esconde as sem gasto no período. Para ver os anúncios de uma campanha (ids para adicionar_anuncio_meta, pausar_anuncio, propor_alteracao_anuncio), chame com campanhaId.',
+    descricao: 'Campanhas da Meta (com os conjuntos e a quantidade de anúncios) e campanhas do Google Ads do cliente, com ids, status, orçamento (reais), gasto e leads do período; mais os pedidos aguardando aprovação e as últimas alterações. Padrão: só as ATIVAS. status=pausados ou todos inclui as pausadas; comGasto=true esconde as sem gasto no período. Para ver os anúncios de uma campanha (ids para adicionar_anuncio_meta, pausar_anuncio, propor_alteracao_anuncio), chame com campanhaId (TEXTO entre aspas). pagina = página de 60 campanhas. Campanha ou conjunto (com orçamento próprio) ligado e sem gasto no período vem com alerta.',
     escrita: false,
     entrada: {
       clienteId: id('Cliente (id de listar_clientes)'),
@@ -585,7 +587,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const g = await import('@/servicos/google-agencia')
       const { estruturaParaIA } = await import('@/dominio/controle-anuncios')
       const google = await g.situacaoGoogle()
-      const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId, pagina: a.pagina }
+      const filtro = { status: a.status, comGasto: a.comGasto, campanhaId: a.campanhaId, pagina: a.pagina, periodo: p }
       const [meta, goog, pendentes, ultimas] = await Promise.all([
         cliente.metaContaId ? ctl.estruturaMeta(cliente.metaContaId, p).then((x) => estruturaParaIA(x, filtro)).catch((e: Error) => ({ erro: e.message })) : null,
         !a.campanhaId && cliente.googleAdsId && google.conectado
