@@ -88,3 +88,15 @@ it('P2-2: atualizar_lancamento converte reais em centavos e só manda o que mudo
   const vazio = await cli.callTool({ name: 'atualizar_lancamento', arguments: { lancamentoId: '00000000-0000-4000-8000-000000000001' } })
   expect(vazio.isError).toBe(true)
 })
+
+it('P2-5: lancar_tempo chama lancar_tempo no banco com os minutos', async () => {
+  const chamadas: unknown[] = []
+  const sb = { rpc: async (nome: string, args: unknown) => { chamadas.push([nome, args]); return { error: null } } } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const r = await cli.callTool({ name: 'lancar_tempo', arguments: { tarefaId: '00000000-0000-4000-8000-000000000001', data: '2026-10-23', minutos: 90 } })
+  expect(r.isError).toBeFalsy()
+  expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined }]])
+})

@@ -1102,6 +1102,17 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'lancar_tempo',
+    descricao: 'Lança tempo trabalhado numa tarefa, em nome da pessoa dona do token (igual ao lançamento manual na tarefa). Entra no foco de relatorio_projetos. Dia AAAA-MM-DD; minutos de 1 a 1440.',
+    escrita: true,
+    entrada: { tarefaId: id('Tarefa'), data: data('Dia trabalhado'), minutos: z.number().int().min(1).max(1440), nota: z.string().max(300).optional() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null)
+      return { ok: true, lancado: formatarDuracao(a.minutos * 60) }
+    },
+  }),
+
+  definir({
     nome: 'desarquivar_tarefa',
     descricao: 'Desfaz o arquivamento de uma tarefa: ela volta para a lista com as subtarefas que foram arquivadas junto (as arquivadas antes continuam arquivadas).',
     escrita: true,
