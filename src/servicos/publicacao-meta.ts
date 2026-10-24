@@ -1,6 +1,6 @@
 import 'server-only'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
+import { formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
 import { urlLeitura } from '@/infra/r2'
 import { ErroGoogle, publicarNoNegocio } from './google-agencia'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -178,12 +178,13 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       const conta = await graph<{ instagram_business_account?: { id: string } }>(paginaId!, { params: { fields: 'instagram_business_account' } })
       const igId = conta.instagram_business_account?.id
       if (!igId) throw new ErroMeta('A Página do cliente não tem um Instagram profissional ligado (ou ele não foi atribuído ao usuário do sistema).')
-      const r = await publicarInstagram(igId, planoInstagram(p.format as Formato, midias), comUrl, legenda, p.ig_container_id, collabs)
+      const plano = planoInstagram(p.format as Formato, midias)
+      const r = await publicarInstagram(igId, plano, comUrl, legenda, p.ig_container_id, collabs)
       if ('pendente' in r) {
         await salvar({ ig_container_id: r.pendente, publish_lock_at: null })
         return { status: 'publicando' }
       }
-      await salvar({ ig_media_id: r.id, ig_permalink: r.permalink, ig_container_id: null })
+      await salvar({ ig_media_id: r.id, ig_permalink: r.permalink, ig_container_id: null, format: formatoPublicado(plano) })
     }
     if (alvos.includes('facebook') && !p.fb_post_id) {
       const r = await publicarFacebook(paginaId!, comUrl, legenda)

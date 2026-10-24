@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerCollabs, planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
+import { formatoPublicado, lerCollabs, planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
 
 const foto = (n: string, ext = 'jpg'): MidiaPublicavel => ({ tipo: 'imagem', nome: n, chave: `conteudo/t/${n}.${ext}` })
 const video = (n: string): MidiaPublicavel => ({ tipo: 'video', nome: n, chave: `conteudo/t/${n}.mp4` })
@@ -61,5 +61,16 @@ describe('Google Meu Negócio', () => {
     expect(validarPublicacao('reels', ['google'], [video('v')])).toMatch(/precisa de uma foto/)
     expect(validarPublicacao('stories', ['instagram', 'google'], [foto('a')])).toMatch(/Stories não vão para o Google/)
     expect(validarPublicacao('feed', ['google'], [foto('a', 'png')])).toBeNull() // PNG só é problema no Instagram
+  })
+})
+
+describe('formato publicado', () => {
+  it('vídeo único em feed sai como Reels; carrossel e foto ficam feed; stories', () => {
+    const video = { tipo: 'video' as const, nome: 'v.mp4', chave: 'k' }
+    const foto = { tipo: 'imagem' as const, nome: 'f.jpg', chave: 'k' }
+    expect(formatoPublicado(planoInstagram('feed', [video]))).toBe('reels')
+    expect(formatoPublicado(planoInstagram('feed', [foto]))).toBe('feed')
+    expect(formatoPublicado(planoInstagram('feed', [foto, foto]))).toBe('feed')
+    expect(formatoPublicado(planoInstagram('stories', [video]))).toBe('stories')
   })
 })

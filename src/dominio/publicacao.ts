@@ -71,6 +71,11 @@ export function planoInstagram(formato: Formato, midias: MidiaPublicavel[]): Pla
   return { tipo: 'CAROUSEL', midias }
 }
 
+/** Formato que de fato saiu no Instagram (vídeo único em "feed" vira Reels: o Instagram não aceita mais vídeo no feed). */
+export function formatoPublicado(plano: PlanoInstagram): Formato {
+  return plano.tipo === 'REELS' ? 'reels' : plano.tipo === 'STORIES' ? 'stories' : 'feed'
+}
+
 /** A rotina publica quando venceu a hora e (no modo aprovação) o cliente já aprovou a versão atual. */
 export function prontoParaPublicar(p: { status: StatusPublicacao; em: string | null; modo: ModoPublicacao; aprovacao: Aprovacao }, agora: Date): boolean {
   if (p.status !== 'agendado' && p.status !== 'publicando') return false
