@@ -71,7 +71,7 @@ export async function GoogleNegocio({ clienteId, perfil, perfilNome, periodo, se
             ) : null}
             {[r.reservas ? `${numero.format(r.reservas)} reservas` : '', r.pedidosComida ? `${numero.format(r.pedidosComida)} pedidos de comida` : '', r.cliquesCardapio ? `${numero.format(r.cliquesCardapio)} cliques no cardápio` : ''].filter(Boolean).length > 0 && <p className="text-legenda text-texto-2">{[r.reservas ? `${numero.format(r.reservas)} reservas` : '', r.pedidosComida ? `${numero.format(r.pedidosComida)} pedidos de comida` : '', r.cliquesCardapio ? `${numero.format(r.cliquesCardapio)} cliques no cardápio` : ''].filter(Boolean).join(' · ')}</p>}
             {r.avisos?.map((a) => <p key={a} className="text-legenda text-aviso-forte">{a}</p>)}
-            <p className="text-legenda text-texto-3">Dados do Google (atualizados a cada hora; o Google costuma fechar os números com alguns dias de atraso).</p>
+            <p className="text-legenda text-texto-3">{periodo.atalho === 'hoje' ? 'Consulta feita agora, sem cache. O Google Meu Negócio costuma fechar os números com alguns dias de atraso.' : 'Dados do Google atualizados a cada hora; o Google costuma fechar os números com alguns dias de atraso.'}</p>
           </>
         )}
         {podeGerir && <VincularPerfilGoogle clienteId={clienteId} ligado />}

@@ -18,13 +18,13 @@ export async function GoogleAds({ contaId, periodo, seletor }: { contaId: string
       ) : r.campanhas.length === 0 ? (
         <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma campanha ativa nesta conta agora.</p>
       ) : (
-        <ResumoCampanhas r={r} />
+        <ResumoCampanhas r={r} hoje={periodo.atalho === 'hoje'} />
       )}
     </Modulo>
   )
 }
 
-function ResumoCampanhas({ r }: { r: { campanhas: Campanha[]; moeda: string } }) {
+function ResumoCampanhas({ r, hoje }: { r: { campanhas: Campanha[]; moeda: string }; hoje: boolean }) {
   const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: r.moeda })
   const t = totaisCampanhas(r.campanhas)
   const itens: [string, string][] = [
@@ -71,7 +71,7 @@ function ResumoCampanhas({ r }: { r: { campanhas: Campanha[]; moeda: string } })
           </tbody>
         </table>
       </div>
-      <p className="text-legenda text-texto-3">Dados do Google Ads, atualizados a cada 30 minutos.</p>
+      <p className="text-legenda text-texto-3">{hoje ? 'Dados consultados agora no Google Ads; o próprio Google pode levar alguns minutos para consolidar o dia.' : 'Dados do Google Ads, atualizados a cada 30 minutos.'}</p>
     </div>
   )
 }

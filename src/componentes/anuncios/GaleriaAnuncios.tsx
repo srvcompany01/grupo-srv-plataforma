@@ -97,7 +97,7 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
           <Resumo anuncios={r.anuncios} mostrarGasto={mostrarGasto} />
           <ul className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4">{r.anuncios.map((a) => <Cartao key={a.id} a={a} mostrarGasto={mostrarGasto} />)}</ul>
           <p className="text-legenda text-texto-3">
-            Dados do Meta, atualizados a cada 30 minutos. Cada anúncio é avaliado pelo objetivo da campanha, comparando só com os do mesmo tipo (com 500+ impressões):{' '}
+            {periodo.atalho === 'hoje' ? 'Dados consultados agora na Meta; a própria Meta pode levar alguns minutos para consolidar o dia. ' : 'Dados do Meta, atualizados a cada 30 minutos. '}Cada anúncio é avaliado pelo objetivo da campanha, comparando só com os do mesmo tipo (com 500+ impressões):{' '}
             <strong className="text-sucesso-forte">Leads</strong> (conversas no WhatsApp/Direct, formulário) pelo custo por resultado;{' '}
             <strong className="text-[#6250d6]">Marca</strong> (tráfego e conteúdo para o Instagram) pelo custo do clique e CTR no link, porque o papel dela é levar pessoas ao perfil, que viram lead depois.
           </p>

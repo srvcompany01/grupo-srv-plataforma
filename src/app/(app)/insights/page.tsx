@@ -131,7 +131,7 @@ async function DetalheInstagram({ cliente, periodo, seletor }: { cliente: Client
   return (
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · {rotuloPeriodo(periodo)}</>} acoes={seletor}>
-        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <InstagramInsights ig={ig} dias={dias} />}
+        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <><InstagramInsights ig={ig} dias={dias} />{periodo.atalho === 'hoje' && <p className="mt-3 text-legenda text-texto-3">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}</>}
       </Modulo>
       {!('erro' in ig) && (
         <Modulo icone={Sparkles} titulo="Insights e recomendações" descricao="O que os números mostram e o que fazer no orgânico">
@@ -212,7 +212,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
             </table>
           </div>
         )}
-        <p className="text-legenda text-texto-3">Dados do Instagram pela API do Meta, atualizados a cada hora. Clique no cliente (ou escolha no seletor) para ver os posts, o melhor formato e as recomendações.</p>
+        <p className="text-legenda text-texto-3">{periodo.atalho === 'hoje' ? 'Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.' : 'Dados do Instagram pela API do Meta, atualizados a cada hora.'} Clique no cliente (ou escolha no seletor) para ver os posts, o melhor formato e as recomendações.</p>
       </div>
     </Modulo>
   )
