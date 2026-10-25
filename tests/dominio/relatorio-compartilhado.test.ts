@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -35,5 +35,16 @@ describe('relatório para o cliente', () => {
     const t = textoWhatsapp(base, 'u')
     expect(t).toMatch(/12 posts, que alcançaram 1\.012 pessoas \(alcance da conta com anúncios: 143\.547\)/)
     expect(leadsDoRelatorio({ ...base.anuncios!, leadsSite: 5 })).toBe(296)
+  })
+})
+
+describe('R1-1: campanhas no relatório', () => {
+  it('lead mostra leads e custo por lead; marca mostra cliques no link, sem CPL; sem investimento não mostra custo', () => {
+    const whats = campanhaMetaRelatorio({ nome: 'CBO / ENGJ - WHATS', status: 'ACTIVE', objetivo: 'OUTCOME_ENGAGEMENT', gasto: 400, cliquesLink: 300, leads: { formularios: 0, conversas: 20, site: 0 } }, true)
+    expect(whats).toMatchObject({ papel: 'lead', resultado: 20, rotuloResultado: 'conversas', custoPorResultado: 20, ativa: true })
+    const marca = campanhaMetaRelatorio({ nome: 'CONTEÚDO / TRAF-INSTA', status: 'PAUSED', objetivo: 'OUTCOME_TRAFFIC', gasto: 100, cliquesLink: 500, leads: { formularios: 0, conversas: 0, site: 0 } }, true)
+    expect(marca).toMatchObject({ papel: 'marca', resultado: 500, rotuloResultado: 'cliques no link', custoPorResultado: 0.2, ativa: false })
+    expect(campanhaMetaRelatorio({ nome: 'x', status: 'ACTIVE', objetivo: 'OUTCOME_LEADS', gasto: 100, cliquesLink: 1, leads: { formularios: 4, conversas: 0, site: 0 } }, false)).toMatchObject({ gasto: null, custoPorResultado: null, rotuloResultado: 'leads' })
+    expect(campanhaGoogleRelatorio({ nome: 'Pesquisa | Concorrentes', status: 'ENABLED', custo: 0, conversoes: 0 }, true)).toMatchObject({ resultado: 0, custoPorResultado: null })
   })
 })

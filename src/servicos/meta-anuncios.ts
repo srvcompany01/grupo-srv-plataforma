@@ -176,8 +176,11 @@ export async function totaisDoPeriodoMeta(contaId: string, periodo: Pick<Periodo
 
 export type CampanhaPeriodo = { id: string; nome: string; status: string; objetivo: string; gasto: number; cliquesLink: number; impressoes: number; leads: Leads; destinos: string[] }
 
-/** Campanhas que gastaram no período (ativas ou não) com gasto, cliques no link e leads, da que mais gastou à que menos. */
-export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<CampanhaPeriodo[] | { erro: string }> {
+/**
+ * Campanhas que gastaram no período (ativas ou não), da que mais gastou à que menos, e os nomes das campanhas ATIVAS
+ * que não gastaram nada (sem entrega: em revisão, reprovadas, público ou pagamento).
+ */
+export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<{ campanhas: CampanhaPeriodo[]; ativasSemGasto: string[] } | { erro: string }> {
   const [linhas, camps] = await Promise.all([
     conjuntosDoPeriodo(contaId, periodo.de, periodo.ate),
     meta<{ data: { id: string; name: string; objective?: string; effective_status?: string }[] }>(`act_${contaId}/campaigns`, { fields: 'id,name,objective,effective_status', effective_status: '["ACTIVE","PAUSED","DELETED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]', limit: '300' }),
@@ -194,7 +197,9 @@ export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<Peri
     if (l.destino && !c.destinos.includes(l.destino)) c.destinos.push(l.destino)
     por.set(l.campanhaId, c)
   }
-  return [...por.values()].filter((c) => c.gasto > 0).sort((a, b) => b.gasto - a.gasto)
+  const campanhas = [...por.values()].filter((c) => c.gasto > 0).sort((a, b) => b.gasto - a.gasto)
+  const ativasSemGasto = ('erro' in camps ? [] : camps.data).filter((c) => c.effective_status === 'ACTIVE' && !(por.get(c.id)?.gasto)).map((c) => c.name)
+  return { campanhas, ativasSemGasto }
 }
 
 /**

@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, MapPin, MessageCircle, MousePointerClick, Star, Target, Users } from 'lucide-react'
+import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -66,6 +66,41 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
               <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques" valor={num(a.cliques)} />
               <Cartao icone={Eye} cor="#e87ba4" rotulo="Impressões" valor={num(a.impressoes)} />
             </div>
+          </Secao>
+        )}
+
+        {r.campanhas && r.campanhas.length > 0 && (
+          <Secao titulo="Campanhas do período" icone={Megaphone}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[36rem] text-rotulo">
+                <thead>
+                  <tr className="border-b border-borda text-left text-legenda text-texto-3">
+                    <th className="py-2 pr-3 font-medium">Campanha</th>
+                    {r.campanhas.some((c) => c.gasto !== null) && <th className="py-2 pr-3 text-right font-medium">Investido</th>}
+                    <th className="py-2 pr-3 text-right font-medium">Resultado</th>
+                    {r.campanhas.some((c) => c.custoPorResultado !== null) && <th className="py-2 text-right font-medium">Custo por resultado</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.campanhas.map((c, i) => (
+                    <tr key={c.plataforma + c.nome + i} className="border-b border-borda/60 last:border-0">
+                      <td className="py-2 pr-3">
+                        <p className="font-semibold text-texto">{c.nome}</p>
+                        <p className="flex flex-wrap items-center gap-1.5 text-micro text-texto-3">
+                          <span className={`rounded-full px-1.5 py-0.5 font-semibold ${c.plataforma === 'meta' ? 'bg-[#e8f0fe] text-[#0866ff]' : 'bg-[#fdeee6] text-[#c2551f]'}`}>{c.plataforma === 'meta' ? 'Meta' : 'Google'}</span>
+                          <span className={`rounded-full px-1.5 py-0.5 font-semibold ${c.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}>{c.papel === 'lead' ? 'Geração de leads' : 'Marca (alcance e seguidores)'}</span>
+                          {!c.ativa && <span>pausada</span>}
+                        </p>
+                      </td>
+                      {r.campanhas!.some((x) => x.gasto !== null) && <td className="py-2 pr-3 text-right tabular-nums">{c.gasto === null ? '—' : reais(c.gasto)}</td>}
+                      <td className="py-2 pr-3 text-right tabular-nums">{num(c.resultado)} <span className="text-legenda text-texto-3">{c.rotuloResultado}</span></td>
+                      {r.campanhas!.some((x) => x.custoPorResultado !== null) && <td className="py-2 text-right tabular-nums">{c.custoPorResultado === null ? '—' : reais(c.custoPorResultado)}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-legenda text-texto-3">Campanhas de marca levam pessoas ao perfil e trazem seguidores, que viram clientes depois: o resultado delas é o clique, não o lead.</p>
           </Secao>
         )}
 

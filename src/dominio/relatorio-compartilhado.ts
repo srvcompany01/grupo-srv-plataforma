@@ -2,7 +2,9 @@
  * Relatório que a agência manda ao cliente: uma foto dos números do período (anúncios, Instagram e Google Meu
  * Negócio) guardada no banco, aberta por um link público com token, e o texto pronto para o WhatsApp.
  */
+import { papelDoObjetivo } from './anuncios-meta'
 import type { MetricasGrade, PontoGrade, Ponto } from './gmn'
+import { totalLeads, type Leads } from './performance'
 
 /** 2 = leads contados por destino (sem somar conversa e "lead" da mesma pessoa) e alcance orgânico separado. */
 export const VERSAO_RELATORIO = 2
@@ -28,7 +30,25 @@ export type RelatorioCompartilhado = {
   } | null
   instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string } | null } | null
+  /** Cada campanha que gastou no período, por plataforma (versão 2+). */
+  campanhas?: CampanhaRelatorio[]
   destaques: string[]
+}
+
+/** Lead: resultado = leads e custo por lead. Marca (tráfego/conteúdo): cliques no link e custo por clique, nunca CPL. */
+export type CampanhaRelatorio = { plataforma: 'meta' | 'google'; nome: string; ativa: boolean; papel: 'lead' | 'marca'; gasto: number | null; resultado: number; rotuloResultado: string; custoPorResultado: number | null }
+
+const arred = (n: number) => Math.round(n * 100) / 100
+
+export function campanhaMetaRelatorio(c: { nome: string; status: string; objetivo: string; gasto: number; cliquesLink: number; leads: Leads }, mostrarInvestimento: boolean): CampanhaRelatorio {
+  const leads = totalLeads(c.leads)
+  const papel = papelDoObjetivo(c.objetivo, leads > 0)
+  const resultado = papel === 'lead' ? leads : c.cliquesLink
+  return { plataforma: 'meta', nome: c.nome, ativa: c.status === 'ACTIVE', papel, gasto: mostrarInvestimento ? arred(c.gasto) : null, resultado, rotuloResultado: papel === 'lead' ? (c.leads.conversas && !c.leads.formularios ? 'conversas' : 'leads') : 'cliques no link', custoPorResultado: mostrarInvestimento && resultado ? arred(c.gasto / resultado) : null }
+}
+
+export function campanhaGoogleRelatorio(c: { nome: string; status: string; custo: number; conversoes: number }, mostrarInvestimento: boolean): CampanhaRelatorio {
+  return { plataforma: 'google', nome: c.nome, ativa: c.status === 'ENABLED', papel: 'lead', gasto: mostrarInvestimento ? arred(c.custo) : null, resultado: arred(c.conversoes), rotuloResultado: 'conversões', custoPorResultado: mostrarInvestimento && c.conversoes ? arred(c.custo / c.conversoes) : null }
 }
 
 export const TOKEN_RELATORIO = /^[A-Za-z0-9]{32}$/
