@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { MapaGrade, Medidor } from '@/componentes/gmn/MapaGrade'
 import { Marca } from '@/componentes/Marca'
+import { fraseGeogrid } from '@/dominio/gmn'
 import { leadsDoRelatorio } from '@/dominio/relatorio-compartilhado'
 import { relatorioPorToken } from '@/servicos/relatorio-compartilhado'
 
@@ -136,7 +137,7 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
             </div>
             {r.gmn.geogrid && (
               <div className="space-y-2">
-                <p className="text-rotulo text-texto-2">Posição no Google Maps em cada ponto da região para <strong>&quot;{r.gmn.geogrid.palavra}&quot;</strong>: no top 3 em <strong>{num(r.gmn.geogrid.metricas.top3)}%</strong> dos pontos.</p>
+                <p className="text-rotulo text-texto-2">{r.gmn.geogrid.primeiro !== undefined ? fraseGeogrid(r.gmn.geogrid.palavra, r.gmn.geogrid.metricas, r.gmn.geogrid.primeiro, r.gmn.geogrid.lider ?? null) : <>Posição no Google Maps em cada ponto da região para <strong>&quot;{r.gmn.geogrid.palavra}&quot;</strong>: no top 3 em <strong>{num(r.gmn.geogrid.metricas.top3)}%</strong> dos pontos.</>}</p>
                 <div className="max-w-xl"><MapaGrade centro={r.gmn.geogrid.centro} pontos={r.gmn.geogrid.pontos} rotulo={`Mapa de posições para ${r.gmn.geogrid.palavra}`} /></div>
               </div>
             )}

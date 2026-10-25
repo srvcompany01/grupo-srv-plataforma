@@ -3,7 +3,7 @@
  * Negócio) guardada no banco, aberta por um link público com token, e o texto pronto para o WhatsApp.
  */
 import { papelDoObjetivo } from './anuncios-meta'
-import type { MetricasGrade, PontoGrade, Ponto } from './gmn'
+import { fraseGeogrid, type MetricasGrade, type PontoGrade, type Ponto } from './gmn'
 import { totalLeads, type Leads } from './performance'
 
 /** 2 = leads contados por destino (sem somar conversa e "lead" da mesma pessoa) e alcance orgânico separado. */
@@ -29,7 +29,7 @@ export type RelatorioCompartilhado = {
     custoPorLead: number | null
   } | null
   instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
-  gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string } | null } | null
+  gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Cada campanha que gastou no período, por plataforma (versão 2+). */
   campanhas?: CampanhaRelatorio[]
   destaques: string[]
@@ -79,7 +79,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   if (r.gmn) {
     linhas.push('*Google*')
     linhas.push(`• Nota ${r.gmn.nota === null ? '—' : `★ ${num(r.gmn.nota)}`} com ${num(r.gmn.avaliacoes)} avaliações`)
-    if (r.gmn.geogrid) linhas.push(`• Top 3 do Google Maps em ${num(r.gmn.geogrid.metricas.top3)}% da região para "${r.gmn.geogrid.palavra}"`)
+    if (r.gmn.geogrid) linhas.push(`• ${r.gmn.geogrid.primeiro !== undefined ? fraseGeogrid(r.gmn.geogrid.palavra, r.gmn.geogrid.metricas, r.gmn.geogrid.primeiro, r.gmn.geogrid.lider ?? null) : `Top 3 do Google Maps em ${num(r.gmn.geogrid.metricas.top3)}% da região para "${r.gmn.geogrid.palavra}"`}`)
     linhas.push('')
   }
   linhas.push(`Relatório completo: ${url}`)

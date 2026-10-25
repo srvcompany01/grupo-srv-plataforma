@@ -1,5 +1,5 @@
 import 'server-only'
-import { analisarSaude } from '@/dominio/gmn'
+import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro } from '@/dominio/gmn'
 import { totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
@@ -12,7 +12,7 @@ import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, situacaoGoogle } from './google-agencia'
 import { instagramDoCliente } from './insights-instagram'
 import { campanhasDoPeriodoMeta, totaisDoPeriodoMeta } from './meta-anuncios'
-import { detalhesDoLugar, placesConfigurado, varreduras } from './places'
+import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
 
 const BASE = () => process.env.NEXT_PUBLIC_URL_BASE ?? 'https://app.gruposrv.com.br'
 export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
@@ -50,6 +50,10 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const dias = Math.round((Date.parse(periodo.ate) - Date.parse(periodo.de)) / 86_400_000) + 1
   const melhor = i ? [...i.posts].sort((a, b) => b.interacoes - a.interacoes)[0] : undefined
   const scan = scans[0]
+  const lider = scan && c.googlePlaceId ? liderDaGrade(scan.pontos, c.googlePlaceId) : null
+  const nomeLider = lider ? (await resumoDosLugares(sb, [lider.id]).catch(() => new Map())).get(lider.id)?.nome ?? null : null
+  const primeiro = scan ? pctPrimeiro(scan.pontos) : 0
+  const liderInfo = lider && nomeLider ? { nome: nomeLider as string, pct: lider.pct } : null
   const dados: RelatorioCompartilhado = {
     versao: VERSAO_RELATORIO,
     cliente: c.nome,
@@ -58,7 +62,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     geradoEm: new Date().toISOString(),
     anuncios,
     instagram: i ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: i.alcance, alcancePosts: i.posts.reduce((s, p) => s + p.alcance, 0), visualizacoes: i.visualizacoes, interacoes: i.interacoes, posts: i.posts.length, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
-    gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em } : null } : null,
+    gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em, primeiro, lider: liderInfo } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     campanhas: [
       ...(campsMeta && !('erro' in campsMeta) ? campsMeta.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
@@ -67,6 +71,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     destaques: [
       ...(m || g ? analisarPago({ meta: m ? { gasto: m.gasto, impressoes: m.impressoes, alcance: 0, cliques: m.cliques, ctr: m.impressoes ? (m.cliques / m.impressoes) * 100 : 0, anuncios: 0, fracos: 0, frequenciaAlta: 0 } : null, google: g ? { custo: g.custo, cliques: g.cliques, conversoes: g.conversoes, ctr: g.impressoes ? (g.cliques / g.impressoes) * 100 : 0, custoPorConversao: g.conversoes ? g.custo / g.conversoes : 0, campanhas: goog && !('erro' in goog) ? goog.campanhas.length : 0 } : null }).destaques : []),
       ...(i ? analisarOrganico(i, dias).destaques : []),
+      ...(scan ? [{ tom: 'bom' as const, texto: fraseGeogrid(scan.palavra, scan.metricas, primeiro, liderInfo) }] : []),
     ].filter((d) => d.tom === 'bom' && (opcoes.mostrarInvestimento || !/R\$/.test(d.texto))).map((d) => d.texto).slice(0, 5),
   }
   const token = gerarToken()

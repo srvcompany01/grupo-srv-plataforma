@@ -11,7 +11,7 @@ import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarSaude, concorrentesDaGrade, linkAvaliacao, textoProposta, type ColunaComparativo, type ItemSaude } from '@/dominio/gmn'
+import { analisarSaude, concorrentesDaGrade, liderDaGrade, linkAvaliacao, pctPrimeiro, textoProposta, type ColunaComparativo, type ItemSaude } from '@/dominio/gmn'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoPrimario, campo } from '@/lib/ui'
@@ -182,7 +182,8 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
   const atual = lista.find((v) => v.id === varreduraId) ?? lista[0] ?? null
   const anterior = atual ? lista.find((v) => v.palavra === atual.palavra && v.em < atual.em) : undefined
   const concorrentes = atual ? concorrentesDaGrade(atual.pontos, placeId, 5) : []
-  const nomes = concorrentes.length ? await places.resumoDosLugares(sb, concorrentes.map((c) => c.id)).catch(() => new Map<string, places.LugarResumo>()) : new Map<string, places.LugarResumo>()
+  const lider = atual ? liderDaGrade(atual.pontos, placeId) : null
+  const nomes = concorrentes.length || lider ? await places.resumoDosLugares(sb, [...new Set([...concorrentes.map((c) => c.id), ...(lider ? [lider.id] : [])])]).catch(() => new Map<string, places.LugarResumo>()) : new Map<string, places.LugarResumo>()
   const base = `/gmn?cliente=${cliente.id}&aba=geogrid`
   const delta = atual && anterior ? Math.round((anterior.metricas.posicaoMediaTotal - atual.metricas.posicaoMediaTotal) * 10) / 10 : null
   return (
@@ -199,7 +200,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
               {[
                 { rotulo: 'Posição média (onde aparece)', valor: atual.metricas.posicaoMedia === null ? '—' : `${n(atual.metricas.posicaoMedia)}º`, extra: null, tom: null, icone: Trophy, cor: '#2a78d6' },
                 { rotulo: 'Posição média geral', valor: `${n(atual.metricas.posicaoMediaTotal)}º`, extra: delta === null ? 'fora do top 20 conta como 21' : delta >= 0 ? `▲ ${n(delta)} vs a anterior` : `▼ ${n(-delta)} vs a anterior`, tom: delta === null ? null : delta >= 0 ? 'bom' : 'ruim', icone: BarChart3, cor: '#6250d6' },
-                { rotulo: 'Pontos no top 3', valor: `${n(atual.metricas.top3)}%`, extra: null, tom: atual.metricas.top3 >= 50 ? 'bom' : atual.metricas.top3 >= 20 ? 'atencao' : 'ruim', icone: Target, cor: '#1baf7a' },
+                { rotulo: 'Pontos no top 3', valor: `${n(atual.metricas.top3)}%`, extra: `em 1º lugar em ${n(pctPrimeiro(atual.pontos))}%${lider ? ` · líder: ${nomes.get(lider.id)?.nome ?? 'concorrente'} (${n(lider.pct)}%)` : ''}`, tom: atual.metricas.top3 >= 50 ? 'bom' : atual.metricas.top3 >= 20 ? 'atencao' : 'ruim', icone: Target, cor: '#1baf7a' },
                 { rotulo: 'Aparece em', valor: `${n(atual.metricas.encontrado)}%`, extra: `top 10 em ${n(atual.metricas.top10)}% dos pontos`, tom: null, icone: Search, cor: '#eb6834' },
               ].map((m) => {
                 const Icone = m.icone

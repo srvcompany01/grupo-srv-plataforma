@@ -48,3 +48,11 @@ describe('R1-1: campanhas no relatório', () => {
     expect(campanhaGoogleRelatorio({ nome: 'Pesquisa | Concorrentes', status: 'ENABLED', custo: 0, conversoes: 0 }, true)).toMatchObject({ resultado: 0, custoPorResultado: null })
   })
 })
+
+describe('R1-3: geogrid no texto do relatório', () => {
+  it('diz quem lidera em vez de só o top 3', () => {
+    const geo = { palavra: 'compro ouro', metricas: { posicaoMedia: 2, posicaoMediaTotal: 2, top3: 98.8, top10: 100, encontrado: 100, pontos: 81 }, centro: { lat: 0, lng: 0 }, pontos: [], em: '', primeiro: 1.2, lider: { nome: 'Compra Ouro Pará', pct: 100 } }
+    const t = textoWhatsapp({ ...base, gmn: { nota: 4.9, avaliacoes: 613, saude: 80, geogrid: geo } }, 'u')
+    expect(t).toMatch(/1º lugar em 1,2%.*Compra Ouro Pará \(100% dos pontos\)/)
+  })
+})

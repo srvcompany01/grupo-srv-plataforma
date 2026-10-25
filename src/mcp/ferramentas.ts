@@ -973,7 +973,9 @@ export const FERRAMENTAS: Ferramenta[] = [
       const v = await p.rodarGeogrid(sb, cliente, cliente.googlePlaceId, a.palavra, a.grade, a.raioKm)
       const top = concorrentesDaGrade(v.pontos, cliente.googlePlaceId, 5)
       const nomes = await p.resumoDosLugares(sb, top.map((t) => t.id))
-      return { varreduraId: v.id, palavra: v.palavra, metricas: v.metricas, concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })), pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })) }
+      const lider = (await import('@/dominio/gmn')).liderDaGrade(v.pontos, cliente.googlePlaceId)
+      const nomeLider = lider ? (await p.resumoDosLugares(sb, [lider.id])).get(lider.id)?.nome ?? lider.id : null
+      return { varreduraId: v.id, palavra: v.palavra, metricas: { ...v.metricas, primeiroLugarPct: (await import('@/dominio/gmn')).pctPrimeiro(v.pontos) }, lider: lider ? { nome: nomeLider, pctDosPontosEm1: lider.pct } : null, concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })), pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })) }
     },
   }),
 
@@ -1010,7 +1012,10 @@ export const FERRAMENTAS: Ferramenta[] = [
       const { concorrentesDaGrade } = await import('@/dominio/gmn')
       const top = concorrentesDaGrade(v.pontos, cliente?.googlePlaceId ?? '', 5)
       const nomes = await p.resumoDosLugares(sb, top.map((t) => t.id))
-      return { ...v, pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })), concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })) }
+      const g = await import('@/dominio/gmn')
+      const lider = g.liderDaGrade(v.pontos, cliente?.googlePlaceId ?? '')
+      const nomeLider = lider ? (await p.resumoDosLugares(sb, [lider.id])).get(lider.id)?.nome ?? lider.id : null
+      return { ...v, metricas: { ...v.metricas, primeiroLugarPct: g.pctPrimeiro(v.pontos) }, lider: lider ? { nome: nomeLider, pctDosPontosEm1: lider.pct } : null, pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })), concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })) }
     },
   }),
 
