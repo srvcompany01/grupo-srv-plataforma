@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avisosGoogle, intervaloNegocio, lerCampanha, lerContaGoogleAds, lerMetricasNegocio, totaisCampanhas } from '@/dominio/google'
+import { avisosGoogle, intervaloNegocio, lerAvaliacoesNegocio, lerCampanha, lerContaGoogleAds, lerMetricasNegocio, lerPalavrasChaveNegocio, totaisCampanhas } from '@/dominio/google'
 
 describe('google', () => {
   it('conta do Google Ads', () => {
@@ -23,6 +23,20 @@ describe('google', () => {
     expect(m).toMatchObject({ buscas: 10, mapas: 5, visualizacoes: 15, ligacoes: 3 })
     expect(m.porDia).toEqual([{ dia: '2026-10-01', visualizacoes: 15, acoes: 0 }, { dia: '2026-10-02', visualizacoes: 0, acoes: 3 }])
     expect(intervaloNegocio('2026-10-01', '2026-10-07')).toContainEqual(['dailyRange.end_date.day', '7'])
+    expect(intervaloNegocio('2026-10-01', '2026-10-07')).toContainEqual(['dailyMetrics', 'MESSAGING_CLICKS'])
+    expect(intervaloNegocio('2026-10-01', '2026-10-07')).not.toContainEqual(['dailyMetrics', 'BUSINESS_CONVERSATIONS'])
+  })
+  it('avaliações do período e termos que levaram ao perfil', () => {
+    const a = lerAvaliacoesNegocio([
+      { starRating: 'FIVE', createTime: '2026-10-02T12:00:00Z', reviewReply: { comment: 'Obrigado' } },
+      { starRating: 'THREE', createTime: '2026-10-07T02:30:00Z' },
+      { starRating: 'ONE', createTime: '2026-09-30T12:00:00Z' },
+    ], '2026-10-01', '2026-10-06')
+    expect(a).toEqual({ novas: 2, notaMedia: 4, respondidas: 1, semResposta: 1, distribuicao: { 1: 0, 2: 0, 3: 1, 4: 0, 5: 1 } })
+    expect(lerPalavrasChaveNegocio([
+      { searchKeyword: 'ouro belém', insightsValue: { value: '42' } },
+      { searchKeyword: 'comprar ouro', insightsValue: { threshold: '15' } },
+    ])).toEqual([{ termo: 'ouro belém', visualizacoes: 42, abaixoDe: false }, { termo: 'comprar ouro', visualizacoes: 15, abaixoDe: true }])
   })
 })
 

@@ -72,7 +72,8 @@ export function consultaCampanhas(de: string, ate: string): string {
 /** Métricas diárias do perfil (API Business Profile Performance). */
 export const METRICAS_NEGOCIO = [
   'BUSINESS_IMPRESSIONS_MOBILE_SEARCH', 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH', 'BUSINESS_IMPRESSIONS_MOBILE_MAPS', 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-  'CALL_CLICKS', 'WEBSITE_CLICKS', 'BUSINESS_DIRECTION_REQUESTS', 'BUSINESS_CONVERSATIONS',
+  'CALL_CLICKS', 'WEBSITE_CLICKS', 'BUSINESS_DIRECTION_REQUESTS', 'MESSAGING_CLICKS',
+  'BUSINESS_BOOKINGS', 'BUSINESS_FOOD_ORDERS', 'BUSINESS_FOOD_MENU_CLICKS',
 ] as const
 
 export type SerieBruta = { multiDailyMetricTimeSeries?: { dailyMetricTimeSeries?: { dailyMetric?: string; timeSeries?: { datedValues?: { date?: { year?: number; month?: number; day?: number }; value?: string }[] } }[] }[] }
@@ -84,7 +85,15 @@ export type MetricasNegocio = {
   ligacoes: number
   site: number
   rotas: number
-  conversas: number
+  mensagens: number
+  reservas: number
+  pedidosComida: number
+  cliquesCardapio: number
+  avaliacoes?: AvaliacoesNegocio | null
+  palavrasChave?: PalavraChaveNegocio[]
+  /** Meses inteiros usados pela API de termos de busca (essa API não oferece recorte diário). */
+  palavrasPeriodo?: { de: string; ate: string }
+  avisos?: string[]
   /** Visualizações (busca + mapas) por dia, AAAA-MM-DD. */
   porDia: { dia: string; visualizacoes: number; acoes: number }[]
 }
@@ -118,9 +127,51 @@ export function lerMetricasNegocio(r: SerieBruta): MetricasNegocio {
     ligacoes: s('CALL_CLICKS'),
     site: s('WEBSITE_CLICKS'),
     rotas: s('BUSINESS_DIRECTION_REQUESTS'),
-    conversas: s('BUSINESS_CONVERSATIONS'),
+    mensagens: s('MESSAGING_CLICKS'),
+    reservas: s('BUSINESS_BOOKINGS'),
+    pedidosComida: s('BUSINESS_FOOD_ORDERS'),
+    cliquesCardapio: s('BUSINESS_FOOD_MENU_CLICKS'),
     porDia: [...dias].map(([dia, v]) => ({ dia, ...v })).sort((a, b) => a.dia.localeCompare(b.dia)),
   }
+}
+
+export type AvaliacaoBruta = { reviewId?: string; starRating?: string; createTime?: string; reviewReply?: { comment?: string; updateTime?: string } }
+export type AvaliacoesNegocio = { novas: number; notaMedia: number | null; respondidas: number; semResposta: number; distribuicao: Record<1 | 2 | 3 | 4 | 5, number> }
+
+const NOTA: Record<string, 1 | 2 | 3 | 4 | 5> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 }
+
+/** Avaliações criadas dentro do período no fuso de Belém (edições posteriores não viram avaliação nova). */
+export function lerAvaliacoesNegocio(reviews: AvaliacaoBruta[], de: string, ate: string): AvaliacoesNegocio {
+  const inicio = Date.parse(`${de}T00:00:00-03:00`)
+  const fim = Date.parse(`${ate}T23:59:59.999-03:00`)
+  const periodo = reviews.filter((r) => {
+    const t = Date.parse(r.createTime ?? '')
+    return Number.isFinite(t) && t >= inicio && t <= fim
+  })
+  const distribuicao: AvaliacoesNegocio['distribuicao'] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  let soma = 0
+  let comNota = 0
+  let respondidas = 0
+  for (const r of periodo) {
+    const nota = NOTA[r.starRating ?? '']
+    if (nota) {
+      distribuicao[nota]++
+      soma += nota
+      comNota++
+    }
+    if (r.reviewReply) respondidas++
+  }
+  return { novas: periodo.length, notaMedia: comNota ? Math.round((soma / comNota) * 10) / 10 : null, respondidas, semResposta: periodo.length - respondidas, distribuicao }
+}
+
+export type PalavraChaveBruta = { searchKeyword?: string; insightsValue?: { value?: string; threshold?: string } }
+export type PalavraChaveNegocio = { termo: string; visualizacoes: number; abaixoDe: boolean }
+
+export function lerPalavrasChaveNegocio(linhas: PalavraChaveBruta[], limite = 10): PalavraChaveNegocio[] {
+  return linhas.map((l) => ({ termo: l.searchKeyword?.trim() ?? '', visualizacoes: n(l.insightsValue?.value ?? l.insightsValue?.threshold), abaixoDe: l.insightsValue?.value === undefined && l.insightsValue?.threshold !== undefined }))
+    .filter((l) => l.termo && l.visualizacoes > 0)
+    .sort((a, b) => b.visualizacoes - a.visualizacoes)
+    .slice(0, limite)
 }
 
 /** Parâmetros de data da API de desempenho (o Google tem uns 3 dias de atraso nos números). */

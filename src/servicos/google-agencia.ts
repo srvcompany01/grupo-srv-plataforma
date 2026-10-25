@@ -1,5 +1,5 @@
 import 'server-only'
-import { consultaCampanhas, intervaloNegocio, lerCampanha, lerMetricasNegocio, type Campanha, type CampanhaBruta, type MetricasNegocio, type SerieBruta } from '@/dominio/google'
+import { consultaCampanhas, intervaloNegocio, lerAvaliacoesNegocio, lerCampanha, lerMetricasNegocio, lerPalavrasChaveNegocio, type AvaliacaoBruta, type Campanha, type CampanhaBruta, type MetricasNegocio, type PalavraChaveBruta, type SerieBruta } from '@/dominio/google'
 import type { PagoPorDia } from '@/dominio/insights'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import { dados } from './resultado'
@@ -196,8 +196,52 @@ export function metricasDoNegocio(perfil: string, de: string, ate: string): Prom
   return comErro(async () => {
     const local = perfil.slice(perfil.indexOf('locations/'))
     const q = new URLSearchParams(intervaloNegocio(de, ate))
-    return lerMetricasNegocio(await google<SerieBruta>(`https://businessprofileperformance.googleapis.com/v1/${local}:fetchMultiDailyMetricsTimeSeries?${q}`, { cacheSeg: 3600 }))
+    const serie = await google<SerieBruta>(`https://businessprofileperformance.googleapis.com/v1/${local}:fetchMultiDailyMetricsTimeSeries?${q}`, { cacheSeg: 3600 })
+    const [avaliacoes, palavras] = await Promise.allSettled([avaliacoesDoNegocio(perfil, de, ate), palavrasChaveDoNegocio(local, de, ate)])
+    const avisos = [
+      ...(avaliacoes.status === 'rejected' ? ['O Google não liberou as avaliações detalhadas deste perfil.'] : []),
+      ...(palavras.status === 'rejected' ? ['O Google não liberou os termos de busca deste perfil.'] : []),
+    ]
+    return {
+      ...lerMetricasNegocio(serie),
+      avaliacoes: avaliacoes.status === 'fulfilled' ? avaliacoes.value : null,
+      palavrasChave: palavras.status === 'fulfilled' ? palavras.value : [],
+      palavrasPeriodo: { de: de.slice(0, 7), ate: ate.slice(0, 7) },
+      avisos,
+    }
   })
+}
+
+async function avaliacoesDoNegocio(perfil: string, de: string, ate: string) {
+  const reviews: AvaliacaoBruta[] = []
+  let pagina: string | undefined
+  for (let i = 0; i < 50; i++) {
+    const q = new URLSearchParams({ pageSize: '50', orderBy: 'updateTime desc', ...(pagina ? { pageToken: pagina } : {}) })
+    const r = await google<{ reviews?: AvaliacaoBruta[]; nextPageToken?: string }>(`https://mybusiness.googleapis.com/v4/${perfil}/reviews?${q}`, { cacheSeg: 3600 })
+    reviews.push(...(r.reviews ?? []))
+    pagina = r.nextPageToken
+    if (!pagina) break
+  }
+  return lerAvaliacoesNegocio(reviews, de, ate)
+}
+
+async function palavrasChaveDoNegocio(local: string, de: string, ate: string) {
+  const [anoDe, mesDe] = de.split('-').map(Number)
+  const [anoAte, mesAte] = ate.split('-').map(Number)
+  const linhas: PalavraChaveBruta[] = []
+  let pagina: string | undefined
+  for (let i = 0; i < 5; i++) {
+    const q = new URLSearchParams([
+      ['monthlyRange.start_month.year', String(anoDe)], ['monthlyRange.start_month.month', String(mesDe)],
+      ['monthlyRange.end_month.year', String(anoAte)], ['monthlyRange.end_month.month', String(mesAte)],
+      ['pageSize', '100'], ...(pagina ? [['pageToken', pagina] as [string, string]] : []),
+    ])
+    const r = await google<{ searchKeywordsCounts?: PalavraChaveBruta[]; nextPageToken?: string }>(`https://businessprofileperformance.googleapis.com/v1/${local}/searchkeywords/impressions/monthly?${q}`, { cacheSeg: 3600 })
+    linhas.push(...(r.searchKeywordsCounts ?? []))
+    pagina = r.nextPageToken
+    if (!pagina) break
+  }
+  return lerPalavrasChaveNegocio(linhas)
 }
 
 /** Publica um post "Novidade" no perfil (texto + 1 foto). Erros saem como ErroGoogle. */
