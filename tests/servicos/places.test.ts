@@ -32,3 +32,26 @@ describe('Places API', () => {
     await expect(buscarLugares('x y z')).rejects.toThrow(/não está ativada/)
   })
 })
+
+describe('R2-3: primeira foto do perfil', () => {
+  it('ligar o lugar ao cliente grava a foto do dia (o histórico começa na hora)', async () => {
+    vi.resetModules()
+    vi.stubEnv('GOOGLE_PLACES_API_KEY', 'chave-teste')
+    vi.stubGlobal('fetch', vi.fn(async () => resposta({ id: 'ChIJ_teste_123', displayName: { text: 'Aurum' }, rating: 4.9, userRatingCount: 613 })))
+    const inseridos: unknown[] = []
+    const consulta = (dados: unknown) => {
+      const q: Record<string, unknown> = {}
+      for (const m of ['select', 'eq', 'order', 'limit', 'lt', 'gte', 'in', 'not', 'neq']) q[m] = () => q
+      q.maybeSingle = async () => ({ data: dados, error: null })
+      q.insert = async (linha: unknown) => { inseridos.push(linha); return { error: null } }
+      q.upsert = async () => ({ error: null })
+      q.update = () => ({ eq: async () => ({ error: null, count: 1 }) })
+      return q
+    }
+    vi.doMock('@/infra/supabase/admin', () => ({ criarClienteAdmin: () => ({ from: () => consulta(null) }) }))
+    const { definirLugarDoCliente } = await import('@/servicos/places')
+    const sb = { from: () => consulta(null) } as never
+    await definirLugarDoCliente(sb, 'cliente-1', 'ChIJ_teste_123')
+    expect(inseridos).toContainEqual(expect.objectContaining({ client_id: 'cliente-1', nota: 4.9, avaliacoes: 613 }))
+  })
+})

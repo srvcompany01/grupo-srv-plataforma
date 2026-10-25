@@ -122,11 +122,20 @@ export async function resumoDosLugares(sb: Supabase, ids: string[]): Promise<Map
 
 // ───────────────────────────── Cliente ─────────────────────────────
 
+/** Primeira foto do dia (nota e avaliações) se a rotina ainda não tirou: o histórico começa no dia em que liga. */
+async function garantirFotoDeHoje(clienteId: string, d: Pick<Detalhes, 'nota' | 'avaliacoes'>): Promise<void> {
+  const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10)
+  const admin = criarClienteAdmin()
+  const { data } = await admin.from('gmn_snapshots').select('dia').eq('client_id', clienteId).eq('dia', hoje).maybeSingle()
+  if (!data) await admin.from('gmn_snapshots').insert({ client_id: clienteId, dia: hoje, nota: d.nota, avaliacoes: d.avaliacoes })
+}
+
 export async function definirLugarDoCliente(sb: Supabase, clienteId: string, placeId: string | null): Promise<void> {
-  if (placeId) await detalhesDoLugar(sb, placeId, 0)
+  const d = placeId ? await detalhesDoLugar(sb, placeId, 0) : null
   const { error, count } = await sb.from('clients').update({ google_place_id: placeId }, { count: 'exact' }).eq('id', clienteId)
   if (error) throw error
   if (!count) throw { code: '42501' }
+  if (d) await garantirFotoDeHoje(clienteId, d).catch((e) => console.error('foto do GMN', e))
 }
 
 export async function lugarDoCliente(sb: Supabase, clienteId: string): Promise<string | null> {
@@ -137,6 +146,7 @@ export async function lugarDoCliente(sb: Supabase, clienteId: string): Promise<s
 /** Perfil público do cliente com a análise de saúde (comparando com os concorrentes da última varredura). */
 export async function saudeDoCliente(sb: Supabase, placeId: string, hoje: string, clienteId: string) {
   const d = await detalhesDoLugar(sb, placeId)
+  await garantirFotoDeHoje(clienteId, d).catch((e) => console.error('foto do GMN', e))
   const ultima = (await varreduras(sb, clienteId, 1))[0]
   let concorrentes: { nota: number | null; avaliacoes: number | null } | null = null
   if (ultima) {
