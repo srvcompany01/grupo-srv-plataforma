@@ -18,6 +18,7 @@ import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
 import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
+import { totalLeads } from '@/dominio/performance'
 import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 
@@ -327,7 +328,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.metaContaId) throw new Error('Este cliente não tem conta de anúncios do Meta cadastrada.')
-      const r = await (await import('@/servicos/meta-anuncios')).anunciosAtivos(cliente.metaContaId, periodoDaIA(a))
+      const ma = await import('@/servicos/meta-anuncios')
+      const [r, conta] = await Promise.all([ma.anunciosAtivos(cliente.metaContaId, periodoDaIA(a)), ma.totaisDoPeriodoMeta(cliente.metaContaId, periodoDaIA(a))])
       if ('erro' in r) throw new Error(r.erro)
       // Sem a URL da imagem (longa e expira) e sem campos vazios: cabe inteiro na resposta.
       const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, cliques, ...x }) => ({
@@ -340,7 +342,11 @@ export const FERRAMENTAS: Ferramenta[] = [
       return {
         cliente: cliente.nome,
         periodo: periodoDaIA(a),
+        // totais = totaisAtivos (compatibilidade). O gasto da conta inteira está em totaisConta.
         totais: totaisAnuncios(r.anuncios),
+        totaisAtivos: totaisAnuncios(r.anuncios),
+        totaisConta: 'erro' in conta ? { erro: conta.erro } : { ...conta, gasto: Math.round(conta.gasto * 100) / 100, leads: totalLeads(conta), custoPorLead: totalLeads(conta) ? Math.round((conta.gasto / totalLeads(conta)) * 100) / 100 : null },
+        origemDosTotais: 'totaisAtivos soma só os anúncios ATIVOS agora (os listados); totaisConta soma todas as campanhas que gastaram no período, inclusive as pausadas no meio dele — use totaisConta para investimento e leads do período.',
         referencias: {
           comoCalcula: 'Média de cada papel = gasto ÷ resultados (lead) ou gasto ÷ cliques no link (marca), só com os anúncios de 500+ impressões no período; por isso pode diferir do total da conta.',
           lead: { ...ref.lead, custoPorResultado: arred(ref.lead.custoPorResultado), custoPorClique: arred(ref.lead.custoPorClique) },
