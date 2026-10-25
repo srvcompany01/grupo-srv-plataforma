@@ -41,7 +41,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     meuNegocioLigado: !!c.googlePerfil,
     erroMeuNegocio: negocio && 'erro' in negocio ? negocio.erro : null,
     ativasSemEntrega: [...(cm?.ativasSemGasto.map((n) => `${n} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'ENABLED' && x.custo === 0).map((x) => `${x.nome} (Google)`) ?? [])],
-    pausadasComGasto: [...(cm?.campanhas.filter((x) => x.status !== 'ACTIVE').map((x) => `${x.nome} (Meta)`) ?? []), ...(cg?.filter((x) => x.status !== 'ENABLED' && x.custo > 0).map((x) => `${x.nome} (Google)`) ?? [])],
+    pausadasComGasto: [...(cm?.campanhas.filter((x) => x.status === 'PAUSED').map((x) => `${x.nome} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'PAUSED' && x.custo > 0).map((x) => `${x.nome} (Google)`) ?? [])],
     avisosGoogle: [...(goog && !('erro' in goog) ? avisosGoogle(totaisCampanhas(goog.campanhas)) : []), ...(divergente ? [divergente] : [])],
   })
   const m = meta && !('erro' in meta) ? meta : null

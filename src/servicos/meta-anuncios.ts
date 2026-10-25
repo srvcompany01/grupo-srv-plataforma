@@ -99,7 +99,24 @@ async function meta<T>(caminho: string, params: Record<string, string>): Promise
   }
 }
 
-const TODOS_STATUS = '["ACTIVE","PAUSED","DELETED","ARCHIVED","IN_PROCESS","WITH_ISSUES","CAMPAIGN_PAUSED"]'
+type DetalheConjunto = { id: string; destination_type?: string; campaign?: { effective_status?: string; objective?: string } }
+
+/**
+ * Destino do conjunto e status/objetivo da campanha, pelos ids (vale para pausados, arquivados e excluídos). A listagem
+ * `act/adsets` ou `act/campaigns` filtrada por DELETED/ARCHIVED falhava calada na Meta e deixava tudo sem destino.
+ * Lotes de 50; se um lote falhar, pede um a um.
+ */
+async function detalhesDosConjuntos(ids: string[]): Promise<Map<string, DetalheConjunto>> {
+  const r = new Map<string, DetalheConjunto>()
+  const fields = 'destination_type,campaign{effective_status,objective}'
+  for (let i = 0; i < ids.length; i += 50) {
+    const lote = ids.slice(i, i + 50)
+    const d = await meta<Record<string, DetalheConjunto>>('', { ids: lote.join(','), fields })
+    const itens = 'erro' in d ? await Promise.all(lote.map((id) => meta<DetalheConjunto>(id, { fields }))) : Object.values(d)
+    for (const x of itens) if (!('erro' in x)) r.set(x.id, x)
+  }
+  return r
+}
 
 export type LinhaConjunto = {
   mes: string | null
@@ -108,6 +125,9 @@ export type LinhaConjunto = {
   conjuntoId: string
   conjunto: string
   destino: string | null
+  /** effective_status atual da campanha ('' se a Meta não respondeu). */
+  campanhaStatus: string
+  objetivo: string
   gasto: number
   impressoes: number
   cliques: number
@@ -122,15 +142,13 @@ export type LinhaConjunto = {
  * `mensal` quebra por mês. Cache de 30 min.
  */
 export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, mensal = false): Promise<LinhaConjunto[] | { erro: string }> {
-  const [ins, conjs] = await Promise.all([
-    meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
+  const ins = await meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
       level: 'adset', fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(mensal ? { time_increment: 'monthly' } : {}),
-    }),
-    meta<{ data: { id: string; destination_type?: string }[] }>(`act_${contaId}/adsets`, { fields: 'id,destination_type', effective_status: TODOS_STATUS, limit: '500' }),
-  ])
+  })
   if ('erro' in ins) return ins
-  // ponytail: até 500 conjuntos por consulta; paginar se alguma conta passar disso.
-  const destino = new Map(('erro' in conjs ? [] : conjs.data).map((c) => [c.id, c.destination_type ?? null]))
+  // ponytail: até 500 linhas de insights por consulta; paginar se alguma conta passar disso.
+  const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))])
+  const destino = new Map([...det].map(([id, c]) => [id, c.destination_type ?? null]))
   return ins.data.map((d) => ({
     mes: mensal ? d.date_start.slice(0, 7) : null,
     campanhaId: d.campaign_id,
@@ -138,6 +156,8 @@ export async function conjuntosDoPeriodo(contaId: string, de: string, ate: strin
     conjuntoId: d.adset_id,
     conjunto: d.adset_name,
     destino: destino.get(d.adset_id) ?? null,
+    campanhaStatus: det.get(d.adset_id)?.campaign?.effective_status ?? '',
+    objetivo: det.get(d.adset_id)?.campaign?.objective ?? '',
     gasto: Number(d.spend ?? 0),
     impressoes: Number(d.impressions ?? 0),
     cliques: Number(d.clicks ?? 0),
@@ -183,13 +203,13 @@ export type CampanhaPeriodo = { id: string; nome: string; status: string; objeti
 export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<{ campanhas: CampanhaPeriodo[]; ativasSemGasto: string[] } | { erro: string }> {
   const [linhas, camps] = await Promise.all([
     conjuntosDoPeriodo(contaId, periodo.de, periodo.ate),
-    meta<{ data: { id: string; name: string; objective?: string; effective_status?: string }[] }>(`act_${contaId}/campaigns`, { fields: 'id,name,objective,effective_status', effective_status: '["ACTIVE","PAUSED","DELETED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]', limit: '300' }),
+    // Mesmo filtro de `estruturaMeta` (o que funciona na Meta); aqui só as ativas, para achar as que não entregaram.
+    meta<{ data: { id: string; name: string }[] }>(`act_${contaId}/campaigns`, { fields: 'id,name', effective_status: '["ACTIVE"]', limit: '300' }),
   ])
   if ('erro' in linhas) return linhas
-  const info = new Map(('erro' in camps ? [] : camps.data).map((c) => [c.id, c]))
   const por = new Map<string, CampanhaPeriodo>()
   for (const l of linhas) {
-    const c = por.get(l.campanhaId) ?? { id: l.campanhaId, nome: l.campanha, status: info.get(l.campanhaId)?.effective_status ?? '', objetivo: info.get(l.campanhaId)?.objective ?? '', gasto: 0, cliquesLink: 0, impressoes: 0, leads: { formularios: 0, conversas: 0, site: 0 }, destinos: [] }
+    const c = por.get(l.campanhaId) ?? { id: l.campanhaId, nome: l.campanha, status: l.campanhaStatus, objetivo: l.objetivo, gasto: 0, cliquesLink: 0, impressoes: 0, leads: { formularios: 0, conversas: 0, site: 0 }, destinos: [] }
     c.gasto += l.gasto
     c.cliquesLink += l.cliquesLink
     c.impressoes += l.impressoes
@@ -198,7 +218,7 @@ export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<Peri
     por.set(l.campanhaId, c)
   }
   const campanhas = [...por.values()].filter((c) => c.gasto > 0).sort((a, b) => b.gasto - a.gasto)
-  const ativasSemGasto = ('erro' in camps ? [] : camps.data).filter((c) => c.effective_status === 'ACTIVE' && !(por.get(c.id)?.gasto)).map((c) => c.name)
+  const ativasSemGasto = ('erro' in camps ? [] : camps.data).filter((c) => !(por.get(c.id)?.gasto)).map((c) => c.name)
   return { campanhas, ativasSemGasto }
 }
 
