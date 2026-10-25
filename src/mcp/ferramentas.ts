@@ -1054,6 +1054,32 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'listar_relatorios_cliente',
+    descricao: 'Lista os relatórios já gerados de um cliente, com id, URL, período, versão do cálculo, data de geração e se está desatualizado ou revogado.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), limite: z.number().int().min(1).max(50).default(20) },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const lista = await (await import('@/servicos/relatorio-compartilhado')).relatoriosDoCliente(sb, cliente, a.limite)
+      return lista.map((r) => ({ id: r.id, url: r.url, de: r.de, ate: r.ate, versao: r.versao, geradoEm: r.em, automatico: r.automatico, desatualizado: r.desatualizado, revogado: r.revogado }))
+    },
+  }),
+
+  definir({
+    nome: 'revogar_relatorio_cliente',
+    descricao: 'Revoga um relatório incorreto pelo id ou URL pública. O link deixa de mostrar os números e passa a informar que foi substituído. Só admin e gestor.',
+    escrita: true,
+    entrada: { id: id('Id de listar_relatorios_cliente').optional(), url: z.string().url().max(500).optional() },
+    executar: async ({ sb, papel, userId }, a) => {
+      if (papel !== 'admin' && papel !== 'gestor') throw new Error('Só admin e gestor revogam relatórios.')
+      if (!!a.id === !!a.url) throw new Error('Informe somente id ou url.')
+      await (await import('@/servicos/relatorio-compartilhado')).revogarRelatorio(sb, a.id ?? a.url!, userId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
     nome: 'relatorio_clientes_trabalhados',
     descricao: 'Ranking de em quais clientes a pessoa conectada trabalhou (botão "trabalhei hoje" da galeria) nos últimos 7, 14 ou 30 dias: dias trabalhados por cliente, último dia, saudável (≥ 2 dias por semana) ou precisando de atenção, e quantos clientes por dia.',
     escrita: false,

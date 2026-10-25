@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, Users } from 'lucide-react'
+import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, TriangleAlert, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -49,8 +49,25 @@ function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlatafo
 
 /** Relatório público que a agência envia ao cliente (link com token). Mostra só a foto guardada dos números. */
 export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
-  const r = await relatorioPorToken((await params).token)
-  if (!r) notFound()
+  const leitura = await relatorioPorToken((await params).token)
+  if (!leitura) notFound()
+  const r = leitura.dados
+  if (leitura.substituido) return (
+    <main className="min-h-dvh bg-fundo px-4 py-10">
+      <div className="mx-auto max-w-xl space-y-5 rounded-2xl border border-aviso/40 bg-white p-6 text-center shadow-sm">
+        <div className="flex justify-center"><Marca tamanho="h-12 w-12 text-base" /></div>
+        <div>
+          <p className="eyebrow">Relatório de resultados</p>
+          <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em] text-[#1d6fe0]">{r.cliente}</h1>
+        </div>
+        <div className="rounded-xl border border-aviso/40 bg-aviso-fundo/50 p-4">
+          <TriangleAlert className="mx-auto h-7 w-7 text-aviso-forte" />
+          <h2 className="mt-2 text-corpo font-bold text-texto">Este relatório foi substituído</h2>
+          <p className="mt-1 text-rotulo text-texto-2">Os números antigos foram bloqueados para evitar o envio de informações desatualizadas. Solicite à Grupo SRV o novo link deste período.</p>
+        </div>
+      </div>
+    </main>
+  )
   const a = r.anuncios
   return (
     <main className="min-h-dvh bg-fundo px-4 py-6 sm:py-10">

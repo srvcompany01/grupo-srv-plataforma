@@ -185,10 +185,11 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
               {data(r.de)} a {data(r.ate)}
               {r.automatico && <span className="ml-1.5 rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-3">automático</span>}
               {r.desatualizado && <span className="ml-1.5 rounded-full bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title="Gerado com a contagem antiga de leads da Meta (somava conversa e lead da mesma pessoa): gere de novo antes de enviar.">desatualizado</span>}
+              {r.revogado && <span className="ml-1.5 rounded-full bg-perigo-fundo px-1.5 text-micro font-semibold text-perigo-forte">revogado</span>}
               {r.avisos.length > 0 && <span className="ml-1.5 rounded-full bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title={r.avisos.join('\n')}>{r.avisos.length} aviso(s)</span>}
             </span>
             <span className="text-legenda text-texto-3">{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
-            <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>
+            {!r.revogado && <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>}
             <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline"><ExternalLink className="h-3.5 w-3.5" /> Abrir</a>
           </li>
         ))}

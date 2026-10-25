@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gastoDeMarca } from '@/dominio/anuncios-meta'
-import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -11,6 +11,14 @@ const base: RelatorioCompartilhado = {
 }
 
 describe('relatório para o cliente', () => {
+  it('C5: bloqueia versão antiga ou revogada e aceita id/URL para revogação', () => {
+    expect(relatorioDeveSerSubstituido(undefined)).toBe(true)
+    expect(relatorioDeveSerSubstituido(2)).toBe(false)
+    expect(relatorioDeveSerSubstituido(2, true)).toBe(true)
+    expect(referenciaRelatorio('https://app.gruposrv.com.br/r/PX7wAYZ3YpA28oN2v0yHoIc8iWh75V8e')).toEqual({ token: 'PX7wAYZ3YpA28oN2v0yHoIc8iWh75V8e' })
+    expect(referenciaRelatorio('39f033be-10fa-4315-aeb6-6db5025ffbb5')).toEqual({ id: '39f033be-10fa-4315-aeb6-6db5025ffbb5' })
+  })
+
   it('texto do WhatsApp com anúncios, Instagram, Google e o link', () => {
     const t = textoWhatsapp(base, 'https://app.gruposrv.com.br/r/abc')
     expect(t).toMatch(/Aurum Belém de 01\/10 a 31\/10/)

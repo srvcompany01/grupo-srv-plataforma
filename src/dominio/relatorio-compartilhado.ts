@@ -8,6 +8,8 @@ import { totalLeads, type Leads } from './performance'
 
 /** 2 = leads contados por destino (sem somar conversa e "lead" da mesma pessoa) e alcance orgânico separado. */
 export const VERSAO_RELATORIO = 2
+/** Versões anteriores contavam o mesmo lead mais de uma vez e não podem continuar públicas. */
+export const VERSAO_MINIMA_PUBLICA = 2
 
 export type RelatorioCompartilhado = {
   /** Ausente nos relatórios de antes da versão 2 (contagem antiga de leads). */
@@ -93,6 +95,16 @@ export function campanhaGoogleRelatorio(c: { nome: string; status: string; custo
 }
 
 export const TOKEN_RELATORIO = /^[A-Za-z0-9]{32}$/
+
+export const relatorioDeveSerSubstituido = (versao: number | undefined, revogado = false) => revogado || (versao ?? 1) < VERSAO_MINIMA_PUBLICA
+
+/** Aceita o UUID interno ou uma URL/token público, sem confundir ids com tokens. */
+export function referenciaRelatorio(valor: string): { id?: string; token?: string } | null {
+  const v = valor.trim()
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)) return { id: v }
+  const token = v.match(/(?:^|\/r\/)([A-Za-z0-9]{32})(?:[/?#]|$)/)?.[1]
+  return token && TOKEN_RELATORIO.test(token) ? { token } : null
+}
 
 export const leadsDoRelatorio = (a: NonNullable<RelatorioCompartilhado['anuncios']>) => a.conversas + a.formularios + (a.leadsSite ?? 0) + Math.round(a.conversoesGoogle)
 

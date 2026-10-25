@@ -54,9 +54,9 @@ export type Database = {
         Relationships: []
       }
       client_reports: {
-        Row: { id: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico: boolean; created_by: string | null; created_at: string }
-        Insert: { id?: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico?: boolean; created_by?: string | null; created_at?: string }
-        Update: { id?: string; token?: string; client_id?: string; de?: string; ate?: string; dados?: Json; automatico?: boolean; created_by?: string | null; created_at?: string }
+        Row: { id: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico: boolean; created_by: string | null; created_at: string; revoked_at: string | null; revoked_by: string | null }
+        Insert: { id?: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico?: boolean; created_by?: string | null; created_at?: string; revoked_at?: string | null; revoked_by?: string | null }
+        Update: { id?: string; token?: string; client_id?: string; de?: string; ate?: string; dados?: Json; automatico?: boolean; created_by?: string | null; created_at?: string; revoked_at?: string | null; revoked_by?: string | null }
         Relationships: []
       }
       gmn_monitors: {

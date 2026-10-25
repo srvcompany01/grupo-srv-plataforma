@@ -3,7 +3,7 @@ import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDiverge
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -102,24 +102,38 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   return { id: data.id, url, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, whatsappTelefone: telefoneComoWhatsapp ? linkWhatsapp(texto, telefoneComoWhatsapp) : null, avisos, dados }
 }
 
-export type RelatorioGerado = { id: string; url: string; de: string; ate: string; automatico: boolean; em: string; texto: string; whatsapp: string | null; avisos: string[]; desatualizado: boolean }
+export type RelatorioGerado = { id: string; url: string; de: string; ate: string; automatico: boolean; em: string; texto: string; whatsapp: string | null; avisos: string[]; versao: number; desatualizado: boolean; revogado: boolean }
 
 export async function relatoriosDoCliente(sb: Supabase, c: Pick<Cliente, 'id' | 'whatsapp'>, limite = 10): Promise<RelatorioGerado[]> {
-  const { data, error } = await sb.from('client_reports').select('id, token, de, ate, automatico, created_at, dados').eq('client_id', c.id).order('created_at', { ascending: false }).limit(limite)
+  const { data, error } = await sb.from('client_reports').select('id, token, de, ate, automatico, created_at, dados, revoked_at').eq('client_id', c.id).order('created_at', { ascending: false }).limit(limite)
   if (error) return []
   return data.map((r) => {
     const url = urlDoRelatorio(r.token)
     const d = r.dados as unknown as RelatorioCompartilhado
     const texto = textoWhatsapp(d, url)
-    return { id: r.id, url, de: r.de, ate: r.ate, automatico: r.automatico, em: r.created_at, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, avisos: d.avisosInternos ?? [], desatualizado: (d.versao ?? 1) < VERSAO_RELATORIO }
+    const versao = d.versao ?? 1
+    return { id: r.id, url, de: r.de, ate: r.ate, automatico: r.automatico, em: r.created_at, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, avisos: d.avisosInternos ?? [], versao, desatualizado: versao < VERSAO_RELATORIO, revogado: !!r.revoked_at }
   })
 }
 
 /** Leitura pública pelo token (página /r/<token>): só os dados guardados, nada além. */
-export async function relatorioPorToken(token: string): Promise<RelatorioCompartilhado | null> {
+export async function relatorioPorToken(token: string): Promise<{ dados: RelatorioCompartilhado; substituido: boolean } | null> {
   if (!TOKEN_RELATORIO.test(token)) return null
-  const { data } = await criarClienteAdmin().from('client_reports').select('dados').eq('token', token).maybeSingle()
-  return (data?.dados as unknown as RelatorioCompartilhado) ?? null
+  const { data } = await criarClienteAdmin().from('client_reports').select('dados, revoked_at').eq('token', token).maybeSingle()
+  if (!data) return null
+  const dados = data.dados as unknown as RelatorioCompartilhado
+  return { dados, substituido: relatorioDeveSerSubstituido(dados.versao, !!data.revoked_at) }
+}
+
+/** Revoga sem apagar: o link continua explicando que foi substituído, mas não mostra os números antigos. */
+export async function revogarRelatorio(sb: Supabase, valor: string, userId: string): Promise<void> {
+  const ref = referenciaRelatorio(valor)
+  if (!ref) throw new Error('Informe o id do relatório ou a URL pública /r/<token>.')
+  let q = sb.from('client_reports').update({ revoked_at: new Date().toISOString(), revoked_by: userId })
+  q = ref.id ? q.eq('id', ref.id) : q.eq('token', ref.token!)
+  const { data, error } = await q.select('id')
+  if (error) throw error
+  if (!data.length) throw new Error('Relatório não encontrado, já revogado ou sem permissão.')
 }
 
 /** Rotina do dia 1: relatório do mês anterior de cada cliente ativo; avisa a equipe no sino para enviar. */
