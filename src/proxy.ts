@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { rotaPublica } from '@/dominio/acesso'
+import { caminhoInternoDaBio, hostEhDaBio } from '@/dominio/bio'
 import { opcoesRealtime } from '@/infra/supabase/realtime'
 import { COOKIE_SESSAO, sessaoValida } from '@/infra/sessao'
 
@@ -8,6 +9,15 @@ import { COOKIE_SESSAO, sessaoValida } from '@/infra/sessao'
 // Papel (equipe × cliente) é decidido nas páginas (exigirEquipe/exigirCliente); a garantia é a RLS.
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname
+
+  // Domínio dedicado às páginas da bio (BIO_DOMINIO): /<cliente> abre a página; qualquer outro caminho é 404 em branco.
+  if (hostEhDaBio(req.headers.get('host'), process.env.BIO_DOMINIO)) {
+    const interno = caminhoInternoDaBio(caminho)
+    if (!interno) return new NextResponse(null, { status: 404 })
+    const destino = req.nextUrl.clone()
+    destino.pathname = interno
+    return NextResponse.rewrite(destino)
+  }
 
   // App antigo de aprovação (até a Fase 1b): senha única em cookie próprio.
   if (caminho === '/admin' || caminho.startsWith('/admin/')) {

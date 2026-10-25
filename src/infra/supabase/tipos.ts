@@ -36,9 +36,21 @@ export type Database = {
         ]
       }
       bio_clicks: {
-        Row: { client_id: string; day: string; clicks: number }
-        Insert: { client_id: string; day: string; clicks?: number }
-        Update: { client_id?: string; day?: string; clicks?: number }
+        Row: { client_id: string; day: string; clicks: number; origem: string }
+        Insert: { client_id: string; day: string; clicks?: number; origem?: string }
+        Update: { client_id?: string; day?: string; clicks?: number; origem?: string }
+        Relationships: []
+      }
+      bio_botao_clicks: {
+        Row: { client_id: string; botao: string; day: string; clicks: number }
+        Insert: { client_id: string; botao: string; day: string; clicks?: number }
+        Update: { client_id?: string; botao?: string; day?: string; clicks?: number }
+        Relationships: []
+      }
+      bio_links: {
+        Row: { id: string; client_id: string; rotulo: string; url: string; position: number; created_at: string }
+        Insert: { id?: string; client_id: string; rotulo: string; url: string; position?: number; created_at?: string }
+        Update: { id?: string; client_id?: string; rotulo?: string; url?: string; position?: number; created_at?: string }
         Relationships: []
       }
       lead_confirmations: {
@@ -376,6 +388,7 @@ export type Database = {
           meta_ad_account_id: string | null
           whatsapp: string | null
           bio_slug: string | null
+          bio_logo: string | null
           google_place_id: string | null
           bio_mensagem: string
           google_ads_customer_id: string | null
@@ -403,6 +416,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           bio_slug?: string | null
+          bio_logo?: string | null
           google_place_id?: string | null
           bio_mensagem?: string
           google_ads_customer_id?: string | null
@@ -430,6 +444,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           bio_slug?: string | null
+          bio_logo?: string | null
           google_place_id?: string | null
           bio_mensagem?: string
           google_ads_customer_id?: string | null
@@ -1801,6 +1816,9 @@ export type Database = {
       arquivos_a_arquivar: { Args: { p_antecedencia_dias?: number }; Returns: { tipo: string; id: string; chave: string; bytes: number; nome: string; vence_em: string }[] }
       uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      bio_pagina: { Args: { p_slug: string }; Returns: { nome: string; logo: string | null; whatsapp: string | null; mensagem: string; links: Json }[] }
+      bio_visita: { Args: { p_slug: string; p_origem: string }; Returns: undefined }
+      bio_botao: { Args: { p_slug: string; p_botao: string; p_contar: boolean }; Returns: { url: string | null; whatsapp: string | null; mensagem: string | null }[] }
       registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
       blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }
       blog_registrar_eventos: { Args: { p_slug: string; p_eventos: string[] }; Returns: undefined }

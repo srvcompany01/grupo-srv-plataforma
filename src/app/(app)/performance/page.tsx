@@ -7,12 +7,15 @@ import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { dataDeHoje } from '@/dominio/filtros'
 import { tomVariacao } from '@/dominio/insights'
-import { indicadores, lerMes, mesAnterior, mesesAte, rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
+import { indicadores, intervaloDoMes, lerMes, mesAnterior, mesesAte, rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoSecundario, campo } from '@/lib/ui'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { situacaoGoogle } from '@/servicos/google-agencia'
+import { urlDaBio } from '@/dominio/bio'
+import { urlLeitura } from '@/infra/r2'
+import { paginaBioDoCliente, resumoDaBio } from '@/servicos/bio'
 import { historicoDoCliente, investido, leadsConfirmadosDoMes, leadsPagos, linkBioDoCliente, type MesPerformance } from '@/servicos/performance'
 import { ConfirmarLead, LancarMes, LinkBio, RemoverLead } from './Formularios'
 
@@ -22,7 +25,6 @@ const reais = (n: number | null) => (n === null ? '—' : n.toLocaleString('pt-B
 const inteiro = (n: number | null) => (n === null ? '—' : Math.round(n).toLocaleString('pt-BR'))
 const vezes = (n: number | null) => (n === null ? '—' : `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}x`)
 const pct = (n: number | null) => (n === null ? '—' : `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
-const URL_BIO = 'https://www.gruposrv.com.br/l/'
 
 const numerosDe = (m: MesPerformance) => indicadores({ investido: investido(m), leadsPagos: leadsPagos(m), leadsOrganicos: m.leadsConfirmados, faturamento: m.faturamento, vendas: m.vendas })
 
@@ -80,7 +82,9 @@ function kpis(m: MesPerformance, ant: MesPerformance | null): Numero[] {
 async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: string; hoje: string }) {
   const sb = await criarClienteServidor()
   const meses = mesesAte(mes, 12)
-  const [google, bio, leads] = await Promise.all([situacaoGoogle(), linkBioDoCliente(sb, cliente.id), leadsConfirmadosDoMes(sb, cliente.id, mes, hoje)])
+  const [google, bio, leads, paginaBio] = await Promise.all([situacaoGoogle(), linkBioDoCliente(sb, cliente.id), leadsConfirmadosDoMes(sb, cliente.id, mes, hoje), paginaBioDoCliente(sb, cliente.id)])
+  const intervaloMes = intervaloDoMes(mes, hoje)
+  const [resumoBio, logoBio] = await Promise.all([resumoDaBio(sb, cliente.id, intervaloMes.de, intervaloMes.ate), paginaBio.logo ? urlLeitura(paginaBio.logo).catch(() => null) : null])
   const h = await historicoDoCliente(sb, cliente, meses, hoje, google.conectado)
   const atual = h.meses[h.meses.length - 1]
   const ant = h.meses.find((m) => m.mes === mesAnterior(mes)) ?? null
@@ -109,8 +113,17 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
         <Modulo icone={BadgeDollarSign} titulo="Lançar o mês" descricao={`Faturamento e vendas de ${rotuloMesLongo(mes)} (só a equipe vê)`}>
           <LancarMes key={mes} clienteId={cliente.id} mes={mes} faturamento={atual.faturamento} vendas={atual.vendas} notas={atual.notas} />
         </Modulo>
-        <Modulo icone={Link2} titulo="Link da bio" descricao="Coloque no Instagram do cliente: cada clique é contado e abre o WhatsApp com a mensagem pronta">
-          <LinkBio clienteId={cliente.id} url={bio?.slug ? `${URL_BIO}${bio.slug}` : null} mensagem={bio?.mensagem ?? 'Olá! Vim pelo Instagram 😊'} whatsapp={bio?.whatsapp ?? null} />
+        <Modulo icone={Link2} titulo="Link da bio" descricao="Página simples com a logo do cliente e os botões dele (sem a marca da agência): cada visita e cada toque são contados">
+          <LinkBio
+            clienteId={cliente.id}
+            url={bio?.slug ? urlDaBio(bio.slug) : null}
+            urls={bio?.slug ? [{ rotulo: 'Link da bio', url: urlDaBio(bio.slug) }, { rotulo: 'Stories', url: urlDaBio(bio.slug, 'story') }, { rotulo: 'Anúncios', url: urlDaBio(bio.slug, 'anuncio') }] : []}
+            mensagem={bio?.mensagem ?? 'Olá! Vim pelo Instagram 😊'}
+            whatsapp={bio?.whatsapp ?? null}
+            logo={logoBio}
+            links={paginaBio.links}
+            resumo={resumoBio}
+          />
         </Modulo>
       </div>
 
