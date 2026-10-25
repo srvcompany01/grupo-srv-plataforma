@@ -25,10 +25,12 @@ import {
   Wallet,
   TrendingUp,
   MapPin,
+  FileBarChart,
+  Shapes,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { createContext, useContext, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
@@ -60,6 +62,7 @@ function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'insights', href: '/insights', rotulo: 'Insights', curto: 'Insights', Icone: ChartNoAxesCombined },
     { id: 'gmn', href: '/gmn', rotulo: 'Google Meu Negócio', curto: 'GMN', Icone: MapPin },
     { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Result.', Icone: TrendingUp },
+    { id: 'relatorios', href: '/relatorios', rotulo: 'Relatórios', curto: 'Relatórios', Icone: FileBarChart },
     { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
     { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
     { id: 'time', href: '/time', rotulo: 'Time', curto: 'Time', Icone: UsersRound },
@@ -80,28 +83,82 @@ function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
 const estaEm = (caminho: string, href: string) => caminho === href || caminho.startsWith(`${href}/`)
 
 /** Faixa estreita (desktop) com os atalhos dos módulos: ícone e o nome embaixo, compacto. Ordem por arrastar. */
-export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [] }: Pick<PropsPainel, 'papel' | 'chatNaoLidas' | 'ordemInicio'>) {
+/**
+ * Grupos da faixa de ícones: os de uso diário ficam soltos; os outros abrem um menu ao lado. Módulo novo entra no
+ * grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto no fim.
+ */
+const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
+  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'relatorios', 'agendamentos', 'blog'] },
+  { id: 'gestao', rotulo: 'Gestão', curto: 'Gestão', Icone: LayoutDashboard, itens: ['painel', 'clientes', 'projetos', 'time', 'reunioes', 'financeiro'] },
+  { id: 'ferramentas', rotulo: 'Ferramentas', curto: 'Ferram.', Icone: Shapes, itens: ['documentos', 'quadros', 'funis', 'formularios'] },
+]
+const SOLTOS_NO_TOPO = ['tarefas', 'chat', 'agenda']
+
+export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'papel' | 'chatNaoLidas' | 'ordemInicio'>) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
+  // O menu vale só para a página em que foi aberto: navegar já fecha, sem efeito.
+  const [abertoEm, setAbertoEm] = useState<{ id: string; caminho: string } | null>(null)
+  const aberto = abertoEm?.caminho === caminho ? abertoEm.id : null
+  const setAberto = (id: string | null) => setAbertoEm(id ? { id, caminho } : null)
+  const faixa = useRef<HTMLElement>(null)
   // "/config" não acende em "/config/formularios" (que tem o seu próprio atalho).
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
+  const porId = new Map(atalhos.map((a) => [a.id, a]))
+  const agrupados = new Set(GRUPOS_FAIXA.flatMap((g) => g.itens))
+  const soltosFim = atalhos.filter((a) => !SOLTOS_NO_TOPO.includes(a.id) && !agrupados.has(a.id))
+  // Fecha ao clicar fora ou com Esc.
+  useEffect(() => {
+    if (!aberto) return
+    const fora = (e: MouseEvent) => { if (!faixa.current?.contains(e.target as Node)) setAbertoEm(null) }
+    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setAbertoEm(null) }
+    document.addEventListener('mousedown', fora)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
+  }, [aberto])
+  const botao = 'relative flex w-full flex-col items-center gap-0.5 rounded-md px-0.5 py-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
+  const solto = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => (
+    <Link key={id} href={href} title={rotulo} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botao} ${ativoEm(href) ? 'bg-lat-ativo text-lat-fg' : ''}`}>
+      <Icone className="h-4 w-4" />
+      <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{curto}</span>
+      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
+    </Link>
+  )
   return (
-    <nav aria-label="Módulos" className="sticky top-14 z-20 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 overflow-y-auto border-r border-lat-borda bg-lat-bg px-1 py-1.5 md:block">
-      <ListaOrdenavel
-        className="space-y-0.5"
-        cookie={COOKIE_ORDEM_INICIO}
-        ordemInicial={ordemInicio}
-        itens={atalhos.map(({ id, href, rotulo, curto, Icone, contador }) => ({
-          id,
-          no: (
-            <Link href={href} draggable={false} title={rotulo} aria-current={ativoEm(href) ? 'page' : undefined} className={`relative flex flex-col items-center gap-0.5 rounded-md px-0.5 py-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg ${ativoEm(href) ? 'bg-lat-ativo text-lat-fg' : ''}`}>
-              <Icone className="h-4 w-4" />
-              <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{curto}</span>
-              {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
-            </Link>
-          ),
-        }))}
-      />
+    <nav ref={faixa} aria-label="Módulos" className="sticky top-14 z-30 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 border-r border-lat-borda bg-lat-bg px-1 py-1.5 md:block">
+      <div className="space-y-0.5">
+        {SOLTOS_NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a).map(solto)}
+        <div className="mx-2 my-1.5 border-t border-lat-borda" />
+        {GRUPOS_FAIXA.map((g) => {
+          const itens = g.itens.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
+          if (!itens.length) return null
+          const ativoNoGrupo = itens.some((a) => ativoEm(a.href))
+          const atual = itens.find((a) => ativoEm(a.href))
+          const Icone = atual?.Icone ?? g.Icone
+          return (
+            <div key={g.id} className="relative">
+              <button type="button" onClick={() => setAberto(aberto === g.id ? null : g.id)} aria-expanded={aberto === g.id} aria-haspopup="menu" title={g.rotulo} className={`${botao} ${ativoNoGrupo || aberto === g.id ? 'bg-lat-ativo text-lat-fg' : ''}`}>
+                <Icone className="h-4 w-4" />
+                <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{atual?.curto ?? g.curto}</span>
+                <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-lat-3" aria-hidden />
+              </button>
+              {aberto === g.id && (
+                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-56 rounded-xl border border-borda bg-white p-1.5 shadow-xl">
+                  <p className="px-2 pb-1 pt-0.5 text-micro font-semibold uppercase tracking-rotulo text-texto-3">{g.rotulo}</p>
+                  {itens.map(({ id, href, rotulo, Icone: I }) => (
+                    <Link key={id} href={href} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-rotulo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-fundo font-semibold text-texto' : 'text-texto-2'}`}>
+                      <I className="h-4 w-4 shrink-0" />
+                      {rotulo}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {soltosFim.length > 0 && <div className="mx-2 my-1.5 border-t border-lat-borda" />}
+        {soltosFim.map(solto)}
+      </div>
     </nav>
   )
 }
