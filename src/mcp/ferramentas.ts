@@ -193,6 +193,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Controle de anúncios: estrutura_anuncios_cliente mostra campanhas › conjuntos › anúncios (Meta) e campanhas (Google Ads) com ids, status, orçamento, gasto e leads, mais os pedidos pendentes e o histórico. pausar_anuncio pausa na hora (só admin e gestor). Ativar e mudar orçamento NUNCA são diretos: propor_alteracao_anuncio cria um pedido que admin ou gestor aprova na aba Anúncios (avisa no sino). Para criar na Meta: o criativo precisa estar na biblioteca do cliente (a equipe sobe na aba Anúncios → Criativos; veja listar_criativos_cliente); monte o público com buscar_locais_meta e buscar_interesses_meta; para formulário de cadastro use listar_formularios_meta; então criar_campanha_meta (campanha + conjunto + anúncios) ou adicionar_anuncio_meta (criativo novo num conjunto existente). Tudo nasce PAUSADO; para ir ao ar, proponha ativar. No Google Ads: buscar_locais_google e ideias_palavras_google (volume de buscas e lance) ajudam a montar criar_campanha_google_pesquisa (orçamento, locais, palavras com correspondência, negativas e anúncio responsivo com 3 a 15 títulos de até 30 caracteres e 2 a 4 descrições de até 90), que nasce PAUSADA. Sempre confirme com a pessoa o cliente, o objetivo, o orçamento, o público e os textos antes de criar. Não há exclusão por aqui.',
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
+        'GMN (Google Meu Negócio, aba GMN): pelos dados PÚBLICOS do Google (Places API), sem depender da API do Business Profile. Primeiro ligue o lugar do cliente no Google (gmn_buscar_lugares + definir_lugar_google_cliente). gmn_cliente traz o perfil, a nota de saúde de 0 a 100 (Fraco/Razoável/Bom por item), as avaliações em destaque, a evolução e o link de avaliação. gmn_geogrid roda a palavra-chave numa grade ao redor do endereço e guarda a posição em cada ponto (próxima da do Maps, não idêntica); gmn_varreduras lê as varreduras com os concorrentes do top 3. Prospecção: gmn_buscar_lugares (segmento + cidade) e gmn_analisar_lugar (pré-análise e texto de abordagem).',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
@@ -883,6 +884,96 @@ export const FERRAMENTAS: Ferramenta[] = [
     escrita: true,
     entrada: { postId: id('Post (id de posts_publicados)') },
     executar: async ({ sb }, a) => (await import('@/servicos/insights-post')).analisarPost(sb, a.postId),
+  }),
+
+  definir({
+    nome: 'gmn_buscar_lugares',
+    descricao: 'Procura negócios no Google pelo texto (ex.: "Aurum Joalheria Belém" para achar o lugar de um cliente, ou "clínica odontológica em Belém" para prospectar). Devolve id do lugar, nome, endereço, categoria, nota, avaliações, telefone e site.',
+    escrita: false,
+    entrada: { busca: z.string().min(3).max(120) },
+    executar: async (_ctx, a) => (await import('@/servicos/places')).buscarLugares(a.busca),
+  }),
+
+  definir({
+    nome: 'definir_lugar_google_cliente',
+    descricao: 'Liga o lugar do Google (id de gmn_buscar_lugares) ao cliente; null desliga. É o que habilita a aba GMN, o geogrid e o card de avaliação desse cliente.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), placeId: z.string().regex(/^[A-Za-z0-9_-]{10,300}$/).nullable() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/places')).definirLugarDoCliente(sb, a.clienteId, a.placeId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'gmn_cliente',
+    descricao: 'Perfil do cliente no Google (dados públicos): nome, nota, avaliações, categoria, contato, horário, avaliações em destaque, a análise de saúde (nota de 0 a 100 e cada item como bom/atencao/ruim, comparando com os concorrentes do último geogrid), a evolução diária de nota e avaliações e o link que abre a tela de avaliar.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!cliente.googlePlaceId) throw new Error('O cliente não tem o lugar do Google ligado: use gmn_buscar_lugares e definir_lugar_google_cliente.')
+      const p = await import('@/servicos/places')
+      const { linkAvaliacao } = await import('@/dominio/gmn')
+      const [s, evolucao] = await Promise.all([p.saudeDoCliente(sb, cliente.googlePlaceId, dataDeHoje(new Date()), cliente.id), p.evolucaoDoPerfil(sb, cliente.id)])
+      return { cliente: cliente.nome, perfil: p.detalhesParaIA(s.detalhes), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, evolucao, linkAvaliacao: linkAvaliacao(cliente.googlePlaceId) }
+    },
+  }),
+
+  definir({
+    nome: 'gmn_geogrid',
+    descricao: 'Roda o geogrid: busca a palavra-chave em cada ponto de uma grade (3x3 a 9x9) ao redor do endereço do cliente e guarda a posição dele em cada ponto (até 60; null = fora). Devolve posição média, % no top 3, % em que aparece e os concorrentes mais frequentes. Sem custo no Google (busca só por ids). Pode levar até 1 ou 2 minutos em 9x9.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      palavra: z.string().min(2).max(80).describe('Como o cliente busca: ex.: joalheria, dentista perto de mim'),
+      grade: z.union([z.literal(3), z.literal(5), z.literal(7), z.literal(9)]).default(5),
+      raioKm: z.number().positive().max(50).default(3).describe('Do endereço até a borda da grade'),
+    },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente?.googlePlaceId) throw new Error('O cliente não tem o lugar do Google ligado.')
+      const p = await import('@/servicos/places')
+      const { concorrentesDaGrade } = await import('@/dominio/gmn')
+      const v = await p.rodarGeogrid(sb, cliente, cliente.googlePlaceId, a.palavra, a.grade, a.raioKm)
+      const top = concorrentesDaGrade(v.pontos, cliente.googlePlaceId, 5)
+      const nomes = await p.resumoDosLugares(sb, top.map((t) => t.id))
+      return { varreduraId: v.id, palavra: v.palavra, metricas: v.metricas, concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })), pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })) }
+    },
+  }),
+
+  definir({
+    nome: 'gmn_varreduras',
+    descricao: 'Varreduras do geogrid do cliente (mais recentes primeiro): palavra, grade, raio, data e métricas. Com varreduraId, traz também a posição em cada ponto e os concorrentes do top 3.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), varreduraId: id('Uma varredura para detalhar').optional() },
+    executar: async ({ sb }, a) => {
+      const p = await import('@/servicos/places')
+      const lista = await p.varreduras(sb, a.clienteId)
+      if (!a.varreduraId) return lista.map((v) => ({ id: v.id, palavra: v.palavra, grade: v.grade, raioKm: v.raioKm, em: v.em, metricas: v.metricas }))
+      const v = lista.find((x) => x.id === a.varreduraId)
+      if (!v) throw new Error('Varredura não encontrada.')
+      const cliente = await buscarCliente(sb, a.clienteId)
+      const { concorrentesDaGrade } = await import('@/dominio/gmn')
+      const top = concorrentesDaGrade(v.pontos, cliente?.googlePlaceId ?? '', 5)
+      const nomes = await p.resumoDosLugares(sb, top.map((t) => t.id))
+      return { ...v, pontos: v.pontos.map((x) => ({ lat: Math.round(x.lat * 1e5) / 1e5, lng: Math.round(x.lng * 1e5) / 1e5, posicao: x.posicao })), concorrentes: top.map((t) => ({ nome: nomes.get(t.id)?.nome ?? t.id, nota: nomes.get(t.id)?.nota ?? null, avaliacoes: nomes.get(t.id)?.avaliacoes ?? null, vezesNoTop3: t.vezes })) }
+    },
+  }),
+
+  definir({
+    nome: 'gmn_analisar_lugar',
+    descricao: 'Pré-análise de QUALQUER negócio no Google (id de gmn_buscar_lugares): perfil público, nota de saúde de 0 a 100 com os itens, e um texto pronto de abordagem comercial com os pontos fracos.',
+    escrita: false,
+    entrada: { placeId: z.string().regex(/^[A-Za-z0-9_-]{10,300}$/) },
+    executar: async ({ sb }, a) => {
+      const p = await import('@/servicos/places')
+      const { analisarSaude, textoProposta } = await import('@/dominio/gmn')
+      const d = await p.detalhesDoLugar(sb, a.placeId)
+      const s = analisarSaude(d.perfil, dataDeHoje(new Date()))
+      return { perfil: p.detalhesParaIA(d), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, textoAbordagem: textoProposta(d.nome, s) }
+    },
   }),
 
   definir({

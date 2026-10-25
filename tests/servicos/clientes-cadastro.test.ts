@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { atualizarCadastro, conexoesDoCliente, type Cliente } from '@/servicos/clientes-plataforma'
 
-const cliente = (extra: Partial<Cliente> = {}): Cliente => ({ id: 'c', nome: 'Aurum', cor: '#000', razaoSocial: null, documento: null, email: null, telefone: null, status: 'ativo', interno: false, posicaoGaleria: null, metaPaginaId: '288286987700968', metaContaId: '123456789', whatsapp: null, googleAdsId: null, googlePerfil: null, googlePerfilNome: null, ...extra })
+const cliente = (extra: Partial<Cliente> = {}): Cliente => ({ id: 'c', nome: 'Aurum', cor: '#000', razaoSocial: null, documento: null, email: null, telefone: null, status: 'ativo', interno: false, posicaoGaleria: null, metaPaginaId: '288286987700968', metaContaId: '123456789', whatsapp: null, googleAdsId: null, googlePerfil: null, googlePerfilNome: null, googlePlaceId: null, ...extra })
 
 describe('P2-1: cadastro do cliente pelo MCP', () => {
   it('mostra o que está ligado e o que falta', () => {

@@ -47,6 +47,24 @@ export type Database = {
         Update: { id?: string; client_id?: string; origem?: string; day?: string; observacao?: string; created_by?: string | null; created_at?: string }
         Relationships: []
       }
+      google_places: {
+        Row: { id: string; nome: string; endereco: string; nota: number | null; avaliacoes: number | null; lat: number | null; lng: number | null; dados: Json; atualizado_em: string }
+        Insert: { id: string; nome?: string; endereco?: string; nota?: number | null; avaliacoes?: number | null; lat?: number | null; lng?: number | null; dados?: Json; atualizado_em?: string }
+        Update: { id?: string; nome?: string; endereco?: string; nota?: number | null; avaliacoes?: number | null; lat?: number | null; lng?: number | null; dados?: Json; atualizado_em?: string }
+        Relationships: []
+      }
+      gmn_scans: {
+        Row: { id: string; client_id: string; palavra: string; grade: number; raio_km: number; centro_lat: number; centro_lng: number; pontos: Json; metricas: Json; created_by: string | null; created_at: string }
+        Insert: { id?: string; client_id: string; palavra: string; grade: number; raio_km: number; centro_lat: number; centro_lng: number; pontos: Json; metricas?: Json; created_by?: string | null; created_at?: string }
+        Update: { id?: string; client_id?: string; palavra?: string; grade?: number; raio_km?: number; centro_lat?: number; centro_lng?: number; pontos?: Json; metricas?: Json; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
+      gmn_snapshots: {
+        Row: { client_id: string; dia: string; nota: number | null; avaliacoes: number | null }
+        Insert: { client_id: string; dia: string; nota?: number | null; avaliacoes?: number | null }
+        Update: { client_id?: string; dia?: string; nota?: number | null; avaliacoes?: number | null }
+        Relationships: []
+      }
       oauth_clients: {
         Row: { client_id: string; name: string; redirect_uris: string[]; created_at: string }
         Insert: { client_id: string; name?: string; redirect_uris: string[]; created_at?: string }
@@ -346,6 +364,7 @@ export type Database = {
           meta_ad_account_id: string | null
           whatsapp: string | null
           bio_slug: string | null
+          google_place_id: string | null
           bio_mensagem: string
           google_ads_customer_id: string | null
           google_location: string | null
@@ -372,6 +391,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           bio_slug?: string | null
+          google_place_id?: string | null
           bio_mensagem?: string
           google_ads_customer_id?: string | null
           google_location?: string | null
@@ -398,6 +418,7 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           bio_slug?: string | null
+          google_place_id?: string | null
           bio_mensagem?: string
           google_ads_customer_id?: string | null
           google_location?: string | null

@@ -30,9 +30,11 @@ export type Cliente = {
   /** Perfil do Google Meu Negócio: accounts/…/locations/… e o nome dele. */
   googlePerfil: string | null
   googlePerfilNome: string | null
+  /** Lugar do cliente no Google (Places API): aba GMN, geogrid e card de avaliação. */
+  googlePlaceId: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title, whatsapp'
+const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title, whatsapp, google_place_id'
 
 type Linha = {
   id: string
@@ -51,6 +53,7 @@ type Linha = {
   google_location: string | null
   google_location_title: string | null
   whatsapp: string | null
+  google_place_id: string | null
 }
 
 const paraCliente = (c: Linha): Cliente => ({
@@ -70,6 +73,7 @@ const paraCliente = (c: Linha): Cliente => ({
   googleAdsId: c.google_ads_customer_id,
   googlePerfil: c.google_location,
   googlePerfilNome: c.google_location_title,
+  googlePlaceId: c.google_place_id,
 })
 
 export async function listarClientes(sb: Supabase): Promise<Cliente[]> {
