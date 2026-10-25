@@ -280,3 +280,33 @@ export function googleParaIA(campanhas: CampanhaGoogleIA[], f: FiltroEstrutura) 
       return { ...c, custo: arred(c.custo), ...(orcamento ? { orcamentoDiario: orcamento.diario, ...(orcamento.compartilhado ? { orcamentoCompartilhado: true } : {}) } : {}), ...(alerta ? { alerta } : {}) }
     })
 }
+
+// ───────────────────────────── Estrutura da campanha da Meta (CBO / ABO) ─────────────────────────────
+
+export type ConjuntoPedido<A> = { nome?: string; publico: Publico; orcamentoDiario?: number; anuncios: A[] }
+
+/**
+ * Onde fica o orçamento: CBO (na campanha; a Meta divide entre os conjuntos) ou ABO (cada conjunto com o seu; sem
+ * orçamento próprio, o conjunto usa o geral). Devolve os parâmetros da campanha e de cada conjunto (sem ids).
+ */
+export function planoCampanhaMeta<A>(n: { nome: string; orcamentoDiario: number; cbo?: boolean; conjuntos: ConjuntoPedido<A>[] }) {
+  if (!n.conjuntos.length) throw new Error('Informe ao menos um conjunto (público + anúncios).')
+  if (n.conjuntos.length > 10) throw new Error('No máximo 10 conjuntos por campanha.')
+  for (const [i, c] of n.conjuntos.entries()) {
+    if (!c.anuncios.length) throw new Error(`O conjunto ${i + 1} está sem anúncios.`)
+    const ruim = problemaPublico(c.publico)
+    if (ruim) throw new Error(`Conjunto ${i + 1}: ${ruim}`)
+    if (n.cbo && c.orcamentoDiario !== undefined) throw new Error('Com orçamento na campanha (CBO), os conjuntos não têm orçamento próprio.')
+  }
+  const campanha: Record<string, string> = n.cbo
+    ? { daily_budget: String(centavos(n.orcamentoDiario)), bid_strategy: 'LOWEST_COST_WITHOUT_CAP' }
+    : { is_adset_budget_sharing_enabled: 'false' }
+  const conjuntos = n.conjuntos.map((c, i) => ({
+    nome: c.nome?.trim() || (n.conjuntos.length > 1 ? `${n.nome} · Público ${i + 1}` : `${n.nome} · Público`),
+    params: (n.cbo ? {} : { daily_budget: String(centavos(c.orcamentoDiario ?? n.orcamentoDiario)), bid_strategy: 'LOWEST_COST_WITHOUT_CAP' }) as Record<string, string>,
+    orcamento: n.cbo ? null : (c.orcamentoDiario ?? n.orcamentoDiario),
+    publico: c.publico,
+    anuncios: c.anuncios,
+  }))
+  return { campanha, conjuntos }
+}

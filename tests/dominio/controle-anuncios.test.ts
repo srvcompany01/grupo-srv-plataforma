@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, googleParaIA, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, problemaPublico, type ItemArvore } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, alertaSemGasto, estruturaParaIA, googleParaIA, operacoesPesquisaGoogle, planoCampanhaMeta, podeGerirAnuncios, problemaPesquisaGoogle, problemaPublico, type ItemArvore } from '@/dominio/controle-anuncios'
 
 describe('controle de anúncios', () => {
   it('só admin e gestor mexem', () => {
@@ -167,5 +167,26 @@ describe('P2-8: lances e extensões no Google', () => {
     expect(ops).toContainEqual(expect.objectContaining({ assetOperation: { create: { resourceName: 'customers/1/assets/-30', callAsset: { countryCode: 'BR', phoneNumber: '91999990000' } } } }))
     expect(problemaPesquisaGoogle({ ...ok, sitelinks: [{ texto: 'x'.repeat(26), url: 'https://a.com' }] })).toMatch(/Sitelink inválido/)
     expect(problemaPesquisaGoogle({ ...ok, telefone: '123' })).toMatch(/Telefone/)
+  })
+})
+
+describe('CBO e ABO com vários conjuntos', () => {
+  const pub = { idadeMin: 25, idadeMax: 45 }
+  it('CBO: orçamento na campanha e conjuntos sem orçamento', () => {
+    const p = planoCampanhaMeta({ nome: 'Ouro', orcamentoDiario: 60, cbo: true, conjuntos: [{ publico: pub, anuncios: ['a'] }, { publico: {}, anuncios: ['b'] }] })
+    expect(p.campanha).toEqual({ daily_budget: '6000', bid_strategy: 'LOWEST_COST_WITHOUT_CAP' })
+    expect(p.conjuntos.map((c) => [c.nome, c.params, c.orcamento])).toEqual([['Ouro · Público 1', {}, null], ['Ouro · Público 2', {}, null]])
+  })
+
+  it('ABO: cada conjunto com o seu orçamento (ou o geral)', () => {
+    const p = planoCampanhaMeta({ nome: 'Ouro', orcamentoDiario: 30, conjuntos: [{ nome: 'Belém', publico: pub, orcamentoDiario: 50, anuncios: ['a'] }, { publico: pub, anuncios: ['b'] }] })
+    expect(p.campanha).toEqual({ is_adset_budget_sharing_enabled: 'false' })
+    expect(p.conjuntos.map((c) => [c.nome, c.params.daily_budget])).toEqual([['Belém', '5000'], ['Ouro · Público 2', '3000']])
+  })
+
+  it('recusa conjunto sem anúncio, idade invertida e orçamento de conjunto em CBO', () => {
+    expect(() => planoCampanhaMeta({ nome: 'x', orcamentoDiario: 10, conjuntos: [{ publico: pub, anuncios: [] }] })).toThrow(/sem anúncios/)
+    expect(() => planoCampanhaMeta({ nome: 'x', orcamentoDiario: 10, conjuntos: [{ publico: { idadeMin: 40, idadeMax: 20 }, anuncios: ['a'] }] })).toThrow(/Conjunto 1: Idade mínima/)
+    expect(() => planoCampanhaMeta({ nome: 'x', orcamentoDiario: 10, cbo: true, conjuntos: [{ publico: pub, orcamentoDiario: 5, anuncios: ['a'] }] })).toThrow(/CBO/)
   })
 })

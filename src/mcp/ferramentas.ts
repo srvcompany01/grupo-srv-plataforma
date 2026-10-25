@@ -164,6 +164,23 @@ function camposDoMcp(a: EntradaPostMcp, atual: import('@/servicos/blog').PostEqu
 /** Commit em produção (Vercel); 'local' fora dela. */
 export const VERSAO = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local'
 
+const PUBLICO_META = z.object({
+  locais: z.array(z.object({ chave: z.string().max(40), tipo: z.enum(['cidade', 'estado']), raioKm: z.number().min(10).max(80).optional() })).max(25).optional(),
+  idadeMin: z.number().int().min(18).max(65).optional(),
+  idadeMax: z.number().int().min(18).max(65).optional(),
+  generos: z.enum(['todos', 'homens', 'mulheres']).optional(),
+  interesses: z.array(z.object({ id: z.string().max(40), nome: z.string().max(120) })).max(25).optional(),
+  advantage: z.boolean().optional().describe('Público Advantage+ (a Meta amplia quando achar melhor)'),
+})
+const ANUNCIO_META = z.object({
+  criativoId: id('Criativo da biblioteca'),
+  nome: z.string().max(80).optional(),
+  texto: z.string().min(1).max(2200).describe('Texto principal'),
+  titulo: z.string().max(80).optional(),
+  descricao: z.string().max(120).optional(),
+  botao: z.string().regex(/^[A-Z_]{3,40}$/).optional().describe('CTA da Meta para site/formulário, ex.: LEARN_MORE, SIGN_UP, GET_QUOTE, CONTACT_US'),
+})
+
 export const FERRAMENTAS: Ferramenta[] = [
   definir({
     nome: 'descrever_plataforma',
@@ -796,7 +813,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_campanha_meta',
-    descricao: 'Cria na Meta uma campanha completa, PAUSADA: campanha + conjunto (orçamento diário e público) + um anúncio por criativo. modo: whatsapp (conversas no WhatsApp ligado à Página), direct (conversas no Direct do Instagram), formulario (cadastro na Meta; precisa de formularioId), site (cliques para o link) ou perfil_instagram (papel MARCA: tráfego para o perfil do Instagram do cliente, otimizado para visitas ao perfil). Idade mínima maior que a máxima é recusada. Um conjunto por campanha, com orçamento no conjunto (ABO). Criativos: ids de listar_criativos_cliente. Público: locais de buscar_locais_meta (vazio = Brasil), interesses de buscar_interesses_meta. Para ir ao ar, use propor_alteracao_anuncio (ativar) na campanha e no conjunto. Só admin e gestor.',
+    descricao: 'Cria na Meta uma campanha completa, PAUSADA: campanha + conjunto (orçamento diário e público) + um anúncio por criativo. modo: whatsapp (conversas no WhatsApp ligado à Página), direct (conversas no Direct do Instagram), formulario (cadastro na Meta; precisa de formularioId), site (cliques para o link) ou perfil_instagram (papel MARCA: tráfego para o perfil do Instagram do cliente, otimizado para visitas ao perfil). Idade mínima maior que a máxima é recusada. Um conjunto (publico + anuncios) ou vários (conjuntos, até 10); orçamento por conjunto (ABO, padrão) ou na campanha (cbo=true). Criativos: ids de listar_criativos_cliente. Público: locais de buscar_locais_meta (vazio = Brasil), interesses de buscar_interesses_meta. Para ir ao ar, use propor_alteracao_anuncio (ativar) na campanha e no conjunto. Só admin e gestor.',
     escrita: true,
     entrada: {
       clienteId: id('Cliente (id de listar_clientes)'),
@@ -805,30 +822,24 @@ export const FERRAMENTAS: Ferramenta[] = [
       orcamentoDiario: z.number().positive().max(50000).describe('Reais por dia'),
       inicio: data('Início').optional(),
       fim: data('Fim (opcional)').optional(),
-      publico: z.object({
-        locais: z.array(z.object({ chave: z.string().max(40), tipo: z.enum(['cidade', 'estado']), raioKm: z.number().min(10).max(80).optional() })).max(25).optional(),
-        idadeMin: z.number().int().min(18).max(65).optional(),
-        idadeMax: z.number().int().min(18).max(65).optional(),
-        generos: z.enum(['todos', 'homens', 'mulheres']).optional(),
-        interesses: z.array(z.object({ id: z.string().max(40), nome: z.string().max(120) })).max(25).optional(),
-        advantage: z.boolean().optional().describe('Público Advantage+ (a Meta amplia quando achar melhor)'),
-      }),
-      anuncios: z.array(z.object({
-        criativoId: id('Criativo da biblioteca'),
-        nome: z.string().max(80).optional(),
-        texto: z.string().min(1).max(2200).describe('Texto principal'),
-        titulo: z.string().max(80).optional(),
-        descricao: z.string().max(120).optional(),
-        botao: z.string().regex(/^[A-Z_]{3,40}$/).optional().describe('CTA da Meta para site/formulário, ex.: LEARN_MORE, SIGN_UP, GET_QUOTE, CONTACT_US'),
-      })).min(1).max(6),
+      cbo: z.boolean().optional().describe('true = orçamento na CAMPANHA (CBO: a Meta divide entre os conjuntos); sem isso, cada conjunto tem o seu (ABO)'),
+      publico: PUBLICO_META.optional().describe('Um conjunto só (formato simples). Para vários públicos, use conjuntos'),
+      anuncios: z.array(ANUNCIO_META).min(1).max(6).optional().describe('Anúncios do conjunto único (formato simples)'),
+      conjuntos: z.array(z.object({
+        nome: z.string().max(120).optional(),
+        publico: PUBLICO_META,
+        orcamentoDiario: z.number().positive().max(50000).optional().describe('Só em ABO: reais por dia deste conjunto (sem ele, usa o orcamentoDiario geral)'),
+        anuncios: z.array(ANUNCIO_META).min(1).max(6),
+      })).min(1).max(10).optional().describe('Vários conjuntos (públicos), cada um com os seus anúncios'),
       link: z.string().url().optional().describe('Obrigatório no modo site'),
       formularioId: z.string().regex(/^\d{1,25}$/).optional().describe('Obrigatório no modo formulario'),
     },
     executar: async ({ sb, userId, papel }, a) => {
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
+      if (!a.conjuntos?.length && !(a.publico && a.anuncios?.length)) throw new Error('Informe conjuntos, ou publico + anuncios para um conjunto só.')
       const r = await (await import('@/servicos/controle-anuncios')).criarCampanhaMeta(sb, { id: userId, papel }, cliente, a)
-      return { ...r, status: 'PAUSADA', proximoPasso: 'Revise no Gerenciador de Anúncios se quiser e use propor_alteracao_anuncio (ativar) na campanha e no conjunto.' }
+      return { ...r, status: 'PAUSADA', proximoPasso: 'Revise no Gerenciador de Anúncios se quiser e use propor_alteracao_anuncio (ativar) na campanha e nos conjuntos.' }
     },
   }),
 

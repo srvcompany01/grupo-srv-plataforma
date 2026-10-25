@@ -1,5 +1,5 @@
 import 'server-only'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, problemaPublico, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, planoCampanhaMeta, type ConjuntoPedido, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
 import { leadsDasAcoes } from '@/dominio/performance'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -264,48 +264,58 @@ async function criarAnuncio(sb: Supabase, cliente: Cliente, ctx: Awaited<ReturnT
   return ad.id
 }
 
-export type NovaCampanha = { nome: string; modo: Modo; orcamentoDiario: number; inicio?: string; fim?: string; publico: Publico; anuncios: NovoAnuncio[]; link?: string; formularioId?: string }
+/**
+ * `conjuntos` (vários públicos) ou, no formato antigo, `publico` + `anuncios` (um conjunto só). `cbo`: orçamento na
+ * campanha (a Meta divide); sem ele, cada conjunto tem o seu (o `orcamentoDiario` geral quando não informado).
+ */
+export type NovaCampanha = { nome: string; modo: Modo; orcamentoDiario: number; cbo?: boolean; inicio?: string; fim?: string; publico?: Publico; anuncios?: NovoAnuncio[]; conjuntos?: ConjuntoPedido<NovoAnuncio>[]; link?: string; formularioId?: string }
 
-/** Campanha + conjunto + anúncios, tudo PAUSADO. Se algo falhar no meio, o que já foi criado continua pausado. */
-export async function criarCampanhaMeta(sb: Supabase, quem: Quem, cliente: Cliente, n: NovaCampanha): Promise<{ campanhaId: string; conjuntoId: string; anuncios: string[]; erros: string[] }> {
+/** Campanha + conjuntos + anúncios, tudo PAUSADO. Se algo falhar no meio, o que já foi criado continua pausado. */
+export async function criarCampanhaMeta(sb: Supabase, quem: Quem, cliente: Cliente, n: NovaCampanha): Promise<{ campanhaId: string; conjuntoId: string; conjuntos: { id: string; nome: string; anuncios: string[] }[]; anuncios: string[]; erros: string[] }> {
   if (!podeGerirAnuncios(quem.papel)) throw falha('Só admin e gestor criam campanhas.')
-  if (!n.anuncios.length) throw falha('Informe ao menos um anúncio (criativo + texto).')
-  const publicoRuim = problemaPublico(n.publico)
-  if (publicoRuim) throw falha(publicoRuim)
+  let plano: ReturnType<typeof planoCampanhaMeta<NovoAnuncio>>
+  try {
+    plano = planoCampanhaMeta({ nome: n.nome, orcamentoDiario: n.orcamentoDiario, cbo: n.cbo, conjuntos: n.conjuntos?.length ? n.conjuntos : [{ publico: n.publico ?? {}, anuncios: n.anuncios ?? [] }] })
+  } catch (e) {
+    throw falha(e instanceof Error ? e.message : 'Campanha inválida.')
+  }
   return comMensagem(async () => {
     const ctx = await contexto(cliente)
     const cfg = configDoModo(n.modo)
     const act = `act_${ctx.contaId}`
-    const camp = await graph<{ id: string }>(`${act}/campaigns`, { metodo: 'POST', params: { name: n.nome, objective: cfg.objetivo, status: 'PAUSED', special_ad_categories: '[]', is_adset_budget_sharing_enabled: 'false' } })
-    await registrar(sb, cliente.id, { plataforma: 'meta', nivel: 'campanha', objetoId: camp.id, acao: 'criar', nome: n.nome, depois: 'pausado', origem: 'ia' })
-    const conj = await graph<{ id: string }>(`${act}/adsets`, {
-      metodo: 'POST',
-      params: {
-        name: `${n.nome} · Público`,
-        campaign_id: camp.id,
-        status: 'PAUSED',
-        daily_budget: String(centavos(n.orcamentoDiario)),
-        billing_event: 'IMPRESSIONS',
-        optimization_goal: cfg.otimizacao,
-        bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-        destination_type: cfg.destino,
-        promoted_object: JSON.stringify({ page_id: ctx.paginaId }),
-        targeting: JSON.stringify(montarPublico(n.publico)),
-        ...(n.inicio ? { start_time: `${n.inicio}T00:00:00-0300` } : {}),
-        ...(n.fim ? { end_time: `${n.fim}T23:59:00-0300` } : {}),
-      },
-    })
-    await registrar(sb, cliente.id, { plataforma: 'meta', nivel: 'conjunto', objetoId: conj.id, acao: 'criar', nome: `${n.nome} · Público`, depois: `pausado · ${reais(n.orcamentoDiario)}/dia`, origem: 'ia' })
-    const anuncios: string[] = []
+    const camp = await graph<{ id: string }>(`${act}/campaigns`, { metodo: 'POST', params: { name: n.nome, objective: cfg.objetivo, status: 'PAUSED', special_ad_categories: '[]', ...plano.campanha } })
+    await registrar(sb, cliente.id, { plataforma: 'meta', nivel: 'campanha', objetoId: camp.id, acao: 'criar', nome: n.nome, depois: n.cbo ? `pausado · CBO ${reais(n.orcamentoDiario)}/dia` : 'pausado', origem: 'ia' })
+    const criados: { id: string; nome: string; anuncios: string[] }[] = []
     const erros: string[] = []
-    for (const a of n.anuncios) {
-      try {
-        anuncios.push(await criarAnuncio(sb, cliente, ctx, { modo: n.modo, conjuntoId: conj.id, anuncio: a, link: n.link, formularioId: n.formularioId }))
-      } catch (e) {
-        erros.push(`${a.criativoId}: ${e instanceof Error ? e.message : 'erro'}`)
+    for (const c of plano.conjuntos) {
+      const conj = await graph<{ id: string }>(`${act}/adsets`, {
+        metodo: 'POST',
+        params: {
+          name: c.nome,
+          campaign_id: camp.id,
+          status: 'PAUSED',
+          ...c.params,
+          billing_event: 'IMPRESSIONS',
+          optimization_goal: cfg.otimizacao,
+          destination_type: cfg.destino,
+          promoted_object: JSON.stringify({ page_id: ctx.paginaId }),
+          targeting: JSON.stringify(montarPublico(c.publico)),
+          ...(n.inicio ? { start_time: `${n.inicio}T00:00:00-0300` } : {}),
+          ...(n.fim ? { end_time: `${n.fim}T23:59:00-0300` } : {}),
+        },
+      })
+      await registrar(sb, cliente.id, { plataforma: 'meta', nivel: 'conjunto', objetoId: conj.id, acao: 'criar', nome: c.nome, depois: `pausado${c.orcamento ? ` · ${reais(c.orcamento)}/dia` : ''}`, origem: 'ia' })
+      const ids: string[] = []
+      for (const a of c.anuncios) {
+        try {
+          ids.push(await criarAnuncio(sb, cliente, ctx, { modo: n.modo, conjuntoId: conj.id, anuncio: a, link: n.link, formularioId: n.formularioId }))
+        } catch (e) {
+          erros.push(`${c.nome} · ${a.criativoId}: ${e instanceof Error ? e.message : 'erro'}`)
+        }
       }
+      criados.push({ id: conj.id, nome: c.nome, anuncios: ids })
     }
-    return { campanhaId: camp.id, conjuntoId: conj.id, anuncios, erros }
+    return { campanhaId: camp.id, conjuntoId: criados[0].id, conjuntos: criados, anuncios: criados.flatMap((c) => c.anuncios), erros }
   })
 }
 
