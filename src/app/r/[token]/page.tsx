@@ -144,7 +144,7 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <Cartao icone={Users} cor="#6250d6" rotulo="Seguidores" valor={num(r.instagram.seguidores)} extra={`${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} no período`} />
               {r.instagram.alcancePosts !== undefined ? (
-                <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance dos posts (orgânico)" valor={num(r.instagram.alcancePosts)} extra={`Alcance total da conta, com anúncios: ${num(r.instagram.alcance)}`} />
+                <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance dos posts (orgânico)" valor={num(r.instagram.alcancePosts)} extra={`${num(r.instagram.visualizacoes)} visualizações dos posts`} />
               ) : (
                 <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance da conta (orgânico + anúncios)" valor={num(r.instagram.alcance)} extra={`${num(r.instagram.visualizacoes)} visualizações`} />
               )}
@@ -185,7 +185,20 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
               <Cartao icone={MessageCircle} cor="#1baf7a" rotulo="Ligações" valor={num(r.meuNegocio.ligacoes)} />
               <Cartao icone={MapPin} cor="#eb6834" rotulo="Pedidos de rota" valor={num(r.meuNegocio.rotas)} />
               <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no site" valor={num(r.meuNegocio.site)} />
+              {(r.meuNegocio.mensagens ?? r.meuNegocio.conversas ?? 0) > 0 && <Cartao icone={MessageCircle} cor="#1baf7a" rotulo="Cliques em mensagens" valor={num(r.meuNegocio.mensagens ?? r.meuNegocio.conversas ?? 0)} />}
+              {r.meuNegocio.avaliacoes && <Cartao icone={Star} cor="#eda100" rotulo="Avaliações novas" valor={num(r.meuNegocio.avaliacoes.novas)} extra={r.meuNegocio.avaliacoes.notaMedia === null ? 'Sem nota no período' : `Média ★ ${num(r.meuNegocio.avaliacoes.notaMedia)} · ${num(r.meuNegocio.avaliacoes.respondidas)} respondidas`} />}
+              {(r.meuNegocio.reservas ?? 0) > 0 && <Cartao icone={Target} cor="#2a78d6" rotulo="Reservas" valor={num(r.meuNegocio.reservas!)} />}
+              {(r.meuNegocio.cliquesCardapio ?? 0) > 0 && <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no cardápio" valor={num(r.meuNegocio.cliquesCardapio!)} />}
             </div>
+            {r.meuNegocio.palavrasChave?.length ? (
+              <div className="rounded-xl border border-borda bg-white p-3">
+                <p className="text-legenda font-semibold text-texto-2">Principais termos usados para encontrar o perfil</p>
+                <p className="text-micro text-texto-3">Agregado mensal de {r.meuNegocio.palavrasPeriodo?.de} a {r.meuNegocio.palavrasPeriodo?.ate}</p>
+                <ol className="mt-2 grid gap-x-5 gap-y-1 text-rotulo sm:grid-cols-2">
+                  {r.meuNegocio.palavrasChave.map((p) => <li key={p.termo} className="flex justify-between gap-3"><span className="truncate text-texto-2">{p.termo}</span><strong className="tabular-nums">{p.abaixoDe ? '< ' : ''}{num(p.visualizacoes)}</strong></li>)}
+                </ol>
+              </div>
+            ) : null}
           </Secao>
         )}
 

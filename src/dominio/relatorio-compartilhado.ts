@@ -5,9 +5,10 @@
 import { papelDoObjetivo } from './anuncios-meta'
 import { fraseGeogrid, type MetricasGrade, type PontoGrade, type Ponto } from './gmn'
 import { totalLeads, type Leads } from './performance'
+import type { AvaliacoesNegocio, PalavraChaveNegocio } from './google'
 
-/** 2 = leads contados por destino (sem somar conversa e "lead" da mesma pessoa) e alcance orgânico separado. */
-export const VERSAO_RELATORIO = 2
+/** 3 = orgânico usa somente métricas dos posts; nenhuma métrica de conta que possa incluir anúncios. */
+export const VERSAO_RELATORIO = 3
 /** Versões anteriores contavam o mesmo lead mais de uma vez e não podem continuar públicas. */
 export const VERSAO_MINIMA_PUBLICA = 2
 
@@ -33,10 +34,10 @@ export type RelatorioCompartilhado = {
     meta?: AnunciosPlataforma | null
     google?: AnunciosPlataforma | null
   } | null
-  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
+  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Legado: na versão 3+, é igual a alcancePosts. */ alcance: number; /** Alcance acumulado somente dos posts publicados no período. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
-  meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; conversas: number } | null
+  meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; /** Campo legado, removido pelo Google em 2026. */ conversas?: number; mensagens?: number; reservas?: number; pedidosComida?: number; cliquesCardapio?: number; avaliacoes?: AvaliacoesNegocio | null; palavrasChave?: PalavraChaveNegocio[]; palavrasPeriodo?: { de: string; ate: string } } | null
   /** Só para a equipe (a página pública não mostra). */
   avisosInternos?: string[]
   /** Cada campanha que gastou no período, por plataforma (versão 2+). */
@@ -137,13 +138,20 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   if (r.instagram) {
     linhas.push('*Instagram*')
     linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
-    linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts, que alcançaram ${num(r.instagram.alcancePosts)} pessoas (alcance da conta com anúncios: ${num(r.instagram.alcance)})` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
+    linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts orgânicos, com ${num(r.instagram.alcancePosts)} de alcance e ${num(r.instagram.interacoes)} interações` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
     linhas.push('')
   }
-  if (r.gmn) {
+  if (r.gmn || r.meuNegocio) {
     linhas.push('*Google*')
-    linhas.push(`• Nota ${r.gmn.nota === null ? '—' : `★ ${num(r.gmn.nota)}`} com ${num(r.gmn.avaliacoes)} avaliações`)
-    if (r.gmn.geogrid) linhas.push(`• ${r.gmn.geogrid.primeiro !== undefined ? fraseGeogrid(r.gmn.geogrid.palavra, r.gmn.geogrid.metricas, r.gmn.geogrid.primeiro, r.gmn.geogrid.lider ?? null) : `Top 3 do Google Maps em ${num(r.gmn.geogrid.metricas.top3)}% da região para "${r.gmn.geogrid.palavra}"`}`)
+    if (r.gmn) {
+      linhas.push(`• Nota ${r.gmn.nota === null ? '—' : `★ ${num(r.gmn.nota)}`} com ${num(r.gmn.avaliacoes)} avaliações`)
+      if (r.gmn.geogrid) linhas.push(`• ${r.gmn.geogrid.primeiro !== undefined ? fraseGeogrid(r.gmn.geogrid.palavra, r.gmn.geogrid.metricas, r.gmn.geogrid.primeiro, r.gmn.geogrid.lider ?? null) : `Top 3 do Google Maps em ${num(r.gmn.geogrid.metricas.top3)}% da região para "${r.gmn.geogrid.palavra}"`}`)
+    }
+    if (r.meuNegocio) {
+      linhas.push(`• ${num(r.meuNegocio.visualizacoes)} visualizações do perfil (${num(r.meuNegocio.buscas)} na Busca · ${num(r.meuNegocio.mapas)} no Maps)`)
+      linhas.push(`• ${num(r.meuNegocio.ligacoes)} ligações · ${num(r.meuNegocio.rotas)} rotas · ${num(r.meuNegocio.site)} cliques no site`)
+      if (r.meuNegocio.avaliacoes) linhas.push(`• ${num(r.meuNegocio.avaliacoes.novas)} avaliações novas no período${r.meuNegocio.avaliacoes.notaMedia === null ? '' : ` · média ★ ${num(r.meuNegocio.avaliacoes.notaMedia)}`}`)
+    }
     linhas.push('')
   }
   linhas.push(`Relatório completo: ${url}`)

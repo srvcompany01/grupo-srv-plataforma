@@ -1,5 +1,5 @@
-import { ExternalLink, Eye, Heart, LayoutGrid, MousePointerClick, PlayCircle, Radar, Users } from 'lucide-react'
-import { engajamentoOrganico, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
+import { ExternalLink, Eye, Heart, LayoutGrid, PlayCircle, Radar, Users } from 'lucide-react'
+import { engajamentoOrganico, metricasOrganicas, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { Numeros } from './BlocoAnalise'
 import { GraficoDiario } from './GraficoDiario'
 import { SeloTom } from './tom'
@@ -13,7 +13,13 @@ const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digi
 
 /** Números do Instagram no período, alcance por dia, desempenho por formato e os melhores posts. */
 export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: string[] }) {
-  const porDia = new Map(ig.alcancePorDia.map((d) => [d.dia, d.valor]))
+  const organico = metricasOrganicas(ig)
+  const porDia = new Map<string, number>()
+  const diaLocal = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Belem' })
+  for (const p of ig.posts) {
+    const dia = diaLocal.format(new Date(p.em))
+    porDia.set(dia, (porDia.get(dia) ?? 0) + p.alcance)
+  }
   const formatos = porFormato(ig.posts)
   const melhores = [...ig.posts].sort((a, b) => b.interacoes - a.interacoes).slice(0, 6)
   const porSemana = (ig.posts.length / Math.max(1, dias.length)) * 7
@@ -22,14 +28,13 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
       <Numeros
         itens={[
           { rotulo: 'Seguidores', valor: numero.format(ig.seguidores), extra: ig.novosSeguidores ? `${ig.novosSeguidores > 0 ? '▲ +' : '▼ '}${numero.format(ig.novosSeguidores)} no período` : undefined, tom: tomVariacao(ig.novosSeguidores), rotuloTom: ig.novosSeguidores > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
-          { rotulo: 'Alcance', valor: numero.format(ig.alcance), extra: ig.seguidores ? `${pct((ig.alcance / ig.seguidores) * 100)} da base` : undefined, tom: tomAlcanceBase(ig.alcance, ig.seguidores), icone: Radar, cor: '#2a78d6' },
-          { rotulo: 'Visualizações', valor: numero.format(ig.visualizacoes), icone: Eye, cor: '#1baf7a' },
-          { rotulo: 'Interações', valor: numero.format(ig.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento nos posts`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },
+          { rotulo: 'Alcance dos posts', valor: numero.format(organico.alcance), extra: ig.seguidores && organico.posts ? `${pct((organico.alcance / organico.posts / ig.seguidores) * 100)} da base por post` : undefined, tom: organico.posts ? tomAlcanceBase(organico.alcance / organico.posts, ig.seguidores) : undefined, icone: Radar, cor: '#2a78d6' },
+          { rotulo: 'Visualizações dos posts', valor: numero.format(organico.visualizacoes), icone: Eye, cor: '#1baf7a' },
+          { rotulo: 'Interações nos posts', valor: numero.format(organico.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },
           { rotulo: 'Posts', valor: String(ig.posts.length), extra: `${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana`, tom: tomFrequencia(porSemana), icone: LayoutGrid, cor: '#eb6834' },
-          { rotulo: 'Cliques no perfil', valor: numero.format(ig.cliquesPerfil), icone: MousePointerClick, cor: '#eda100' },
         ]}
       />
-      <GraficoDiario titulo="Alcance do perfil por dia" dias={dias} series={[{ nome: 'Alcance', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />
+      <GraficoDiario titulo="Alcance dos posts pela data de publicação" dias={dias} series={[{ nome: 'Posts orgânicos', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />
       {formatos.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[28rem] text-rotulo">

@@ -390,7 +390,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'metricas_google_meu_negocio',
-    descricao: 'Métricas do perfil do Google Meu Negócio do cliente nos últimos 7 ou 30 dias (até ontem): visualizações (na busca e no Maps), ligações, cliques no site, pedidos de rota, conversas e o detalhe por dia. O cliente precisa ter o perfil ligado na página dele.',
+    descricao: 'Métricas do perfil do Google Meu Negócio do cliente nos últimos 7 ou 30 dias (até ontem): visualizações (Busca e Maps), ligações, site, rotas, mensagens, reservas/cardápio quando disponíveis, avaliações novas e respondidas, termos de busca mensais e detalhe por dia. Não inclui Google Ads. O cliente precisa ter o perfil ligado na página dele.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -406,7 +406,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'insights_instagram_cliente',
-    descricao: 'Insights do Instagram do cliente no período: seguidores, alcance, visualizações, interações, engajamento, saldo de seguidores, alcance por dia, desempenho por formato, os posts com os números de cada um, e insights e recomendações para o orgânico. O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
+    descricao: 'Insights orgânicos do Instagram no período: seguidores, saldo de seguidores e, somente para os posts publicados no período, alcance, visualizações, interações, engajamento, desempenho por formato e recomendações. Métricas da conta que incluem anúncios são excluídas. O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -416,14 +416,14 @@ export const FERRAMENTAS: Ferramenta[] = [
       const p = periodoDaIA(a)
       const ig = await (await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true)
       if ('erro' in ig) throw new Error(ig.erro)
+      const organico = (await import('@/dominio/insights')).metricasOrganicas(ig)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
       const avisos = [
-        'alcance, visualizações e interações da CONTA somam orgânico e anúncios (o Instagram não separa); o engajamento orgânico é o engajamentoPosts.',
+        'alcance, visualizações e interações abaixo somam somente os posts publicados no período; métricas da conta que incluem anúncios foram excluídas.',
         ...(ig.posts.length ? [] : ['Nenhum post de feed/Reels no período (Stories não entram nesta conta).']),
         ...(ig.alcancePorDia.length < dias ? ['O Instagram leva até 48 horas para fechar o dia: os últimos dias podem faltar em alcancePorDia.'] : []),
-        ...(ig.cliquesPerfil === 0 ? ['cliquesPerfil = toques nos botões e links do perfil; 0 pode ser real ou a Meta não ter entregue a métrica.'] : []),
       ]
-      return { cliente: cliente.nome, periodo: p, ...ig, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
+      return { cliente: cliente.nome, periodo: p, usuario: ig.usuario, seguidores: ig.seguidores, novosSeguidores: ig.novosSeguidores, ...organico, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
     },
   }),
 
@@ -439,13 +439,14 @@ export const FERRAMENTAS: Ferramenta[] = [
       const google = await (await import('@/servicos/google-agencia')).situacaoGoogle()
       const d = await (await import('@/servicos/relatorio-cliente')).dadosDoCliente(cliente, p, google.conectado)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
+      const organico = d.ig ? (await import('@/dominio/insights')).metricasOrganicas(d.ig) : null
       return {
         cliente: cliente.nome,
         periodo: p,
         avisos: d.erros,
         pago: { ...d.pago, analise: analisarPago(d.pago) },
-        organico: d.ig ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, alcance: d.ig.alcance, interacoes: d.ig.interacoes, posts: d.ig.posts.length, analise: analisarOrganico(d.ig, dias) } : null,
-        combinado: { pagoPorDia: d.pagoPorDia, alcanceInstagramPorDia: d.ig?.alcancePorDia ?? [], analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
+        organico: d.ig && organico ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, novosSeguidores: d.ig.novosSeguidores, ...organico, analise: analisarOrganico(d.ig, dias) } : null,
+        combinado: { pagoPorDia: d.pagoPorDia, analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
       }
     },
   }),

@@ -1,7 +1,7 @@
 import { BarChart3, Combine, Eye, Megaphone, MousePointerClick, Search, Sprout, Target, TriangleAlert, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Modulo } from '@/componentes/Modulo'
-import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, tomCtrMeta, tomEngajamento, type Tom } from '@/dominio/insights'
+import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas, tomCtrMeta, tomEngajamento, type Tom } from '@/dominio/insights'
 import { diasDoPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import type { DadosDoCliente } from '@/servicos/relatorio-cliente'
 import { BlocoAnalise, Numeros } from './BlocoAnalise'
@@ -37,7 +37,13 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico }: { d
   const dias = diasDoPeriodo(periodo)
   const total = (pago.meta?.gasto ?? 0) + (pago.google?.custo ?? 0)
   const pagoDia = new Map(pagoPorDia.map((d) => [d.dia, d]))
-  const igDia = new Map((ig?.alcancePorDia ?? []).map((d) => [d.dia, d.valor]))
+  const organico = ig ? metricasOrganicas(ig) : null
+  const igDia = new Map<string, number>()
+  const diaLocal = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Belem' })
+  for (const post of ig?.posts ?? []) {
+    const dia = diaLocal.format(new Date(post.em))
+    igDia.set(dia, (igDia.get(dia) ?? 0) + post.alcance)
+  }
   const cliquesPagos = (pago.meta?.cliques ?? 0) + (pago.google?.cliques ?? 0)
   const tomConversao: Tom | undefined = !pago.google ? undefined : pago.google.conversoes > 0 ? 'bom' : pago.google.custo > 0 ? 'ruim' : 'neutro'
   return (
@@ -89,7 +95,7 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico }: { d
                   dias={dias}
                   series={[
                     { nome: 'Anúncios (Meta)', valores: dias.map((d) => pagoDia.get(d)?.alcance ?? 0) },
-                    { nome: 'Perfil do Instagram', valores: dias.map((d) => igDia.get(d) ?? 0) },
+                    { nome: 'Posts orgânicos', valores: dias.map((d) => igDia.get(d) ?? 0) },
                   ]}
                   formato={(n) => numero.format(n)}
                 />
@@ -105,9 +111,9 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico }: { d
                   </thead>
                   <tbody>
                     {([
-                      ['Alcance (somado por dia)', numero.format(pagoPorDia.reduce((s, d) => s + d.alcance, 0)), numero.format(ig.alcancePorDia.reduce((s, d) => s + d.valor, 0))],
-                      ['Impressões / visualizações', numero.format(pagoPorDia.reduce((s, d) => s + d.impressoes, 0)), numero.format(ig.visualizacoes)],
-                      ['Cliques / interações', numero.format(cliquesPagos), numero.format(ig.interacoes)],
+                      ['Alcance', numero.format(pagoPorDia.reduce((s, d) => s + d.alcance, 0)), numero.format(organico?.alcance ?? 0)],
+                      ['Impressões / visualizações', numero.format(pagoPorDia.reduce((s, d) => s + d.impressoes, 0)), numero.format(organico?.visualizacoes ?? 0)],
+                      ['Cliques / interações', numero.format(cliquesPagos), numero.format(organico?.interacoes ?? 0)],
                       ['Taxa (CTR / engajamento)', pago.meta ? <span key="pago" className="inline-flex items-center gap-1.5">{pct(pago.meta.ctr)} <SeloTom tom={tomCtrMeta(pago.meta.ctr)} /></span> : '—', engajamentoOrganico(ig) === null ? '—' : <span key="organico" className="inline-flex items-center gap-1.5">{pct(engajamentoOrganico(ig)!)} <SeloTom tom={tomEngajamento(engajamentoOrganico(ig)!)} /></span>],
                       ['Investimento', reais.format(total), 'R$ 0,00'],
                     ] as [string, ReactNode, ReactNode][]).map(([r, a, b]) => (

@@ -1,7 +1,7 @@
 import 'server-only'
 import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDivergente } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
-import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
+import { analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
@@ -67,6 +67,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   }
   const dias = Math.round((Date.parse(periodo.ate) - Date.parse(periodo.de)) / 86_400_000) + 1
   const melhor = i ? [...i.posts].sort((a, b) => b.interacoes - a.interacoes)[0] : undefined
+  const organico = i ? metricasOrganicas(i) : null
   const scan = scans[0]
   const lider = scan && c.googlePlaceId ? liderDaGrade(scan.pontos, c.googlePlaceId) : null
   const nomeLider = lider ? (await resumoDosLugares(sb, [lider.id]).catch(() => new Map())).get(lider.id)?.nome ?? null : null
@@ -79,14 +80,14 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     ate: periodo.ate,
     geradoEm: new Date().toISOString(),
     anuncios,
-    instagram: i ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: i.alcance, alcancePosts: i.posts.reduce((s, p) => s + p.alcance, 0), visualizacoes: i.visualizacoes, interacoes: i.interacoes, posts: i.posts.length, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
+    instagram: i && organico ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: organico.alcance, alcancePosts: organico.alcance, visualizacoes: organico.visualizacoes, interacoes: organico.interacoes, posts: organico.posts, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
     gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em, primeiro, lider: liderInfo } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     campanhas: [
       ...(cm ? cm.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
       ...(cg ? cg.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
     ],
-    meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, conversas: negocio.conversas } : null,
+    meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, mensagens: negocio.mensagens, reservas: negocio.reservas, pedidosComida: negocio.pedidosComida, cliquesCardapio: negocio.cliquesCardapio, avaliacoes: negocio.avaliacoes, palavrasChave: negocio.palavrasChave, palavrasPeriodo: negocio.palavrasPeriodo } : null,
     avisosInternos: avisos,
     destaques: [
       ...(m || g ? analisarPago({ meta: m ? { gasto: m.gasto, impressoes: m.impressoes, alcance: 0, cliques: m.cliques, ctr: m.impressoes ? (m.cliques / m.impressoes) * 100 : 0, anuncios: 0, fracos: 0, frequenciaAlta: 0 } : null, google: g ? { custo: g.custo, cliques: g.cliques, conversoes: g.conversoes, ctr: g.impressoes ? (g.cliques / g.impressoes) * 100 : 0, custoPorConversao: g.conversoes ? g.custo / g.conversoes : 0, campanhas: goog && !('erro' in goog) ? goog.campanhas.length : 0 } : null }).destaques : []),

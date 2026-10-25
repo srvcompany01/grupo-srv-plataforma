@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarCombinado, analisarOrganico, analisarPago, formatoDoPost, melhorDiaDaSemana, porFormato, type PostIG, type ResumoInstagram } from '@/dominio/insights'
+import { analisarCombinado, analisarOrganico, analisarPago, formatoDoPost, melhorDiaDaSemana, metricasOrganicas, porFormato, type PostIG, type ResumoInstagram } from '@/dominio/insights'
 
 const post = (id: string, formato: PostIG['formato'], interacoes: number, em: string): PostIG => ({ id, legenda: `Post ${id}`, formato, link: '', imagem: null, em, curtidas: interacoes, comentarios: 0, alcance: interacoes * 10, visualizacoes: 0, salvamentos: 0, compartilhamentos: 0, interacoes })
 const ig = (posts: PostIG[]): ResumoInstagram => ({ usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 10, cliquesPerfil: 3, alcancePorDia: [{ dia: '2026-10-01', valor: 100 }, { dia: '2026-10-02', valor: 50 }], posts })
@@ -16,15 +16,15 @@ describe('insights', () => {
   it('orgânico sem posts recomenda frequência', () => {
     const a = analisarOrganico(ig([]), 30)
     expect(a.recomendacoes[0]).toEqual({ tom: 'ruim', texto: expect.stringMatching(/Nenhum post/) })
-    // Alcance da conta sem posts = anúncios/Stories: avisa e não calcula engajamento orgânico.
-    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/veio de anúncios e Stories/)
+    expect(a.destaques.map((d) => d.texto).join(' ')).not.toMatch(/anúncios|alcance da conta/)
     expect(a.destaques.map((d) => d.texto).join(' ')).not.toMatch(/Engajamento orgânico/)
   })
-  it('engajamento orgânico sai dos posts, não do alcance da conta (que inclui anúncios)', () => {
+  it('orgânico usa só os posts e ignora completamente os totais da conta', () => {
     const conta = { ...ig([post('a', 'Reels', 10, '2026-10-05T15:00:00Z')]), alcance: 100_000, interacoes: 500 }
     const a = analisarOrganico(conta, 7)
     expect(a.destaques).toContainEqual({ tom: 'bom', texto: expect.stringMatching(/Engajamento orgânico de 10%/) })
-    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/maior parte do alcance da conta veio de anúncios/)
+    expect(a.destaques.map((d) => d.texto).join(' ')).not.toMatch(/100\.000|500|anúncios/)
+    expect(metricasOrganicas(conta)).toMatchObject({ posts: 1, alcance: 100, interacoes: 10 })
   })
   it('orgânico com formatos destaca o melhor', () => {
     const cinco = (formato: PostIG['formato'], interacoes: number, dia: number) => Array.from({ length: 5 }, (_, i) => post(`${formato}${i}`, formato, interacoes, `2026-10-${String(dia + i).padStart(2, '0')}T15:00:00Z`))
@@ -42,7 +42,7 @@ describe('insights', () => {
   })
   it('combinado compara dias com e sem anúncio', () => {
     const a = analisarCombinado(ig([post('a', 'Reels', 100, '2026-10-05T15:00:00Z')]), [{ dia: '2026-10-01', gasto: 10, impressoes: 100, alcance: 80, cliques: 2 }], { meta: { gasto: 10, impressoes: 100, alcance: 80, cliques: 2, ctr: 2, anuncios: 1, fracos: 0, frequenciaAlta: 0 }, google: null })
-    expect(a.destaques).toContainEqual({ tom: 'bom', texto: expect.stringMatching(/100% maior/) })
+    expect(a.destaques).toContainEqual({ tom: 'neutro', texto: expect.stringMatching(/Alcance pago.*posts orgânicos/) })
     expect(a.recomendacoes.map((r) => r.texto).join(' ')).toMatch(/remarketing/)
   })
 })

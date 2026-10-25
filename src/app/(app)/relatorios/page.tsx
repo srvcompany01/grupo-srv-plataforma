@@ -20,7 +20,7 @@ import { analisarSaude } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { dataDeHoje } from '@/dominio/filtros'
 import { totalLeads } from '@/dominio/performance'
-import { analisarOrganico, analisarPago, engajamento, engajamentoOrganico, tomCtrMeta } from '@/dominio/insights'
+import { analisarOrganico, analisarPago, engajamentoOrganico, tomCtrMeta } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -250,15 +250,15 @@ const OUTRAS_REDES = ['TikTok', 'YouTube', 'Facebook (Página)', 'LinkedIn']
 
 async function OrganicoTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: PeriodoAnuncios }) {
   const comPagina = clientes.filter((c) => c.metaPaginaId)
-  const linhas = (await Promise.all(comPagina.map(async (c) => ({ c, ig: await instagramDoCliente(c.metaPaginaId!, periodo, false) })))).sort((a, b) => ('erro' in b.ig ? -1 : b.ig.alcance) - ('erro' in a.ig ? -1 : a.ig.alcance))
+  const linhas = (await Promise.all(comPagina.map(async (c) => ({ c, ig: await instagramDoCliente(c.metaPaginaId!, periodo, false) })))).sort((a, b) => ('erro' in b.ig ? -1 : b.ig.posts.length) - ('erro' in a.ig ? -1 : a.ig.posts.length))
   return (
     <>
-      <Modulo icone={Camera} titulo="Instagram · todos os clientes" descricao={`${rotuloPeriodo(periodo)} · alcance e interações da conta somam orgânico e anúncios`}>
+      <Modulo icone={Camera} titulo="Instagram · todos os clientes" descricao={`${rotuloPeriodo(periodo)} · somente publicações orgânicas`}>
         {linhas.length === 0 ? <Aviso>Nenhum cliente com a Página do Facebook (Instagram) no cadastro.</Aviso> : (
-          <Tabela cabecalho={['Seguidores', 'Novos', 'Alcance', 'Interações', 'Posts']} linhas={linhas.map(({ c, ig }) => ({
+          <Tabela cabecalho={['Seguidores', 'Novos', 'Posts orgânicos']} linhas={linhas.map(({ c, ig }) => ({
             c, href: hrefCliente('organico', c, periodo),
-            celulas: 'erro' in ig ? [<span key="e" className="text-perigo" title={ig.erro}>erro</span>, '', '', '', ''] : [
-              compacto(ig.seguidores), <span key="n" className={ig.novosSeguidores > 0 ? 'font-semibold text-sucesso-forte' : ig.novosSeguidores < 0 ? 'font-semibold text-perigo-forte' : ''}>{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, compacto(ig.alcance), compacto(ig.interacoes), String(ig.posts.length),
+            celulas: 'erro' in ig ? [<span key="e" className="text-perigo" title={ig.erro}>erro</span>, '', ''] : [
+              compacto(ig.seguidores), <span key="n" className={ig.novosSeguidores > 0 ? 'font-semibold text-sucesso-forte' : ig.novosSeguidores < 0 ? 'font-semibold text-perigo-forte' : ''}>{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, String(ig.posts.length),
             ],
           }))} />
         )}
@@ -278,7 +278,7 @@ async function OrganicoCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnu
         {'erro' in ig ? <Erro texto={ig.erro} /> : (
           <div className="space-y-4">
             <InstagramInsights ig={ig} dias={dias} />
-            <p className="text-legenda text-texto-3">Engajamento nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)} · interações sobre o alcance da conta (inclui anúncios): {pct(engajamento(ig.interacoes, ig.alcance))}.</p>
+            <p className="text-legenda text-texto-3">Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
           </div>
         )}
       </Modulo>

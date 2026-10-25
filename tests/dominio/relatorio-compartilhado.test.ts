@@ -42,7 +42,8 @@ describe('relatório para o cliente', () => {
 
   it('R0-2: o texto usa o alcance dos posts e rotula o total da conta com anúncios', () => {
     const t = textoWhatsapp(base, 'u')
-    expect(t).toMatch(/12 posts, que alcançaram 1\.012 pessoas \(alcance da conta com anúncios: 143\.547\)/)
+    expect(t).toMatch(/12 posts orgânicos, com 1\.012 de alcance e 1\.200 interações/)
+    expect(t).not.toMatch(/143\.547|com anúncios/)
     expect(leadsDoRelatorio({ ...base.anuncios!, leadsSite: 5 })).toBe(296)
   })
 })
