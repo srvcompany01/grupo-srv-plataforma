@@ -19,6 +19,7 @@ import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { analisarSaude } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { dataDeHoje } from '@/dominio/filtros'
+import { totalLeads } from '@/dominio/performance'
 import { analisarOrganico, analisarPago, engajamento, engajamentoOrganico, tomCtrMeta } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -134,7 +135,7 @@ async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: 
   const linhas = (await Promise.all(comConta.map(async (c) => ({ c, t: await totaisDoPeriodoMeta(c.metaContaId!, periodo) })))).sort((a, b) => ('erro' in b.t ? -1 : b.t.gasto) - ('erro' in a.t ? -1 : a.t.gasto))
   const ok = linhas.flatMap((l) => ('erro' in l.t ? [] : [l.t]))
   const gasto = ok.reduce((s, t) => s + t.gasto, 0)
-  const leads = ok.reduce((s, t) => s + t.formularios + t.conversas, 0)
+  const leads = ok.reduce((s, t) => s + totalLeads(t), 0)
   return (
     <Modulo icone={Megaphone} titulo="Meta Ads · todos os clientes" descricao={rotuloPeriodo(periodo)}>
       <div className="space-y-4">
@@ -148,7 +149,7 @@ async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: 
           <Tabela cabecalho={['Investido', 'Leads', 'Custo por lead', 'Cliques', 'CTR']} linhas={linhas.map(({ c, t }) => ({
             c, href: hrefCliente('meta', c, periodo),
             celulas: 'erro' in t ? [<span key="e" className="text-perigo" title={t.erro}>erro</span>, '', '', '', ''] : [
-              reais(t.gasto), n(t.formularios + t.conversas), t.formularios + t.conversas ? reais(t.gasto / (t.formularios + t.conversas)) : '—', compacto(t.cliques),
+              reais(t.gasto), n(totalLeads(t)), totalLeads(t) ? reais(t.gasto / totalLeads(t)) : '—', compacto(t.cliques),
               t.impressoes ? <span key="c" className="inline-flex items-center gap-1">{pct((t.cliques / t.impressoes) * 100)} <SeloTom tom={tomCtrMeta((t.cliques / t.impressoes) * 100)} /></span> : '—',
             ],
           }))} />
@@ -164,7 +165,7 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
   const dias = diasDoPeriodo(periodo)
   const m = d.pago.meta
   const tot = 'erro' in t ? null : t
-  const leads = tot ? tot.formularios + tot.conversas : 0
+  const leads = tot ? totalLeads(tot) : 0
   const diaMap = new Map(('erro' in porDia ? [] : porDia).map((x) => [x.dia, x.gasto]))
   const seletor = <SeletorPeriodo base={`/relatorios?aba=meta&cliente=${c.id}`} periodo={periodo} hoje={dataDeHoje(new Date())} />
   return (
@@ -174,7 +175,7 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
           {'erro' in t && <Erro texto={t.erro} />}
           <Numeros itens={[
             { rotulo: 'Investido', valor: reais(tot?.gasto ?? m?.gasto ?? 0), icone: Wallet, cor: '#0866ff' },
-            { rotulo: 'Leads', valor: n(leads), extra: tot ? `${n(tot.conversas)} conversas · ${n(tot.formularios)} cadastros` : undefined, icone: Users, cor: '#1baf7a' },
+            { rotulo: 'Leads', valor: n(leads), extra: tot ? [tot.conversas ? `${n(tot.conversas)} conversas` : '', tot.formularios ? `${n(tot.formularios)} cadastros` : '', tot.site ? `${n(tot.site)} do site` : ''].filter(Boolean).join(' · ') || undefined : undefined, icone: Users, cor: '#1baf7a' },
             { rotulo: 'Custo por lead', valor: leads && tot ? reais(tot.gasto / leads) : '—', icone: Target, cor: '#eb6834' },
             { rotulo: 'Impressões', valor: compacto(m?.impressoes ?? tot?.impressoes ?? 0), extra: m?.alcance ? `${compacto(m.alcance)} pessoas` : undefined, icone: Eye, cor: '#6250d6' },
             { rotulo: 'Cliques', valor: compacto(m?.cliques ?? tot?.cliques ?? 0), icone: MousePointerClick, cor: '#e87ba4' },

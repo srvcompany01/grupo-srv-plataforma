@@ -353,6 +353,20 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'acoes_meta_cliente',
+    descricao: 'Diagnóstico da contagem de leads da Meta: cada conjunto que gastou no período com o destino (WHATSAPP, ON_AD, WEBSITE…), as ações brutas da Meta (lead, onsite_conversion.lead_grouped, offsite_conversion.fb_pixel_lead, onsite_conversion.messaging_conversation_started_7d…) e o que a plataforma contou. Use para conferir números com o Gerenciador de Anúncios.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional(), de: data('Início do período').optional(), ate: data('Fim do período').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente?.metaContaId) throw new Error('Cliente sem conta de anúncios da Meta.')
+      const r = await (await import('@/servicos/meta-anuncios')).diagnosticoAcoesMeta(cliente.metaContaId, periodoDaIA(a))
+      if ('erro' in r) throw new Error(r.erro)
+      return { cliente: cliente.nome, periodo: periodoDaIA(a), ...r }
+    },
+  }),
+
+  definir({
     nome: 'campanhas_google_ads_cliente',
     descricao: 'Campanhas ATIVAS do cliente no Google Ads com os números de 7 ou 30 dias: investido, impressões, cliques, CTR, CPC, conversões e valor das conversões, mais os totais. O cliente precisa ter a conta do Google Ads no cadastro e a agência ter conectado o Google (aba Anúncios).',
     escrita: false,

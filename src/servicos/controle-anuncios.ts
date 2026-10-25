@@ -1,6 +1,6 @@
 import 'server-only'
 import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, planoCampanhaMeta, type ConjuntoPedido, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
-import { leadsDasAcoes } from '@/dominio/performance'
+import { leadsDasAcoes, totalLeads } from '@/dominio/performance'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -40,7 +40,7 @@ const reais = (n: number | null) => (n === null ? '—' : n.toLocaleString('pt-B
 
 export type ObjetoMeta = { id: string; nome: string; nivel: Nivel; status: string; ligado: boolean; diario: number | null; total: number | null; gasto: number; leads: number; miniatura: string | null; criadaEm: string | null; filhos: ObjetoMeta[] }
 
-type Bruto = { id: string; name: string; status: string; effective_status: string; created_time?: string; daily_budget?: string; lifetime_budget?: string; campaign_id?: string; adset_id?: string; creative?: { thumbnail_url?: string } }
+type Bruto = { id: string; name: string; status: string; effective_status: string; destination_type?: string; created_time?: string; daily_budget?: string; lifetime_budget?: string; campaign_id?: string; adset_id?: string; creative?: { thumbnail_url?: string } }
 const reaisDe = (centavos?: string) => (centavos && Number(centavos) > 0 ? Number(centavos) / 100 : null)
 
 /** Campanhas › conjuntos › anúncios (ativos e pausados) com orçamento, gasto e leads do período. Sem cache. */
@@ -52,20 +52,21 @@ export async function estruturaMeta(contaId: string, periodo: { de: string; ate:
       graph<{ data: ({ spend?: string; actions?: { action_type: string; value: string }[] } & Record<string, string>)[] }>(`${act}/insights`, { params: { level, fields: `${campo},spend,actions`, time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '500' } })
     const [camps, conjs, ads, ins, insCamp, insConj] = await Promise.all([
       graph<{ data: Bruto[] }>(`${act}/campaigns`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget', effective_status: '["ACTIVE","PAUSED"]', limit: '100' } }),
-      graph<{ data: Bruto[] }>(`${act}/adsets`, { params: { fields: 'id,name,status,effective_status,created_time,daily_budget,lifetime_budget,campaign_id', effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED"]', limit: '300' } }),
+      graph<{ data: Bruto[] }>(`${act}/adsets`, { params: { fields: 'id,name,status,effective_status,destination_type,created_time,daily_budget,lifetime_budget,campaign_id', effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED"]', limit: '300' } }),
       graph<{ data: Bruto[] }>(`${act}/ads`, { params: { fields: 'id,name,status,effective_status,adset_id,creative{thumbnail_url}', effective_status: '["ACTIVE","PAUSED","ADSET_PAUSED","CAMPAIGN_PAUSED","PENDING_REVIEW","DISAPPROVED","WITH_ISSUES","IN_PROCESS"]', limit: '500' } }),
-      insights('ad', 'ad_id'),
+      insights('ad', 'ad_id,adset_id'),
       // Gasto de campanha e conjunto direto da Meta: inclui anúncios e conjuntos arquivados que gastaram no período.
       insights('campaign', 'campaign_id'),
-      insights('adset', 'adset_id'),
+      insights('adset', 'adset_id,campaign_id'),
     ])
-    const ler = (lista: typeof ins.data, chave: string) => new Map(lista.map((i) => {
-      const l = leadsDasAcoes(i.actions)
-      return [i[chave], { gasto: Number(i.spend ?? 0), leads: l.formularios + l.conversas }]
-    }))
-    const numeros = ler(ins.data, 'ad_id')
-    const porCampanha = ler(insCamp.data, 'campaign_id')
-    const porConjunto = ler(insConj.data, 'adset_id')
+    // Leads pelo destino do conjunto (conversa conta uma vez; sem somar a ação "lead" da mesma pessoa).
+    const destino = new Map(conjs.data.map((c) => [c.id, c.destination_type ?? null]))
+    const leads = (i: { actions?: { action_type: string; value: string }[] } & Record<string, string>) => totalLeads(leadsDasAcoes(i.actions, destino.get(i.adset_id)))
+    const numeros = new Map(ins.data.map((i) => [i.ad_id, { gasto: Number(i.spend ?? 0), leads: leads(i) }]))
+    const porConjunto = new Map(insConj.data.map((i) => [i.adset_id, { gasto: Number(i.spend ?? 0), leads: leads(i) }]))
+    const leadsCampanha = new Map<string, number>()
+    for (const i of insConj.data) leadsCampanha.set(i.campaign_id, (leadsCampanha.get(i.campaign_id) ?? 0) + leads(i))
+    const porCampanha = new Map(insCamp.data.map((i) => [i.campaign_id, { gasto: Number(i.spend ?? 0), leads: leadsCampanha.get(i.campaign_id) ?? 0 }]))
     const obj = (b: Bruto, nivel: Nivel, filhos: ObjetoMeta[]): ObjetoMeta => {
       const n = (nivel === 'anuncio' ? numeros : nivel === 'conjunto' ? porConjunto : porCampanha).get(b.id) ?? (nivel === 'anuncio' ? { gasto: 0, leads: 0 } : { gasto: filhos.reduce((s, f) => s + f.gasto, 0), leads: filhos.reduce((s, f) => s + f.leads, 0) })
       return { id: b.id, nome: b.name, nivel, status: b.effective_status, ligado: b.status === 'ACTIVE', diario: reaisDe(b.daily_budget), total: reaisDe(b.lifetime_budget), ...n, miniatura: b.creative?.thumbnail_url ?? null, criadaEm: b.created_time ?? null, filhos }

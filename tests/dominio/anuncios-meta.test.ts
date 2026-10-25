@@ -67,4 +67,10 @@ describe('anúncios do Meta', () => {
   it('P1-4: CTR e CPC por todos os cliques e pelos cliques no link', () => {
     expect(taxasDoAnuncio({ impressoes: 10000, cliques: 40, cliquesLink: 0, gasto: 20 })).toEqual({ ctrTodos: 0.4, cpcTodos: 0.5, ctrLink: 0, cpcLink: null })
   })
+
+  it('R0-1: anúncio de WhatsApp em campanha de leads não soma "lead" e conversa da mesma pessoa', () => {
+    const a = lerAnuncio(bruto('w', { impressions: '5000', spend: '100', inline_link_clicks: '33', actions: [{ action_type: 'lead', value: '17' }, { action_type: 'onsite_conversion.lead_grouped', value: '17' }, { action_type: 'onsite_conversion.messaging_conversation_started_7d', value: '18' }] }, { adset: { name: 'Belém', destination_type: 'WHATSAPP' } }))
+    expect(a.resultados).toBe(18) // antes: 35 (17 + 18), mais resultados que cliques no link
+    expect(a.resultados).toBeLessThanOrEqual(a.cliquesLink)
+  })
 })

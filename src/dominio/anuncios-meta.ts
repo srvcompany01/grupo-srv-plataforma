@@ -7,7 +7,7 @@
  *    não são reprovadas por não gerar lead.
  * Somam o diagnóstico da Meta (só com 500+ impressões) e a frequência.
  */
-import { leadsDasAcoes } from './performance'
+import { leadsDasAcoes, totalLeads } from './performance'
 
 export type Ranking = 'acima' | 'media' | 'abaixo' | null
 export type Desempenho = 'bom' | 'medio' | 'fraco' | 'poucos-dados'
@@ -71,7 +71,7 @@ export type AnuncioBruto = {
   id: string
   name?: string
   campaign?: { name?: string; objective?: string }
-  adset?: { name?: string }
+  adset?: { name?: string; destination_type?: string }
   creative?: { title?: string; body?: string; thumbnail_url?: string; image_url?: string; video_id?: string; object_type?: string; effective_object_story_id?: string; instagram_permalink_url?: string }
   insights?: { data?: Record<string, string | Acao[] | undefined>[] }
 }
@@ -85,8 +85,7 @@ export function lerAnuncio(a: AnuncioBruto): Anuncio {
   const acoes = (Array.isArray(i.actions) ? i.actions : []) as Acao[]
   const acao = (tipo: string) => num(acoes.find((x) => x.action_type === tipo)?.value)
   const c = a.creative ?? {}
-  const l = leadsDasAcoes(acoes)
-  const resultados = l.formularios + l.conversas
+  const resultados = totalLeads(leadsDasAcoes(acoes, a.adset?.destination_type))
   const link = c.instagram_permalink_url ?? (c.effective_object_story_id ? `https://www.facebook.com/${c.effective_object_story_id}` : null)
   return {
     id: a.id,

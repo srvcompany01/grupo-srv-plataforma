@@ -7,18 +7,36 @@ import { somarDias } from './agenda'
 
 type Acao = { action_type: string; value: string }
 
-/** Formulários e conversas a partir das "actions" do Meta (sem contar o mesmo lead duas vezes). */
+/** Destinos de conjunto em que o resultado é uma CONVERSA (WhatsApp, Direct, Messenger). */
+export const DESTINOS_MENSAGEM = new Set(['WHATSAPP', 'MESSENGER', 'INSTAGRAM_DIRECT', 'MESSAGING_MESSENGER_WHATSAPP', 'MESSAGING_INSTAGRAM_DIRECT_MESSENGER', 'MESSAGING_INSTAGRAM_DIRECT_WHATSAPP', 'MESSAGING_INSTAGRAM_DIRECT_MESSENGER_WHATSAPP'])
+
+export type Leads = { formularios: number; conversas: number; site: number }
+
 /**
- * `formularios` = todos os leads da Meta (ação "lead"): formulário instantâneo e leads em mensagens (`naMeta`) mais o evento
- * Lead do pixel do site (`site`). Por isso pode haver "formulários" sem nenhum formulário instantâneo na Página.
+ * Leads a partir das "actions" da Meta, pelo DESTINO do conjunto, contando cada pessoa uma vez:
+ *  - conjunto de mensagem: só onsite_conversion.messaging_conversation_started_7d (a Meta também lança "lead" e
+ *    onsite_conversion.lead_grouped para a mesma conversa em campanhas de leads com destino WhatsApp: não somar);
+ *  - formulário instantâneo (ON_AD): onsite_conversion.lead_grouped;
+ *  - site (WEBSITE): offsite_conversion.fb_pixel_lead (evento Lead do pixel);
+ *  - destino desconhecido (conjunto arquivado, nível da conta): conversa quando houver; senão formulário e site.
+ * Nunca usa a ação "lead" (é a soma de todas as outras).
  */
-export function leadsDasAcoes(acoes: Acao[] | undefined): { formularios: number; conversas: number; naMeta: number; site: number } {
+export function leadsDasAcoes(acoes: Acao[] | undefined, destino?: string | null): Leads {
   const v = (t: string) => Number(acoes?.find((a) => a.action_type === t)?.value ?? 0)
-  // "lead" já soma os leads do site (pixel) e os do próprio Meta; sem ele, soma as partes.
-  const formularios = v('lead') || v('onsite_conversion.lead_grouped') + v('offsite_conversion.fb_pixel_lead')
-  const conversas = v('onsite_conversion.messaging_conversation_started_7d')
-  return { formularios, conversas, naMeta: v('onsite_conversion.lead_grouped'), site: v('offsite_conversion.fb_pixel_lead') }
+  const conversa = v('onsite_conversion.messaging_conversation_started_7d')
+  const form = v('onsite_conversion.lead_grouped')
+  const pixel = v('offsite_conversion.fb_pixel_lead')
+  if (destino && DESTINOS_MENSAGEM.has(destino)) return { formularios: 0, conversas: conversa, site: 0 }
+  if (destino === 'ON_AD') return { formularios: form, conversas: 0, site: 0 }
+  if (destino === 'WEBSITE') return { formularios: 0, conversas: 0, site: pixel }
+  if (conversa) return { formularios: 0, conversas: conversa, site: pixel }
+  return { formularios: form, conversas: 0, site: pixel }
 }
+
+export const totalLeads = (l: Leads) => l.formularios + l.conversas + l.site
+
+/** Soma leads de vários conjuntos. */
+export const somarLeads = (xs: Leads[]): Leads => xs.reduce((s, l) => ({ formularios: s.formularios + l.formularios, conversas: s.conversas + l.conversas, site: s.site + l.site }), { formularios: 0, conversas: 0, site: 0 })
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
 export const mesDe = (dia: string) => dia.slice(0, 7)

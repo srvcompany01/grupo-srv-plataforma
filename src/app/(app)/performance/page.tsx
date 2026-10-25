@@ -93,7 +93,7 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
         <div className="space-y-4">
           <Numeros itens={kpis(atual, ant)} />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <Fonte icone={ClipboardList} cor="#2a78d6" rotulo="Formulários (Meta)" valor={inteiro(atual.formularios)} />
+            <Fonte icone={ClipboardList} cor="#2a78d6" rotulo="Formulários instantâneos (Meta)" valor={inteiro(atual.formularios)} extra={atual.leadsSite ? `+ ${inteiro(atual.leadsSite)} leads do site` : undefined} />
             <Fonte icone={MessageCircle} cor="#1baf7a" rotulo="Conversas WhatsApp/Direct (Meta)" valor={inteiro(atual.conversas)} />
             <Fonte icone={Target} cor="#eb6834" rotulo="Conversões (Google Ads)" valor={cliente.googleAdsId ? inteiro(atual.conversoesGoogle) : 'sem conta'} />
             <Fonte icone={Camera} cor="#e1306c" rotulo="Cliques nos links do perfil (Instagram)" valor={atual.cliquesPerfilInstagram === null ? (cliente.metaPaginaId ? 'Meta não entregou' : 'sem Página') : inteiro(atual.cliquesPerfilInstagram)} />

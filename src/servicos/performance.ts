@@ -32,7 +32,7 @@ export type MesPerformance = {
 }
 
 export const investido = (m: MesPerformance) => m.investidoMeta + m.investidoGoogle
-export const leadsPagos = (m: MesPerformance) => m.formularios + m.conversas + Math.round(m.conversoesGoogle)
+export const leadsPagos = (m: MesPerformance) => m.formularios + m.conversas + m.leadsSite + Math.round(m.conversoesGoogle)
 
 /** Os meses pedidos de um cliente (busca o período inteiro de uma vez em cada fonte). */
 export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string[], hoje: string, googleConectado: boolean): Promise<{ meses: MesPerformance[]; erros: string[] }> {
@@ -76,7 +76,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
         investidoMeta: m?.get(mes)?.gasto ?? 0,
         investidoGoogle: g?.get(mes)?.custo ?? 0,
         formularios: m?.get(mes)?.formularios ?? 0,
-        leadsNaMeta: m?.get(mes)?.naMeta ?? 0,
+        leadsNaMeta: m?.get(mes)?.formularios ?? 0,
         leadsSite: m?.get(mes)?.site ?? 0,
         conversas: m?.get(mes)?.conversas ?? 0,
         conversoesGoogle: g?.get(mes)?.conversoes ?? 0,
