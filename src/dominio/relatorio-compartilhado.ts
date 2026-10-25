@@ -7,10 +7,10 @@ import { fraseGeogrid, type MetricasGrade, type PontoGrade, type Ponto } from '.
 import { totalLeads, type Leads } from './performance'
 import type { AvaliacoesNegocio, PalavraChaveNegocio } from './google'
 
-/** 3 = orgânico usa somente métricas dos posts; nenhuma métrica de conta que possa incluir anúncios. */
-export const VERSAO_RELATORIO = 3
-/** Versões anteriores contavam o mesmo lead mais de uma vez e não podem continuar públicas. */
-export const VERSAO_MINIMA_PUBLICA = 2
+/** 4 = Meta separa captação de reconhecimento; CPL nunca inclui investimento de tráfego/perfil. */
+export const VERSAO_RELATORIO = 4
+/** Versões anteriores misturam campanha de reconhecimento no custo por lead e não podem continuar públicas. */
+export const VERSAO_MINIMA_PUBLICA = 4
 
 export type RelatorioCompartilhado = {
   /** Ausente nos relatórios de antes da versão 2 (contagem antiga de leads). */
@@ -34,7 +34,7 @@ export type RelatorioCompartilhado = {
     meta?: AnunciosPlataforma | null
     google?: AnunciosPlataforma | null
   } | null
-  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Legado: na versão 3+, é igual a alcancePosts. */ alcance: number; /** Alcance acumulado somente dos posts publicados no período. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
+  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Legado: na versão 3+, é igual a alcancePosts. */ alcance: number; /** Alcance acumulado somente dos posts publicados no período. */ alcancePosts?: number; /** Cliques no link da bio da plataforma no período. */ cliquesLinkBio?: number | null; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
   meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; /** Campo legado, removido pelo Google em 2026. */ conversas?: number; mensagens?: number; reservas?: number; pedidosComida?: number; cliquesCardapio?: number; avaliacoes?: AvaliacoesNegocio | null; palavrasChave?: PalavraChaveNegocio[]; palavrasPeriodo?: { de: string; ate: string } } | null
@@ -63,6 +63,10 @@ export type AnunciosPlataforma = {
   custoPorLead: number | null
   /** Todo o investimento ÷ leads (só quando difere do de captação). */
   custoPorLeadGeral?: number | null
+  /** Detalhe da Meta na versão 4+: somente campanhas cujo objetivo é gerar contato. */
+  captacao?: { investido: number | null; leads: number; conversas: number; formularios: number; leadsSite: number; custoPorLead: number | null; campanhas: number }
+  /** Detalhe da Meta na versão 4+: tráfego/reconhecimento, medido por visitas explícitas ou cliques no link. */
+  reconhecimento?: { investido: number | null; cliquesLink: number; visitasPerfil: number; custoPorClique: number | null; campanhas: number }
 }
 
 const arred = (n: number) => Math.round(n * 100) / 100
@@ -77,6 +81,25 @@ function plataforma(gasto: number, gastoMarca: number, leads: number, resto: Pic
 export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: number } & Leads, gastoMarca: number, mostrarInvestimento: boolean) =>
   plataforma(m.gasto, gastoMarca, totalLeads(m), { conversas: m.conversas, formularios: m.formularios, leadsSite: m.site, cliques: m.cliques, impressoes: m.impressoes }, mostrarInvestimento)
 
+/** Relatório Meta v4: cada finalidade tem seu investimento e sua métrica; não existe média de CPL com tráfego de perfil. */
+export const anunciosMetaSeparados = (m: {
+  total: { gasto: number; cliques: number; impressoes: number }
+  captacao: { gasto: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
+  reconhecimento: { gasto: number; cliquesLink: number; visitasPerfil: number; custoPorClique: number | null; campanhas: number }
+}, mostrarInvestimento: boolean): AnunciosPlataforma => ({
+  investido: mostrarInvestimento ? arred(m.total.gasto) : null,
+  investidoCaptacao: mostrarInvestimento ? arred(m.captacao.gasto) : null,
+  leads: arred(m.captacao.leads),
+  conversas: arred(m.captacao.conversas),
+  formularios: arred(m.captacao.formularios),
+  leadsSite: arred(m.captacao.site),
+  cliques: arred(m.total.cliques),
+  impressoes: arred(m.total.impressoes),
+  custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null,
+  captacao: { investido: mostrarInvestimento ? arred(m.captacao.gasto) : null, leads: arred(m.captacao.leads), conversas: arred(m.captacao.conversas), formularios: arred(m.captacao.formularios), leadsSite: arred(m.captacao.site), custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null, campanhas: m.captacao.campanhas },
+  reconhecimento: { investido: mostrarInvestimento ? arred(m.reconhecimento.gasto) : null, cliquesLink: arred(m.reconhecimento.cliquesLink), visitasPerfil: arred(m.reconhecimento.visitasPerfil), custoPorClique: mostrarInvestimento && m.reconhecimento.custoPorClique !== null ? arred(m.reconhecimento.custoPorClique) : null, campanhas: m.reconhecimento.campanhas },
+})
+
 export const anunciosGoogle = (g: { custo: number; conversoes: number; cliques: number; impressoes: number }, mostrarInvestimento: boolean) =>
   plataforma(g.custo, 0, g.conversoes, { conversas: 0, formularios: 0, leadsSite: 0, cliques: g.cliques, impressoes: g.impressoes }, mostrarInvestimento)
 
@@ -88,7 +111,8 @@ export function campanhaMetaRelatorio(c: { nome: string; status: string; objetiv
   const leads = totalLeads(c.leads)
   const papel = papelDoObjetivo(c.objetivo, leads > 0)
   const resultado = papel === 'lead' ? leads : c.cliquesLink
-  return { plataforma: 'meta', nome: c.nome, ativa: c.status === 'ACTIVE', papel, gasto: mostrarInvestimento ? arred(c.gasto) : null, resultado, rotuloResultado: papel === 'lead' ? (c.leads.conversas && !c.leads.formularios ? 'conversas' : 'leads') : 'cliques no link', custoPorResultado: mostrarInvestimento && resultado ? arred(c.gasto / resultado) : null }
+  const rotuloLead = c.leads.conversas && !c.leads.formularios && !c.leads.site ? 'conversas' : c.leads.formularios && !c.leads.conversas && !c.leads.site ? 'formulários' : c.leads.site && !c.leads.conversas && !c.leads.formularios ? 'leads no site' : 'leads'
+  return { plataforma: 'meta', nome: c.nome, ativa: c.status === 'ACTIVE', papel, gasto: mostrarInvestimento ? arred(c.gasto) : null, resultado, rotuloResultado: papel === 'lead' ? rotuloLead : 'cliques no link', custoPorResultado: mostrarInvestimento && resultado ? arred(c.gasto / resultado) : null }
 }
 
 export function campanhaGoogleRelatorio(c: { nome: string; status: string; custo: number; conversoes: number }, mostrarInvestimento: boolean): CampanhaRelatorio {
@@ -118,10 +142,19 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   const linhas = [`Olá! Segue o relatório da ${r.cliente} de ${data(r.de)} a ${data(r.ate)} 📊`, '']
   const bloco = (titulo: string, p: AnunciosPlataforma, detalhe: string) => {
     linhas.push(`*${titulo}*`)
-    if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
-    linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)
-    const cpl = rotuloCustoPorLead(p)
-    if (cpl) linhas.push(`• ${cpl}`)
+    if (p.captacao && p.reconhecimento) {
+      if (p.captacao.investido !== null) linhas.push(`• Captação: ${reais(p.captacao.investido)} · ${num(p.captacao.leads)} leads${detalhe} · CPL ${p.captacao.custoPorLead === null ? '—' : reais(p.captacao.custoPorLead)}`)
+      else linhas.push(`• Captação: ${num(p.captacao.leads)} leads${detalhe}`)
+      const resultadoMarca = p.reconhecimento.visitasPerfil || p.reconhecimento.cliquesLink
+      const rotuloMarca = p.reconhecimento.visitasPerfil ? 'visitas ao perfil' : 'cliques no link'
+      if (p.reconhecimento.investido !== null) linhas.push(`• Reconhecimento/tráfego: ${reais(p.reconhecimento.investido)} · ${num(resultadoMarca)} ${rotuloMarca}${p.reconhecimento.custoPorClique === null ? '' : ` · custo por clique ${reais(p.reconhecimento.custoPorClique)}`}`)
+      else if (resultadoMarca) linhas.push(`• Reconhecimento/tráfego: ${num(resultadoMarca)} ${rotuloMarca}`)
+    } else {
+      if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
+      linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)
+      const cpl = rotuloCustoPorLead(p)
+      if (cpl) linhas.push(`• ${cpl}`)
+    }
     linhas.push('')
   }
   if (r.anuncios?.meta || r.anuncios?.google) {
@@ -139,6 +172,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
     linhas.push('*Instagram*')
     linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
     linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts orgânicos, com ${num(r.instagram.alcancePosts)} de alcance e ${num(r.instagram.interacoes)} interações` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
+    if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)
     linhas.push('')
   }
   if (r.gmn || r.meuNegocio) {

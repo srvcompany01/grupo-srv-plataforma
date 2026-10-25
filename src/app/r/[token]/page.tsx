@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, TriangleAlert, Users } from 'lucide-react'
+import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, TriangleAlert, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -34,6 +34,31 @@ function Secao({ titulo, icone: Icone, children }: { titulo: string; icone: type
 }
 
 function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlataforma; detalhe?: string }) {
+  if (p.captacao && p.reconhecimento) {
+    const resultadoMarca = p.reconhecimento.visitasPerfil || p.reconhecimento.cliquesLink
+    const rotuloMarca = p.reconhecimento.visitasPerfil ? 'Visitas ao perfil' : 'Cliques no link'
+    return (
+      <Secao titulo={titulo} icone={Target}>
+        {p.investido !== null && <p className="text-rotulo text-texto-2">Investimento total: <strong className="tabular-nums text-texto">{reais(p.investido)}</strong></p>}
+        <div>
+          <p className="mb-2 text-rotulo font-semibold text-sucesso-forte">Campanhas de captação</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {p.captacao.investido !== null && <Cartao icone={BadgeDollarSign} cor="#1baf7a" rotulo="Investimento" valor={reais(p.captacao.investido)} extra={`${p.captacao.campanhas} campanha${p.captacao.campanhas === 1 ? '' : 's'}`} />}
+            <Cartao icone={Users} cor="#1baf7a" rotulo="Leads" valor={num(p.captacao.leads)} extra={detalhe} />
+            {p.captacao.custoPorLead !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por lead" valor={reais(p.captacao.custoPorLead)} />}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-rotulo font-semibold text-[#6250d6]">Campanhas de reconhecimento e tráfego para perfil</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {p.reconhecimento.investido !== null && <Cartao icone={BadgeDollarSign} cor="#6250d6" rotulo="Investimento" valor={reais(p.reconhecimento.investido)} extra={`${p.reconhecimento.campanhas} campanha${p.reconhecimento.campanhas === 1 ? '' : 's'}`} />}
+            <Cartao icone={MousePointerClick} cor="#6250d6" rotulo={rotuloMarca} valor={num(resultadoMarca)} extra={p.reconhecimento.visitasPerfil ? `${num(p.reconhecimento.cliquesLink)} cliques no link` : undefined} />
+            {p.reconhecimento.custoPorClique !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por clique" valor={reais(p.reconhecimento.custoPorClique)} />}
+          </div>
+        </div>
+      </Secao>
+    )
+  }
   return (
     <Secao titulo={titulo} icone={Target}>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -148,6 +173,7 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
               ) : (
                 <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance da conta (orgânico + anúncios)" valor={num(r.instagram.alcance)} extra={`${num(r.instagram.visualizacoes)} visualizações`} />
               )}
+              {r.instagram.cliquesLinkBio != null && <Cartao icone={Link2} cor="#1baf7a" rotulo="Cliques no link da bio" valor={num(r.instagram.cliquesLinkBio)} extra="pessoas que tocaram no link do perfil" />}
               <Cartao icone={Heart} cor="#e87ba4" rotulo="Interações" valor={num(r.instagram.interacoes)} extra={`${num(r.instagram.posts)} posts${r.instagram.engajamentoPosts !== null ? ` · ${num(r.instagram.engajamentoPosts)}% de engajamento` : ''}`} />
             </div>
             {r.instagram.melhorPost && (

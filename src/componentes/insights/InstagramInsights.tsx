@@ -1,4 +1,4 @@
-import { ExternalLink, Eye, Heart, LayoutGrid, PlayCircle, Radar, Users } from 'lucide-react'
+import { ExternalLink, Eye, Heart, LayoutGrid, Link2, PlayCircle, Radar, Users } from 'lucide-react'
 import { engajamentoOrganico, metricasOrganicas, porFormato, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { Numeros } from './BlocoAnalise'
 import { GraficoDiario } from './GraficoDiario'
@@ -12,7 +12,7 @@ const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits:
 const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Belem' })
 
 /** Números do Instagram no período, alcance por dia, desempenho por formato e os melhores posts. */
-export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: string[] }) {
+export function InstagramInsights({ ig, dias, cliquesLinkBio }: { ig: ResumoInstagram; dias: string[]; cliquesLinkBio?: number | null }) {
   const organico = metricasOrganicas(ig)
   const porDia = new Map<string, number>()
   const diaLocal = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Belem' })
@@ -32,6 +32,7 @@ export function InstagramInsights({ ig, dias }: { ig: ResumoInstagram; dias: str
           { rotulo: 'Visualizações dos posts', valor: numero.format(organico.visualizacoes), icone: Eye, cor: '#1baf7a' },
           { rotulo: 'Interações nos posts', valor: numero.format(organico.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },
           { rotulo: 'Posts', valor: String(ig.posts.length), extra: `${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana`, tom: tomFrequencia(porSemana), icone: LayoutGrid, cor: '#eb6834' },
+          ...(cliquesLinkBio == null ? [] : [{ rotulo: 'Cliques no link da bio', valor: numero.format(cliquesLinkBio), extra: 'pelo link da plataforma', icone: Link2, cor: '#1baf7a' }]),
         ]}
       />
       <GraficoDiario titulo="Alcance dos posts pela data de publicação" dias={dias} series={[{ nome: 'Posts orgânicos', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />

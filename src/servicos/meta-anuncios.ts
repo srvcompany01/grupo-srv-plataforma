@@ -1,9 +1,9 @@
 import 'server-only'
 import type { PagoPorDia } from '@/dominio/insights'
-import { leadsDasAcoes, somarLeads, type Leads } from '@/dominio/performance'
+import { leadsDasAcoes, somarLeads, totalLeads, type Leads } from '@/dominio/performance'
 import { dataDeHoje } from '@/dominio/filtros'
 import { periodoEhHoje, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { avaliarAnuncios, gastoDeMarca, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
+import { avaliarAnuncios, gastoDeMarca, lerAnuncio, papelDoObjetivo, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 /**
  * API de Marketing do Meta com o token de um usuário do sistema do Gerenciador de Negócios (META_ACCESS_TOKEN, com
@@ -125,6 +125,8 @@ async function detalhesDosConjuntos(ids: string[], cacheSeg = CACHE): Promise<Ma
 
 export type LinhaConjunto = {
   mes: string | null
+  /** Preenchido somente quando a consulta usa granularidade diária. */
+  dia: string | null
   campanhaId: string
   campanha: string
   conjuntoId: string
@@ -141,22 +143,84 @@ export type LinhaConjunto = {
   acoes: Acoes
 }
 
+export type ResumoCaptacaoMeta = { gasto: number; impressoes: number; cliques: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
+export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorClique: number | null; campanhas: number }
+export type ResumoMetaPorTipo = { captacao: ResumoCaptacaoMeta; reconhecimento: ResumoReconhecimentoMeta; total: TotaisMeta }
+
+const vazioCaptacao = (): ResumoCaptacaoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, leads: 0, conversas: 0, formularios: 0, site: 0, custoPorLead: null, campanhas: 0 })
+const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorClique: null, campanhas: 0 })
+
+/** A Meta varia o nome da ação por posicionamento; só usamos visita explícita ao perfil quando ela vier na resposta. */
+export const visitasPerfilDasAcoes = (acoes: Acoes) => acoes.reduce((s, a) => s + (['profile_visit', 'ig_profile_visit', 'instagram_profile_visit', 'onsite_conversion.profile_visit'].includes(a.action_type) ? Number(a.value ?? 0) : 0), 0)
+
+/**
+ * Separa captação de reconhecimento antes de calcular médias. O papel é decidido pela campanha inteira, para um
+ * objetivo desconhecido não mudar de grupo de um conjunto/dia para outro.
+ */
+export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
+  const porCampanha = new Map<string, Leads>()
+  for (const l of linhas) porCampanha.set(l.campanhaId, somarLeads([porCampanha.get(l.campanhaId) ?? { formularios: 0, conversas: 0, site: 0 }, l.leads]))
+  const captacao = vazioCaptacao()
+  const reconhecimento = vazioReconhecimento()
+  const campanhasCaptacao = new Set<string>()
+  const campanhasReconhecimento = new Set<string>()
+  for (const l of linhas) {
+    const papel = papelDoObjetivo(l.objetivo, totalLeads(porCampanha.get(l.campanhaId) ?? { formularios: 0, conversas: 0, site: 0 }) > 0)
+    if (papel === 'lead') {
+      captacao.gasto += l.gasto
+      captacao.impressoes += l.impressoes
+      captacao.cliques += l.cliques
+      captacao.conversas += l.leads.conversas
+      captacao.formularios += l.leads.formularios
+      captacao.site += l.leads.site
+      campanhasCaptacao.add(l.campanhaId)
+    } else {
+      reconhecimento.gasto += l.gasto
+      reconhecimento.impressoes += l.impressoes
+      reconhecimento.cliques += l.cliques
+      reconhecimento.cliquesLink += l.cliquesLink
+      reconhecimento.visitasPerfil += visitasPerfilDasAcoes(l.acoes)
+      campanhasReconhecimento.add(l.campanhaId)
+    }
+  }
+  captacao.leads = captacao.conversas + captacao.formularios + captacao.site
+  captacao.campanhas = campanhasCaptacao.size
+  captacao.custoPorLead = captacao.leads ? captacao.gasto / captacao.leads : null
+  reconhecimento.campanhas = campanhasReconhecimento.size
+  // Quando a Meta não devolve "visita ao perfil", o clique no link é o indicador disponível para a campanha de tráfego.
+  reconhecimento.custoPorClique = reconhecimento.cliquesLink ? reconhecimento.gasto / reconhecimento.cliquesLink : null
+  return {
+    captacao,
+    reconhecimento,
+    total: {
+      gasto: captacao.gasto + reconhecimento.gasto,
+      impressoes: captacao.impressoes + reconhecimento.impressoes,
+      cliques: captacao.cliques + reconhecimento.cliques,
+      cliquesLink: linhas.reduce((s, l) => s + l.cliquesLink, 0),
+      formularios: captacao.formularios,
+      conversas: captacao.conversas,
+      site: captacao.site,
+    },
+  }
+}
+
 /**
  * Base única dos números da Meta: cada conjunto que gastou no período (inclusive pausados e arquivados), com o destino
  * dele e os leads contados por `leadsDasAcoes` (uma vez por pessoa). Totais da conta = soma dos conjuntos.
  * `mensal` quebra por mês. Cache de 30 min para períodos históricos e sem cache para hoje.
  */
-export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, mensal = false): Promise<LinhaConjunto[] | { erro: string }> {
+export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, granularidade: 'total' | 'mensal' | 'diaria' = 'total'): Promise<LinhaConjunto[] | { erro: string }> {
   const cacheSeg = cacheDoPeriodo({ de, ate })
   const ins = await meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
-      level: 'adset', fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(mensal ? { time_increment: 'monthly' } : {}),
+      level: 'adset', fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(granularidade === 'mensal' ? { time_increment: 'monthly' } : granularidade === 'diaria' ? { time_increment: '1' } : {}),
   }, cacheSeg)
   if ('erro' in ins) return ins
   // ponytail: até 500 linhas de insights por consulta; paginar se alguma conta passar disso.
   const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))], cacheSeg)
   const destino = new Map([...det].map(([id, c]) => [id, c.destination_type ?? null]))
   return ins.data.map((d) => ({
-    mes: mensal ? d.date_start.slice(0, 7) : null,
+    mes: granularidade === 'mensal' ? d.date_start.slice(0, 7) : null,
+    dia: granularidade === 'diaria' ? d.date_start : null,
     campanhaId: d.campaign_id,
     campanha: d.campaign_name,
     conjuntoId: d.adset_id,
@@ -175,7 +239,7 @@ export async function conjuntosDoPeriodo(contaId: string, de: string, ate: strin
 
 /** Investimento e leads da conta, mês a mês, entre `de` e `ate` (soma dos conjuntos). */
 export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number; gastoMarca: number } & Leads> | { erro: string }> {
-  const linhas = await conjuntosDoPeriodo(contaId, de, ate, true)
+  const linhas = await conjuntosDoPeriodo(contaId, de, ate, 'mensal')
   if ('erro' in linhas) return linhas
   const r = new Map<string, { gasto: number; gastoMarca: number } & Leads>()
   for (const l of linhas) {
@@ -187,17 +251,25 @@ export async function metaPorMes(contaId: string, de: string, ate: string): Prom
 
 export type TotaisMeta = { gasto: number; cliques: number; cliquesLink: number; impressoes: number } & Leads
 
+/** Totais separados por finalidade da campanha, para nunca misturar reconhecimento no CPL de captação. */
+export async function resumoMetaPorTipo(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<ResumoMetaPorTipo | { erro: string }> {
+  const linhas = await conjuntosDoPeriodo(contaId, periodo.de, periodo.ate)
+  return 'erro' in linhas ? linhas : resumirMetaPorTipo(linhas)
+}
+
+/** Série diária de investimento e resultado, uma linha para captação e outra para reconhecimento. */
+export async function metaPorDiaPorTipo(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<Map<string, ResumoMetaPorTipo> | { erro: string }> {
+  const linhas = await conjuntosDoPeriodo(contaId, periodo.de, periodo.ate, 'diaria')
+  if ('erro' in linhas) return linhas
+  const porDia = new Map<string, LinhaConjunto[]>()
+  for (const l of linhas) if (l.dia) porDia.set(l.dia, [...(porDia.get(l.dia) ?? []), l])
+  return new Map([...porDia].map(([dia, itens]) => [dia, resumirMetaPorTipo(itens)]))
+}
+
 /** Totais da CONTA no período (todas as campanhas que gastaram, ativas ou não), com os leads sem duplicar. */
 export async function totaisDoPeriodoMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<TotaisMeta | { erro: string }> {
-  const linhas = await conjuntosDoPeriodo(contaId, periodo.de, periodo.ate)
-  if ('erro' in linhas) return linhas
-  return {
-    gasto: linhas.reduce((s, l) => s + l.gasto, 0),
-    cliques: linhas.reduce((s, l) => s + l.cliques, 0),
-    cliquesLink: linhas.reduce((s, l) => s + l.cliquesLink, 0),
-    impressoes: linhas.reduce((s, l) => s + l.impressoes, 0),
-    ...somarLeads(linhas.map((l) => l.leads)),
-  }
+  const resumo = await resumoMetaPorTipo(contaId, periodo)
+  return 'erro' in resumo ? resumo : resumo.total
 }
 
 export type CampanhaPeriodo = { id: string; nome: string; status: string; objetivo: string; gasto: number; cliquesLink: number; impressoes: number; leads: Leads; destinos: string[] }

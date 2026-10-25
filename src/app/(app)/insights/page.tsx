@@ -12,6 +12,7 @@ import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
 import { analisarOrganico, engajamento, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
@@ -126,12 +127,12 @@ function Carregando({ titulo }: { titulo: string }) {
 }
 
 async function DetalheInstagram({ cliente, periodo, seletor }: { cliente: Cliente; periodo: PeriodoAnuncios; seletor: ReactNode }) {
-  const ig = await instagramDoCliente(cliente.metaPaginaId!, periodo, true)
+  const [ig, cliquesLinkBio] = await Promise.all([instagramDoCliente(cliente.metaPaginaId!, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, cliente.id, periodo.de, periodo.ate))])
   const dias = diasDoPeriodo(periodo)
   return (
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · {rotuloPeriodo(periodo)}</>} acoes={seletor}>
-        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <><InstagramInsights ig={ig} dias={dias} />{periodo.atalho === 'hoje' && <p className="mt-3 text-legenda text-texto-3">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}</>}
+        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <><InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} />{periodo.atalho === 'hoje' && <p className="mt-3 text-legenda text-texto-3">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}</>}
       </Modulo>
       {!('erro' in ig) && (
         <Modulo icone={Sparkles} titulo="Insights e recomendações" descricao="O que os números mostram e o que fazer no orgânico">

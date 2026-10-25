@@ -186,7 +186,7 @@ export function avaliarAnuncios(anuncios: Anuncio[]): AnuncioAvaliado[] {
 }
 
 export function totaisAnuncios(anuncios: Anuncio[]) {
-  const t = anuncios.reduce((s, a) => ({ impressoes: s.impressoes + a.impressoes, alcance: s.alcance + a.alcance, cliques: s.cliques + a.cliques, gasto: s.gasto + a.gasto, visualizacoesVideo: s.visualizacoesVideo + a.visualizacoesVideo }), { impressoes: 0, alcance: 0, cliques: 0, gasto: 0, visualizacoesVideo: 0 })
+  const t = anuncios.reduce((s, a) => ({ impressoes: s.impressoes + a.impressoes, alcance: s.alcance + a.alcance, cliques: s.cliques + a.cliques, cliquesLink: s.cliquesLink + a.cliquesLink, gasto: s.gasto + a.gasto, visualizacoesVideo: s.visualizacoesVideo + a.visualizacoesVideo }), { impressoes: 0, alcance: 0, cliques: 0, cliquesLink: 0, gasto: 0, visualizacoesVideo: 0 })
   const resultados = anuncios.reduce((x, a) => x + a.resultados, 0)
   return { ...t, ctr: t.impressoes ? (t.cliques / t.impressoes) * 100 : 0, resultados, custoPorResultado: resultados ? t.gasto / resultados : null }
 }

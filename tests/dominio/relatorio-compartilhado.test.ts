@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gastoDeMarca } from '@/dominio/anuncios-meta'
-import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMeta, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -11,10 +11,11 @@ const base: RelatorioCompartilhado = {
 }
 
 describe('relatório para o cliente', () => {
-  it('C5: bloqueia versão antiga ou revogada e aceita id/URL para revogação', () => {
+  it('C5/C6: bloqueia versão antiga ou revogada e aceita id/URL para revogação', () => {
     expect(relatorioDeveSerSubstituido(undefined)).toBe(true)
-    expect(relatorioDeveSerSubstituido(2)).toBe(false)
-    expect(relatorioDeveSerSubstituido(2, true)).toBe(true)
+    expect(relatorioDeveSerSubstituido(3)).toBe(true)
+    expect(relatorioDeveSerSubstituido(4)).toBe(false)
+    expect(relatorioDeveSerSubstituido(4, true)).toBe(true)
     expect(referenciaRelatorio('https://app.gruposrv.com.br/r/PX7wAYZ3YpA28oN2v0yHoIc8iWh75V8e')).toEqual({ token: 'PX7wAYZ3YpA28oN2v0yHoIc8iWh75V8e' })
     expect(referenciaRelatorio('39f033be-10fa-4315-aeb6-6db5025ffbb5')).toEqual({ id: '39f033be-10fa-4315-aeb6-6db5025ffbb5' })
   })
@@ -48,6 +49,12 @@ describe('relatório para o cliente', () => {
   })
 })
 
+it('orgânico: os cliques no link da bio entram no texto do WhatsApp', () => {
+  const t = textoWhatsapp({ ...base, instagram: { ...base.instagram!, cliquesLinkBio: 87 } }, 'u')
+  expect(t).toMatch(/87 cliques no link da bio/)
+  expect(textoWhatsapp({ ...base, instagram: { ...base.instagram!, cliquesLinkBio: 0 } }, 'u')).not.toMatch(/link da bio/)
+})
+
 describe('anúncios separados por plataforma', () => {
   it('Meta e Google com investido, leads e custo por lead próprios, sem somar', () => {
     const meta = anunciosMeta({ gasto: 4047.52, cliques: 2000, impressoes: 80000, conversas: 182, formularios: 0, site: 3 }, 0, true)
@@ -72,6 +79,18 @@ describe('anúncios separados por plataforma', () => {
     expect(textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google: null } }, 'u')).toMatch(/Custo por lead \(campanhas de captação\): R\$\s?10,62 · considerando todo o investimento: R\$\s?14,47/)
     expect(anunciosMeta({ gasto: 100, cliques: 0, impressoes: 0, conversas: 10, formularios: 0, site: 0 }, 0, true).custoPorLeadGeral).toBeNull()
   })
+
+  it('C6: relatório novo mostra captação e reconhecimento separadamente', () => {
+    const meta = anunciosMetaSeparados({
+      total: { gasto: 2200, cliques: 500, impressoes: 30000 },
+      captacao: { gasto: 1500, leads: 150, conversas: 120, formularios: 10, site: 20, custoPorLead: 10, campanhas: 2 },
+      reconhecimento: { gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorClique: 700 / 2301, campanhas: 1 },
+    }, true)
+    expect(meta).toMatchObject({ investido: 2200, custoPorLead: 10, captacao: { investido: 1500, leads: 150, leadsSite: 20 }, reconhecimento: { investido: 700, visitasPerfil: 1800 } })
+    const t = textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google: null } }, 'u')
+    expect(t).toMatch(/Captação: R\$\s?1\.500,00 · 150 leads.*CPL R\$\s?10,00/)
+    expect(t).toMatch(/Reconhecimento\/tráfego: R\$\s?700,00 · 1\.800 visitas ao perfil/)
+  })
 })
 
 describe('R1-1: campanhas no relatório', () => {
@@ -80,7 +99,7 @@ describe('R1-1: campanhas no relatório', () => {
     expect(whats).toMatchObject({ papel: 'lead', resultado: 20, rotuloResultado: 'conversas', custoPorResultado: 20, ativa: true })
     const marca = campanhaMetaRelatorio({ nome: 'CONTEÚDO / TRAF-INSTA', status: 'PAUSED', objetivo: 'OUTCOME_TRAFFIC', gasto: 100, cliquesLink: 500, leads: { formularios: 0, conversas: 0, site: 0 } }, true)
     expect(marca).toMatchObject({ papel: 'marca', resultado: 500, rotuloResultado: 'cliques no link', custoPorResultado: 0.2, ativa: false })
-    expect(campanhaMetaRelatorio({ nome: 'x', status: 'ACTIVE', objetivo: 'OUTCOME_LEADS', gasto: 100, cliquesLink: 1, leads: { formularios: 4, conversas: 0, site: 0 } }, false)).toMatchObject({ gasto: null, custoPorResultado: null, rotuloResultado: 'leads' })
+    expect(campanhaMetaRelatorio({ nome: 'x', status: 'ACTIVE', objetivo: 'OUTCOME_LEADS', gasto: 100, cliquesLink: 1, leads: { formularios: 4, conversas: 0, site: 0 } }, false)).toMatchObject({ gasto: null, custoPorResultado: null, rotuloResultado: 'formulários' })
     expect(campanhaGoogleRelatorio({ nome: 'Pesquisa | Concorrentes', status: 'ENABLED', custo: 0, conversoes: 0 }, true)).toMatchObject({ resultado: 0, custoPorResultado: null })
   })
 })

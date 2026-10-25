@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, Eye, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Camera, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
@@ -19,7 +19,6 @@ import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { analisarSaude } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { dataDeHoje } from '@/dominio/filtros'
-import { totalLeads } from '@/dominio/performance'
 import { analisarOrganico, analisarPago, engajamentoOrganico, tomCtrMeta } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -27,8 +26,9 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/google-agencia'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
-import { pagoPorDiaMeta, totaisDoPeriodoMeta } from '@/servicos/meta-anuncios'
+import { metaPorDiaPorTipo, resumoMetaPorTipo } from '@/servicos/meta-anuncios'
 import * as places from '@/servicos/places'
+import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
 export const maxDuration = 120
@@ -132,25 +132,26 @@ const hrefCliente = (aba: Aba, c: Cliente, periodo: PeriodoAnuncios) => `/relato
 
 async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: PeriodoAnuncios }) {
   const comConta = clientes.filter((c) => c.metaContaId)
-  const linhas = (await Promise.all(comConta.map(async (c) => ({ c, t: await totaisDoPeriodoMeta(c.metaContaId!, periodo) })))).sort((a, b) => ('erro' in b.t ? -1 : b.t.gasto) - ('erro' in a.t ? -1 : a.t.gasto))
+  const linhas = (await Promise.all(comConta.map(async (c) => ({ c, t: await resumoMetaPorTipo(c.metaContaId!, periodo) })))).sort((a, b) => ('erro' in b.t ? -1 : b.t.total.gasto) - ('erro' in a.t ? -1 : a.t.total.gasto))
   const ok = linhas.flatMap((l) => ('erro' in l.t ? [] : [l.t]))
-  const gasto = ok.reduce((s, t) => s + t.gasto, 0)
-  const leads = ok.reduce((s, t) => s + totalLeads(t), 0)
+  const gasto = ok.reduce((s, t) => s + t.total.gasto, 0)
+  const captacao = ok.reduce((s, t) => ({ gasto: s.gasto + t.captacao.gasto, leads: s.leads + t.captacao.leads }), { gasto: 0, leads: 0 })
+  const reconhecimento = ok.reduce((s, t) => ({ gasto: s.gasto + t.reconhecimento.gasto, cliques: s.cliques + t.reconhecimento.cliquesLink }), { gasto: 0, cliques: 0 })
   return (
     <Modulo icone={Megaphone} titulo="Meta Ads · todos os clientes" descricao={rotuloPeriodo(periodo)}>
       <div className="space-y-4">
         <Numeros itens={[
           { rotulo: 'Investido', valor: reais(gasto), icone: Wallet, cor: '#0866ff' },
-          { rotulo: 'Leads', valor: n(leads), extra: 'conversas + cadastros', icone: Users, cor: '#1baf7a' },
-          { rotulo: 'Custo por lead', valor: leads ? reais(gasto / leads) : '—', icone: Target, cor: '#eb6834' },
+          { rotulo: 'Captação', valor: reais(captacao.gasto), extra: `${n(captacao.leads)} leads`, icone: Users, cor: '#1baf7a' },
+          { rotulo: 'CPL de captação', valor: captacao.leads ? reais(captacao.gasto / captacao.leads) : '—', icone: Target, cor: '#eb6834' },
+          { rotulo: 'Reconhecimento', valor: reais(reconhecimento.gasto), extra: `${compacto(reconhecimento.cliques)} cliques no link`, icone: MousePointerClick, cor: '#6250d6' },
           { rotulo: 'Clientes com Meta', valor: String(comConta.length), icone: Megaphone, cor: '#6250d6' },
         ]} />
         {linhas.length === 0 ? <Aviso>Nenhum cliente com conta de anúncios da Meta no cadastro.</Aviso> : (
-          <Tabela cabecalho={['Investido', 'Leads', 'Custo por lead', 'Cliques', 'CTR']} linhas={linhas.map(({ c, t }) => ({
+          <Tabela cabecalho={['Captação', 'Leads', 'CPL', 'Reconhecimento', 'Cliques', 'CPC']} linhas={linhas.map(({ c, t }) => ({
             c, href: hrefCliente('meta', c, periodo),
-            celulas: 'erro' in t ? [<span key="e" className="text-perigo" title={t.erro}>erro</span>, '', '', '', ''] : [
-              reais(t.gasto), n(totalLeads(t)), totalLeads(t) ? reais(t.gasto / totalLeads(t)) : '—', compacto(t.cliques),
-              t.impressoes ? <span key="c" className="inline-flex items-center gap-1">{pct((t.cliques / t.impressoes) * 100)} <SeloTom tom={tomCtrMeta((t.cliques / t.impressoes) * 100)} /></span> : '—',
+            celulas: 'erro' in t ? [<span key="e" className="text-perigo" title={t.erro}>erro</span>, '', '', '', '', ''] : [
+              reais(t.captacao.gasto), n(t.captacao.leads), t.captacao.custoPorLead === null ? '—' : reais(t.captacao.custoPorLead), reais(t.reconhecimento.gasto), compacto(t.reconhecimento.cliquesLink), t.reconhecimento.custoPorClique === null ? '—' : reais(t.reconhecimento.custoPorClique),
             ],
           }))} />
         )}
@@ -161,12 +162,11 @@ async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: 
 
 async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
   if (!c.metaContaId) return <Aviso>A <strong>{c.nome}</strong> não tem conta de anúncios da Meta no cadastro.</Aviso>
-  const [d, t, porDia] = await Promise.all([dadosDoCliente(c, periodo, false, { organico: false }), totaisDoPeriodoMeta(c.metaContaId, periodo), pagoPorDiaMeta(c.metaContaId, periodo)])
+  const [d, t, porDia] = await Promise.all([dadosDoCliente(c, periodo, false, { organico: false }), resumoMetaPorTipo(c.metaContaId, periodo), metaPorDiaPorTipo(c.metaContaId, periodo)])
   const dias = diasDoPeriodo(periodo)
   const m = d.pago.meta
   const tot = 'erro' in t ? null : t
-  const leads = tot ? totalLeads(tot) : 0
-  const diaMap = new Map(('erro' in porDia ? [] : porDia).map((x) => [x.dia, x.gasto]))
+  const diaMap = 'erro' in porDia ? new Map() : porDia
   const seletor = <SeletorPeriodo base={`/relatorios?aba=meta&cliente=${c.id}`} periodo={periodo} hoje={dataDeHoje(new Date())} />
   return (
     <>
@@ -174,14 +174,14 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
         <div className="space-y-4">
           {'erro' in t && <Erro texto={t.erro} />}
           <Numeros itens={[
-            { rotulo: 'Investido', valor: reais(tot?.gasto ?? m?.gasto ?? 0), icone: Wallet, cor: '#0866ff' },
-            { rotulo: 'Leads', valor: n(leads), extra: tot ? [tot.conversas ? `${n(tot.conversas)} conversas` : '', tot.formularios ? `${n(tot.formularios)} cadastros` : '', tot.site ? `${n(tot.site)} do site` : ''].filter(Boolean).join(' · ') || undefined : undefined, icone: Users, cor: '#1baf7a' },
-            { rotulo: 'Custo por lead', valor: leads && tot ? reais(tot.gasto / leads) : '—', icone: Target, cor: '#eb6834' },
-            { rotulo: 'Impressões', valor: compacto(m?.impressoes ?? tot?.impressoes ?? 0), extra: m?.alcance ? `${compacto(m.alcance)} pessoas` : undefined, icone: Eye, cor: '#6250d6' },
-            { rotulo: 'Cliques', valor: compacto(m?.cliques ?? tot?.cliques ?? 0), icone: MousePointerClick, cor: '#e87ba4' },
+            { rotulo: 'Investido', valor: reais(tot?.total.gasto ?? m?.gasto ?? 0), icone: Wallet, cor: '#0866ff' },
+            { rotulo: 'Captação', valor: reais(tot?.captacao.gasto ?? 0), extra: tot ? [tot.captacao.conversas ? `${n(tot.captacao.conversas)} conversas` : '', tot.captacao.formularios ? `${n(tot.captacao.formularios)} formulários` : '', tot.captacao.site ? `${n(tot.captacao.site)} do site` : ''].filter(Boolean).join(' · ') || `${n(tot.captacao.leads)} leads` : undefined, icone: Users, cor: '#1baf7a' },
+            { rotulo: 'CPL de captação', valor: tot?.captacao.custoPorLead === null || !tot ? '—' : reais(tot.captacao.custoPorLead), icone: Target, cor: '#eb6834' },
+            { rotulo: 'Reconhecimento', valor: reais(tot?.reconhecimento.gasto ?? 0), extra: tot ? `${compacto(tot.reconhecimento.visitasPerfil || tot.reconhecimento.cliquesLink)} ${tot.reconhecimento.visitasPerfil ? 'visitas ao perfil' : 'cliques no link'}` : undefined, icone: MousePointerClick, cor: '#6250d6' },
+            { rotulo: 'CPC de reconhecimento', valor: tot?.reconhecimento.custoPorClique === null || !tot ? '—' : reais(tot.reconhecimento.custoPorClique), icone: MousePointerClick, cor: '#e87ba4' },
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
-          <GraficoDiario titulo="Investimento por dia" dias={dias} series={[{ nome: 'Investido', valores: dias.map((x) => diaMap.get(x) ?? 0) }]} formato={reaisCurto} tipo="barras" />
+          <GraficoDiario titulo="Investimento diário por tipo de campanha" dias={dias} series={[{ nome: 'Captação', valores: dias.map((x) => diaMap.get(x)?.captacao.gasto ?? 0) }, { nome: 'Reconhecimento', valores: dias.map((x) => diaMap.get(x)?.reconhecimento.gasto ?? 0) }]} formato={reaisCurto} />
           <BlocoAnalise analise={analisarPago({ meta: m, google: null })} />
         </div>
       </Modulo>
@@ -250,15 +250,16 @@ const OUTRAS_REDES = ['TikTok', 'YouTube', 'Facebook (Página)', 'LinkedIn']
 
 async function OrganicoTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: PeriodoAnuncios }) {
   const comPagina = clientes.filter((c) => c.metaPaginaId)
-  const linhas = (await Promise.all(comPagina.map(async (c) => ({ c, ig: await instagramDoCliente(c.metaPaginaId!, periodo, false) })))).sort((a, b) => ('erro' in b.ig ? -1 : b.ig.posts.length) - ('erro' in a.ig ? -1 : a.ig.posts.length))
+  const sb = await criarClienteServidor()
+  const linhas = (await Promise.all(comPagina.map(async (c) => ({ c, ig: await instagramDoCliente(c.metaPaginaId!, periodo, false), bio: await cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate) })))).sort((a, b) => ('erro' in b.ig ? -1 : b.ig.posts.length) - ('erro' in a.ig ? -1 : a.ig.posts.length))
   return (
     <>
       <Modulo icone={Camera} titulo="Instagram · todos os clientes" descricao={`${rotuloPeriodo(periodo)} · somente publicações orgânicas`}>
         {linhas.length === 0 ? <Aviso>Nenhum cliente com a Página do Facebook (Instagram) no cadastro.</Aviso> : (
-          <Tabela cabecalho={['Seguidores', 'Novos', 'Posts orgânicos']} linhas={linhas.map(({ c, ig }) => ({
+          <Tabela cabecalho={['Seguidores', 'Novos', 'Posts orgânicos', 'Cliques no link da bio']} linhas={linhas.map(({ c, ig, bio }) => ({
             c, href: hrefCliente('organico', c, periodo),
-            celulas: 'erro' in ig ? [<span key="e" className="text-perigo" title={ig.erro}>erro</span>, '', ''] : [
-              compacto(ig.seguidores), <span key="n" className={ig.novosSeguidores > 0 ? 'font-semibold text-sucesso-forte' : ig.novosSeguidores < 0 ? 'font-semibold text-perigo-forte' : ''}>{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, String(ig.posts.length),
+            celulas: 'erro' in ig ? [<span key="e" className="text-perigo" title={ig.erro}>erro</span>, '', '', ''] : [
+              compacto(ig.seguidores), <span key="n" className={ig.novosSeguidores > 0 ? 'font-semibold text-sucesso-forte' : ig.novosSeguidores < 0 ? 'font-semibold text-perigo-forte' : ''}>{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, String(ig.posts.length), bio === null ? '—' : n(bio),
             ],
           }))} />
         )}
@@ -270,14 +271,14 @@ async function OrganicoTodos({ clientes, periodo }: { clientes: Cliente[]; perio
 
 async function OrganicoCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
   if (!c.metaPaginaId) return <><Aviso>A <strong>{c.nome}</strong> não tem a Página do Facebook (Instagram) no cadastro.</Aviso><EmBreve itens={OUTRAS_REDES} /></>
-  const ig = await instagramDoCliente(c.metaPaginaId, periodo, true)
+  const [ig, cliquesLinkBio] = await Promise.all([instagramDoCliente(c.metaPaginaId, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate))])
   const dias = diasDoPeriodo(periodo)
   return (
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? 'Instagram' : `Instagram @${ig.usuario}`} descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
         {'erro' in ig ? <Erro texto={ig.erro} /> : (
           <div className="space-y-4">
-            <InstagramInsights ig={ig} dias={dias} />
+            <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} />
             <p className="text-legenda text-texto-3">Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
           </div>
         )}

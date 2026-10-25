@@ -406,7 +406,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'insights_instagram_cliente',
-    descricao: 'Insights orgânicos do Instagram no período: seguidores, saldo de seguidores e, somente para os posts publicados no período, alcance, visualizações, interações, engajamento, desempenho por formato e recomendações. Métricas da conta que incluem anúncios são excluídas. O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
+    descricao: 'Insights orgânicos do Instagram no período: seguidores, saldo de seguidores e, somente para os posts publicados no período, alcance, visualizações, interações, engajamento, desempenho por formato e recomendações. Métricas da conta que incluem anúncios são excluídas. Traz também cliquesLinkBio (cliques no link da bio da plataforma no período). O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -414,7 +414,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.metaPaginaId) throw new Error('Este cliente não tem a Página do Facebook no cadastro.')
       const p = periodoDaIA(a)
-      const ig = await (await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true)
+      const [ig, cliquesLinkBio] = await Promise.all([(await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true), (await import('@/servicos/performance')).cliquesLinkBioNoPeriodo(sb, cliente.id, p.de, p.ate)])
       if ('erro' in ig) throw new Error(ig.erro)
       const organico = (await import('@/dominio/insights')).metricasOrganicas(ig)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
@@ -423,7 +423,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         ...(ig.posts.length ? [] : ['Nenhum post de feed/Reels no período (Stories não entram nesta conta).']),
         ...(ig.alcancePorDia.length < dias ? ['O Instagram leva até 48 horas para fechar o dia: os últimos dias podem faltar em alcancePorDia.'] : []),
       ]
-      return { cliente: cliente.nome, periodo: p, usuario: ig.usuario, seguidores: ig.seguidores, novosSeguidores: ig.novosSeguidores, ...organico, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
+      return { cliente: cliente.nome, periodo: p, usuario: ig.usuario, seguidores: ig.seguidores, novosSeguidores: ig.novosSeguidores, cliquesLinkBio, ...organico, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
     },
   }),
 
@@ -440,12 +440,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       const d = await (await import('@/servicos/relatorio-cliente')).dadosDoCliente(cliente, p, google.conectado)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
       const organico = d.ig ? (await import('@/dominio/insights')).metricasOrganicas(d.ig) : null
+      const cliquesLinkBio = await (await import('@/servicos/performance')).cliquesLinkBioNoPeriodo(sb, cliente.id, p.de, p.ate)
       return {
         cliente: cliente.nome,
         periodo: p,
         avisos: d.erros,
         pago: { ...d.pago, analise: analisarPago(d.pago) },
-        organico: d.ig && organico ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, novosSeguidores: d.ig.novosSeguidores, ...organico, analise: analisarOrganico(d.ig, dias) } : null,
+        organico: d.ig && organico ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, novosSeguidores: d.ig.novosSeguidores, cliquesLinkBio, ...organico, analise: analisarOrganico(d.ig, dias) } : null,
         combinado: { pagoPorDia: d.pagoPorDia, analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
       }
     },

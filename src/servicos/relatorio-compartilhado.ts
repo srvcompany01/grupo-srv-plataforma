@@ -3,7 +3,7 @@ import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDiverge
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -12,8 +12,8 @@ import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
 import { lerWhatsapp } from './clientes-plataforma'
 import { instagramDoCliente } from './insights-instagram'
-import { gastoDeMarca } from '@/dominio/anuncios-meta'
-import { campanhasDoPeriodoMeta, totaisDoPeriodoMeta } from './meta-anuncios'
+import { cliquesLinkBioNoPeriodo } from './performance'
+import { campanhasDoPeriodoMeta, resumoMetaPorTipo } from './meta-anuncios'
 import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
 
 const BASE = () => process.env.NEXT_PUBLIC_URL_BASE ?? 'https://app.gruposrv.com.br'
@@ -23,7 +23,7 @@ export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
 export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; whatsappTelefone: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
   const google = c.googleAdsId ? await situacaoGoogle() : null
   const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio] = await Promise.all([
-    c.metaContaId ? totaisDoPeriodoMeta(c.metaContaId, periodo) : null,
+    c.metaContaId ? resumoMetaPorTipo(c.metaContaId, periodo) : null,
     c.googleAdsId && google?.conectado ? campanhasGoogle(c.googleAdsId, periodo) : null,
     c.metaPaginaId ? instagramDoCliente(c.metaPaginaId, periodo, true) : null,
     c.googlePlaceId && placesConfigurado() ? detalhesDoLugar(sb, c.googlePlaceId).catch(() => null) : null,
@@ -32,6 +32,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     c.googleAdsId && google?.conectado ? estruturaGoogle(c.googleAdsId, periodo) : null,
     c.googlePerfil ? metricasDoNegocio(c.googlePerfil, periodo.de, periodo.ate) : null,
   ])
+  const cliquesLinkBio = await cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate)
   const cm = campsMeta && !('erro' in campsMeta) ? campsMeta : null
   const cg = campsGoogle && !('erro' in campsGoogle) ? campsGoogle : null
   const telefoneComoWhatsapp = !c.whatsapp && c.telefone ? lerWhatsapp(c.telefone) ?? null : null
@@ -48,22 +49,24 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const m = meta && !('erro' in meta) ? meta : null
   const g = goog && !('erro' in goog) ? totaisCampanhas(goog.campanhas) : null
   const i = ig && !('erro' in ig) ? ig : null
-  const investido = (m?.gasto ?? 0) + (g?.custo ?? 0)
+  const investido = (m?.total.gasto ?? 0) + (g?.custo ?? 0)
   const anuncios: RelatorioCompartilhado['anuncios'] = m || g ? {
     investido: opcoes.mostrarInvestimento ? Math.round(investido * 100) / 100 : null,
-    conversas: m?.conversas ?? 0,
-    formularios: m?.formularios ?? 0,
-    leadsSite: m?.site ?? 0,
+    conversas: m?.captacao.conversas ?? 0,
+    formularios: m?.captacao.formularios ?? 0,
+    leadsSite: m?.captacao.site ?? 0,
     conversoesGoogle: g?.conversoes ?? 0,
-    cliques: (m?.cliques ?? 0) + (g?.cliques ?? 0),
-    impressoes: (m?.impressoes ?? 0) + (g?.impressoes ?? 0),
+    cliques: (m?.total.cliques ?? 0) + (g?.cliques ?? 0),
+    impressoes: (m?.total.impressoes ?? 0) + (g?.impressoes ?? 0),
     custoPorLead: null,
-    meta: m ? anunciosMeta(m, cm ? gastoDeMarca(cm.campanhas) : 0, opcoes.mostrarInvestimento) : null,
+    meta: m ? anunciosMetaSeparados(m, opcoes.mostrarInvestimento) : null,
     google: g ? anunciosGoogle(g, opcoes.mostrarInvestimento) : null,
   } : null
   if (anuncios) {
     const leads = leadsDoRelatorio(anuncios)
-    anuncios.custoPorLead = leads && investido ? Math.round((investido / leads) * 100) / 100 : null
+    // O indicador combinado só pode usar verba de captação da Meta; reconhecimento é avaliado por clique/perfil.
+    const investidoCaptacao = (m?.captacao.gasto ?? 0) + (g?.custo ?? 0)
+    anuncios.custoPorLead = leads && investidoCaptacao ? Math.round((investidoCaptacao / leads) * 100) / 100 : null
   }
   const dias = Math.round((Date.parse(periodo.ate) - Date.parse(periodo.de)) / 86_400_000) + 1
   const melhor = i ? [...i.posts].sort((a, b) => b.interacoes - a.interacoes)[0] : undefined
@@ -80,7 +83,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     ate: periodo.ate,
     geradoEm: new Date().toISOString(),
     anuncios,
-    instagram: i && organico ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: organico.alcance, alcancePosts: organico.alcance, visualizacoes: organico.visualizacoes, interacoes: organico.interacoes, posts: organico.posts, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
+    instagram: i && organico ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: organico.alcance, alcancePosts: organico.alcance, cliquesLinkBio, visualizacoes: organico.visualizacoes, interacoes: organico.interacoes, posts: organico.posts, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
     gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em, primeiro, lider: liderInfo } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     campanhas: [
@@ -90,7 +93,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, mensagens: negocio.mensagens, reservas: negocio.reservas, pedidosComida: negocio.pedidosComida, cliquesCardapio: negocio.cliquesCardapio, avaliacoes: negocio.avaliacoes, palavrasChave: negocio.palavrasChave, palavrasPeriodo: negocio.palavrasPeriodo } : null,
     avisosInternos: avisos,
     destaques: [
-      ...(m || g ? analisarPago({ meta: m ? { gasto: m.gasto, impressoes: m.impressoes, alcance: 0, cliques: m.cliques, ctr: m.impressoes ? (m.cliques / m.impressoes) * 100 : 0, anuncios: 0, fracos: 0, frequenciaAlta: 0 } : null, google: g ? { custo: g.custo, cliques: g.cliques, conversoes: g.conversoes, ctr: g.impressoes ? (g.cliques / g.impressoes) * 100 : 0, custoPorConversao: g.conversoes ? g.custo / g.conversoes : 0, campanhas: goog && !('erro' in goog) ? goog.campanhas.length : 0 } : null }).destaques : []),
+      ...(m || g ? analisarPago({ meta: m ? { gasto: m.total.gasto, impressoes: m.total.impressoes, alcance: 0, cliques: m.total.cliques, ctr: m.total.impressoes ? (m.total.cliques / m.total.impressoes) * 100 : 0, anuncios: 0, fracos: 0, frequenciaAlta: 0 } : null, google: g ? { custo: g.custo, cliques: g.cliques, conversoes: g.conversoes, ctr: g.impressoes ? (g.cliques / g.impressoes) * 100 : 0, custoPorConversao: g.conversoes ? g.custo / g.conversoes : 0, campanhas: goog && !('erro' in goog) ? goog.campanhas.length : 0 } : null }).destaques : []),
       ...(i ? analisarOrganico(i, dias).destaques : []),
       ...(scan ? [{ tom: 'bom' as const, texto: fraseGeogrid(scan.palavra, scan.metricas, primeiro, liderInfo) }] : []),
     ].filter((d) => d.tom === 'bom' && (opcoes.mostrarInvestimento || !/R\$/.test(d.texto))).map((d) => d.texto).slice(0, 5),

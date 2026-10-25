@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { campanhaMetaRelatorio } from '@/dominio/relatorio-compartilhado'
-import { campanhasDoPeriodoMeta } from '@/servicos/meta-anuncios'
+import { campanhasDoPeriodoMeta, resumoMetaPorTipo } from '@/servicos/meta-anuncios'
 
 vi.mock('server-only', () => ({}))
 
@@ -40,4 +40,25 @@ it('C1/C2: status e objetivo vêm da campanha pelos ids dos conjuntos; marca é 
   expect(site.leads).toEqual({ formularios: 0, conversas: 0, site: 30 })
   expect(r.ativasSemGasto).toEqual(['Sem entrega'])
   expect(campanhaMetaRelatorio(insta, true)).toMatchObject({ ativa: true, papel: 'marca', resultado: 2301, rotuloResultado: 'cliques no link', custoPorResultado: 0.3 })
+})
+
+it('C6: separa captação de reconhecimento antes de calcular CPL, incluindo conversa, formulário e site', async () => {
+  process.env.META_ACCESS_TOKEN = 't'
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    const u = new URL(url)
+    const corpo = u.pathname.endsWith('/insights')
+      ? { data: [
+        linha('c1', 'WHATS', 's1', 1200, { 'onsite_conversion.messaging_conversation_started_7d': 120 }),
+        linha('c2', 'PERFIL', 's2', 700, { link_click: 2301, profile_visit: 1800 }),
+        linha('c3', 'SITE', 's3', 300, { 'offsite_conversion.fb_pixel_lead': 30 }),
+      ] }
+      : u.searchParams.get('ids') ? Object.fromEntries(u.searchParams.get('ids')!.split(',').map((id) => [id, DETALHES[id as keyof typeof DETALHES]]))
+      : { error: { message: 'inesperado' } }
+    return new Response(JSON.stringify(corpo), { status: 'error' in corpo ? 400 : 200 })
+  }))
+  const r = await resumoMetaPorTipo('1', { de: '2026-10-18', ate: '2026-10-24' })
+  if ('erro' in r) throw new Error(r.erro)
+  expect(r.captacao).toMatchObject({ gasto: 1500, conversas: 120, formularios: 0, site: 30, leads: 150, custoPorLead: 10, campanhas: 2 })
+  expect(r.reconhecimento).toMatchObject({ gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorClique: expect.closeTo(700 / 2301), campanhas: 1 })
+  expect(r.total).toMatchObject({ gasto: 2200, conversas: 120, site: 30 })
 })

@@ -110,15 +110,16 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
 
 function Resumo({ anuncios, mostrarGasto }: { anuncios: AnuncioAvaliado[]; mostrarGasto: boolean }) {
   const t = totaisAnuncios(anuncios)
+  const captacao = totaisAnuncios(anuncios.filter((a) => a.papel === 'lead'))
+  const reconhecimento = totaisAnuncios(anuncios.filter((a) => a.papel === 'marca'))
   const bons = anuncios.filter((a) => a.desempenho === 'bom').length
   const fracos = anuncios.filter((a) => a.desempenho === 'fraco').length
   const itens: [string, string][] = [
     ['Anúncios ativos', String(anuncios.length)],
+    ...(mostrarGasto ? [['Captação · investido', reais.format(captacao.gasto)] as [string, string], ['Captação · resultados', numero.format(captacao.resultados)] as [string, string], ['Captação · CPL', captacao.custoPorResultado === null ? '—' : reais.format(captacao.custoPorResultado)] as [string, string], ['Reconhecimento · investido', reais.format(reconhecimento.gasto)] as [string, string], ['Reconhecimento · cliques', numero.format(reconhecimento.cliquesLink)] as [string, string], ['Reconhecimento · CPC', reconhecimento.cliquesLink ? reais.format(reconhecimento.gasto / reconhecimento.cliquesLink) : '—'] as [string, string]] : []),
     ['Impressões', numero.format(t.impressoes)],
-    ['Cliques', numero.format(t.cliques)],
     ['CTR geral', pct(t.ctr)],
     ...(t.visualizacoesVideo ? [['Visualizações de vídeo', numero.format(t.visualizacoesVideo)] as [string, string]] : []),
-    ...(mostrarGasto ? [['Investido', reais.format(t.gasto)] as [string, string]] : []),
     ['Bons / fracos', `${bons} / ${fracos}`],
   ]
   return (
