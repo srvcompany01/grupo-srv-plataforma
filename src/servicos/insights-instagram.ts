@@ -1,15 +1,18 @@
 import 'server-only'
+import { dataDeHoje } from '@/dominio/filtros'
 import { formatoDoPost, type PostIG, type ResumoInstagram } from '@/dominio/insights'
-import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { periodoEhHoje, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { ErroMeta, contaDaPagina, graph } from './publicacao-meta'
 
 /**
  * Insights do Instagram profissional do cliente (ligado à Página do Facebook do cadastro), com o token do usuário do
  * sistema do Meta (instagram_manage_insights). A API só aceita janelas de até 30 dias: períodos maiores são somados
- * por janela (o alcance somado conta a mesma pessoa mais de uma vez entre janelas). Cache de 1 hora.
+ * por janela (o alcance somado conta a mesma pessoa mais de uma vez entre janelas). Cache de 1 hora para períodos
+ * históricos e sem cache para hoje.
  */
 const CACHE = 3600
 const DIA = 86_400
+const cacheDoPeriodo = (periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>) => periodoEhHoje(periodo, dataDeHoje(new Date())) ? 0 : CACHE
 
 /** Janelas de até 30 dias, em segundos Unix, do início de `de` ao fim de `ate` (meia-noite de Belém = 03:00 UTC). */
 /** Soma das janelas; null se nenhuma janela trouxe o número. */
@@ -27,9 +30,9 @@ type Valor = { name: string; total_value?: { value?: number; breakdowns?: { resu
 
 const METRICAS = ['reach', 'views', 'accounts_engaged', 'total_interactions', 'likes', 'comments', 'saves', 'shares', 'profile_links_taps']
 
-async function totais(igId: string, j: { since: number; until: number }): Promise<Record<string, number>> {
+async function totais(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<Record<string, number>> {
   const consultar = async (metricas: string[]) => {
-    const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: metricas.join(','), metric_type: 'total_value', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg: CACHE })
+    const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: metricas.join(','), metric_type: 'total_value', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg })
     return r.data.map((m): [string, number] => [m.name, m.total_value?.value ?? 0])
   }
   try {
@@ -44,9 +47,9 @@ async function totais(igId: string, j: { since: number; until: number }): Promis
 }
 
 /** Seguiram − deixaram de seguir na janela (0 se a Meta não entregar). */
-async function saldoSeguidores(igId: string, j: { since: number; until: number }): Promise<number> {
+async function saldoSeguidores(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<number> {
   try {
-    const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'follows_and_unfollows', metric_type: 'total_value', period: 'day', breakdown: 'follow_type', since: String(j.since), until: String(j.until) }, cacheSeg: CACHE })
+    const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'follows_and_unfollows', metric_type: 'total_value', period: 'day', breakdown: 'follow_type', since: String(j.since), until: String(j.until) }, cacheSeg })
     const res = r.data[0]?.total_value?.breakdowns?.[0]?.results ?? []
     const v = (t: string) => res.find((x) => x.dimension_values[0] === t)?.value ?? 0
     return v('FOLLOWER') - v('NON_FOLLOWER')
@@ -55,8 +58,8 @@ async function saldoSeguidores(igId: string, j: { since: number; until: number }
   }
 }
 
-async function alcanceDiario(igId: string, j: { since: number; until: number }): Promise<{ dia: string; valor: number }[]> {
-  const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'reach', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg: CACHE })
+async function alcanceDiario(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<{ dia: string; valor: number }[]> {
+  const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'reach', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg })
   // end_time = fim do dia (fuso da Meta): o dia medido é o anterior.
   return (r.data[0]?.values ?? []).map((v) => ({ dia: new Date(Date.parse(v.end_time) - DIA * 1000).toISOString().slice(0, 10), valor: v.value }))
 }
@@ -64,7 +67,7 @@ async function alcanceDiario(igId: string, j: { since: number; until: number }):
 type MidiaBruta = { id: string; caption?: string; media_type?: string; media_product_type?: string; permalink?: string; thumbnail_url?: string; media_url?: string; timestamp: string; like_count?: number; comments_count?: number }
 
 /** Posts do feed no período (até 120), mais novos primeiro. */
-async function postsDoPeriodo(igId: string, de: string, ate: string): Promise<MidiaBruta[]> {
+async function postsDoPeriodo(igId: string, de: string, ate: string, cacheSeg: number): Promise<MidiaBruta[]> {
   const inicio = Date.parse(`${de}T03:00:00Z`)
   const fim = Date.parse(`${ate}T03:00:00Z`) + DIA * 1000
   const posts: MidiaBruta[] = []
@@ -72,7 +75,7 @@ async function postsDoPeriodo(igId: string, de: string, ate: string): Promise<Mi
   for (let pagina = 0; pagina < 6; pagina++) {
     const r = await graph<{ data: MidiaBruta[]; paging?: { cursors?: { after?: string }; next?: string } }>(`${igId}/media`, {
       params: { fields: 'id,caption,media_type,media_product_type,permalink,thumbnail_url,media_url,timestamp,like_count,comments_count', limit: '50', ...(depois ? { after: depois } : {}) },
-      cacheSeg: CACHE,
+      cacheSeg,
     })
     for (const m of r.data) if (Date.parse(m.timestamp) >= inicio && Date.parse(m.timestamp) < fim) posts.push(m)
     const ultimo = r.data[r.data.length - 1]
@@ -82,10 +85,10 @@ async function postsDoPeriodo(igId: string, de: string, ate: string): Promise<Mi
   return posts.slice(0, 120)
 }
 
-async function comNumeros(m: MidiaBruta): Promise<PostIG> {
+async function comNumeros(m: MidiaBruta, cacheSeg: number): Promise<PostIG> {
   let n: Record<string, number> = {}
   try {
-    const r = await graph<{ data: Valor[] }>(`${m.id}/insights`, { params: { metric: 'reach,views,saved,shares,total_interactions' }, cacheSeg: CACHE })
+    const r = await graph<{ data: Valor[] }>(`${m.id}/insights`, { params: { metric: 'reach,views,saved,shares,total_interactions' }, cacheSeg })
     n = Object.fromEntries(r.data.map((x) => [x.name, x.values?.[0]?.value ?? x.total_value?.value ?? 0]))
   } catch {
     // Post antigo ou de um tipo sem esse insight: fica com curtidas e comentários.
@@ -128,15 +131,16 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
     }
     const igId = conta.instagram.id
     const js = janelas(periodo.de, periodo.ate)
+    const cacheSeg = cacheDoPeriodo(periodo)
     const [perfil, tot, saldos, diario, brutos] = await Promise.all([
-      graph<{ username: string; followers_count?: number }>(igId, { params: { fields: 'username,followers_count' }, cacheSeg: CACHE }),
-      Promise.all(js.map((j) => totais(igId, j))),
-      Promise.all(js.map((j) => saldoSeguidores(igId, j))),
-      detalhado ? Promise.all(js.map((j) => alcanceDiario(igId, j))) : Promise.resolve([]),
-      postsDoPeriodo(igId, periodo.de, periodo.ate),
+      graph<{ username: string; followers_count?: number }>(igId, { params: { fields: 'username,followers_count' }, cacheSeg }),
+      Promise.all(js.map((j) => totais(igId, j, cacheSeg))),
+      Promise.all(js.map((j) => saldoSeguidores(igId, j, cacheSeg))),
+      detalhado ? Promise.all(js.map((j) => alcanceDiario(igId, j, cacheSeg))) : Promise.resolve([]),
+      postsDoPeriodo(igId, periodo.de, periodo.ate, cacheSeg),
     ])
     const posts = detalhado
-      ? await Promise.all(brutos.slice(0, 40).map(comNumeros))
+      ? await Promise.all(brutos.slice(0, 40).map((m) => comNumeros(m, cacheSeg)))
       : brutos.map(semNumeros)
     return {
       usuario: perfil.username,

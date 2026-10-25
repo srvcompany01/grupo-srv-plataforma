@@ -10,9 +10,10 @@ import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 const dia = (d: Date) => d.toISOString().slice(0, 10)
 const menos = (hoje: string, n: number) => dia(new Date(Date.parse(`${hoje}T12:00:00Z`) - n * 86_400_000))
 
-/** Períodos prontos (até ontem, como os relatórios de anúncios) ou personalizado. */
+/** Hoje, períodos prontos até ontem ou personalizado. */
 function periodo(tipo: string, hoje: string): { de: string; ate: string } {
   const [a, m] = hoje.split('-').map(Number)
+  if (tipo === 'hoje') return { de: hoje, ate: hoje }
   if (tipo === '7') return { de: menos(hoje, 7), ate: menos(hoje, 1) }
   if (tipo === '30') return { de: menos(hoje, 30), ate: menos(hoje, 1) }
   if (tipo === 'mes-passado') return { de: dia(new Date(Date.UTC(a, m - 2, 1))), ate: dia(new Date(Date.UTC(a, m - 1, 0))) }
@@ -42,6 +43,7 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
         <label className="block space-y-1">
           <span className={rotulo}>Período</span>
           <select className={`${campo} w-44`} value={tipo} onChange={(e) => escolher(e.target.value)}>
+            <option value="hoje">Hoje</option>
             <option value="7">Últimos 7 dias</option>
             <option value="30">Últimos 30 dias</option>
             <option value="este-mes">Este mês</option>

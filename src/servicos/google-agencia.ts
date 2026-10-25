@@ -1,6 +1,8 @@
 import 'server-only'
+import { dataDeHoje } from '@/dominio/filtros'
 import { consultaCampanhas, intervaloNegocio, lerAvaliacoesNegocio, lerCampanha, lerMetricasNegocio, lerPalavrasChaveNegocio, type AvaliacaoBruta, type Campanha, type CampanhaBruta, type MetricasNegocio, type PalavraChaveBruta, type SerieBruta } from '@/dominio/google'
 import type { PagoPorDia } from '@/dominio/insights'
+import { periodoEhHoje } from '@/dominio/periodo-anuncios'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import { dados } from './resultado'
 import { idCliente, segredoCliente, urlDeRetorno } from './google-agenda'
@@ -16,6 +18,7 @@ import { idCliente, segredoCliente, urlDeRetorno } from './google-agenda'
 const ESCOPOS = 'openid email https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/business.manage'
 // Versões do Google Ads valem ~1 ano: atualize quando o Google avisar o fim desta.
 const ADS = 'https://googleads.googleapis.com/v26'
+const cacheDoPeriodo = (periodo: { de: string; ate: string }, segundos: number) => periodoEhHoje(periodo, dataDeHoje(new Date())) ? undefined : segundos
 
 export class ErroGoogle extends Error {}
 
@@ -121,11 +124,11 @@ const comErro = async <T>(fn: () => Promise<T>): Promise<T | { erro: string }> =
   }
 }
 
-/** Campanhas ativas da conta com os números do período (cache de 30 min). */
+/** Campanhas ativas da conta com os números do período (cache de 30 min, exceto hoje). */
 export function campanhasGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<{ campanhas: Campanha[]; moeda: string } | { erro: string }> {
   return comErro(async () => {
     const r = await google<{ results?: (CampanhaBruta & { customer?: { currencyCode?: string } })[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
-      metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: consultaCampanhas(periodo.de, periodo.ate).replace('SELECT ', 'SELECT customer.currency_code, ') }, cacheSeg: 1800,
+      metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: consultaCampanhas(periodo.de, periodo.ate).replace('SELECT ', 'SELECT customer.currency_code, ') }, cacheSeg: cacheDoPeriodo(periodo, 1800),
     })
     const linhas = r.results ?? []
     return { campanhas: linhas.map(lerCampanha), moeda: linhas[0]?.customer?.currencyCode ?? 'BRL' }
@@ -137,7 +140,7 @@ export function pagoPorDiaGoogle(contaId: string, periodo: { de: string; ate: st
   return comErro(async () => {
     if (![periodo.de, periodo.ate].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new ErroGoogle('Período inválido.')
     const r = await google<{ results?: { segments?: { date?: string }; metrics?: { costMicros?: string; impressions?: string; clicks?: string } }[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
-      metodo: 'POST', cabecalhos: cabecalhosAds(), cacheSeg: 1800,
+      metodo: 'POST', cabecalhos: cabecalhosAds(), cacheSeg: cacheDoPeriodo(periodo, 1800),
       corpo: { query: `SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks FROM customer WHERE segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` },
     })
     return (r.results ?? []).map((x) => ({ dia: x.segments?.date ?? '', gasto: Number(x.metrics?.costMicros ?? 0) / 1_000_000, impressoes: Number(x.metrics?.impressions ?? 0), alcance: 0, cliques: Number(x.metrics?.clicks ?? 0) }))
@@ -191,13 +194,14 @@ export function perfisDoNegocio(): Promise<{ id: string; nome: string }[] | { er
   })
 }
 
-/** Números do perfil entre duas datas (AAAA-MM-DD). Cache de 1 hora. */
+/** Números do perfil entre duas datas (AAAA-MM-DD). Cache de 1 hora para o histórico e sem cache para hoje. */
 export function metricasDoNegocio(perfil: string, de: string, ate: string): Promise<MetricasNegocio | { erro: string }> {
   return comErro(async () => {
     const local = perfil.slice(perfil.indexOf('locations/'))
     const q = new URLSearchParams(intervaloNegocio(de, ate))
-    const serie = await google<SerieBruta>(`https://businessprofileperformance.googleapis.com/v1/${local}:fetchMultiDailyMetricsTimeSeries?${q}`, { cacheSeg: 3600 })
-    const [avaliacoes, palavras] = await Promise.allSettled([avaliacoesDoNegocio(perfil, de, ate), palavrasChaveDoNegocio(local, de, ate)])
+    const cacheSeg = cacheDoPeriodo({ de, ate }, 3600)
+    const serie = await google<SerieBruta>(`https://businessprofileperformance.googleapis.com/v1/${local}:fetchMultiDailyMetricsTimeSeries?${q}`, { cacheSeg })
+    const [avaliacoes, palavras] = await Promise.allSettled([avaliacoesDoNegocio(perfil, de, ate, cacheSeg), palavrasChaveDoNegocio(local, de, ate, cacheSeg)])
     const avisos = [
       ...(avaliacoes.status === 'rejected' ? ['O Google não liberou as avaliações detalhadas deste perfil.'] : []),
       ...(palavras.status === 'rejected' ? ['O Google não liberou os termos de busca deste perfil.'] : []),
@@ -212,12 +216,12 @@ export function metricasDoNegocio(perfil: string, de: string, ate: string): Prom
   })
 }
 
-async function avaliacoesDoNegocio(perfil: string, de: string, ate: string) {
+async function avaliacoesDoNegocio(perfil: string, de: string, ate: string, cacheSeg: number | undefined) {
   const reviews: AvaliacaoBruta[] = []
   let pagina: string | undefined
   for (let i = 0; i < 50; i++) {
     const q = new URLSearchParams({ pageSize: '50', orderBy: 'updateTime desc', ...(pagina ? { pageToken: pagina } : {}) })
-    const r = await google<{ reviews?: AvaliacaoBruta[]; nextPageToken?: string }>(`https://mybusiness.googleapis.com/v4/${perfil}/reviews?${q}`, { cacheSeg: 3600 })
+    const r = await google<{ reviews?: AvaliacaoBruta[]; nextPageToken?: string }>(`https://mybusiness.googleapis.com/v4/${perfil}/reviews?${q}`, { cacheSeg })
     reviews.push(...(r.reviews ?? []))
     pagina = r.nextPageToken
     if (!pagina) break
@@ -225,7 +229,7 @@ async function avaliacoesDoNegocio(perfil: string, de: string, ate: string) {
   return lerAvaliacoesNegocio(reviews, de, ate)
 }
 
-async function palavrasChaveDoNegocio(local: string, de: string, ate: string) {
+async function palavrasChaveDoNegocio(local: string, de: string, ate: string, cacheSeg: number | undefined) {
   const [anoDe, mesDe] = de.split('-').map(Number)
   const [anoAte, mesAte] = ate.split('-').map(Number)
   const linhas: PalavraChaveBruta[] = []
@@ -236,7 +240,7 @@ async function palavrasChaveDoNegocio(local: string, de: string, ate: string) {
       ['monthlyRange.end_month.year', String(anoAte)], ['monthlyRange.end_month.month', String(mesAte)],
       ['pageSize', '100'], ...(pagina ? [['pageToken', pagina] as [string, string]] : []),
     ])
-    const r = await google<{ searchKeywordsCounts?: PalavraChaveBruta[]; nextPageToken?: string }>(`https://businessprofileperformance.googleapis.com/v1/${local}/searchkeywords/impressions/monthly?${q}`, { cacheSeg: 3600 })
+    const r = await google<{ searchKeywordsCounts?: PalavraChaveBruta[]; nextPageToken?: string }>(`https://businessprofileperformance.googleapis.com/v1/${local}/searchkeywords/impressions/monthly?${q}`, { cacheSeg })
     linhas.push(...(r.searchKeywordsCounts ?? []))
     pagina = r.nextPageToken
     if (!pagina) break

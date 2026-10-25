@@ -1,15 +1,20 @@
 import 'server-only'
 import type { PagoPorDia } from '@/dominio/insights'
 import { leadsDasAcoes, somarLeads, type Leads } from '@/dominio/performance'
-import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { dataDeHoje } from '@/dominio/filtros'
+import { periodoEhHoje, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { avaliarAnuncios, gastoDeMarca, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 /**
  * API de Marketing do Meta com o token de um usuário do sistema do Gerenciador de Negócios (META_ACCESS_TOKEN, com
- * ads_read nas contas dos clientes). O token fica só no servidor. As respostas ficam 30 minutos em cache.
+ * ads_read nas contas dos clientes). O token fica só no servidor. As respostas históricas ficam 30 minutos em cache;
+ * consultas de hoje sempre vão à API.
  */
 const VERSAO = process.env.META_API_VERSION || 'v23.0'
 export const metaConfigurado = () => !!process.env.META_ACCESS_TOKEN
+const CACHE = 1800
+const cacheDoPeriodo = (periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>) => periodoEhHoje(periodo, dataDeHoje(new Date())) ? 0 : CACHE
+const opcoesCache = (segundos: number) => segundos ? { next: { revalidate: segundos } } : { cache: 'no-store' as const }
 
 const CRIATIVO = 'creative.thumbnail_width(720).thumbnail_height(720){title,body,thumbnail_url,image_url,video_id,object_type,effective_object_story_id,instagram_permalink_url}'
 const METRICAS = 'impressions,reach,clicks,inline_link_clicks,ctr,cpm,cpc,spend,frequency,actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking'
@@ -33,7 +38,7 @@ export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnunc
     access_token: token,
   })
   try {
-    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/ads?${q}`, { next: { revalidate: 1800 } })
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/ads?${q}`, opcoesCache(cacheDoPeriodo(periodo)))
     const corpo = (await r.json()) as { data?: AnuncioBruto[]; error?: { code?: number; message?: string } }
     if (!r.ok || corpo.error) {
       console.error('Meta API', r.status, corpo.error)
@@ -52,7 +57,7 @@ export async function pagoPorDiaMeta(contaId: string, periodo: Pick<PeriodoAnunc
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   const q = new URLSearchParams({ level: 'account', time_increment: '1', fields: 'spend,impressions,reach,clicks', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '1000', access_token: token })
   try {
-    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, { next: { revalidate: 1800 } })
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, opcoesCache(cacheDoPeriodo(periodo)))
     const corpo = (await r.json()) as { data?: { date_start: string; spend?: string; impressions?: string; reach?: string; clicks?: string }[]; error?: { code?: number; message?: string } }
     if (!r.ok || corpo.error) {
       console.error('Meta API', r.status, corpo.error)
@@ -81,12 +86,12 @@ export async function nomeDaConta(contaId: string): Promise<string | null> {
 type Acoes = { action_type: string; value: string }[]
 type ErroMeta = { error?: { code?: number; message?: string } }
 
-/** GET na API de Marketing com o token do servidor (cache de 30 min); erro vira { erro } com mensagem clara. */
-async function meta<T>(caminho: string, params: Record<string, string>): Promise<T | { erro: string }> {
+/** GET na API de Marketing com o token do servidor; erro vira { erro } com mensagem clara. */
+async function meta<T>(caminho: string, params: Record<string, string>, cacheSeg = CACHE): Promise<T | { erro: string }> {
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
   try {
-    const r = await fetch(`https://graph.facebook.com/${VERSAO}/${caminho}?${new URLSearchParams({ ...params, access_token: token })}`, { next: { revalidate: 1800 } })
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/${caminho}?${new URLSearchParams({ ...params, access_token: token })}`, opcoesCache(cacheSeg))
     const corpo = (await r.json()) as T & ErroMeta
     if (!r.ok || corpo.error) {
       console.error('Meta API', caminho, r.status, corpo.error)
@@ -106,13 +111,13 @@ type DetalheConjunto = { id: string; destination_type?: string; campaign?: { eff
  * `act/adsets` ou `act/campaigns` filtrada por DELETED/ARCHIVED falhava calada na Meta e deixava tudo sem destino.
  * Lotes de 50; se um lote falhar, pede um a um.
  */
-async function detalhesDosConjuntos(ids: string[]): Promise<Map<string, DetalheConjunto>> {
+async function detalhesDosConjuntos(ids: string[], cacheSeg = CACHE): Promise<Map<string, DetalheConjunto>> {
   const r = new Map<string, DetalheConjunto>()
   const fields = 'destination_type,campaign{effective_status,objective}'
   for (let i = 0; i < ids.length; i += 50) {
     const lote = ids.slice(i, i + 50)
-    const d = await meta<Record<string, DetalheConjunto>>('', { ids: lote.join(','), fields })
-    const itens = 'erro' in d ? await Promise.all(lote.map((id) => meta<DetalheConjunto>(id, { fields }))) : Object.values(d)
+    const d = await meta<Record<string, DetalheConjunto>>('', { ids: lote.join(','), fields }, cacheSeg)
+    const itens = 'erro' in d ? await Promise.all(lote.map((id) => meta<DetalheConjunto>(id, { fields }, cacheSeg))) : Object.values(d)
     for (const x of itens) if (!('erro' in x)) r.set(x.id, x)
   }
   return r
@@ -139,15 +144,16 @@ export type LinhaConjunto = {
 /**
  * Base única dos números da Meta: cada conjunto que gastou no período (inclusive pausados e arquivados), com o destino
  * dele e os leads contados por `leadsDasAcoes` (uma vez por pessoa). Totais da conta = soma dos conjuntos.
- * `mensal` quebra por mês. Cache de 30 min.
+ * `mensal` quebra por mês. Cache de 30 min para períodos históricos e sem cache para hoje.
  */
 export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, mensal = false): Promise<LinhaConjunto[] | { erro: string }> {
+  const cacheSeg = cacheDoPeriodo({ de, ate })
   const ins = await meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
       level: 'adset', fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(mensal ? { time_increment: 'monthly' } : {}),
-  })
+  }, cacheSeg)
   if ('erro' in ins) return ins
   // ponytail: até 500 linhas de insights por consulta; paginar se alguma conta passar disso.
-  const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))])
+  const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))], cacheSeg)
   const destino = new Map([...det].map(([id, c]) => [id, c.destination_type ?? null]))
   return ins.data.map((d) => ({
     mes: mensal ? d.date_start.slice(0, 7) : null,
@@ -204,7 +210,7 @@ export async function campanhasDoPeriodoMeta(contaId: string, periodo: Pick<Peri
   const [linhas, camps] = await Promise.all([
     conjuntosDoPeriodo(contaId, periodo.de, periodo.ate),
     // Mesmo filtro de `estruturaMeta` (o que funciona na Meta); aqui só as ativas, para achar as que não entregaram.
-    meta<{ data: { id: string; name: string }[] }>(`act_${contaId}/campaigns`, { fields: 'id,name', effective_status: '["ACTIVE"]', limit: '300' }),
+    meta<{ data: { id: string; name: string }[] }>(`act_${contaId}/campaigns`, { fields: 'id,name', effective_status: '["ACTIVE"]', limit: '300' }, cacheDoPeriodo(periodo)),
   ])
   if ('erro' in linhas) return linhas
   const por = new Map<string, CampanhaPeriodo>()

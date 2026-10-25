@@ -9,7 +9,7 @@ import { botaoPrimario, campo } from '@/lib/ui'
 
 const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
 
-/** Período dos resultados: atalhos de 7 e 30 dias ou datas escolhidas (vão na URL: ?dias=30 ou ?de=…&ate=…). */
+/** Período dos resultados: hoje, 7 e 30 dias ou datas escolhidas. */
 export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo: PeriodoAnuncios; hoje: string }) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
@@ -17,6 +17,10 @@ export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo:
   const [ate, setAte] = useState(periodo.ate)
   // `base` pode já ter outros filtros (ex.: ?cliente=…): o período entra junto.
   const url = (p: PeriodoAnuncios) => (consultaPeriodo(p) ? `${base}${base.includes('?') ? '&' : '?'}${consultaPeriodo(p)}` : base)
+  const selecionarHoje = () => {
+    if (periodo.atalho === 'hoje') router.refresh()
+    else router.push(url({ de: hoje, ate: hoje, atalho: 'hoje' }), { scroll: false })
+  }
   const aplicar = () => {
     setAberto(false)
     router.push(url({ de, ate, atalho: null }), { scroll: false })
@@ -24,6 +28,7 @@ export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo:
   return (
     <div className="relative flex flex-wrap items-center gap-1">
       <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
+        <button type="button" onClick={selecionarHoje} aria-pressed={periodo.atalho === 'hoje'} title={periodo.atalho === 'hoje' ? 'Atualizar dados de hoje' : 'Ver dados de hoje'} className={chip(periodo.atalho === 'hoje')}>Hoje</button>
         {([7, 30] as const).map((d) => <Link key={d} href={url({ de: '', ate: '', atalho: d })} scroll={false} className={chip(periodo.atalho === d)}>{d} dias</Link>)}
         <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-haspopup="dialog" className={`${chip(!periodo.atalho)} inline-flex items-center gap-1`}>
           <CalendarRange className="h-3.5 w-3.5" /> {periodo.atalho ? 'Personalizado' : rotuloPeriodo(periodo)}
