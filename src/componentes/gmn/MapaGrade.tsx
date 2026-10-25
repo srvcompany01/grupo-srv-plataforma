@@ -72,13 +72,13 @@ export function Medidor({ nota }: { nota: number }) {
     return <path d={`M ${100 + 85 * Math.cos(a)} ${100 - 85 * Math.sin(a)} A 85 85 0 0 1 ${100 + 85 * Math.cos(b)} ${100 - 85 * Math.sin(b)}`} stroke={cor} strokeWidth="14" fill="none" />
   }
   return (
-    <svg viewBox="0 0 200 120" className="mx-auto w-full max-w-64" role="img" aria-label={`Nota ${nota} de 100`}>
+    <svg viewBox="0 0 200 134" className="mx-auto w-full max-w-64" role="img" aria-label={`Nota ${nota} de 100`}>
       {arco(0, 60, '#d64545')}
       {arco(60, 80, '#eda100')}
       {arco(80, 100, '#1f8a4c')}
       <line x1="100" y1="100" x2={ponta.x} y2={ponta.y} stroke="#1f1f1f" strokeWidth="4" strokeLinecap="round" />
       <circle cx="100" cy="100" r="6" fill="#1f1f1f" />
-      <text x="100" y="118" textAnchor="middle" fontSize="20" fontWeight="700" fill="#1f1f1f">{nota}</text>
+      <text x="100" y="130" textAnchor="middle" fontSize="20" fontWeight="700" fill="#1f1f1f">{nota}</text>
     </svg>
   )
 }

@@ -1,4 +1,4 @@
-import { BarChart3, IdCard, KeyRound, LayoutGrid, ListChecks, MapPin, Megaphone, Search } from 'lucide-react'
+import { BarChart3, ExternalLink, IdCard, KeyRound, LayoutGrid, ListChecks, MapPin, Megaphone, MessageCircle, Search, Send } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Suspense } from 'react'
@@ -28,6 +28,8 @@ import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
 import { CamposCliente } from './CamposCliente'
 import { ExcluirCliente } from './ExcluirCliente'
+import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
+import { relatoriosDoCliente } from '@/servicos/relatorio-compartilhado'
 import { SeletorCapa } from './SeletorCapa'
 
 export default async function Cliente({ params, searchParams }: PageProps<'/clientes/[cliente]'>) {
@@ -119,6 +121,18 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             <CarregarRelatorio cliente={cliente} periodo={periodo} seletor={seletor} />
           </Suspense>
         )}
+        {!cliente.interno && (
+          <div id="relatorios">
+            <Modulo icone={Send} titulo="Relatório para o cliente" descricao="Gera um link com os números do período (anúncios, Instagram e Google) e o texto pronto para o WhatsApp">
+              <div className="space-y-4">
+                <EnviarRelatorio clienteId={cliente.id} hoje={dataDeHoje(new Date())} temWhatsapp={!!cliente.whatsapp} />
+                <Suspense fallback={null}>
+                  <RelatoriosGerados clienteId={cliente.id} whatsapp={cliente.whatsapp} />
+                </Suspense>
+              </div>
+            </Modulo>
+          </div>
+        )}
         {cliente.metaContaId && (
           <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
             <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto seletor={seletor} />
@@ -152,6 +166,28 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           {admin && !cliente.interno && <ExcluirCliente clienteId={id} nome={cliente.nome} />}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Os últimos relatórios gerados (inclusive os automáticos do dia 1), com o WhatsApp e o link. */
+async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; whatsapp: string | null }) {
+  const lista = await relatoriosDoCliente(await criarClienteServidor(), { id: clienteId, whatsapp })
+  if (!lista.length) return null
+  const data = (d: string) => d.split('-').reverse().slice(0, 2).join('/')
+  return (
+    <div className="space-y-1">
+      <p className="text-legenda font-semibold text-texto-3">Gerados</p>
+      <ul className="divide-y divide-borda/60 rounded-lg border border-borda text-rotulo">
+        {lista.map((r) => (
+          <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5">
+            <span className="min-w-0 flex-1">{data(r.de)} a {data(r.ate)}{r.automatico && <span className="ml-1.5 rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-3">automático</span>}</span>
+            <span className="text-legenda text-texto-3">{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
+            <a href={r.whatsapp} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>
+            <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline"><ExternalLink className="h-3.5 w-3.5" /> Abrir</a>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

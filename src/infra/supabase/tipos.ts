@@ -53,6 +53,12 @@ export type Database = {
         Update: { id?: string; nome?: string; endereco?: string; nota?: number | null; avaliacoes?: number | null; lat?: number | null; lng?: number | null; dados?: Json; atualizado_em?: string }
         Relationships: []
       }
+      client_reports: {
+        Row: { id: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico: boolean; created_by: string | null; created_at: string }
+        Insert: { id?: string; token: string; client_id: string; de: string; ate: string; dados: Json; automatico?: boolean; created_by?: string | null; created_at?: string }
+        Update: { id?: string; token?: string; client_id?: string; de?: string; ate?: string; dados?: Json; automatico?: boolean; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
       gmn_monitors: {
         Row: { client_id: string; palavra: string; grade: number; raio_km: number; created_by: string | null; created_at: string }
         Insert: { client_id: string; palavra: string; grade: number; raio_km: number; created_by?: string | null; created_at?: string }

@@ -93,3 +93,21 @@ export async function metaPorMes(contaId: string, de: string, ate: string): Prom
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
   }
 }
+
+/** Totais da conta no período (gasto, cliques, impressões e leads). Cache de 30 min. */
+export async function totaisDoPeriodoMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<{ gasto: number; cliques: number; impressoes: number; formularios: number; conversas: number } | { erro: string }> {
+  const token = process.env.META_ACCESS_TOKEN
+  if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
+  const q = new URLSearchParams({ level: 'account', fields: 'spend,clicks,impressions,actions', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), access_token: token })
+  try {
+    const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, { next: { revalidate: 1800 } })
+    const corpo = (await r.json()) as { data?: { spend?: string; clicks?: string; impressions?: string; actions?: { action_type: string; value: string }[] }[]; error?: { code?: number; message?: string } }
+    if (!r.ok || corpo.error) return { erro: mensagemDaMeta(corpo) }
+    const d = corpo.data?.[0]
+    const l = leadsDasAcoes(d?.actions)
+    return { gasto: Number(d?.spend ?? 0), cliques: Number(d?.clicks ?? 0), impressoes: Number(d?.impressions ?? 0), formularios: l.formularios, conversas: l.conversas }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }
+  }
+}

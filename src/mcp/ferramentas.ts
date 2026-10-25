@@ -194,6 +194,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'GMN (Google Meu Negócio, aba GMN): pelos dados PÚBLICOS do Google (Places API), sem depender da API do Business Profile. Primeiro ligue o lugar do cliente no Google (gmn_buscar_lugares + definir_lugar_google_cliente). gmn_cliente traz o perfil, a nota de saúde de 0 a 100 (Fraco/Razoável/Bom por item), as avaliações em destaque, a evolução e o link de avaliação. gmn_geogrid roda a palavra-chave numa grade ao redor do endereço e guarda a posição em cada ponto (próxima da do Maps, não idêntica); gmn_varreduras lê as varreduras com os concorrentes do top 3; gmn_acompanhar liga o geogrid automático toda segunda, com aviso se a posição piorar. Prospecção: gmn_buscar_lugares (segmento + cidade) e gmn_analisar_lugar (pré-análise e texto de abordagem).',
+        'Relatório para o cliente: gerar_relatorio_cliente cria um link público com os números do período e o texto do WhatsApp; na página do cliente há o mesmo botão e a lista dos gerados. No dia 1 a plataforma gera o do mês anterior de cada cliente ativo e avisa a equipe no sino para enviar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
         'Time: quem da equipe está ativo agora (site aberto e mexendo nos últimos 5 min), ocioso ou offline, há quanto tempo, e o status que cada um escolheu (disponível, reunião, intervalo, foco, gravando, externo, ausente; com prazo volta sozinho a disponível). ver_time mostra o quadro; definir_meu_status muda o status da pessoa dona do token; relatorio_time traz os minutos ativos por pessoa e dia (de todos só para admin e gestor; os demais veem só os próprios).',
@@ -992,6 +993,20 @@ export const FERRAMENTAS: Ferramenta[] = [
       const d = await p.detalhesDoLugar(sb, a.placeId)
       const s = analisarSaude(d.perfil, dataDeHoje(new Date()))
       return { perfil: p.detalhesParaIA(d), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, textoAbordagem: textoProposta(d.nome, s) }
+    },
+  }),
+
+  definir({
+    nome: 'gerar_relatorio_cliente',
+    descricao: 'Gera o relatório do período para mandar AO CLIENTE: um link público (sem login) com anúncios (investimento opcional, leads, custo por lead, cliques), Instagram (seguidores, alcance, interações, melhor post), Google (nota, avaliações, saúde do perfil e o mapa do último geogrid) e os destaques; devolve o link, o texto pronto do WhatsApp e o link wa.me para o número do cliente. No dia 1 a plataforma já gera o do mês anterior sozinha.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), de: data('Início'), ate: data('Fim'), mostrarInvestimento: z.boolean().default(true) },
+    executar: async ({ sb }, a) => {
+      if (a.ate < a.de) throw new Error('O fim precisa ser depois do início.')
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const r = await (await import('@/servicos/relatorio-compartilhado')).gerarRelatorio(sb, cliente, { de: a.de, ate: a.ate }, { mostrarInvestimento: a.mostrarInvestimento })
+      return { url: r.url, textoWhatsapp: r.texto, linkWhatsapp: r.whatsapp, resumo: r.dados }
     },
   }),
 
