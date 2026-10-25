@@ -30,6 +30,10 @@ export type RelatorioCompartilhado = {
   } | null
   instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
+  /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
+  meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; conversas: number } | null
+  /** Só para a equipe (a página pública não mostra). */
+  avisosInternos?: string[]
   /** Cada campanha que gastou no período, por plataforma (versão 2+). */
   campanhas?: CampanhaRelatorio[]
   destaques: string[]
@@ -88,3 +92,26 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
 
 /** Link do WhatsApp com o texto pronto (para o número do cliente, se houver). */
 export const linkWhatsapp = (texto: string, numero: string | null) => `https://wa.me/${numero ?? ''}?text=${encodeURIComponent(texto)}`
+
+/**
+ * Avisos para a EQUIPE ao gerar o relatório (não aparecem na página do cliente): o que falta no cadastro e o que
+ * aconteceu na operação e o cliente vai perguntar.
+ */
+export function avisosInternos(e: {
+  whatsapp: string | null
+  telefoneComoWhatsapp: string | null
+  meuNegocioLigado: boolean
+  erroMeuNegocio: string | null
+  ativasSemEntrega: string[]
+  pausadasComGasto: string[]
+  avisosGoogle: string[]
+}): string[] {
+  const lista = (xs: string[]) => xs.slice(0, 4).join('; ') + (xs.length > 4 ? ` e mais ${xs.length - 4}` : '')
+  return [
+    ...(e.whatsapp ? [] : [e.telefoneComoWhatsapp ? `Cliente sem WhatsApp no cadastro: o link do WhatsApp sai sem destinatário. Há um botão para o telefone do cadastro (${e.telefoneComoWhatsapp}); confirme antes que é WhatsApp.` : 'Cliente sem WhatsApp no cadastro: o link do WhatsApp sai sem destinatário (escolha o contato ao abrir). Cadastre o WhatsApp na página do cliente.']),
+    ...(!e.meuNegocioLigado ? ['Métricas do Meu Negócio indisponíveis (visualizações, ligações, rotas, cliques no site): perfil do Google Meu Negócio não ligado ao cliente.'] : e.erroMeuNegocio ? [`Métricas do Meu Negócio indisponíveis: ${e.erroMeuNegocio}`] : []),
+    ...(e.ativasSemEntrega.length ? [`Campanhas ativas sem nenhum gasto no período (em revisão, reprovadas, público ou pagamento?): ${lista(e.ativasSemEntrega)}.`] : []),
+    ...(e.pausadasComGasto.length ? [`Campanhas pausadas que gastaram no período (o cliente pode perguntar por que pararam): ${lista(e.pausadasComGasto)}.`] : []),
+    ...e.avisosGoogle,
+  ]
+}

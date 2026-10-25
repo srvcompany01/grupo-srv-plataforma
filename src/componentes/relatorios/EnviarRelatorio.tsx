@@ -21,12 +21,12 @@ function periodo(tipo: string, hoje: string): { de: string; ate: string } {
 }
 
 /** Gera o relatório do cliente e entrega o link, o texto e o botão do WhatsApp (com o número do cadastro). */
-export function EnviarRelatorio({ clienteId, hoje, temWhatsapp }: { clienteId: string; hoje: string; temWhatsapp: boolean }) {
+export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: string; temWhatsapp?: boolean }) {
   const [tipo, setTipo] = useState('30')
   const [de, setDe] = useState(menos(hoje, 30))
   const [ate, setAte] = useState(menos(hoje, 1))
   const [investimento, setInvestimento] = useState(true)
-  const [pronto, setPronto] = useState<{ url: string; texto: string; whatsapp: string } | null>(null)
+  const [pronto, setPronto] = useState<{ url: string; texto: string; whatsapp: string | null; whatsappTelefone: string | null; avisos: string[] } | null>(null)
   const [pendente, iniciar] = useTransition()
   const escolher = (t: string) => {
     setTipo(t)
@@ -65,11 +65,18 @@ export function EnviarRelatorio({ clienteId, hoje, temWhatsapp }: { clienteId: s
       {pronto && (
         <div className="space-y-2 rounded-xl border border-sucesso/30 bg-sucesso-fundo/40 p-3">
           <div className="flex flex-wrap gap-2">
-            <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> {temWhatsapp ? 'Enviar no WhatsApp do cliente' : 'Abrir no WhatsApp'}</a>
+            {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> Enviar no WhatsApp do cliente</a>}
+            {!pronto.whatsapp && pronto.whatsappTelefone && <a href={pronto.whatsappTelefone} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Enviar para o telefone do cadastro</a>}
+            {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Abrir WhatsApp e escolher o contato</a>}
             <a href={pronto.url} target="_blank" rel="noreferrer" className={botaoSecundario}><ExternalLink className="h-4 w-4" /> Ver relatório</a>
             <CopiarTexto texto={pronto.texto} rotulo="Copiar texto" />
           </div>
-          {!temWhatsapp && <p className="text-legenda text-aviso-forte">Sem WhatsApp no cadastro: o WhatsApp abre para você escolher o contato.</p>}
+          {pronto.avisos.length > 0 && (
+            <div className="space-y-1 rounded-lg border border-aviso/40 bg-aviso-fundo/50 p-2">
+              <p className="text-legenda font-semibold text-aviso-forte">Só para a equipe (o cliente não vê):</p>
+              <ul className="list-disc space-y-0.5 pl-5 text-legenda text-texto-2">{pronto.avisos.map((a) => <li key={a}>{a}</li>)}</ul>
+            </div>
+          )}
           <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-white p-2 font-sans text-legenda text-texto-2">{pronto.texto}</pre>
         </div>
       )}

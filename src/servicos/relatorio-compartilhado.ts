@@ -1,15 +1,16 @@
 import 'server-only'
 import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro } from '@/dominio/gmn'
-import { totaisCampanhas } from '@/dominio/google'
+import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import type { Cliente } from './clientes-plataforma'
-import { campanhasGoogle, estruturaGoogle, situacaoGoogle } from './google-agencia'
+import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
+import { lerWhatsapp } from './clientes-plataforma'
 import { instagramDoCliente } from './insights-instagram'
 import { campanhasDoPeriodoMeta, totaisDoPeriodoMeta } from './meta-anuncios'
 import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
@@ -18,9 +19,9 @@ const BASE = () => process.env.NEXT_PUBLIC_URL_BASE ?? 'https://app.gruposrv.com
 export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
 
 /** Junta os números do período (o que der: cada fonte que falhar fica de fora) e guarda a foto. */
-export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string; dados: RelatorioCompartilhado }> {
+export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; whatsappTelefone: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
   const google = c.googleAdsId ? await situacaoGoogle() : null
-  const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle] = await Promise.all([
+  const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio] = await Promise.all([
     c.metaContaId ? totaisDoPeriodoMeta(c.metaContaId, periodo) : null,
     c.googleAdsId && google?.conectado ? campanhasGoogle(c.googleAdsId, periodo) : null,
     c.metaPaginaId ? instagramDoCliente(c.metaPaginaId, periodo, true) : null,
@@ -28,7 +29,20 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     c.googlePlaceId ? varreduras(sb, c.id, 1) : [],
     c.metaContaId ? campanhasDoPeriodoMeta(c.metaContaId, periodo) : null,
     c.googleAdsId && google?.conectado ? estruturaGoogle(c.googleAdsId, periodo) : null,
+    c.googlePerfil ? metricasDoNegocio(c.googlePerfil, periodo.de, periodo.ate) : null,
   ])
+  const cm = campsMeta && !('erro' in campsMeta) ? campsMeta : null
+  const cg = campsGoogle && !('erro' in campsGoogle) ? campsGoogle : null
+  const telefoneComoWhatsapp = !c.whatsapp && c.telefone ? lerWhatsapp(c.telefone) ?? null : null
+  const avisos = avisosInternos({
+    whatsapp: c.whatsapp,
+    telefoneComoWhatsapp,
+    meuNegocioLigado: !!c.googlePerfil,
+    erroMeuNegocio: negocio && 'erro' in negocio ? negocio.erro : null,
+    ativasSemEntrega: [...(cm?.ativasSemGasto.map((n) => `${n} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'ENABLED' && x.custo === 0).map((x) => `${x.nome} (Google)`) ?? [])],
+    pausadasComGasto: [...(cm?.campanhas.filter((x) => x.status !== 'ACTIVE').map((x) => `${x.nome} (Meta)`) ?? []), ...(cg?.filter((x) => x.status !== 'ENABLED' && x.custo > 0).map((x) => `${x.nome} (Google)`) ?? [])],
+    avisosGoogle: goog && !('erro' in goog) ? avisosGoogle(totaisCampanhas(goog.campanhas)) : [],
+  })
   const m = meta && !('erro' in meta) ? meta : null
   const g = goog && !('erro' in goog) ? totaisCampanhas(goog.campanhas) : null
   const i = ig && !('erro' in ig) ? ig : null
@@ -65,9 +79,11 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em, primeiro, lider: liderInfo } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     campanhas: [
-      ...(campsMeta && !('erro' in campsMeta) ? campsMeta.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
-      ...(campsGoogle && !('erro' in campsGoogle) ? campsGoogle.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
+      ...(cm ? cm.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
+      ...(cg ? cg.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
     ],
+    meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, conversas: negocio.conversas } : null,
+    avisosInternos: avisos,
     destaques: [
       ...(m || g ? analisarPago({ meta: m ? { gasto: m.gasto, impressoes: m.impressoes, alcance: 0, cliques: m.cliques, ctr: m.impressoes ? (m.cliques / m.impressoes) * 100 : 0, anuncios: 0, fracos: 0, frequenciaAlta: 0 } : null, google: g ? { custo: g.custo, cliques: g.cliques, conversoes: g.conversoes, ctr: g.impressoes ? (g.cliques / g.impressoes) * 100 : 0, custoPorConversao: g.conversoes ? g.custo / g.conversoes : 0, campanhas: goog && !('erro' in goog) ? goog.campanhas.length : 0 } : null }).destaques : []),
       ...(i ? analisarOrganico(i, dias).destaques : []),
@@ -79,18 +95,19 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   if (error) throw error
   const url = urlDoRelatorio(token)
   const texto = textoWhatsapp(dados, url)
-  return { id: data.id, url, texto, whatsapp: linkWhatsapp(texto, c.whatsapp), dados }
+  return { id: data.id, url, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, whatsappTelefone: telefoneComoWhatsapp ? linkWhatsapp(texto, telefoneComoWhatsapp) : null, avisos, dados }
 }
 
-export type RelatorioGerado = { id: string; url: string; de: string; ate: string; automatico: boolean; em: string; texto: string; whatsapp: string }
+export type RelatorioGerado = { id: string; url: string; de: string; ate: string; automatico: boolean; em: string; texto: string; whatsapp: string | null; avisos: string[]; desatualizado: boolean }
 
 export async function relatoriosDoCliente(sb: Supabase, c: Pick<Cliente, 'id' | 'whatsapp'>, limite = 10): Promise<RelatorioGerado[]> {
   const { data, error } = await sb.from('client_reports').select('id, token, de, ate, automatico, created_at, dados').eq('client_id', c.id).order('created_at', { ascending: false }).limit(limite)
   if (error) return []
   return data.map((r) => {
     const url = urlDoRelatorio(r.token)
-    const texto = textoWhatsapp(r.dados as unknown as RelatorioCompartilhado, url)
-    return { id: r.id, url, de: r.de, ate: r.ate, automatico: r.automatico, em: r.created_at, texto, whatsapp: linkWhatsapp(texto, c.whatsapp) }
+    const d = r.dados as unknown as RelatorioCompartilhado
+    const texto = textoWhatsapp(d, url)
+    return { id: r.id, url, de: r.de, ate: r.ate, automatico: r.automatico, em: r.created_at, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, avisos: d.avisosInternos ?? [], desatualizado: (d.versao ?? 1) < VERSAO_RELATORIO }
   })
 }
 

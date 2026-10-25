@@ -1035,7 +1035,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'gerar_relatorio_cliente',
-    descricao: 'Gera o relatório do período para mandar AO CLIENTE: um link público (sem login) com anúncios (investimento opcional, leads, custo por lead, cliques), Instagram (seguidores, alcance, interações, melhor post), Google (nota, avaliações, saúde do perfil e o mapa do último geogrid) e os destaques; devolve o link, o texto pronto do WhatsApp e o link wa.me para o número do cliente. No dia 1 a plataforma já gera o do mês anterior sozinha.',
+    descricao: 'Gera o relatório do período para mandar AO CLIENTE: um link público (sem login) com anúncios (investimento opcional, leads, custo por lead, cliques), Instagram (seguidores, alcance, interações, melhor post), Google (nota, avaliações, saúde do perfil e o mapa do último geogrid) e os destaques; devolve o link, o texto pronto do WhatsApp e o link wa.me para o número do cliente (null sem WhatsApp no cadastro; aí vem o do telefone, se houver, para confirmar). avisosInternos traz o que a equipe precisa saber e o cliente não vê: cadastro incompleto, Meu Negócio não ligado, campanhas ativas sem entrega, pausadas com gasto e conversões do Google sem valor. No dia 1 a plataforma já gera o do mês anterior sozinha.',
     escrita: true,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), de: data('Início'), ate: data('Fim'), mostrarInvestimento: z.boolean().default(true) },
     executar: async ({ sb }, a) => {
@@ -1043,7 +1043,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const cliente = await buscarCliente(sb, a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       const r = await (await import('@/servicos/relatorio-compartilhado')).gerarRelatorio(sb, cliente, { de: a.de, ate: a.ate }, { mostrarInvestimento: a.mostrarInvestimento })
-      return { url: r.url, textoWhatsapp: r.texto, linkWhatsapp: r.whatsapp, resumo: r.dados }
+      return { url: r.url, textoWhatsapp: r.texto, linkWhatsapp: r.whatsapp, linkWhatsappTelefoneDoCadastro: r.whatsappTelefone, avisosInternos: r.avisos, resumo: { ...r.dados, avisosInternos: undefined } }
     },
   }),
 

@@ -144,6 +144,17 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
           </Secao>
         )}
 
+        {r.meuNegocio && (
+          <Secao titulo="Google Meu Negócio no período" icone={MapPin}>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Cartao icone={Eye} cor="#2a78d6" rotulo="Visualizações do perfil" valor={num(r.meuNegocio.visualizacoes)} extra={`${num(r.meuNegocio.buscas)} na busca · ${num(r.meuNegocio.mapas)} no Maps`} />
+              <Cartao icone={MessageCircle} cor="#1baf7a" rotulo="Ligações" valor={num(r.meuNegocio.ligacoes)} />
+              <Cartao icone={MapPin} cor="#eb6834" rotulo="Pedidos de rota" valor={num(r.meuNegocio.rotas)} />
+              <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no site" valor={num(r.meuNegocio.site)} />
+            </div>
+          </Secao>
+        )}
+
         <footer className="pt-2 text-center text-legenda text-texto-3">Relatório gerado pela Grupo SRV em {new Date(r.geradoEm).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}.</footer>
       </div>
     </main>

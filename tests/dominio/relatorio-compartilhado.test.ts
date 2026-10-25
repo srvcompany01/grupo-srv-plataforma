@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -54,5 +54,17 @@ describe('R1-3: geogrid no texto do relatório', () => {
     const geo = { palavra: 'compro ouro', metricas: { posicaoMedia: 2, posicaoMediaTotal: 2, top3: 98.8, top10: 100, encontrado: 100, pontos: 81 }, centro: { lat: 0, lng: 0 }, pontos: [], em: '', primeiro: 1.2, lider: { nome: 'Compra Ouro Pará', pct: 100 } }
     const t = textoWhatsapp({ ...base, gmn: { nota: 4.9, avaliacoes: 613, saude: 80, geogrid: geo } }, 'u')
     expect(t).toMatch(/1º lugar em 1,2%.*Compra Ouro Pará \(100% dos pontos\)/)
+  })
+})
+
+describe('R1-2, R1-4 e R1-5: avisos internos', () => {
+  it('cadastro, Meu Negócio e operação; nada quando está tudo certo', () => {
+    const a = avisosInternos({ whatsapp: null, telefoneComoWhatsapp: '5591984479696', meuNegocioLigado: false, erroMeuNegocio: null, ativasSemEntrega: ['Pesquisa | Concorrentes'], pausadasComGasto: ['CAMAS [PP]', 'CBO-TESTE / ICARUS'], avisosGoogle: ['Conversões sem valor configurado'] })
+    expect(a).toHaveLength(5)
+    expect(a[0]).toMatch(/sem WhatsApp.*5591984479696.*confirme/)
+    expect(a[1]).toMatch(/Meu Negócio indisponíveis.*não ligado/)
+    expect(a[2]).toMatch(/Pesquisa \| Concorrentes/)
+    expect(a[3]).toMatch(/CAMAS \[PP\]; CBO-TESTE/)
+    expect(avisosInternos({ whatsapp: '5591', telefoneComoWhatsapp: null, meuNegocioLigado: true, erroMeuNegocio: null, ativasSemEntrega: [], pausadasComGasto: [], avisosGoogle: [] })).toEqual([])
   })
 })
