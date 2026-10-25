@@ -1,12 +1,12 @@
 'use client'
 
-import { Radar, Search, Star } from 'lucide-react'
+import { BellRing, Radar, Search, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { buscarLugaresAcao, definirLugarAcao, rodarGeogridAcao } from '@/app/(app)/gmn/acoes'
+import { buscarLugaresAcao, definirLugarAcao, monitorarAcao, rodarGeogridAcao } from '@/app/(app)/gmn/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { GRADES } from '@/dominio/gmn'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
+import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { LugarResumo } from '@/servicos/places'
 
 /** Procura o negócio do cliente no Google e liga o lugar certo ao cadastro. */
@@ -80,5 +80,15 @@ export function NovaVarredura({ clienteId, base, palavraInicial, gradeInicial = 
       </label>
       <button type="submit" disabled={pendente} className={botaoPrimario}><Radar className="h-4 w-4" /> {pendente ? `Varrendo ${grade * grade} pontos…` : 'Rodar geogrid'}</button>
     </form>
+  )
+}
+
+/** Liga ou desliga o geogrid automático (toda segunda) de uma palavra. */
+export function BotaoMonitor({ clienteId, palavra, grade, raioKm, ligado }: { clienteId: string; palavra: string; grade: number; raioKm: number; ligado: boolean }) {
+  const [pendente, iniciar] = useTransition()
+  return (
+    <button type="button" disabled={pendente} onClick={() => iniciar(async () => { avisar(await monitorarAcao(clienteId, palavra, grade, raioKm, !ligado), true) })} className={ligado ? `${botaoFantasma} h-8 text-legenda` : botaoSecundario}>
+      <BellRing className="h-4 w-4" /> {ligado ? 'Parar' : 'Acompanhar toda semana'}
+    </button>
   )
 }

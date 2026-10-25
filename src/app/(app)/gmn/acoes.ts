@@ -48,3 +48,12 @@ export async function rodarGeogridAcao(clienteId: string, palavra: string, grade
     return erro(e)
   }
 }
+
+/** Liga ou desliga o geogrid automático (toda segunda) da palavra. */
+export async function monitorarAcao(clienteId: string, palavra: string, grade: number, raioKm: number, ligado: boolean): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(clienteId) || palavra.trim().length < 2 || !GRADES.includes(grade as Grade) || !(raioKm > 0 && raioKm <= 50)) return { erro: 'Dados inválidos.' }
+  const r = await tentar(async () => places.definirMonitor(await criarClienteServidor(), clienteId, { palavra, grade: grade as Grade, raioKm }, ligado), ligado ? 'Vamos varrer essa palavra toda segunda-feira.' : 'Acompanhamento semanal desligado.')
+  revalidatePath('/gmn')
+  return r
+}

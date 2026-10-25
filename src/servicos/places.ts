@@ -1,5 +1,5 @@
 import 'server-only'
-import { analisarSaude, concorrentesDaGrade, gerarGrade, metricasDaGrade, PROFUNDIDADE, raioDoVies, type Grade, type MetricasGrade, type PerfilPublico, type Ponto, type PontoGrade } from '@/dominio/gmn'
+import { analisarSaude, concorrentesDaGrade, gerarGrade, metricasDaGrade, pioraNoGeogrid, PROFUNDIDADE, raioDoVies, type Grade, type MetricasGrade, type PerfilPublico, type Ponto, type PontoGrade } from '@/dominio/gmn'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
@@ -218,3 +218,47 @@ export async function evolucaoDoPerfil(sb: Supabase, clienteId: string, dias = 9
 
 /** Detalhes para a IA: sem o bloco interno da análise e só a quantidade de fotos. */
 export const detalhesParaIA = (d: Detalhes) => ({ id: d.id, nome: d.nome, endereco: d.endereco, nota: d.nota, avaliacoes: d.avaliacoes, categoria: d.categoria, site: d.site, telefone: d.telefone, mapa: d.mapa, status: d.status, fotos: d.fotos.length, horario: d.horario, avaliacoesRecentes: d.avaliacoesRecentes, atualizadoEm: d.atualizadoEm })
+
+// ───────────────────────────── Geogrid agendado (toda segunda) ─────────────────────────────
+
+export type Monitor = { palavra: string; grade: Grade; raioKm: number }
+
+export async function monitoresDoCliente(sb: Supabase, clienteId: string): Promise<Monitor[]> {
+  const { data, error } = await sb.from('gmn_monitors').select('palavra, grade, raio_km').eq('client_id', clienteId).order('created_at')
+  if (error) return []
+  return data.map((m) => ({ palavra: m.palavra, grade: m.grade as Grade, raioKm: Number(m.raio_km) }))
+}
+
+/** Liga (ou atualiza grade e raio) ou desliga o acompanhamento semanal de uma palavra. */
+export async function definirMonitor(sb: Supabase, clienteId: string, m: Monitor, ligado: boolean): Promise<void> {
+  const { error } = ligado
+    ? await sb.from('gmn_monitors').upsert({ client_id: clienteId, palavra: m.palavra.trim(), grade: m.grade, raio_km: m.raioKm })
+    : await sb.from('gmn_monitors').delete().eq('client_id', clienteId).eq('palavra', m.palavra.trim())
+  if (error) throw error
+}
+
+/** Rotina semanal: roda cada palavra acompanhada e avisa no sino quando a posição piorou em relação à anterior. */
+export async function rodarMonitores(): Promise<{ varreduras: number; avisos: number; erros: number }> {
+  const admin = criarClienteAdmin()
+  const sb = admin as unknown as Supabase
+  const { data: mons } = await admin.from('gmn_monitors').select('client_id, palavra, grade, raio_km, clients!inner(name, google_place_id, status)')
+  const { data: gestores } = await admin.from('profiles').select('id').in('role', ['admin', 'gestor']).eq('active', true)
+  const r = { varreduras: 0, avisos: 0, erros: 0 }
+  for (const m of (mons ?? []) as unknown as { client_id: string; palavra: string; grade: number; raio_km: number; clients: { name: string; google_place_id: string | null; status: string } }[]) {
+    if (!m.clients.google_place_id || m.clients.status === 'encerrado') continue
+    try {
+      const anterior = (await varreduras(sb, m.client_id, 30)).find((v) => v.palavra === m.palavra)
+      const atual = await rodarGeogrid(sb, { id: m.client_id }, m.clients.google_place_id, m.palavra, m.grade as Grade, Number(m.raio_km))
+      r.varreduras++
+      const piora = anterior ? pioraNoGeogrid(atual.metricas, anterior.metricas) : null
+      if (piora && gestores?.length) {
+        await admin.from('notifications').insert(gestores.map((g) => ({ user_id: g.id, kind: 'alerta', message: `${m.clients.name}: no Google, "${m.palavra}" piorou: ${piora}.`.slice(0, 300), link: `/gmn?cliente=${m.client_id}&aba=geogrid&varredura=${atual.id}` })))
+        r.avisos++
+      }
+    } catch (e) {
+      console.error('geogrid agendado', m.client_id, m.palavra, e)
+      r.erros++
+    }
+  }
+  return r
+}

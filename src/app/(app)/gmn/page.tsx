@@ -2,7 +2,7 @@ import { BarChart3, ExternalLink, Globe, MapPin, MessageSquareText, Phone, QrCod
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
-import { LigarLugar, NovaVarredura } from '@/componentes/gmn/FormulariosGmn'
+import { BotaoMonitor, LigarLugar, NovaVarredura } from '@/componentes/gmn/FormulariosGmn'
 import { MapaGrade, Medidor } from '@/componentes/gmn/MapaGrade'
 import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
@@ -197,7 +197,7 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
 
 async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; placeId: string; varreduraId: string }) {
   const sb = await criarClienteServidor()
-  const lista = await places.varreduras(sb, cliente.id)
+  const [lista, monitores] = await Promise.all([places.varreduras(sb, cliente.id), places.monitoresDoCliente(sb, cliente.id)])
   const atual = lista.find((v) => v.id === varreduraId) ?? lista[0] ?? null
   const anterior = atual ? lista.find((v) => v.palavra === atual.palavra && v.em < atual.em) : undefined
   const concorrentes = atual ? concorrentesDaGrade(atual.pontos, placeId, 5) : []
@@ -212,7 +212,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
       {!atual ? (
         <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma varredura ainda. Rode a primeira acima.</p>
       ) : (
-        <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`}>
+        <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`} acoes={monitores.some((m) => m.palavra === atual.palavra) ? <span className="inline-flex items-center gap-1 rounded-full bg-sucesso-fundo px-2 py-1 text-legenda font-semibold text-sucesso-forte">Acompanhada toda segunda</span> : <BotaoMonitor clienteId={cliente.id} palavra={atual.palavra} grade={atual.grade} raioKm={atual.raioKm} ligado={false} />}>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {[
@@ -264,6 +264,19 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
               </div>
             </div>
           </div>
+        </Modulo>
+      )}
+      {monitores.length > 0 && (
+        <Modulo icone={Radar} titulo="Acompanhamento semanal" descricao="Toda segunda-feira a plataforma roda estas palavras e avisa no sino se a posição piorar">
+          <ul className="divide-y divide-borda/60 text-rotulo">
+            {monitores.map((m) => (
+              <li key={m.palavra} className="flex flex-wrap items-center gap-3 py-1.5">
+                <span className="min-w-0 flex-1 font-semibold">&quot;{m.palavra}&quot;</span>
+                <span className="text-legenda text-texto-3">{m.grade}×{m.grade} · {n(m.raioKm)} km</span>
+                <BotaoMonitor clienteId={cliente.id} palavra={m.palavra} grade={m.grade} raioKm={m.raioKm} ligado />
+              </li>
+            ))}
+          </ul>
         </Modulo>
       )}
       {lista.length > 0 && (

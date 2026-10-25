@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, concorrentesDaGrade, corDaPosicao, gerarGrade, linkAvaliacao, metricasDaGrade, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, concorrentesDaGrade, corDaPosicao, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -69,5 +69,15 @@ describe('texto de proposta', () => {
     expect(t).toMatch(/55\/100/)
     expect(t.indexOf('Site')).toBeLessThan(t.indexOf('Fotos'))
     expect(t).not.toMatch(/Telefone/)
+  })
+})
+
+describe('geogrid agendado', () => {
+  const m = (posicaoMediaTotal: number, top3: number) => ({ posicaoMedia: null, posicaoMediaTotal, top3, top10: 0, encontrado: 0, pontos: 25 })
+  it('avisa quando a posição média sobe 1+ ou o top 3 cai 10+ pontos; oscilação pequena não avisa', () => {
+    expect(pioraNoGeogrid(m(4.5, 60), m(3.2, 64))).toMatch(/posição média de 3,2º para 4,5º/)
+    expect(pioraNoGeogrid(m(3.4, 40), m(3.2, 60))).toMatch(/top 3 de 60% para 40%/)
+    expect(pioraNoGeogrid(m(3.5, 58), m(3.2, 60))).toBeNull()
+    expect(pioraNoGeogrid(m(2.1, 80), m(3.2, 60))).toBeNull()
   })
 })

@@ -162,3 +162,18 @@ export function textoProposta(nome: string, r: { nota: number; itens: ItemSaude[
     'A Grupo SRV cuida disso para vocês: perfil completo, avaliações, postagens e aparecer nas primeiras posições do Maps no seu bairro. Posso te mostrar o mapa de posições do seu negócio?',
   ].join('\n')
 }
+
+/**
+ * Comparação de duas varreduras da mesma palavra: piorou quando a posição média geral sobe 1 ou mais, ou o top 3
+ * cai 10 pontos percentuais ou mais. Devolve o texto do aviso (null = não piorou).
+ */
+export function pioraNoGeogrid(atual: MetricasGrade, anterior: MetricasGrade): string | null {
+  const subiu = Math.round((atual.posicaoMediaTotal - anterior.posicaoMediaTotal) * 10) / 10
+  const caiuTop3 = Math.round((anterior.top3 - atual.top3) * 10) / 10
+  if (subiu < 1 && caiuTop3 < 10) return null
+  const partes = [
+    ...(subiu >= 1 ? [`posição média de ${anterior.posicaoMediaTotal.toLocaleString('pt-BR')}º para ${atual.posicaoMediaTotal.toLocaleString('pt-BR')}º`] : []),
+    ...(caiuTop3 >= 10 ? [`top 3 de ${anterior.top3.toLocaleString('pt-BR')}% para ${atual.top3.toLocaleString('pt-BR')}% dos pontos`] : []),
+  ]
+  return partes.join(' e ')
+}

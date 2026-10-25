@@ -53,6 +53,12 @@ export type Database = {
         Update: { id?: string; nome?: string; endereco?: string; nota?: number | null; avaliacoes?: number | null; lat?: number | null; lng?: number | null; dados?: Json; atualizado_em?: string }
         Relationships: []
       }
+      gmn_monitors: {
+        Row: { client_id: string; palavra: string; grade: number; raio_km: number; created_by: string | null; created_at: string }
+        Insert: { client_id: string; palavra: string; grade: number; raio_km: number; created_by?: string | null; created_at?: string }
+        Update: { client_id?: string; palavra?: string; grade?: number; raio_km?: number; created_by?: string | null; created_at?: string }
+        Relationships: [{ foreignKeyName: 'gmn_monitors_client_id_fkey'; columns: ['client_id']; isOneToOne: false; referencedRelation: 'clients'; referencedColumns: ['id'] }]
+      }
       gmn_scans: {
         Row: { id: string; client_id: string; palavra: string; grade: number; raio_km: number; centro_lat: number; centro_lng: number; pontos: Json; metricas: Json; created_by: string | null; created_at: string }
         Insert: { id?: string; client_id: string; palavra: string; grade: number; raio_km: number; centro_lat: number; centro_lng: number; pontos: Json; metricas?: Json; created_by?: string | null; created_at?: string }
