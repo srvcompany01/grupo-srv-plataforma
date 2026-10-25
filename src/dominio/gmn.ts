@@ -110,15 +110,29 @@ export const categoriasExtras = (p: Pick<PerfilPublico, 'categorias' | 'tipoPrin
  * Nota de 0 a 100 pelo que qualquer pessoa vê no Google. `concorrentes`: medianas da nota e das avaliações dos que
  * mais aparecem no geogrid (quando houver), para comparar.
  */
-export function analisarSaude(p: PerfilPublico, hoje: string, concorrentes?: { nota: number | null; avaliacoes: number | null } | null): { nota: number; itens: ItemSaude[] } {
+/**
+ * Avaliações novas por mês, pela foto diária (número de avaliações por dia). null sem pelo menos 7 dias de histórico:
+ * as avaliações que o Google destaca não são as mais recentes, então não servem para medir frequência.
+ */
+export function avaliacoesPorMes(evolucao: { dia: string; avaliacoes: number | null }[]): { porMes: number; dias: number } | null {
+  const comDado = evolucao.filter((e) => e.avaliacoes !== null)
+  if (comDado.length < 2) return null
+  const [ini, fim] = [comDado[0], comDado[comDado.length - 1]]
+  const dias = Math.round((Date.parse(fim.dia) - Date.parse(ini.dia)) / 86_400_000)
+  if (dias < 7) return null
+  return { porMes: Math.round(((Math.max(0, fim.avaliacoes! - ini.avaliacoes!) / dias) * 30) * 10) / 10, dias }
+}
+
+export function analisarSaude(p: PerfilPublico, hoje: string, concorrentes?: { nota: number | null; avaliacoes: number | null } | null, evolucao: { dia: string; avaliacoes: number | null }[] = []): { nota: number; itens: ItemSaude[] } {
   const itens: ItemSaude[] = []
   const add = (titulo: string, tom: ItemSaude['tom'], detalhe: string, peso: number) => itens.push({ titulo, tom, detalhe, peso })
   add('Perfil ativo', p.status === 'OPERATIONAL' ? 'bom' : 'ruim', p.status === 'OPERATIONAL' ? 'O Google mostra o negócio como aberto.' : `Status no Google: ${p.status || 'desconhecido'} (fechado temporária ou definitivamente?).`, 3)
   add('Nota média', p.nota === null ? 'ruim' : p.nota >= 4.5 ? 'bom' : p.nota >= 4 ? 'atencao' : 'ruim', p.nota === null ? 'Ainda sem nota.' : `${p.nota.toLocaleString('pt-BR')} estrelas${concorrentes?.nota ? ` (concorrentes: ${concorrentes.nota.toLocaleString('pt-BR')})` : ''}.`, 3)
   const refAval = concorrentes?.avaliacoes ? Math.max(30, concorrentes.avaliacoes) : 100
   add('Quantidade de avaliações', p.avaliacoes >= refAval ? 'bom' : p.avaliacoes >= refAval * 0.4 ? 'atencao' : 'ruim', `${p.avaliacoes} avaliações${concorrentes?.avaliacoes ? ` (concorrentes: ${Math.round(concorrentes.avaliacoes)})` : ' (meta: 100+)'}.`, 3)
-  const dias = p.ultimaAvaliacaoEm ? Math.floor((Date.parse(`${hoje}T12:00:00Z`) - Date.parse(p.ultimaAvaliacaoEm)) / 86_400_000) : null
-  add('Avaliações recentes', dias === null ? 'ruim' : dias <= 30 ? 'bom' : dias <= 90 ? 'atencao' : 'ruim', dias === null ? 'Nenhuma avaliação recente visível.' : `A mais recente entre as que o Google destaca tem ${dias} dia(s).`, 2)
+  const ritmo = avaliacoesPorMes(evolucao)
+  if (!ritmo) add('Avaliações novas', 'atencao', 'Sem dados ainda: a plataforma mede as avaliações novas pela foto diária do perfil (precisa de 7 dias). Não conta na nota.', 0)
+  else add('Avaliações novas', ritmo.porMes >= 4 ? 'bom' : ritmo.porMes >= 1 ? 'atencao' : 'ruim', `${ritmo.porMes.toLocaleString('pt-BR')} por mês (medido em ${ritmo.dias} dias; meta: 4+).`, 2)
   add('Fotos', p.fotos >= 10 ? 'bom' : p.fotos >= 5 ? 'atencao' : 'ruim', p.fotos >= 10 ? '10 ou mais fotos.' : `${p.fotos} foto(s): perfis com mais fotos recebem mais cliques.`, 2)
   add('Horário de funcionamento', p.temHorario ? 'bom' : 'ruim', p.temHorario ? 'Horário cadastrado.' : 'Sem horário: o Google pode esconder o perfil em buscas "aberto agora".', 2)
   add('Site', p.site ? 'bom' : 'ruim', p.site ? p.site : 'Sem site no perfil.', 2)

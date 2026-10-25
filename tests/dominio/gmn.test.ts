@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, categoriasExtras, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, avaliacoesPorMes, categoriasExtras, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -116,5 +116,18 @@ describe('R2-1: categorias adicionais com uma conta só', () => {
     expect(categoriasExtras(perfil)).toBe(0)
     expect(analisarSaude(perfil, '2026-10-24').itens.find((i) => i.titulo === 'Categorias adicionais')?.detalhe).toMatch(/^0 categoria/)
     expect(comparativo([{ nome: 'Aurum', perfil, saude: 80 }]).find((l) => l.rotulo === 'Categorias adicionais')?.valores[0]).toBe('0')
+  })
+})
+
+describe('R2-2: avaliações novas pela foto diária', () => {
+  it('sem 7 dias de histórico: "sem dados" e não pesa na nota; com histórico: ritmo por mês', () => {
+    const perfil = { status: 'OPERATIONAL', nota: 4.9, avaliacoes: 613, fotos: 10, temHorario: true, site: 'x', telefone: 'x', categoriaPrincipal: 'J', tipoPrincipal: 'a', categorias: ['a', 'b', 'c'], resumo: 'r', ultimaAvaliacaoEm: '2026-06-17T10:00:00Z' }
+    const sem = analisarSaude(perfil, '2026-10-24')
+    expect(sem.itens.find((i) => i.titulo === 'Avaliações novas')).toMatchObject({ tom: 'atencao', peso: 0, detalhe: expect.stringMatching(/Sem dados ainda/) })
+    expect(sem.nota).toBe(100) // a avaliação destacada de 129 dias atrás não derruba mais a nota
+    expect(avaliacoesPorMes([{ dia: '2026-10-01', avaliacoes: 600 }, { dia: '2026-10-31', avaliacoes: 612 }])).toEqual({ porMes: 12, dias: 30 })
+    expect(avaliacoesPorMes([{ dia: '2026-10-20', avaliacoes: 600 }, { dia: '2026-10-24', avaliacoes: 601 }])).toBeNull()
+    const com = analisarSaude(perfil, '2026-10-31', null, [{ dia: '2026-10-01', avaliacoes: 613 }, { dia: '2026-10-31', avaliacoes: 613 }])
+    expect(com.itens.find((i) => i.titulo === 'Avaliações novas')).toMatchObject({ tom: 'ruim', peso: 2 })
   })
 })

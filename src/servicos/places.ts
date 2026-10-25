@@ -145,7 +145,8 @@ export async function saudeDoCliente(sb: Supabase, placeId: string, hoje: string
     const mediana = (xs: number[]) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : null)
     concorrentes = { nota: mediana(lista.map((l) => l.nota).filter((x): x is number => x !== null)), avaliacoes: mediana(lista.map((l) => l.avaliacoes)) }
   }
-  return { detalhes: d, ...analisarSaude(d.perfil, hoje, concorrentes) }
+  const evolucao = await evolucaoDoPerfil(sb, clienteId)
+  return { detalhes: d, evolucao, ...analisarSaude(d.perfil, hoje, concorrentes, evolucao) }
 }
 
 // ───────────────────────────── Geogrid ─────────────────────────────

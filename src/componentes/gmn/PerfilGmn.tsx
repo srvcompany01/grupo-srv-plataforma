@@ -28,7 +28,8 @@ export function ItensSaude({ itens }: { itens: ItemSaude[] }) {
 }
 
 export function Placar({ nota, itens }: { nota: number; itens: ItemSaude[] }) {
-  const conta = (t: ItemSaude['tom']) => itens.filter((i) => i.tom === t).length
+  // Item sem dados (peso 0) não entra no placar.
+  const conta = (t: ItemSaude['tom']) => itens.filter((i) => i.tom === t && i.peso > 0).length
   return (
     <div className="grid items-center gap-4 sm:grid-cols-2">
       <div className="text-center">
