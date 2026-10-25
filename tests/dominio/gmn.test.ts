@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, categoriasExtras, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -107,5 +107,14 @@ describe('R1-3: liderança no geogrid', () => {
     const f = fraseGeogrid('compro ouro', { top3: 100, posicaoMediaTotal: 2 }, 25, { nome: 'Compra Ouro Pará', pct: 75 })
     expect(f).toMatch(/Top 3 .* 100% da região.*1º lugar em 25%.*Compra Ouro Pará \(75% dos pontos\)/)
     expect(fraseGeogrid('x', { top3: 100, posicaoMediaTotal: 1.2 }, 80, null)).toMatch(/^1º lugar no Google Maps em 80%/)
+  })
+})
+
+describe('R2-1: categorias adicionais com uma conta só', () => {
+  it('a saúde e o comparativo dão o mesmo número (a principal é comparada pelo id)', () => {
+    const perfil = { status: 'OPERATIONAL', nota: 4.9, avaliacoes: 613, fotos: 10, temHorario: true, site: 'x', telefone: 'x', categoriaPrincipal: 'Joalheria', tipoPrincipal: 'jewelry_store', categorias: ['jewelry_store', 'store', 'point_of_interest', 'establishment'], resumo: null, ultimaAvaliacaoEm: null }
+    expect(categoriasExtras(perfil)).toBe(0)
+    expect(analisarSaude(perfil, '2026-10-24').itens.find((i) => i.titulo === 'Categorias adicionais')?.detalhe).toMatch(/^0 categoria/)
+    expect(comparativo([{ nome: 'Aurum', perfil, saude: 80 }]).find((l) => l.rotulo === 'Categorias adicionais')?.valores[0]).toBe('0')
   })
 })

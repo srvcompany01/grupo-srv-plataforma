@@ -90,7 +90,7 @@ function detalhesDe(b: Bruto, atualizadoEm: string): Detalhes {
     avaliacoesRecentes: reviews.map((r) => ({ autor: r.authorAttribution?.displayName ?? '', nota: r.rating ?? null, texto: r.text?.text ?? '', quando: r.relativePublishTimeDescription ?? '', em: r.publishTime ?? null })),
     perfil: {
       status: b.businessStatus ?? '', nota: b.rating ?? null, avaliacoes: b.userRatingCount ?? 0, fotos: (b.photos ?? []).length, temHorario: !!b.regularOpeningHours?.weekdayDescriptions?.length,
-      site: b.websiteUri ?? null, telefone: b.nationalPhoneNumber ?? null, categoriaPrincipal: b.primaryTypeDisplayName?.text ?? null, categorias: b.types ?? [], resumo: b.editorialSummary?.text ?? null, ultimaAvaliacaoEm: ultima,
+      site: b.websiteUri ?? null, telefone: b.nationalPhoneNumber ?? null, categoriaPrincipal: b.primaryTypeDisplayName?.text ?? null, tipoPrincipal: b.primaryType ?? null, categorias: b.types ?? [], resumo: b.editorialSummary?.text ?? null, ultimaAvaliacaoEm: ultima,
     },
     atualizadoEm,
   }

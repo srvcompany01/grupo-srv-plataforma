@@ -91,6 +91,8 @@ export type PerfilPublico = {
   site: string | null
   telefone: string | null
   categoriaPrincipal: string | null
+  /** Id da categoria principal no Google (ex.: jewelry_store), para não contar ela como adicional. */
+  tipoPrincipal?: string | null
   categorias: string[]
   resumo: string | null
   /** Data da avaliação mais recente entre as que o Google devolve (as mais relevantes). */
@@ -100,6 +102,9 @@ export type PerfilPublico = {
 export type ItemSaude = { titulo: string; tom: Exclude<Tom, 'neutro'>; detalhe: string; peso: number }
 
 const GENERICOS = new Set(['point_of_interest', 'establishment', 'store', 'food', 'health'])
+
+/** Categorias além da principal (sem as genéricas do Google). Única conta usada na saúde e no comparativo. */
+export const categoriasExtras = (p: Pick<PerfilPublico, 'categorias' | 'tipoPrincipal'>) => p.categorias.filter((c) => !GENERICOS.has(c) && c !== p.tipoPrincipal).length
 
 /**
  * Nota de 0 a 100 pelo que qualquer pessoa vê no Google. `concorrentes`: medianas da nota e das avaliações dos que
@@ -119,7 +124,7 @@ export function analisarSaude(p: PerfilPublico, hoje: string, concorrentes?: { n
   add('Site', p.site ? 'bom' : 'ruim', p.site ? p.site : 'Sem site no perfil.', 2)
   add('Telefone', p.telefone ? 'bom' : 'ruim', p.telefone ? p.telefone : 'Sem telefone no perfil.', 2)
   add('Categoria principal', p.categoriaPrincipal ? 'bom' : 'ruim', p.categoriaPrincipal ?? 'Sem categoria principal clara.', 2)
-  const extras = p.categorias.filter((c) => !GENERICOS.has(c) && c !== p.categoriaPrincipal).length
+  const extras = categoriasExtras(p)
   add('Categorias adicionais', extras >= 2 ? 'bom' : extras === 1 ? 'atencao' : 'ruim', `${extras} categoria(s) além da principal (use todas as que se aplicam).`, 1)
   add('Resumo do Google', p.resumo ? 'bom' : 'atencao', p.resumo ? p.resumo : 'O Google ainda não gerou um resumo do negócio (perfis completos e com avaliações costumam ganhar).', 1)
   const valor = { bom: 1, atencao: 0.5, ruim: 0 } as const
@@ -187,7 +192,6 @@ export type LinhaComparativo = { rotulo: string; valores: string[]; tomCliente: 
  */
 export function comparativo(colunas: ColunaComparativo[]): LinhaComparativo[] {
   const [cli, ...outros] = colunas
-  const extras = (p: PerfilPublico) => p.categorias.filter((c) => !GENERICOS.has(c)).length - (p.categoriaPrincipal ? 1 : 0)
   const numero = (rotulo: string, f: (c: ColunaComparativo) => number, fmt: (v: number, c: ColunaComparativo) => string): LinhaComparativo => {
     const v = f(cli)
     const os = outros.map(f)
@@ -204,7 +208,7 @@ export function comparativo(colunas: ColunaComparativo[]): LinhaComparativo[] {
     numero('Nota', (c) => c.perfil.nota ?? 0, (v, c) => (c.perfil.nota === null ? '—' : `★ ${v.toLocaleString('pt-BR')}`)),
     numero('Avaliações', (c) => c.perfil.avaliacoes, (v) => v.toLocaleString('pt-BR')),
     numero('Fotos', (c) => c.perfil.fotos, (v) => (v >= 10 ? '10+' : String(v))),
-    numero('Categorias adicionais', (c) => Math.max(0, extras(c.perfil)), (v) => String(v)),
+    numero('Categorias adicionais', (c) => categoriasExtras(c.perfil), (v) => String(v)),
     simNao('Horário', (p) => p.temHorario),
     simNao('Site', (p) => !!p.site),
     simNao('Telefone', (p) => !!p.telefone),
