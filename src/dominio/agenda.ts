@@ -27,6 +27,8 @@ export type Compromisso = {
   visibilidade: Visibilidade
   repetir: Repeticao
   repetirAte: string | null // AAAA-MM-DD
+  /** Dias (AAAA-MM-DD) de um fixo que foram cancelados um a um. */
+  puladas?: string[]
   criadoPor: string
   pessoas: string[]
   clienteId: string | null
@@ -171,6 +173,7 @@ export function ocorrencias(compromissos: Compromisso[], de: string, ate: string
       if (!comeco) continue
       const t = comeco.getTime()
       if (t >= fimJanela || (c.repetirAte && dataLocal(comeco.toISOString()) > c.repetirAte)) break
+      if (c.puladas?.includes(dataLocal(comeco.toISOString()))) continue
       if (t + dur > ini) saida.push({ id: `${c.id}:${n}`, titulo: c.titulo, inicio: comeco.toISOString(), fim: new Date(t + dur).toISOString(), diaInteiro: c.diaInteiro, compromisso: c })
     }
   }
@@ -185,12 +188,13 @@ export function publico(c: Pick<Compromisso, 'visibilidade' | 'criadoPor' | 'pes
 }
 
 /** Regra de repetição no formato do Google Agenda (RFC 5545). */
-export function regraGoogle(c: Pick<Compromisso, 'repetir' | 'repetirAte' | 'diaInteiro'>): string[] | undefined {
+export function regraGoogle(c: Pick<Compromisso, 'repetir' | 'repetirAte' | 'diaInteiro'> & Partial<Pick<Compromisso, 'inicio' | 'puladas'>>): string[] | undefined {
   if (c.repetir === 'nunca') return undefined
   const freq = { diario: 'DAILY', semanal: 'WEEKLY', mensal: 'MONTHLY' }[c.repetir]
-  if (!c.repetirAte) return [`RRULE:FREQ=${freq}`]
-  const ate = c.diaInteiro ? c.repetirAte.replaceAll('-', '') : instante(c.repetirAte, '23:59').toISOString().replace(/[-:]|\.\d+/g, '')
-  return [`RRULE:FREQ=${freq};UNTIL=${ate}`]
+  const ate = !c.repetirAte ? '' : c.diaInteiro ? c.repetirAte.replaceAll('-', '') : instante(c.repetirAte, '23:59').toISOString().replace(/[-:]|\.\d+/g, '')
+  // Dias cancelados um a um: EXDATE no mesmo formato do início (data, ou o horário do compromisso em UTC).
+  const pulos = (c.puladas ?? []).map((d) => (c.diaInteiro || !c.inicio ? `EXDATE;VALUE=DATE:${d.replaceAll('-', '')}` : `EXDATE:${instante(d, horaLocal(c.inicio)).toISOString().replace(/[-:]|\.\d+/g, '')}`))
+  return [ate ? `RRULE:FREQ=${freq};UNTIL=${ate}` : `RRULE:FREQ=${freq}`, ...pulos]
 }
 
 /** Bloco de um compromisso com horário na grade de horas: minutos desde 0h e a coluna quando há sobreposição. */

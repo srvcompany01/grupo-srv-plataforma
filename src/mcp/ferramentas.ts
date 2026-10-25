@@ -1777,8 +1777,20 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'cancelar_ocorrencia_compromisso',
+    descricao: 'Cancela só UM dia de um compromisso fixo (ex.: a reunião semanal não acontece nesta terça): esse dia some da agenda e do Google Agenda; as outras repetições continuam. Só quem criou, ou o admin.',
+    escrita: true,
+    entrada: { compromissoId: id('Compromisso (compromissoId de listar_agenda)'), data: data('Dia a cancelar') },
+    executar: async (ctx, a) => {
+      await agenda.cancelarOcorrencia(ctx.sb, a.compromissoId, a.data)
+      await (await googleAgenda()).sincronizarCompromisso(a.compromissoId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
     nome: 'atualizar_compromisso',
-    descricao: 'Altera um compromisso (só quem criou, ou o admin). Informe só o que muda; o resto continua igual. Vale para todas as repetições de um fixo. Para CANCELAR as próximas ocorrências de um fixo, defina repetirAte com o último dia que ainda acontece (sincroniza com o Google Agenda). Cancelar uma ocorrência só, ou apagar o compromisso, é pela tela da Agenda.',
+    descricao: 'Altera um compromisso (só quem criou, ou o admin). Informe só o que muda; o resto continua igual. Vale para todas as repetições de um fixo. Para CANCELAR as próximas ocorrências de um fixo, defina repetirAte com o último dia que ainda acontece (sincroniza com o Google Agenda). Para cancelar UM dia só de um fixo, use cancelar_ocorrencia_compromisso. Apagar o compromisso é pela tela da Agenda.',
     escrita: true,
     entrada: { compromissoId: id('Compromisso (compromissoId de listar_agenda)'), ...z.object(entradaCompromisso).partial().shape },
     executar: async (ctx, { compromissoId, ...a }) => {

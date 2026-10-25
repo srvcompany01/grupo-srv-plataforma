@@ -3,7 +3,7 @@
 import { Check, Plus } from 'lucide-react'
 import { useState, useTransition, type CSSProperties, type ReactNode } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { criarEtiquetaAcao, excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
+import { cancelarOcorrenciaAcao, criarEtiquetaAcao, excluirCompromissoAcao, salvarCompromissoAcao } from '@/app/(app)/agenda/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { REPETICOES, VISIBILIDADES, paraEntrada, type Compromisso, type EntradaCompromisso, type TagAgenda } from '@/dominio/agenda'
@@ -24,11 +24,13 @@ type Props = {
   className?: string
   estilo?: CSSProperties
   children?: ReactNode
+  /** Dia (AAAA-MM-DD) da ocorrência clicada: permite cancelar só ele num compromisso fixo. */
+  dia?: string
 }
 
 const vazio = (hoje: string): Required<EntradaCompromisso> => ({ titulo: '', descricao: '', data: hoje, horaInicio: '09:00', horaFim: '10:00', diaInteiro: false, visibilidade: 'privado', pessoas: [], repetir: 'nunca', repetirAte: null, clienteId: null, tags: [], categoriaId: null })
 
-export function CompromissoDialog({ compromisso, equipe, clientes, tags, categorias, podeCompartilhar, podeEditar = true, hoje, className, estilo, children }: Props) {
+export function CompromissoDialog({ compromisso, equipe, clientes, tags, categorias, podeCompartilhar, podeEditar = true, hoje, className, estilo, children, dia }: Props) {
   const [aberto, setAberto] = useState(false)
   const [f, setF] = useState(() => (compromisso ? paraEntrada(compromisso) : vazio(hoje)))
   const [pendente, iniciar] = useTransition()
@@ -61,6 +63,13 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
     if (!(await confirmar({ titulo: `Excluir "${compromisso!.titulo}"?`, descricao: 'Sai da agenda de todos que o veem e do Google Agenda deles. Se for fixo, todas as repetições somem.', confirmar: 'Excluir', perigo: true }))) return
     iniciar(async () => {
       if (avisar(await excluirCompromissoAcao(compromisso!.id), true)) setAberto(false)
+    })
+  }
+  const cancelarDia = async () => {
+    const quando = dia!.split('-').reverse().join('/')
+    if (!(await confirmar({ titulo: `Cancelar só ${quando}?`, descricao: 'Este dia some da agenda (e do Google Agenda); as outras repetições continuam.', confirmar: 'Cancelar este dia', perigo: true }))) return
+    iniciar(async () => {
+      if (avisar(await cancelarOcorrenciaAcao(compromisso!.id, dia!), true)) setAberto(false)
     })
   }
   // Quem não é admin/gestor ainda vê a visibilidade de um compromisso compartilhado com ela, só sem mudar.
@@ -181,7 +190,12 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
         </fieldset>
         {podeEditar && (
           <div className="flex items-center justify-between gap-2">
-            {compromisso ? <button type="button" className={`${botaoFantasma} text-perigo`} disabled={pendente} onClick={excluir}>Excluir</button> : <span />}
+            {compromisso ? (
+              <div className="flex flex-wrap gap-1">
+                <button type="button" className={`${botaoFantasma} text-perigo`} disabled={pendente} onClick={excluir}>{compromisso.repetir === 'nunca' ? 'Excluir' : 'Excluir todos'}</button>
+                {compromisso.repetir !== 'nunca' && dia && <button type="button" className={`${botaoFantasma} text-aviso-forte`} disabled={pendente} onClick={cancelarDia}>Cancelar só este dia</button>}
+              </div>
+            ) : <span />}
             <div className="flex gap-2">
               <button type="button" className={botaoFantasma} onClick={() => setAberto(false)}>Cancelar</button>
               <button type="button" className={botaoPrimario} disabled={pendente} onClick={salvar}>Salvar</button>

@@ -5,7 +5,7 @@ import { BotaoGoogle } from '@/componentes/agenda/BotaoGoogle'
 import { CompromissoDialog } from '@/componentes/agenda/CompromissoDialog'
 import { PainelEtiquetas } from '@/componentes/agenda/PainelEtiquetas'
 import { RolarAoAbrir } from '@/componentes/agenda/RolarAoAbrir'
-import { blocosDoDia, doDia, gradeDoMes, horaLocal, instante, ocorrencias, semanaDe, somarDias, type Ocorrencia } from '@/dominio/agenda'
+import { blocosDoDia, dataLocal, doDia, gradeDoMes, horaLocal, instante, ocorrencias, semanaDe, somarDias, type Ocorrencia } from '@/dominio/agenda'
 import { mesVizinho } from '@/dominio/financeiro'
 import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -107,7 +107,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   /** Abre o compromisso (ou o evento no Google). O conteúdo e o estilo mudam conforme a visão. */
   const abrir = (o: Ocorrencia, className: string, estilo: CSSProperties, conteudo: ReactNode) =>
     o.compromisso ? (
-      <CompromissoDialog {...dialogo} compromisso={o.compromisso} podeEditar={podeMexer(o.compromisso.criadoPor)} className={className} estilo={estilo}>
+      <CompromissoDialog {...dialogo} compromisso={o.compromisso} dia={dataLocal(o.inicio)} podeEditar={podeMexer(o.compromisso.criadoPor)} className={className} estilo={estilo}>
         {conteudo}
       </CompromissoDialog>
     ) : (

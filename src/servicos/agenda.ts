@@ -1,14 +1,14 @@
-import { instante, somarDias, type CamposCompromisso, type Compromisso, type Repeticao, type TagAgenda, type Visibilidade } from '@/dominio/agenda'
+import { dataLocal, instante, ocorrencias, somarDias, type CamposCompromisso, type Compromisso, type Repeticao, type TagAgenda, type Visibilidade } from '@/dominio/agenda'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
 // Compromissos com o cliente da pessoa logada: a RLS decide o que ela vê e o que pode mudar.
 
-export const CAMPOS_COMPROMISSO = 'id, title, description, starts_at, ends_at, all_day, visibility, repeat, repeat_until, created_by, client_id, category_id, agenda_event_people(user_id), agenda_event_tags(tag_id)'
+export const CAMPOS_COMPROMISSO = 'id, title, description, starts_at, ends_at, all_day, visibility, repeat, repeat_until, skipped_dates, created_by, client_id, category_id, agenda_event_people(user_id), agenda_event_tags(tag_id)'
 
 type Linha = {
   id: string; title: string; description: string; starts_at: string; ends_at: string; all_day: boolean
-  visibility: string; repeat: string; repeat_until: string | null; created_by: string; client_id: string | null; category_id: string | null
+  visibility: string; repeat: string; repeat_until: string | null; skipped_dates?: string[] | null; created_by: string; client_id: string | null; category_id: string | null
   agenda_event_people: { user_id: string }[]; agenda_event_tags: { tag_id: string }[]
 }
 
@@ -22,6 +22,7 @@ export const paraCompromisso = (l: Linha): Compromisso => ({
   visibilidade: l.visibility as Visibilidade,
   repetir: l.repeat as Repeticao,
   repetirAte: l.repeat_until,
+  puladas: l.skipped_dates ?? [],
   criadoPor: l.created_by,
   pessoas: l.agenda_event_people.map((p) => p.user_id),
   clienteId: l.client_id,
@@ -68,6 +69,17 @@ export async function criarCompromisso(sb: Supabase, c: CamposCompromisso): Prom
 export async function atualizarCompromisso(sb: Supabase, id: string, c: CamposCompromisso): Promise<void> {
   if (!dados(await sb.from('agenda_events').update(paraLinha(c)).eq('id', id).select('id')).length) throw semPermissao()
   await gravarPessoasETags(sb, id, c)
+}
+
+/** Cancela só o dia `dia` (AAAA-MM-DD) de um compromisso fixo; o resto da série continua. */
+export async function cancelarOcorrencia(sb: Supabase, id: string, dia: string): Promise<void> {
+  const c = await buscarCompromisso(sb, id)
+  if (!c) throw semPermissao()
+  const falha = (message: string) => Object.assign(new Error(message), { code: 'P0001' })
+  if (c.repetir === 'nunca') throw falha('Este compromisso não se repete: para cancelar, exclua pela Agenda.')
+  if (!ocorrencias([c], dia, dia).some((o) => dataLocal(o.inicio) === dia)) throw falha('Esse dia não tem ocorrência deste compromisso.')
+  const puladas = [...new Set([...(c.puladas ?? []), dia])].sort()
+  if (!dados(await sb.from('agenda_events').update({ skipped_dates: puladas }).eq('id', id).select('id')).length) throw semPermissao()
 }
 
 export async function excluirCompromisso(sb: Supabase, id: string): Promise<void> {

@@ -70,3 +70,16 @@ describe('agenda', () => {
     expect(regraGoogle(c({ repetir: 'mensal', repetirAte: '2026-12-31', diaInteiro: true }))).toEqual(['RRULE:FREQ=MONTHLY;UNTIL=20261231'])
   })
 })
+
+describe('cancelar um dia de um compromisso fixo', () => {
+  const semanal: Compromisso = { id: 's', titulo: 'Reunião semanal', descricao: '', inicio: '2026-10-06T17:00:00.000Z', fim: '2026-10-06T18:00:00.000Z', diaInteiro: false, visibilidade: 'equipe', repetir: 'semanal', repetirAte: null, puladas: ['2026-10-13'], criadoPor: 'u', pessoas: [], clienteId: null, tags: [], categoriaId: null }
+
+  it('a ocorrência cancelada some e as outras continuam', () => {
+    expect(ocorrencias([semanal], '2026-10-01', '2026-10-31').map((o) => o.inicio.slice(0, 10))).toEqual(['2026-10-06', '2026-10-20', '2026-10-27'])
+  })
+
+  it('o Google recebe EXDATE no horário do compromisso (ou na data, se for dia inteiro)', () => {
+    expect(regraGoogle(semanal)).toEqual(['RRULE:FREQ=WEEKLY', 'EXDATE:20261013T170000Z'])
+    expect(regraGoogle({ ...semanal, diaInteiro: true })).toEqual(['RRULE:FREQ=WEEKLY', 'EXDATE;VALUE=DATE:20261013'])
+  })
+})

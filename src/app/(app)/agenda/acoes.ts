@@ -27,6 +27,17 @@ export async function salvarCompromissoAcao(id: string | null, e: EntradaComprom
   return r
 }
 
+export async function cancelarOcorrenciaAcao(id: string, dia: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(id) || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return { erro: 'Dados inválidos.' }
+  const r = await tentar(async () => {
+    await agenda.cancelarOcorrencia(await criarClienteServidor(), id, dia)
+    await sincronizarCompromisso(id)
+  }, 'Só este dia foi cancelado.')
+  revalidatePath('/agenda')
+  return r
+}
+
 export async function excluirCompromissoAcao(id: string): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(id)) return { erro: 'Compromisso inválido.' }
