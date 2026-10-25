@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatoPublicado, lerCollabs, planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
+import { formatoDaMidiaPublicada, formatoPublicado, lerCollabs, planoInstagram, prontoParaPublicar, situacaoPublicacao, validarPublicacao, type MidiaPublicavel } from '@/dominio/publicacao'
 
 const foto = (n: string, ext = 'jpg'): MidiaPublicavel => ({ tipo: 'imagem', nome: n, chave: `conteudo/t/${n}.${ext}` })
 const video = (n: string): MidiaPublicavel => ({ tipo: 'video', nome: n, chave: `conteudo/t/${n}.mp4` })
@@ -72,5 +72,12 @@ describe('formato publicado', () => {
     expect(formatoPublicado(planoInstagram('feed', [foto]))).toBe('feed')
     expect(formatoPublicado(planoInstagram('feed', [foto, foto]))).toBe('feed')
     expect(formatoPublicado(planoInstagram('stories', [video]))).toBe('stories')
+  })
+
+  it('C4: usa media_product_type e media_type confirmados pela Graph API', () => {
+    expect(formatoDaMidiaPublicada('VIDEO', 'REELS')).toBe('reels')
+    expect(formatoDaMidiaPublicada('CAROUSEL_ALBUM', 'FEED')).toBe('feed')
+    expect(formatoDaMidiaPublicada('IMAGE', 'STORY')).toBe('stories')
+    expect(formatoDaMidiaPublicada(undefined, undefined, 'reels')).toBe('reels')
   })
 })

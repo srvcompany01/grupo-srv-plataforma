@@ -1,6 +1,6 @@
 import 'server-only'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
+import { formatoDaMidiaPublicada, formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
 import { urlLeitura } from '@/infra/r2'
 import { ErroGoogle, publicarNoNegocio } from './google-agencia'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -64,14 +64,14 @@ const parametrosDaMidia = (m: MidiaPublicavel & { url: string }): Record<string,
  * Cria e publica no Instagram. Se o vídeo ainda está processando, devolve o container para continuar na próxima
  * rodada (sem recriar). Stories: cada mídia vira um story.
  */
-async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null, collabs: string[]): Promise<{ id: string; permalink: string | null } | { pendente: string }> {
+async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null, collabs: string[]): Promise<{ id: string; permalink: string | null; formato: Formato } | { pendente: string }> {
   const publicar = async (container: string) => {
     const { id } = await graph<{ id: string }>(`${igId}/media_publish`, { metodo: 'POST', params: { creation_id: container } })
-    const { permalink } = await graph<{ permalink?: string }>(id, { params: { fields: 'permalink' } }).catch(() => ({ permalink: undefined }))
-    return { id, permalink: permalink ?? null }
+    const detalhes = await graph<{ permalink?: string; media_type?: string; media_product_type?: string }>(id, { params: { fields: 'permalink,media_type,media_product_type' } }).catch(() => ({ permalink: undefined, media_type: undefined, media_product_type: undefined }))
+    return { id, permalink: detalhes.permalink ?? null, formato: formatoDaMidiaPublicada(detalhes.media_type, detalhes.media_product_type, formatoPublicado(plano)) }
   }
   if (plano.tipo === 'STORIES') {
-    let primeiro: { id: string; permalink: string | null } | null = null
+    let primeiro: { id: string; permalink: string | null; formato: Formato } | null = null
     for (const m of midias) {
       const { id } = await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'STORIES', ...(m.tipo === 'video' ? { video_url: m.url } : { image_url: m.url }) } })
       if ((await esperarContainer(id, 120_000)) !== 'FINISHED') throw new ErroMeta('O vídeo do story demorou demais para processar. Tente de novo.')
@@ -184,7 +184,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
         await salvar({ ig_container_id: r.pendente, publish_lock_at: null })
         return { status: 'publicando' }
       }
-      await salvar({ ig_media_id: r.id, ig_permalink: r.permalink, ig_container_id: null, format: formatoPublicado(plano) })
+      await salvar({ ig_media_id: r.id, ig_permalink: r.permalink, ig_container_id: null, format: r.formato })
     }
     if (alvos.includes('facebook') && !p.fb_post_id) {
       const r = await publicarFacebook(paginaId!, comUrl, legenda)

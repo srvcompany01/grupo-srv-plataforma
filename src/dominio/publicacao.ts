@@ -76,6 +76,14 @@ export function formatoPublicado(plano: PlanoInstagram): Formato {
   return plano.tipo === 'REELS' ? 'reels' : plano.tipo === 'STORIES' ? 'stories' : 'feed'
 }
 
+/** Formato confirmado pelo objeto de mídia que a Graph API devolve depois da publicação. */
+export function formatoDaMidiaPublicada(mediaType: string | undefined, produto: string | undefined, fallback: Formato = 'feed'): Formato {
+  if (produto === 'REELS') return 'reels'
+  if (produto === 'STORY') return 'stories'
+  if (produto === 'FEED' || mediaType === 'IMAGE' || mediaType === 'VIDEO' || mediaType === 'CAROUSEL_ALBUM') return 'feed'
+  return fallback
+}
+
 /** A rotina publica quando venceu a hora e (no modo aprovação) o cliente já aprovou a versão atual. */
 export function prontoParaPublicar(p: { status: StatusPublicacao; em: string | null; modo: ModoPublicacao; aprovacao: Aprovacao }, agora: Date): boolean {
   if (p.status !== 'agendado' && p.status !== 'publicando') return false
