@@ -1,5 +1,5 @@
 import 'server-only'
-import { analisarSaude, concorrentesDaGrade, gerarGrade, metricasDaGrade, pioraNoGeogrid, PROFUNDIDADE, raioDoVies, type Grade, type MetricasGrade, type PerfilPublico, type Ponto, type PontoGrade } from '@/dominio/gmn'
+import { analisarSaude, comparativo, concorrentesDaGrade, gerarGrade, metricasDaGrade, pioraNoGeogrid, PROFUNDIDADE, raioDoVies, type ColunaComparativo, type Grade, type LinhaComparativo, type MetricasGrade, type PerfilPublico, type Ponto, type PontoGrade } from '@/dominio/gmn'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
@@ -261,4 +261,14 @@ export async function rodarMonitores(): Promise<{ varreduras: number; avisos: nu
     }
   }
   return r
+}
+
+/** Cliente contra os 3 concorrentes mais frequentes no top 3 do último geogrid (null sem varredura). */
+export async function comparativoDoCliente(sb: Supabase, cliente: { id: string; nome: string }, placeId: string, perfil: PerfilPublico, saude: number, hoje: string): Promise<{ palavra: string; colunas: string[]; linhas: LinhaComparativo[] } | null> {
+  const ultima = (await varreduras(sb, cliente.id, 1))[0]
+  if (!ultima) return null
+  const ids = concorrentesDaGrade(ultima.pontos, placeId, 3).map((c) => c.id)
+  const outros = (await Promise.all(ids.map((id) => detalhesDoLugar(sb, id, 24 * 30).catch(() => null)))).filter((x): x is Detalhes => !!x)
+  const colunas: ColunaComparativo[] = [{ nome: cliente.nome, perfil, saude }, ...outros.map((o) => ({ nome: o.nome, perfil: o.perfil, saude: analisarSaude(o.perfil, hoje).nota }))]
+  return { palavra: ultima.palavra, colunas: colunas.map((c) => c.nome), linhas: comparativo(colunas) }
 }

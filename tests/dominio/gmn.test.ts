@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, concorrentesDaGrade, corDaPosicao, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, comparativo, concorrentesDaGrade, corDaPosicao, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -79,5 +79,21 @@ describe('geogrid agendado', () => {
     expect(pioraNoGeogrid(m(3.4, 40), m(3.2, 60))).toMatch(/top 3 de 60% para 40%/)
     expect(pioraNoGeogrid(m(3.5, 58), m(3.2, 60))).toBeNull()
     expect(pioraNoGeogrid(m(2.1, 80), m(3.2, 60))).toBeNull()
+  })
+})
+
+describe('comparativo com concorrentes', () => {
+  const p = (extra: Partial<PerfilPublico>): PerfilPublico => ({ status: 'OPERATIONAL', nota: 4.8, avaliacoes: 100, fotos: 10, temHorario: true, site: 'x', telefone: 'x', categoriaPrincipal: 'Joalheria', categorias: ['jewelry_store'], resumo: null, ultimaAvaliacaoEm: null, ...extra })
+  it('verde quando ganha de todos, vermelho quando perde para todos, amarelo no meio; sim/não', () => {
+    const linhas = comparativo([
+      { nome: 'Cliente', perfil: p({ avaliacoes: 40, site: null }), saude: 70 },
+      { nome: 'A', perfil: p({ avaliacoes: 391 }), saude: 90 },
+      { nome: 'B', perfil: p({ avaliacoes: 13, site: null }), saude: 60 },
+    ])
+    const l = (r: string) => linhas.find((x) => x.rotulo === r)!
+    expect(l('Avaliações')).toMatchObject({ valores: ['40', '391', '13'], tomCliente: 'atencao' })
+    expect(l('Saúde do perfil').tomCliente).toBe('atencao')
+    expect(l('Nota').tomCliente).toBe('bom')
+    expect(l('Site')).toMatchObject({ valores: ['Não', 'Sim', 'Não'], tomCliente: 'ruim' })
   })
 })

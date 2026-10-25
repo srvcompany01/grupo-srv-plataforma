@@ -177,3 +177,36 @@ export function pioraNoGeogrid(atual: MetricasGrade, anterior: MetricasGrade): s
   ]
   return partes.join(' e ')
 }
+
+export type ColunaComparativo = { nome: string; perfil: PerfilPublico; saude: number }
+export type LinhaComparativo = { rotulo: string; valores: string[]; tomCliente: Exclude<Tom, 'neutro'> }
+
+/**
+ * Cliente (primeira coluna) lado a lado com os concorrentes. Número: verde se empata ou ganha de todos, vermelho se
+ * perde para todos, amarelo no meio. Sim/não: verde se tem, vermelho se não tem e algum concorrente tem.
+ */
+export function comparativo(colunas: ColunaComparativo[]): LinhaComparativo[] {
+  const [cli, ...outros] = colunas
+  const extras = (p: PerfilPublico) => p.categorias.filter((c) => !GENERICOS.has(c)).length - (p.categoriaPrincipal ? 1 : 0)
+  const numero = (rotulo: string, f: (c: ColunaComparativo) => number, fmt: (v: number, c: ColunaComparativo) => string): LinhaComparativo => {
+    const v = f(cli)
+    const os = outros.map(f)
+    const tom = !os.length || v >= Math.max(...os) ? 'bom' : v < Math.min(...os) ? 'ruim' : 'atencao'
+    return { rotulo, valores: colunas.map((c) => fmt(f(c), c)), tomCliente: tom }
+  }
+  const simNao = (rotulo: string, f: (p: PerfilPublico) => boolean): LinhaComparativo => ({
+    rotulo,
+    valores: colunas.map((c) => (f(c.perfil) ? 'Sim' : 'Não')),
+    tomCliente: f(cli.perfil) ? 'bom' : outros.some((o) => f(o.perfil)) ? 'ruim' : 'atencao',
+  })
+  return [
+    numero('Saúde do perfil', (c) => c.saude, (v) => `${v}/100`),
+    numero('Nota', (c) => c.perfil.nota ?? 0, (v, c) => (c.perfil.nota === null ? '—' : `★ ${v.toLocaleString('pt-BR')}`)),
+    numero('Avaliações', (c) => c.perfil.avaliacoes, (v) => v.toLocaleString('pt-BR')),
+    numero('Fotos', (c) => c.perfil.fotos, (v) => (v >= 10 ? '10+' : String(v))),
+    numero('Categorias adicionais', (c) => Math.max(0, extras(c.perfil)), (v) => String(v)),
+    simNao('Horário', (p) => p.temHorario),
+    simNao('Site', (p) => !!p.site),
+    simNao('Telefone', (p) => !!p.telefone),
+  ]
+}

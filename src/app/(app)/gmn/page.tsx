@@ -10,7 +10,7 @@ import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarSaude, concorrentesDaGrade, linkAvaliacao, textoProposta, type ItemSaude } from '@/dominio/gmn'
+import { analisarSaude, concorrentesDaGrade, linkAvaliacao, textoProposta, type ColunaComparativo, type ItemSaude } from '@/dominio/gmn'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoPrimario, campo } from '@/lib/ui'
@@ -160,6 +160,10 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
         <CartaoLugar d={d} />
       </div>
 
+      <Suspense fallback={null}>
+        <Comparativo cliente={cliente} placeId={placeId} saudeCliente={s.nota} perfilCliente={d.perfil} />
+      </Suspense>
+
       {evolucao.length >= 2 && (
         <Modulo icone={BarChart3} titulo="Evolução das avaliações" descricao="Foto diária do perfil (nota e número de avaliações)">
           <GraficoDiario titulo="Número de avaliações" dias={evolucao.map((e) => e.dia)} series={[{ nome: 'Avaliações', valores: evolucao.map((e) => e.avaliacoes ?? 0) }]} formato={(v) => n(Math.round(v))} />
@@ -192,6 +196,43 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
         </Modulo>
       </div>
     </>
+  )
+}
+
+/** Cliente lado a lado com os 3 concorrentes que mais aparecem no top 3 do último geogrid. */
+async function Comparativo({ cliente, placeId, saudeCliente, perfilCliente }: { cliente: Cliente; placeId: string; saudeCliente: number; perfilCliente: ColunaComparativo['perfil'] }) {
+  const c = await places.comparativoDoCliente(await criarClienteServidor(), cliente, placeId, perfilCliente, saudeCliente, dataDeHoje(new Date())).catch(() => null)
+  if (!c) {
+    return (
+      <Modulo icone={Users} titulo="Você contra os concorrentes" descricao="Os concorrentes vêm do geogrid">
+        <p className="text-rotulo text-texto-3">Rode um geogrid na aba <Link href={`/gmn?cliente=${cliente.id}&aba=geogrid`} className="font-semibold text-[#1d6fe0] hover:underline">Geogrid de ranking</Link> para descobrir quem disputa o top 3 com o cliente.</p>
+      </Modulo>
+    )
+  }
+  return (
+    <Modulo icone={Users} titulo="Você contra os concorrentes" descricao={`Os 3 que mais aparecem no top 3 de "${c.palavra}" · verde: o cliente ganha ou empata · vermelho: perde para todos`}>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-rotulo">
+          <thead>
+            <tr className="border-b border-borda text-left text-legenda text-texto-3">
+              <th className="py-2 pr-3 font-medium" />
+              {c.colunas.map((nome, i) => <th key={nome + i} className="max-w-40 truncate py-2 pr-3 font-semibold" title={nome}>{i === 0 ? <NomeCliente nome={nome} /> : nome}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {c.linhas.map((l) => {
+              const e = ESTILO_TOM[l.tomCliente]
+              return (
+                <tr key={l.rotulo} className="border-b border-borda/60 last:border-0">
+                  <td className="py-2 pr-3 text-texto-3">{l.rotulo}</td>
+                  {l.valores.map((v, i) => <td key={i} className={`py-2 pr-3 tabular-nums ${i === 0 ? `font-semibold ${e.texto}` : 'text-texto-2'}`}>{i === 0 ? <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${e.fundo}`}>{v}</span> : v}</td>)}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Modulo>
   )
 }
 

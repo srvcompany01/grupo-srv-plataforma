@@ -917,7 +917,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       const p = await import('@/servicos/places')
       const { linkAvaliacao } = await import('@/dominio/gmn')
       const [s, evolucao] = await Promise.all([p.saudeDoCliente(sb, cliente.googlePlaceId, dataDeHoje(new Date()), cliente.id), p.evolucaoDoPerfil(sb, cliente.id)])
-      return { cliente: cliente.nome, perfil: p.detalhesParaIA(s.detalhes), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, evolucao, linkAvaliacao: linkAvaliacao(cliente.googlePlaceId) }
+      const versus = await p.comparativoDoCliente(sb, cliente, cliente.googlePlaceId, s.detalhes.perfil, s.nota, dataDeHoje(new Date())).catch(() => null)
+      return { cliente: cliente.nome, comparativoConcorrentes: versus, perfil: p.detalhesParaIA(s.detalhes), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, evolucao, linkAvaliacao: linkAvaliacao(cliente.googlePlaceId) }
     },
   }),
 
