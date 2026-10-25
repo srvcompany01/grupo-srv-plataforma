@@ -28,6 +28,8 @@ describe('performance', () => {
     await ler(db, null, `select * from bio_botao('ouro', 'whatsapp', false)`)
     expect(await ler(db, ana, `select botao, clicks from bio_botao_clicks order by botao`)).toHaveLength(2)
     expect(await ler(db, ana, `select clicks from bio_botao_clicks where botao = 'whatsapp'`)).toEqual([{ clicks: 1 }])
+    // O nome do botão fica gravado: depois de removido, o histórico continua legível.
+    expect(await ler(db, ana, `select botao, rotulo from bio_botao_clicks order by botao`)).toEqual([{ botao: pagina[0].links[0].id, rotulo: 'Site' }, { botao: 'whatsapp', rotulo: 'WhatsApp' }])
     expect(await ler(db, cli, `select * from bio_botao_clicks`)).toEqual([])
     await expect(executar(db, ana, `insert into bio_links (client_id, rotulo, url) values ($1, 'X', 'https://a.com')`, [id])).rejects.toThrow(/row-level security/)
     await executar(db, ana, `insert into lead_confirmations (client_id, observacao) values ($1, 'Maria')`, [id])

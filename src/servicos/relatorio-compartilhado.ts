@@ -11,6 +11,7 @@ import type { Json } from '@/infra/supabase/tipos'
 import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
 import { instagramDoCliente } from './insights-instagram'
+import { resumoDaBio } from './bio'
 import { cliquesLinkBioNoPeriodo } from './performance'
 import { campanhasDoPeriodoMeta, resumoMetaPorTipo } from './meta-anuncios'
 import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
@@ -32,6 +33,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     c.googlePerfil ? metricasDoNegocio(c.googlePerfil, periodo.de, periodo.ate) : null,
   ])
   const cliquesLinkBio = await cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate)
+  const resumoBio = cliquesLinkBio === null ? null : await resumoDaBio(sb, c.id, periodo.de, periodo.ate, !!c.whatsappAtendimento)
   const cm = campsMeta && !('erro' in campsMeta) ? campsMeta : null
   const cg = campsGoogle && !('erro' in campsGoogle) ? campsGoogle : null
   const divergente = lugar ? telefoneDivergente(lugar.telefone, [c.whatsapp, c.whatsappAtendimento]) : null
@@ -88,6 +90,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
       ...(cm ? cm.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
       ...(cg ? cg.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
     ],
+    bio: resumoBio && resumoBio.visitas > 0 ? { visitas: resumoBio.visitas, toques: resumoBio.toques, botoes: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ rotulo: b.rotulo, toques: b.toques })) } : null,
     meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, mensagens: negocio.mensagens, reservas: negocio.reservas, pedidosComida: negocio.pedidosComida, cliquesCardapio: negocio.cliquesCardapio, avaliacoes: negocio.avaliacoes, palavrasChave: negocio.palavrasChave, palavrasPeriodo: negocio.palavrasPeriodo } : null,
     avisosInternos: avisos,
     destaques: [

@@ -1,5 +1,5 @@
 import 'server-only'
-import { lerLinkBio, MAXIMO_LINKS_BIO } from '@/dominio/bio'
+import { lerLinkBio, MAXIMO_LINKS_BIO, montarResumoBio, type ResumoBio } from '@/dominio/bio'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
@@ -30,17 +30,23 @@ export async function definirLogoBio(sb: Supabase, clienteId: string, chave: str
   dados(await sb.from('clients').update({ bio_logo: chave }).eq('id', clienteId).select('id'))
 }
 
-/** Visitas por origem e toques por botão no período (a equipe vê quem clicou onde). */
-export async function resumoDaBio(sb: Supabase, clienteId: string, de: string, ate: string) {
+/** Visitas, toques por botão e por dia de um cliente no período (inclui botões já removidos que tiveram toque). */
+export async function resumoDaBio(sb: Supabase, clienteId: string, de: string, ate: string, temWhatsapp: boolean): Promise<ResumoBio> {
+  const mapa = await resumoDaBioDeVarios(sb, [{ id: clienteId, temWhatsapp }], de, ate)
+  return mapa.get(clienteId)!
+}
+
+/** O mesmo resumo para vários clientes de uma vez (3 consultas, qualquer quantidade de clientes). */
+export async function resumoDaBioDeVarios(sb: Supabase, clientes: { id: string; temWhatsapp: boolean }[], de: string, ate: string): Promise<Map<string, ResumoBio>> {
+  const ids = clientes.map((c) => c.id)
   const [v, b, l] = await Promise.all([
-    sb.from('bio_clicks').select('origem, clicks').eq('client_id', clienteId).gte('day', de).lte('day', ate),
-    sb.from('bio_botao_clicks').select('botao, clicks').eq('client_id', clienteId).gte('day', de).lte('day', ate),
-    sb.from('bio_links').select('id, rotulo').eq('client_id', clienteId),
+    sb.from('bio_clicks').select('client_id, day, origem, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
+    sb.from('bio_botao_clicks').select('client_id, botao, rotulo, day, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
+    sb.from('bio_links').select('client_id, id, rotulo, position').in('client_id', ids).order('position'),
   ])
-  const soma = (xs: { k: string; clicks: number }[]) => [...xs.reduce((m, x) => m.set(x.k, (m.get(x.k) ?? 0) + x.clicks), new Map<string, number>())]
-  const nomes = new Map((l.data ?? []).map((x) => [x.id, x.rotulo]))
-  return {
-    porOrigem: soma((v.data ?? []).map((x) => ({ k: x.origem, clicks: x.clicks }))).map(([origem, cliques]) => ({ origem, cliques })).sort((a, z) => z.cliques - a.cliques),
-    porBotao: soma((b.data ?? []).map((x) => ({ k: x.botao, clicks: x.clicks }))).map(([id, cliques]) => ({ botao: id === 'whatsapp' ? 'WhatsApp' : nomes.get(id) ?? 'Botão removido', cliques })).sort((a, z) => z.cliques - a.cliques),
-  }
+  const por = <T extends { client_id: string }>(xs: T[] | null) => (xs ?? []).reduce((m, x) => m.set(x.client_id, [...(m.get(x.client_id) ?? []), x]), new Map<string, T[]>())
+  const visitas = por(v.data)
+  const botoes = por(b.data)
+  const links = por(l.data)
+  return new Map(clientes.map((c) => [c.id, montarResumoBio({ visitas: visitas.get(c.id) ?? [], botoes: botoes.get(c.id) ?? [], links: links.get(c.id) ?? [], temWhatsapp: c.temWhatsapp })]))
 }

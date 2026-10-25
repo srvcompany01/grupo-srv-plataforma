@@ -38,6 +38,8 @@ export type RelatorioCompartilhado = {
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
   meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; /** Campo legado, removido pelo Google em 2026. */ conversas?: number; mensagens?: number; reservas?: number; pedidosComida?: number; cliquesCardapio?: number; avaliacoes?: AvaliacoesNegocio | null; palavrasChave?: PalavraChaveNegocio[]; palavrasPeriodo?: { de: string; ate: string } } | null
+  /** Página da bio do cliente: visitas e toques em cada botão no período (só quando houve visita). */
+  bio?: { visitas: number; toques: number; botoes: { rotulo: string; toques: number }[] } | null
   /** Só para a equipe (a página pública não mostra). */
   avisosInternos?: string[]
   /** Cada campanha que gastou no período, por plataforma (versão 2+). */
@@ -172,7 +174,8 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
     linhas.push('*Instagram*')
     linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
     linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts orgânicos, com ${num(r.instagram.alcancePosts)} de alcance e ${num(r.instagram.interacoes)} interações` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
-    if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)
+    if (r.bio) linhas.push(`• ${num(r.bio.visitas)} visitas no link da bio e ${num(r.bio.toques)} toques nos botões${r.bio.toques ? ` (mais tocado: ${r.bio.botoes[0].rotulo})` : ''}`)
+    else if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)
     linhas.push('')
   }
   if (r.gmn || r.meuNegocio) {

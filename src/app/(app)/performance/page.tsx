@@ -84,7 +84,7 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
   const meses = mesesAte(mes, 12)
   const [google, bio, leads, paginaBio] = await Promise.all([situacaoGoogle(), linkBioDoCliente(sb, cliente.id), leadsConfirmadosDoMes(sb, cliente.id, mes, hoje), paginaBioDoCliente(sb, cliente.id)])
   const intervaloMes = intervaloDoMes(mes, hoje)
-  const [resumoBio, logoBio] = await Promise.all([resumoDaBio(sb, cliente.id, intervaloMes.de, intervaloMes.ate), paginaBio.logo ? urlLeitura(paginaBio.logo).catch(() => null) : null])
+  const [resumoBio, logoBio] = await Promise.all([resumoDaBio(sb, cliente.id, intervaloMes.de, intervaloMes.ate, !!bio?.whatsapp), paginaBio.logo ? urlLeitura(paginaBio.logo).catch(() => null) : null])
   const h = await historicoDoCliente(sb, cliente, meses, hoje, google.conectado)
   const atual = h.meses[h.meses.length - 1]
   const ant = h.meses.find((m) => m.mes === mesAnterior(mes)) ?? null
@@ -122,7 +122,7 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
             whatsapp={bio?.whatsapp ?? null}
             logo={logoBio}
             links={paginaBio.links}
-            resumo={resumoBio}
+            resumo={{ porOrigem: resumoBio.porOrigem.map((o) => ({ origem: o.origem, cliques: o.visitas })), porBotao: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ botao: b.rotulo, cliques: b.toques })) }}
           />
         </Modulo>
       </div>

@@ -42,9 +42,9 @@ export type Database = {
         Relationships: []
       }
       bio_botao_clicks: {
-        Row: { client_id: string; botao: string; day: string; clicks: number }
-        Insert: { client_id: string; botao: string; day: string; clicks?: number }
-        Update: { client_id?: string; botao?: string; day?: string; clicks?: number }
+        Row: { client_id: string; botao: string; day: string; clicks: number; rotulo: string | null }
+        Insert: { client_id: string; botao: string; day: string; clicks?: number; rotulo?: string | null }
+        Update: { client_id?: string; botao?: string; day?: string; clicks?: number; rotulo?: string | null }
         Relationships: []
       }
       bio_links: {

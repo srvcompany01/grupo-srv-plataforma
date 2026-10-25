@@ -204,6 +204,25 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
           </Secao>
         )}
 
+        {r.bio && (
+          <Secao titulo="Link da bio do Instagram" icone={Link2}>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <Cartao icone={Users} cor="#1baf7a" rotulo="Visitas ao link da bio" valor={num(r.bio.visitas)} extra="pessoas que abriram o link" />
+              <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Toques nos botões" valor={num(r.bio.toques)} extra={r.bio.visitas ? `${num(r.bio.toques / r.bio.visitas)} por visita` : undefined} />
+            </div>
+            {r.bio.botoes.length > 0 && (
+              <ul className="space-y-2 rounded-xl border border-borda bg-white p-3">
+                {r.bio.botoes.map((b) => (
+                  <li key={b.rotulo} className="space-y-1">
+                    <div className="flex items-baseline justify-between gap-3 text-rotulo"><span className="font-semibold">{b.rotulo}</span><span className="tabular-nums text-texto-2"><strong className="text-texto">{num(b.toques)}</strong> toques</span></div>
+                    <div className="h-2 overflow-hidden rounded-full bg-fundo"><div className="h-full rounded-full bg-[#6250d6]" style={{ width: `${(b.toques / r.bio!.botoes[0].toques) * 100}%` }} /></div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Secao>
+        )}
+
         {r.meuNegocio && (
           <Secao titulo="Google Meu Negócio no período" icone={MapPin}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

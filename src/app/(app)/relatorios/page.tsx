@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, Heart, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Camera, Heart, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
@@ -16,6 +16,7 @@ import { SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
+import { analisarBio, ROTULO_ORIGEM } from '@/dominio/bio'
 import { analisarSaude } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { dataDeHoje } from '@/dominio/filtros'
@@ -28,7 +29,8 @@ import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/go
 import { instagramDoCliente } from '@/servicos/insights-instagram'
 import { metaPorDiaPorTipo, resumoMetaPorTipo } from '@/servicos/meta-anuncios'
 import * as places from '@/servicos/places'
-import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
+import { resumoDaBio, resumoDaBioDeVarios } from '@/servicos/bio'
+import { cliquesLinkBioNoPeriodo, linkBioDoCliente } from '@/servicos/performance'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
 export const maxDuration = 120
@@ -38,6 +40,7 @@ const ABAS = [
   ['google', 'Google Ads', Search],
   ['organico', 'Orgânico', Camera],
   ['gmn', 'Google Meu Negócio', MapPin],
+  ['bio', 'Link da bio', Link2],
 ] as const
 type Aba = (typeof ABAS)[number][0]
 
@@ -48,7 +51,7 @@ const compacto = (v: number) => v.toLocaleString('pt-BR', { notation: 'compact',
 const pct = (v: number) => `${n(v)}%`
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
 
-/** Relatórios: Meta Ads, Google Ads, orgânico e Google Meu Negócio, de todos os clientes ou de um só, no período. */
+/** Relatórios: Meta Ads, Google Ads, orgânico, Google Meu Negócio e link da bio, de todos os clientes ou de um só, no período. */
 export default async function Relatorios({ searchParams }: PageProps<'/relatorios'>) {
   await exigirEquipe()
   const sp = await searchParams
@@ -93,7 +96,8 @@ export default async function Relatorios({ searchParams }: PageProps<'/relatorio
         {aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
           : aba === 'google' ? (escolhido ? <GoogleCliente c={escolhido} periodo={periodo} /> : <GoogleTodos clientes={clientes} periodo={periodo} />)
           : aba === 'organico' ? (escolhido ? <OrganicoCliente c={escolhido} periodo={periodo} /> : <OrganicoTodos clientes={clientes} periodo={periodo} />)
-          : escolhido ? <GmnCliente c={escolhido} periodo={periodo} /> : <GmnTodos clientes={clientes} />}
+          : aba === 'gmn' ? (escolhido ? <GmnCliente c={escolhido} periodo={periodo} /> : <GmnTodos clientes={clientes} />)
+          : escolhido ? <BioCliente c={escolhido} periodo={periodo} /> : <BioTodos clientes={clientes} periodo={periodo} />}
       </Suspense>
     </div>
   )
@@ -365,6 +369,70 @@ async function GmnCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios
         )}
       </Modulo>
       {metricas}
+    </>
+  )
+}
+
+// ───────────────────────────── Link da bio ─────────────────────────────
+
+async function BioTodos({ clientes, periodo }: { clientes: Cliente[]; periodo: PeriodoAnuncios }) {
+  const resumos = await resumoDaBioDeVarios(await criarClienteServidor(), clientes.map((c) => ({ id: c.id, temWhatsapp: !!c.whatsappAtendimento })), periodo.de, periodo.ate)
+  const linhas = clientes.map((c) => ({ c, r: resumos.get(c.id)! })).filter(({ r }) => r.visitas > 0 || r.toques > 0).sort((a, b) => b.r.visitas - a.r.visitas)
+  return (
+    <Modulo icone={Link2} titulo="Link da bio · todos os clientes" descricao={`${rotuloPeriodo(periodo)} · visitas à página e toques em cada botão`}>
+      {linhas.length === 0 ? <Aviso>Nenhuma visita nas páginas da bio neste período. Crie a página de cada cliente em Performance → Link da bio.</Aviso> : (
+        <Tabela cabecalho={['Visitas', 'Toques nos botões', 'Toques por visita', 'Botão mais tocado']} linhas={linhas.map(({ c, r }) => ({
+          c, href: hrefCliente('bio', c, periodo),
+          celulas: [n(r.visitas), n(r.toques), r.visitas ? n(r.toques / r.visitas) : '—', r.toques ? `${r.botoes[0].rotulo} (${n(r.botoes[0].toques)})` : '—'],
+        }))} />
+      )}
+    </Modulo>
+  )
+}
+
+async function BioCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
+  const sb = await criarClienteServidor()
+  const [bio, r] = await Promise.all([linkBioDoCliente(sb, c.id), resumoDaBio(sb, c.id, periodo.de, periodo.ate, !!c.whatsappAtendimento)])
+  if (!bio?.slug) return <Aviso>A <strong>{c.nome}</strong> ainda não tem a página da bio. Crie em Performance → Link da bio.</Aviso>
+  const dias = diasDoPeriodo(periodo)
+  const porDia = new Map(r.porDia.map((d) => [d.dia, d]))
+  const maior = Math.max(1, ...r.botoes.map((b) => b.toques))
+  return (
+    <>
+      <Modulo icone={Link2} titulo="Link da bio" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
+        <div className="space-y-4">
+          <Numeros itens={[
+            { rotulo: 'Visitas à página', valor: n(r.visitas), extra: 'pessoas que abriram o link da bio', icone: Link2, cor: '#1baf7a' },
+            { rotulo: 'Toques nos botões', valor: n(r.toques), icone: MousePointerClick, cor: '#6250d6' },
+            { rotulo: 'Toques por visita', valor: r.visitas ? n(r.toques / r.visitas) : '—', icone: Target, cor: '#eb6834' },
+            { rotulo: 'Botão mais tocado', valor: r.toques ? r.botoes[0].rotulo : '—', extra: r.toques ? `${n(r.botoes[0].toques)} toques` : undefined, icone: Star, cor: '#eda100' },
+          ]} />
+          <GraficoDiario titulo="Visitas e toques por dia" dias={dias} series={[{ nome: 'Visitas', valores: dias.map((d) => porDia.get(d)?.visitas ?? 0) }, { nome: 'Toques', valores: dias.map((d) => porDia.get(d)?.toques ?? 0) }]} formato={(v) => n(Math.round(v))} />
+        </div>
+      </Modulo>
+      <Modulo icone={MousePointerClick} titulo="Toques por botão" descricao="Quantas vezes cada botão da página foi tocado no período">
+        {r.botoes.length === 0 ? <Aviso>A página não tem botões ainda.</Aviso> : (
+          <ul className="space-y-2">
+            {r.botoes.map((b) => (
+              <li key={b.id} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-3 text-rotulo">
+                  <span className="font-semibold text-texto">{b.rotulo}{!b.ativo && <span className="ml-1.5 text-legenda font-normal text-texto-3">(removido)</span>}</span>
+                  <span className="tabular-nums text-texto-2"><strong className="text-texto">{n(b.toques)}</strong>{r.toques ? ` · ${pct((b.toques / r.toques) * 100)} dos toques` : ''}{r.visitas ? ` · ${pct((b.toques / r.visitas) * 100)} das visitas` : ''}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-fundo"><div className="h-full rounded-full bg-[#6250d6]" style={{ width: `${(b.toques / maior) * 100}%` }} /></div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modulo>
+      {r.porOrigem.length > 0 && (
+        <Modulo icone={Link2} titulo="De onde vêm as visitas" descricao="Cada endereço tem uma origem: bio, stories ou anúncios">
+          <ul className="space-y-1 text-rotulo">{r.porOrigem.map((o) => <li key={o.origem} className="flex justify-between gap-3"><span className="text-texto-2">{ROTULO_ORIGEM[o.origem] ?? o.origem}</span><span className="tabular-nums"><strong>{n(o.visitas)}</strong> · {pct((o.visitas / r.visitas) * 100)}</span></li>)}</ul>
+        </Modulo>
+      )}
+      <Modulo icone={Star} titulo="Insights e recomendações do link da bio" descricao="O que os números mostram e o que fazer">
+        <BlocoAnalise analise={analisarBio(r)} />
+      </Modulo>
     </>
   )
 }
