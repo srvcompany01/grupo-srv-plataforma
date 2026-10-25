@@ -27,7 +27,7 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
   const [de, setDe] = useState(menos(hoje, 30))
   const [ate, setAte] = useState(menos(hoje, 1))
   const [investimento, setInvestimento] = useState(true)
-  const [pronto, setPronto] = useState<{ url: string; texto: string; whatsapp: string | null; whatsappTelefone: string | null; avisos: string[] } | null>(null)
+  const [pronto, setPronto] = useState<{ url: string; texto: string; whatsapp: string | null; avisos: string[] } | null>(null)
   const [pendente, iniciar] = useTransition()
   const escolher = (t: string) => {
     setTipo(t)
@@ -68,7 +68,6 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
         <div className="space-y-2 rounded-xl border border-sucesso/30 bg-sucesso-fundo/40 p-3">
           <div className="flex flex-wrap gap-2">
             {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> Enviar no WhatsApp do cliente</a>}
-            {!pronto.whatsapp && pronto.whatsappTelefone && <a href={pronto.whatsappTelefone} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Enviar para o telefone do cadastro</a>}
             {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Abrir WhatsApp e escolher o contato</a>}
             <a href={pronto.url} target="_blank" rel="noreferrer" className={botaoSecundario}><ExternalLink className="h-4 w-4" /> Ver relatório</a>
             <CopiarTexto texto={pronto.texto} rotulo="Copiar texto" />

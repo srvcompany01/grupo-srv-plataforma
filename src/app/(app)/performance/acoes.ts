@@ -55,7 +55,6 @@ export async function configurarLinkBioAcao(clienteId: string, mensagem: string)
   const sb = await criarClienteServidor()
   const c = await buscarCliente(sb, clienteId)
   if (!c) return { erro: 'Cliente não encontrado.' }
-  if (!c.whatsapp) return { erro: 'Cadastre o WhatsApp do cliente primeiro (página do cliente → Cadastro).' }
   const res = await tentar(() => perf.configurarLinkBio(sb, { id: c.id, nome: c.nome }, String(mensagem ?? '')), 'Link da bio pronto.')
   revalidatePath('/performance')
   return res

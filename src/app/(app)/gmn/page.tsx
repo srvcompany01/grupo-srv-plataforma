@@ -85,7 +85,7 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
     return <Erro e={e} />
   }
   const evolucao = await places.evolucaoDoPerfil(sb, cliente.id)
-  const divergente = telefoneDivergente(s.detalhes.telefone, [cliente.telefone, cliente.whatsapp])
+  const divergente = telefoneDivergente(s.detalhes.telefone, [cliente.whatsapp, cliente.whatsappAtendimento])
   const d = s.detalhes
   const avaliar = linkAvaliacao(placeId)
   return (

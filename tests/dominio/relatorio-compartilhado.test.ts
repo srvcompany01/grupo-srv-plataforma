@@ -114,12 +114,12 @@ describe('R1-3: geogrid no texto do relatório', () => {
 
 describe('R1-2, R1-4 e R1-5: avisos internos', () => {
   it('cadastro, Meu Negócio e operação; nada quando está tudo certo', () => {
-    const a = avisosInternos({ whatsapp: null, telefoneComoWhatsapp: '5591984479696', meuNegocioLigado: false, erroMeuNegocio: null, ativasSemEntrega: ['Pesquisa | Concorrentes'], pausadasComGasto: ['CAMAS [PP]', 'CBO-TESTE / ICARUS'], avisosGoogle: ['Conversões sem valor configurado'] })
+    const a = avisosInternos({ whatsapp: null, meuNegocioLigado: false, erroMeuNegocio: null, ativasSemEntrega: ['Pesquisa | Concorrentes'], pausadasComGasto: ['CAMAS [PP]', 'CBO-TESTE / ICARUS'], avisosGoogle: ['Conversões sem valor configurado'] })
     expect(a).toHaveLength(5)
-    expect(a[0]).toMatch(/sem WhatsApp.*5591984479696.*confirme/)
+    expect(a[0]).toMatch(/sem WhatsApp no cadastro.*sem destinatário/)
     expect(a[1]).toMatch(/Meu Negócio indisponíveis.*não ligado/)
     expect(a[2]).toMatch(/Pesquisa \| Concorrentes/)
     expect(a[3]).toMatch(/CAMAS \[PP\]; CBO-TESTE/)
-    expect(avisosInternos({ whatsapp: '5591', telefoneComoWhatsapp: null, meuNegocioLigado: true, erroMeuNegocio: null, ativasSemEntrega: [], pausadasComGasto: [], avisosGoogle: [] })).toEqual([])
+    expect(avisosInternos({ whatsapp: '5591', meuNegocioLigado: true, erroMeuNegocio: null, ativasSemEntrega: [], pausadasComGasto: [], avisosGoogle: [] })).toEqual([])
   })
 })

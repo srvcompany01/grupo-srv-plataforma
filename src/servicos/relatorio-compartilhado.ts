@@ -10,7 +10,6 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
 import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
-import { lerWhatsapp } from './clientes-plataforma'
 import { instagramDoCliente } from './insights-instagram'
 import { cliquesLinkBioNoPeriodo } from './performance'
 import { campanhasDoPeriodoMeta, resumoMetaPorTipo } from './meta-anuncios'
@@ -20,7 +19,7 @@ const BASE = () => process.env.NEXT_PUBLIC_URL_BASE ?? 'https://app.gruposrv.com
 export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
 
 /** Junta os números do período (o que der: cada fonte que falhar fica de fora) e guarda a foto. */
-export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; whatsappTelefone: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
+export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
   const google = c.googleAdsId ? await situacaoGoogle() : null
   const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio] = await Promise.all([
     c.metaContaId ? resumoMetaPorTipo(c.metaContaId, periodo) : null,
@@ -35,11 +34,9 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const cliquesLinkBio = await cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate)
   const cm = campsMeta && !('erro' in campsMeta) ? campsMeta : null
   const cg = campsGoogle && !('erro' in campsGoogle) ? campsGoogle : null
-  const telefoneComoWhatsapp = !c.whatsapp && c.telefone ? lerWhatsapp(c.telefone) ?? null : null
-  const divergente = lugar ? telefoneDivergente(lugar.telefone, [c.telefone, c.whatsapp]) : null
+  const divergente = lugar ? telefoneDivergente(lugar.telefone, [c.whatsapp, c.whatsappAtendimento]) : null
   const avisos = avisosInternos({
     whatsapp: c.whatsapp,
-    telefoneComoWhatsapp,
     meuNegocioLigado: !!c.googlePerfil,
     linkBioRastreado: cliquesLinkBio !== null,
     erroMeuNegocio: negocio && 'erro' in negocio ? negocio.erro : null,
@@ -104,7 +101,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   if (error) throw error
   const url = urlDoRelatorio(token)
   const texto = textoWhatsapp(dados, url)
-  return { id: data.id, url, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, whatsappTelefone: telefoneComoWhatsapp ? linkWhatsapp(texto, telefoneComoWhatsapp) : null, avisos, dados }
+  return { id: data.id, url, texto, whatsapp: c.whatsapp ? linkWhatsapp(texto, c.whatsapp) : null, avisos, dados }
 }
 
 export type RelatorioGerado = { id: string; url: string; de: string; ate: string; automatico: boolean; em: string; texto: string; whatsapp: string | null; avisos: string[]; versao: number; desatualizado: boolean; revogado: boolean }

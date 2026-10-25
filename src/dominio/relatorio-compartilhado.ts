@@ -201,7 +201,6 @@ export const linkWhatsapp = (texto: string, numero: string | null) => `https://w
  */
 export function avisosInternos(e: {
   whatsapp: string | null
-  telefoneComoWhatsapp: string | null
   meuNegocioLigado: boolean
   /** false = o cliente não tem o link da bio rastreado (cliques da bio não medidos). */
   linkBioRastreado?: boolean
@@ -212,8 +211,8 @@ export function avisosInternos(e: {
 }): string[] {
   const lista = (xs: string[]) => xs.slice(0, 4).join('; ') + (xs.length > 4 ? ` e mais ${xs.length - 4}` : '')
   return [
-    ...(e.whatsapp ? [] : [e.telefoneComoWhatsapp ? `Cliente sem WhatsApp no cadastro: o link do WhatsApp sai sem destinatário. Há um botão para o telefone do cadastro (${e.telefoneComoWhatsapp}); confirme antes que é WhatsApp.` : 'Cliente sem WhatsApp no cadastro: o link do WhatsApp sai sem destinatário (escolha o contato ao abrir). Cadastre o WhatsApp na página do cliente.']),
-    ...(e.linkBioRastreado === false ? ['Cliques no link da bio não medidos: o cliente não tem a página da bio rastreada. Crie a página da bio na aba Performance (logo, WhatsApp e botões) e coloque o endereço dela na bio do Instagram.'] : []),
+    ...(e.whatsapp ? [] : ['Cliente sem WhatsApp no cadastro: o link do WhatsApp sai sem destinatário (escolha o contato ao abrir). Cadastre o WhatsApp do cliente na página do cliente.']),
+    ...(e.linkBioRastreado === false ? ['Cliques no link da bio não medidos: o cliente não tem a página da bio rastreada. Crie a página da bio na aba Performance (logo, WhatsApp de atendimento e botões) e coloque o endereço dela na bio do Instagram.'] : []),
     ...(!e.meuNegocioLigado ? ['Métricas do Meu Negócio indisponíveis (visualizações, ligações, rotas, cliques no site): perfil do Google Meu Negócio não ligado ao cliente.'] : e.erroMeuNegocio ? [`Métricas do Meu Negócio indisponíveis: ${e.erroMeuNegocio}`] : []),
     ...(e.ativasSemEntrega.length ? [`Campanhas ativas sem nenhum gasto no período (em revisão, reprovadas, público ou pagamento?): ${lista(e.ativasSemEntrega)}.`] : []),
     ...(e.pausadasComGasto.length ? [`Campanhas pausadas que gastaram no período (o cliente pode perguntar por que pararam): ${lista(e.pausadasComGasto)}.`] : []),

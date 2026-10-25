@@ -387,6 +387,7 @@ export type Database = {
           legal_name: string | null
           meta_ad_account_id: string | null
           whatsapp: string | null
+          whatsapp_atendimento: string | null
           bio_slug: string | null
           bio_logo: string | null
           google_place_id: string | null
@@ -415,6 +416,7 @@ export type Database = {
           legal_name?: string | null
           meta_ad_account_id?: string | null
           whatsapp?: string | null
+          whatsapp_atendimento?: string | null
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null
@@ -443,6 +445,7 @@ export type Database = {
           legal_name?: string | null
           meta_ad_account_id?: string | null
           whatsapp?: string | null
+          whatsapp_atendimento?: string | null
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null

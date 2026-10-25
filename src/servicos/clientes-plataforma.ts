@@ -14,7 +14,6 @@ export type Cliente = {
   razaoSocial: string | null
   documento: string | null
   email: string | null
-  telefone: string | null
   status: StatusCliente
   interno: boolean
   /** Posição na galeria (ordem manual); null = ainda não ordenado. */
@@ -23,8 +22,10 @@ export type Cliente = {
   metaPaginaId: string | null
   /** Conta de anúncios do Meta (números do act_), para a galeria com os resultados. */
   metaContaId: string | null
-  /** WhatsApp do cliente (só números, com DDI): link da bio e relatório pelo WhatsApp. */
+  /** WhatsApp do próprio cliente (só números, com DDI): para quem a agência envia os relatórios. */
   whatsapp: string | null
+  /** WhatsApp de atendimento (só números, com DDI): onde chegam os leads (botão da página da bio). */
+  whatsappAtendimento: string | null
   /** Conta do Google Ads (10 dígitos, sem traços). */
   googleAdsId: string | null
   /** Perfil do Google Meu Negócio: accounts/…/locations/… e o nome dele. */
@@ -34,7 +35,7 @@ export type Cliente = {
   googlePlaceId: string | null
 }
 
-const CAMPOS = 'id, name, color, legal_name, document, email, phone, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title, whatsapp, google_place_id'
+const CAMPOS = 'id, name, color, legal_name, document, email, status, is_internal, gallery_position, meta_page_id, meta_ad_account_id, google_ads_customer_id, google_location, google_location_title, whatsapp, whatsapp_atendimento, google_place_id'
 
 type Linha = {
   id: string
@@ -43,7 +44,6 @@ type Linha = {
   legal_name: string | null
   document: string | null
   email: string | null
-  phone: string | null
   status: string
   is_internal: boolean
   gallery_position: string | null
@@ -53,6 +53,7 @@ type Linha = {
   google_location: string | null
   google_location_title: string | null
   whatsapp: string | null
+  whatsapp_atendimento: string | null
   google_place_id: string | null
 }
 
@@ -63,13 +64,13 @@ const paraCliente = (c: Linha): Cliente => ({
   razaoSocial: c.legal_name,
   documento: c.document,
   email: c.email,
-  telefone: c.phone,
   status: c.status as StatusCliente,
   interno: c.is_internal,
   posicaoGaleria: c.gallery_position,
   metaPaginaId: c.meta_page_id,
   metaContaId: c.meta_ad_account_id,
   whatsapp: c.whatsapp,
+  whatsappAtendimento: c.whatsapp_atendimento,
   googleAdsId: c.google_ads_customer_id,
   googlePerfil: c.google_location,
   googlePerfilNome: c.google_location_title,
@@ -97,7 +98,7 @@ export const ROTULO_STATUS_CLIENTE: Record<StatusCliente, string> = { ativo: 'At
 
 /** Campos do formulário de cliente → colunas. Nome obrigatório; vazios viram null. */
 /** Campos do formulário do cliente; `erro` quando a página do Meta não foi reconhecida. */
-type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; google_ads_customer_id: string | null; whatsapp: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; phone: string | null; status: StatusCliente }
+type CamposFormCliente = { meta_page_id: string | null; meta_ad_account_id: string | null; google_ads_customer_id: string | null; whatsapp: string | null; whatsapp_atendimento: string | null; name: string; legal_name: string | null; document: string | null; email: string | null; status: StatusCliente }
 
 export function lerFormCliente(form: FormData): CamposFormCliente | { erro: string } {
   const texto = (k: string) => String(form.get(k) ?? '').trim() || null
@@ -109,17 +110,19 @@ export function lerFormCliente(form: FormData): CamposFormCliente | { erro: stri
   const ads = lerContaGoogleAds(String(form.get('googleAds') ?? ''))
   if ('erro' in ads) return { erro: ads.erro }
   const zap = lerWhatsapp(String(form.get('whatsapp') ?? ''))
-  if (zap === undefined) return { erro: 'WhatsApp inválido: use DDD e número (ex.: 91 99999-9999).' }
+  if (zap === undefined) return { erro: 'WhatsApp do cliente inválido: use DDD e número (ex.: 91 99999-9999).' }
+  const atendimento = lerWhatsapp(String(form.get('whatsappAtendimento') ?? ''))
+  if (atendimento === undefined) return { erro: 'WhatsApp de atendimento inválido: use DDD e número (ex.: 91 99999-9999).' }
   return {
     meta_page_id: meta.id,
     meta_ad_account_id: conta.id,
     google_ads_customer_id: ads.id,
     whatsapp: zap,
+    whatsapp_atendimento: atendimento,
     name: texto('nome') ?? '',
     legal_name: texto('razaoSocial'),
     document: texto('documento'),
     email: texto('email'),
-    phone: texto('telefone'),
     status: (['ativo', 'pausado', 'encerrado'].includes(status) ? status : 'ativo') as StatusCliente,
   }
 }
@@ -213,7 +216,7 @@ export async function novoLinkDoCliente(sb: Supabase, clienteId: string, nome: s
   return slug
 }
 
-export type MudancaCadastro = { nome?: string; whatsapp?: string; paginaMeta?: string; contaMeta?: string; googleAds?: string; email?: string; telefone?: string; status?: StatusCliente }
+export type MudancaCadastro = { nome?: string; whatsapp?: string; paginaMeta?: string; contaMeta?: string; googleAds?: string; email?: string; whatsappAtendimento?: string; status?: StatusCliente }
 
 /**
  * Edita só os campos informados do cadastro, com as mesmas regras da tela (Página, act_, Google Ads, WhatsApp e
@@ -243,11 +246,15 @@ export async function atualizarCadastro(sb: Supabase, id: string, m: MudancaCada
   }
   if (m.whatsapp !== undefined) {
     const z = lerWhatsapp(m.whatsapp)
-    if (z === undefined) throw falha('WhatsApp inválido: use DDD e número (ex.: 91 99999-9999).')
+    if (z === undefined) throw falha('WhatsApp do cliente inválido: use DDD e número (ex.: 91 99999-9999).')
     campos.whatsapp = z
   }
+  if (m.whatsappAtendimento !== undefined) {
+    const z = lerWhatsapp(m.whatsappAtendimento)
+    if (z === undefined) throw falha('WhatsApp de atendimento inválido: use DDD e número (ex.: 91 99999-9999).')
+    campos.whatsapp_atendimento = z
+  }
   if (m.email !== undefined) campos.email = m.email.trim() || null
-  if (m.telefone !== undefined) campos.phone = m.telefone.trim() || null
   if (m.status !== undefined) campos.status = m.status
   if (!Object.keys(campos).length) throw falha('Nada para alterar.')
   const atual = await buscarCliente(sb, id)
@@ -262,7 +269,7 @@ export async function atualizarCadastro(sb: Supabase, id: string, m: MudancaCada
 
 /** O que está ligado no cliente e o que falta (para a IA saber antes de tentar). */
 export function conexoesDoCliente(c: Cliente) {
-  const ligado = { whatsapp: !!c.whatsapp, paginaFacebook: !!c.metaPaginaId, contaAnunciosMeta: !!c.metaContaId, googleAds: !!c.googleAdsId, meuNegocio: !!c.googlePerfil }
-  const FALTA: Record<keyof typeof ligado, string> = { whatsapp: 'WhatsApp (link da bio e relatório)', paginaFacebook: 'Página do Facebook (Instagram, posts, comentários e insights)', contaAnunciosMeta: 'conta de anúncios act_ (Meta Ads)', googleAds: 'conta do Google Ads', meuNegocio: 'perfil do Google Meu Negócio' }
+  const ligado = { whatsapp: !!c.whatsapp, whatsappAtendimento: !!c.whatsappAtendimento, paginaFacebook: !!c.metaPaginaId, contaAnunciosMeta: !!c.metaContaId, googleAds: !!c.googleAdsId, meuNegocio: !!c.googlePerfil }
+  const FALTA: Record<keyof typeof ligado, string> = { whatsapp: 'WhatsApp do cliente (envio dos relatórios)', whatsappAtendimento: 'WhatsApp de atendimento (leads da página da bio)', paginaFacebook: 'Página do Facebook (Instagram, posts, comentários e insights)', contaAnunciosMeta: 'conta de anúncios act_ (Meta Ads)', googleAds: 'conta do Google Ads', meuNegocio: 'perfil do Google Meu Negócio' }
   return { ligado, falta: (Object.keys(ligado) as (keyof typeof ligado)[]).filter((k) => !ligado[k]).map((k) => FALTA[k]) }
 }

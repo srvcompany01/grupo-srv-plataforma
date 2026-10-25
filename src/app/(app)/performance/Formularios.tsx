@@ -64,7 +64,7 @@ export function LinkBio({ clienteId, url, urls, mensagem, whatsapp, logo, links,
     })
   return (
     <div className="space-y-4">
-      {!whatsapp && <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">Sem WhatsApp no cadastro do cliente a página não terá o botão do WhatsApp (só os botões extras).</p>}
+      {!whatsapp && <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">Sem o WhatsApp de atendimento no cadastro do cliente (página do cliente → Cadastro), a página não terá o botão do WhatsApp, só os botões extras.</p>}
       {url && (
         <div className="space-y-1.5">
           {urls.map((u) => (
@@ -92,7 +92,7 @@ export function LinkBio({ clienteId, url, urls, mensagem, whatsapp, logo, links,
         <span className="text-legenda text-texto-3">JPG, PNG ou WebP, até 5 MB. A página mostra só a logo e o nome do cliente.</span>
       </div>
       <label className="block space-y-1">
-        <span className={rotulo}>Mensagem que já chega escrita no WhatsApp{whatsapp ? ` (${whatsapp})` : ''}</span>
+        <span className={rotulo}>Mensagem que já chega escrita no WhatsApp de atendimento{whatsapp ? ` (${whatsapp})` : ''}</span>
         <input className={campo} maxLength={300} value={texto} onChange={(e) => setTexto(e.target.value)} />
       </label>
       <button type="button" disabled={pendente} onClick={() => iniciar(async () => { avisar(await configurarLinkBioAcao(clienteId, texto), true) })} className={url ? botaoSecundario : botaoPrimario}>

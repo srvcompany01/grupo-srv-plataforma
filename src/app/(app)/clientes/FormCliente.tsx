@@ -24,7 +24,6 @@ export function FormCliente({ acao, cliente, podeEditar, embutido }: { acao: Aca
         {c('Razão social', 'razaoSocial', cliente?.razaoSocial)}
         {c('CNPJ / CPF', 'documento', cliente?.documento)}
         {c('E-mail', 'email', cliente?.email, 'email')}
-        {c('Telefone', 'telefone', cliente?.telefone)}
         <label className="space-y-1">
           <span className={rotulo}>Status</span>
           <select name="status" defaultValue={cliente?.status ?? 'ativo'} disabled={!podeEditar} className={campo}>
@@ -47,7 +46,12 @@ export function FormCliente({ acao, cliente, podeEditar, embutido }: { acao: Aca
       <label className="block space-y-1">
         <span className={rotulo}>WhatsApp do cliente</span>
         <input name="whatsapp" defaultValue={cliente?.whatsapp ?? ''} disabled={!podeEditar} className={campo} placeholder="91 99999-9999" inputMode="tel" />
-        <span className="block text-legenda text-texto-3">Para o link da bio (abre o WhatsApp com mensagem pronta) e para enviar relatórios.</span>
+        <span className="block text-legenda text-texto-3">O número do próprio cliente, o contato dele com a agência. Para onde enviamos os relatórios.</span>
+      </label>
+      <label className="block space-y-1">
+        <span className={rotulo}>WhatsApp de atendimento</span>
+        <input name="whatsappAtendimento" defaultValue={cliente?.whatsappAtendimento ?? ''} disabled={!podeEditar} className={campo} placeholder="91 99999-9999" inputMode="tel" />
+        <span className="block text-legenda text-texto-3">Onde chegam os leads do cliente (a equipe de atendimento dele). É o botão do WhatsApp da página da bio, com a mensagem pronta.</span>
       </label>
       <label className="block space-y-1">
         <span className={rotulo}>Conta do Google Ads</span>

@@ -148,7 +148,7 @@ export async function cliquesLinkBioNoPeriodo(sb: Supabase, clienteId: string, d
 }
 
 export async function linkBioDoCliente(sb: Supabase, clienteId: string): Promise<{ slug: string | null; mensagem: string; whatsapp: string | null } | null> {
-  const { data, error } = await sb.from('clients').select('bio_slug, bio_mensagem, whatsapp').eq('id', clienteId).maybeSingle()
+  const { data, error } = await sb.from('clients').select('bio_slug, bio_mensagem, whatsapp_atendimento').eq('id', clienteId).maybeSingle()
   if (error || !data) return null
-  return { slug: data.bio_slug, mensagem: data.bio_mensagem, whatsapp: data.whatsapp }
+  return { slug: data.bio_slug, mensagem: data.bio_mensagem, whatsapp: data.whatsapp_atendimento }
 }

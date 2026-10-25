@@ -262,8 +262,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         (await import('@/servicos/performance')).linkBioDoCliente(sb, c.id),
       ])
       return {
-        id: c.id, nome: c.nome, status: c.status, interno: c.interno, email: c.email, telefone: c.telefone, razaoSocial: c.razaoSocial, documento: c.documento,
-        whatsapp: c.whatsapp, paginaFacebook: c.metaPaginaId, instagram: pagina && !('erro' in pagina) ? pagina.instagram : null, ...(pagina && 'erro' in pagina ? { erroPagina: pagina.erro } : {}),
+        id: c.id, nome: c.nome, status: c.status, interno: c.interno, email: c.email, razaoSocial: c.razaoSocial, documento: c.documento,
+        whatsapp: c.whatsapp, whatsappAtendimento: c.whatsappAtendimento, paginaFacebook: c.metaPaginaId, instagram: pagina && !('erro' in pagina) ? pagina.instagram : null, ...(pagina && 'erro' in pagina ? { erroPagina: pagina.erro } : {}),
         contaAnunciosMeta: c.metaContaId ? `act_${c.metaContaId}` : null, googleAds: c.googleAdsId, meuNegocio: c.googlePerfil ? { id: c.googlePerfil, nome: c.googlePerfilNome } : null,
         linkBio: bio?.slug ? urlDaBio(bio.slug) : null,
         ...conexoesDoCliente(c),
@@ -273,7 +273,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'atualizar_cliente',
-    descricao: 'Edita o cadastro do cliente (só os campos informados; texto vazio tira o valor): nome, WhatsApp (DDD + número), Página do Facebook (id ou link), conta de anúncios (act_123 ou link do Gerenciador), conta do Google Ads (10 dígitos), e-mail, telefone e status. Recusa conta ou Página que já está em outro cliente. O Meu Negócio é ligado na página do cliente.',
+    descricao: 'Edita o cadastro do cliente (só os campos informados; texto vazio tira o valor): nome, WhatsApp do cliente (DDD + número; para onde vão os relatórios), WhatsApp de atendimento (onde chegam os leads; botão da página da bio), Página do Facebook (id ou link), conta de anúncios (act_123 ou link do Gerenciador), conta do Google Ads (10 dígitos), e-mail e status. Recusa conta ou Página que já está em outro cliente. O Meu Negócio é ligado na página do cliente.',
     escrita: true,
     entrada: {
       clienteId: id('Cliente (id de listar_clientes)'),
@@ -283,13 +283,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       contaMeta: z.string().max(300).optional().describe('act_123… ou link do Gerenciador de Anúncios'),
       googleAds: z.string().max(20).optional().describe('Conta do Google Ads (123-456-7890)'),
       email: z.string().max(200).optional(),
-      telefone: z.string().max(30).optional(),
+      whatsappAtendimento: z.string().max(30).optional().describe('WhatsApp de atendimento do cliente (onde chegam os leads; botão da página da bio): DDD + número'),
       status: z.enum(['ativo', 'pausado', 'encerrado']).optional(),
     },
     executar: async ({ sb }, a) => {
       const { clienteId, ...m } = a
       const c = await atualizarCadastro(sb, clienteId, m)
-      return { ok: true, cliente: { id: c.id, nome: c.nome, status: c.status, whatsapp: c.whatsapp, paginaFacebook: c.metaPaginaId, contaAnunciosMeta: c.metaContaId, googleAds: c.googleAdsId }, ...conexoesDoCliente(c) }
+      return { ok: true, cliente: { id: c.id, nome: c.nome, status: c.status, whatsapp: c.whatsapp, whatsappAtendimento: c.whatsappAtendimento, paginaFacebook: c.metaPaginaId, contaAnunciosMeta: c.metaContaId, googleAds: c.googleAdsId }, ...conexoesDoCliente(c) }
     },
   }),
 
@@ -959,7 +959,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const [s, evolucao] = await Promise.all([p.saudeDoCliente(sb, cliente.googlePlaceId, dataDeHoje(new Date()), cliente.id), p.evolucaoDoPerfil(sb, cliente.id)])
       const versus = await p.comparativoDoCliente(sb, cliente, cliente.googlePlaceId, s.detalhes.perfil, s.nota, dataDeHoje(new Date())).catch(() => null)
       const { telefoneDivergente } = await import('@/dominio/gmn')
-      const divergente = telefoneDivergente(s.detalhes.telefone, [cliente.telefone, cliente.whatsapp])
+      const divergente = telefoneDivergente(s.detalhes.telefone, [cliente.whatsapp, cliente.whatsappAtendimento])
       return { cliente: cliente.nome, avisos: divergente ? [divergente] : [], comparativoConcorrentes: versus, perfil: p.detalhesParaIA(s.detalhes), saude: { nota: s.nota, itens: s.itens.map((i) => ({ titulo: i.titulo, tom: i.tom, detalhe: i.detalhe })) }, evolucao, linkAvaliacao: linkAvaliacao(cliente.googlePlaceId) }
     },
   }),
@@ -1052,7 +1052,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       const cliente = await buscarCliente(sb, a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       const r = await (await import('@/servicos/relatorio-compartilhado')).gerarRelatorio(sb, cliente, { de: a.de, ate: a.ate }, { mostrarInvestimento: a.mostrarInvestimento })
-      return { url: r.url, textoWhatsapp: r.texto, linkWhatsapp: r.whatsapp, linkWhatsappTelefoneDoCadastro: r.whatsappTelefone, avisosInternos: r.avisos, resumo: { ...r.dados, avisosInternos: undefined } }
+      return { url: r.url, textoWhatsapp: r.texto, linkWhatsapp: r.whatsapp, avisosInternos: r.avisos, resumo: { ...r.dados, avisosInternos: undefined } }
     },
   }),
 

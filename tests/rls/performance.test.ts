@@ -7,7 +7,7 @@ describe('performance', () => {
     const db = await criarBanco()
     const ana = await criarUsuario(db, { role: 'membro' })
     const cli = await criarUsuario(db, { role: 'cliente' })
-    const { rows } = await db.query<{ id: string }>(`insert into public.clients (name, whatsapp, bio_slug) values ('Ouro', '5591999999999', 'ouro') returning id`)
+    const { rows } = await db.query<{ id: string }>(`insert into public.clients (name, whatsapp, whatsapp_atendimento, bio_slug) values ('Ouro', '5591988887777', '5591999999999', 'ouro') returning id`)
     const id = rows[0].id
     expect(await ler(db, null, `select * from registrar_clique_bio('ouro')`)).toEqual([{ whatsapp: '5591999999999', mensagem: 'Olá! Vim pelo Instagram 😊' }])
     await ler(db, null, `select * from registrar_clique_bio('ouro')`)
