@@ -3,7 +3,7 @@ import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDiverge
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -57,6 +57,8 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     cliques: (m?.cliques ?? 0) + (g?.cliques ?? 0),
     impressoes: (m?.impressoes ?? 0) + (g?.impressoes ?? 0),
     custoPorLead: null,
+    meta: m ? anunciosMeta(m, opcoes.mostrarInvestimento) : null,
+    google: g ? anunciosGoogle(g, opcoes.mostrarInvestimento) : null,
   } : null
   if (anuncios) {
     const leads = leadsDoRelatorio(anuncios)

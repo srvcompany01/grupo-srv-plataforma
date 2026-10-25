@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { MapaGrade, Medidor } from '@/componentes/gmn/MapaGrade'
 import { Marca } from '@/componentes/Marca'
 import { fraseGeogrid } from '@/dominio/gmn'
-import { leadsDoRelatorio } from '@/dominio/relatorio-compartilhado'
+import { leadsDoRelatorio, type AnunciosPlataforma } from '@/dominio/relatorio-compartilhado'
 import { relatorioPorToken } from '@/servicos/relatorio-compartilhado'
 
 export const metadata: Metadata = { title: 'Relatório · Grupo SRV', robots: { index: false, follow: false } }
@@ -30,6 +30,20 @@ function Secao({ titulo, icone: Icone, children }: { titulo: string; icone: type
       <h2 className="flex items-center gap-2 text-corpo font-bold text-texto"><Icone className="h-5 w-5 text-texto-3" />{titulo}</h2>
       {children}
     </section>
+  )
+}
+
+function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlataforma; detalhe?: string }) {
+  return (
+    <Secao titulo={titulo} icone={Target}>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {p.investido !== null && <Cartao icone={BadgeDollarSign} cor="#2a78d6" rotulo="Investimento" valor={reais(p.investido)} />}
+        <Cartao icone={Users} cor="#1baf7a" rotulo="Leads" valor={num(p.leads)} extra={detalhe} />
+        {p.custoPorLead !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por lead" valor={reais(p.custoPorLead)} />}
+        <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques" valor={num(p.cliques)} />
+        <Cartao icone={Eye} cor="#e87ba4" rotulo="Impressões" valor={num(p.impressoes)} />
+      </div>
+    </Secao>
   )
 }
 
@@ -58,7 +72,10 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
           </Secao>
         )}
 
-        {a && (
+        {a?.meta && <Plataforma titulo="Meta Ads (Instagram e Facebook)" p={a.meta} detalhe={[a.meta.conversas ? `${num(a.meta.conversas)} conversas` : '', a.meta.formularios ? `${num(a.meta.formularios)} cadastros` : '', a.meta.leadsSite ? `${num(a.meta.leadsSite)} pelo site` : ''].filter(Boolean).join(' · ') || undefined} />}
+        {a?.google && <Plataforma titulo="Google Ads" p={a.google} detalhe="conversões" />}
+
+        {a && !a.meta && !a.google && (
           <Secao titulo="Anúncios (Meta e Google)" icone={Target}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {a.investido !== null && <Cartao icone={BadgeDollarSign} cor="#2a78d6" rotulo="Investimento" valor={reais(a.investido)} />}

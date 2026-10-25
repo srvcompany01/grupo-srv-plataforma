@@ -27,6 +27,9 @@ export type RelatorioCompartilhado = {
     cliques: number
     impressoes: number
     custoPorLead: number | null
+    /** Cada plataforma com seus próprios números (sem somar Meta e Google). Ausente nos relatórios antigos. */
+    meta?: AnunciosPlataforma | null
+    google?: AnunciosPlataforma | null
   } | null
   instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
@@ -42,7 +45,20 @@ export type RelatorioCompartilhado = {
 /** Lead: resultado = leads e custo por lead. Marca (tráfego/conteúdo): cliques no link e custo por clique, nunca CPL. */
 export type CampanhaRelatorio = { plataforma: 'meta' | 'google'; nome: string; ativa: boolean; papel: 'lead' | 'marca'; gasto: number | null; resultado: number; rotuloResultado: string; custoPorResultado: number | null }
 
+/** Números de uma plataforma de anúncios. Meta: leads = conversas + formulários + site. Google: leads = conversões. */
+export type AnunciosPlataforma = { investido: number | null; leads: number; conversas: number; formularios: number; leadsSite: number; cliques: number; impressoes: number; custoPorLead: number | null }
+
 const arred = (n: number) => Math.round(n * 100) / 100
+
+function plataforma(gasto: number, leads: number, resto: Omit<AnunciosPlataforma, 'investido' | 'leads' | 'custoPorLead'>, mostrarInvestimento: boolean): AnunciosPlataforma {
+  return { investido: mostrarInvestimento ? arred(gasto) : null, leads: arred(leads), ...resto, custoPorLead: mostrarInvestimento && leads && gasto ? arred(gasto / leads) : null }
+}
+
+export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: number } & Leads, mostrarInvestimento: boolean) =>
+  plataforma(m.gasto, totalLeads(m), { conversas: m.conversas, formularios: m.formularios, leadsSite: m.site, cliques: m.cliques, impressoes: m.impressoes }, mostrarInvestimento)
+
+export const anunciosGoogle = (g: { custo: number; conversoes: number; cliques: number; impressoes: number }, mostrarInvestimento: boolean) =>
+  plataforma(g.custo, g.conversoes, { conversas: 0, formularios: 0, leadsSite: 0, cliques: g.cliques, impressoes: g.impressoes }, mostrarInvestimento)
 
 export function campanhaMetaRelatorio(c: { nome: string; status: string; objetivo: string; gasto: number; cliquesLink: number; leads: Leads }, mostrarInvestimento: boolean): CampanhaRelatorio {
   const leads = totalLeads(c.leads)
@@ -66,7 +82,17 @@ const num = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 
 /** Texto do WhatsApp: os números principais e o link do relatório completo. */
 export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   const linhas = [`Olá! Segue o relatório da ${r.cliente} de ${data(r.de)} a ${data(r.ate)} 📊`, '']
-  if (r.anuncios) {
+  const bloco = (titulo: string, p: AnunciosPlataforma, detalhe: string) => {
+    linhas.push(`*${titulo}*`)
+    if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
+    linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)
+    if (p.custoPorLead !== null) linhas.push(`• Custo por lead: ${reais(p.custoPorLead)}`)
+    linhas.push('')
+  }
+  if (r.anuncios?.meta || r.anuncios?.google) {
+    if (r.anuncios.meta) bloco('Meta Ads (Instagram e Facebook)', r.anuncios.meta, r.anuncios.meta.conversas ? ` (${num(r.anuncios.meta.conversas)} conversas no WhatsApp/Direct)` : '')
+    if (r.anuncios.google) bloco('Google Ads', r.anuncios.google, ' (conversões)')
+  } else if (r.anuncios) {
     const leads = leadsDoRelatorio(r.anuncios)
     linhas.push('*Anúncios*')
     if (r.anuncios.investido !== null) linhas.push(`• Investimento: ${reais(r.anuncios.investido)}`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -35,6 +35,20 @@ describe('relatório para o cliente', () => {
     const t = textoWhatsapp(base, 'u')
     expect(t).toMatch(/12 posts, que alcançaram 1\.012 pessoas \(alcance da conta com anúncios: 143\.547\)/)
     expect(leadsDoRelatorio({ ...base.anuncios!, leadsSite: 5 })).toBe(296)
+  })
+})
+
+describe('anúncios separados por plataforma', () => {
+  it('Meta e Google com investido, leads e custo por lead próprios, sem somar', () => {
+    const meta = anunciosMeta({ gasto: 4047.52, cliques: 2000, impressoes: 80000, conversas: 182, formularios: 0, site: 3 }, true)
+    const google = anunciosGoogle({ custo: 1200, conversoes: 4.6, cliques: 900, impressoes: 10000 }, true)
+    expect(meta).toMatchObject({ investido: 4047.52, leads: 185, custoPorLead: 21.88 })
+    expect(google).toMatchObject({ investido: 1200, leads: 4.6, custoPorLead: 260.87 })
+    expect(anunciosMeta({ gasto: 10, cliques: 0, impressoes: 0, conversas: 1, formularios: 0, site: 0 }, false)).toMatchObject({ investido: null, custoPorLead: null })
+    const t = textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google } }, 'u')
+    expect(t).toMatch(/\*Meta Ads \(Instagram e Facebook\)\*\n• Investimento: R\$\s?4\.047,52\n• Leads: 185 \(182 conversas no WhatsApp\/Direct\)\n• Custo por lead: R\$\s?21,88/)
+    expect(t).toMatch(/\*Google Ads\*\n• Investimento: R\$\s?1\.200,00\n• Leads: 4,6 \(conversões\)\n• Custo por lead: R\$\s?260,87/)
+    expect(t).not.toMatch(/\*Anúncios\*/)
   })
 })
 
