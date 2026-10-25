@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
 import { LigarLugar, NovaVarredura } from '@/componentes/gmn/FormulariosGmn'
 import { MapaGrade, Medidor } from '@/componentes/gmn/MapaGrade'
-import { Numeros } from '@/componentes/insights/BlocoAnalise'
 import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
@@ -208,42 +207,64 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
   return (
     <>
       <Modulo icone={Radar} titulo="Nova varredura" descricao={<><NomeCliente nome={cliente.nome} /> · a posição do cliente no Google em cada ponto ao redor do endereço (dados da Places API: próximos do Maps, não idênticos)</>}>
-        <NovaVarredura clienteId={cliente.id} base={base} palavraInicial={atual?.palavra ?? ''} />
+        <NovaVarredura clienteId={cliente.id} base={base} palavraInicial={atual?.palavra ?? ''} gradeInicial={atual?.grade} raioInicial={atual?.raioKm} />
       </Modulo>
       {!atual ? (
         <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma varredura ainda. Rode a primeira acima.</p>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`}>
-            <MapaGrade centro={atual.centro} pontos={atual.pontos} rotulo={`Mapa de posições para ${atual.palavra}`} />
-          </Modulo>
+        <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`}>
           <div className="space-y-4">
-            <Numeros
-              itens={[
-                { rotulo: 'Posição média (onde aparece)', valor: atual.metricas.posicaoMedia === null ? '—' : `${n(atual.metricas.posicaoMedia)}º`, icone: Trophy, cor: '#2a78d6' },
-                { rotulo: 'Posição média geral', valor: `${n(atual.metricas.posicaoMediaTotal)}º`, extra: delta === null ? 'fora do top 20 conta 21' : delta >= 0 ? `▲ ${n(delta)} vs anterior` : `▼ ${n(-delta)} vs anterior`, tom: delta === null ? undefined : delta >= 0 ? 'bom' : 'ruim', icone: BarChart3, cor: '#6250d6' },
-                { rotulo: 'Pontos no top 3', valor: `${n(atual.metricas.top3)}%`, tom: atual.metricas.top3 >= 50 ? 'bom' : atual.metricas.top3 >= 20 ? 'atencao' : 'ruim', icone: Target, cor: '#1baf7a' },
-                { rotulo: 'Aparece em', valor: `${n(atual.metricas.encontrado)}%`, extra: `top 10 em ${n(atual.metricas.top10)}%`, icone: Search, cor: '#eb6834' },
-              ]}
-            />
-            <Modulo icone={Users} titulo="Quem aparece no top 3" descricao="Concorrentes mais frequentes nos pontos da grade">
-              {concorrentes.length === 0 ? <p className="text-rotulo text-texto-3">Sem concorrentes no top 3.</p> : (
-                <ul className="space-y-1.5 text-rotulo">
-                  {concorrentes.map((c) => {
-                    const l = nomes.get(c.id)
-                    return (
-                      <li key={c.id} className="flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate font-semibold" title={l?.endereco}>{l?.nome ?? 'Concorrente'}</span>
-                        {l?.nota != null && <span className="text-legenda text-texto-3">★ {n(l.nota)} ({n(l.avaliacoes)})</span>}
-                        <span className="rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-2">{c.vezes}/{atual.metricas.pontos}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </Modulo>
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              {[
+                { rotulo: 'Posição média (onde aparece)', valor: atual.metricas.posicaoMedia === null ? '—' : `${n(atual.metricas.posicaoMedia)}º`, extra: null, tom: null, icone: Trophy, cor: '#2a78d6' },
+                { rotulo: 'Posição média geral', valor: `${n(atual.metricas.posicaoMediaTotal)}º`, extra: delta === null ? 'fora do top 20 conta como 21' : delta >= 0 ? `▲ ${n(delta)} vs a anterior` : `▼ ${n(-delta)} vs a anterior`, tom: delta === null ? null : delta >= 0 ? 'bom' : 'ruim', icone: BarChart3, cor: '#6250d6' },
+                { rotulo: 'Pontos no top 3', valor: `${n(atual.metricas.top3)}%`, extra: null, tom: atual.metricas.top3 >= 50 ? 'bom' : atual.metricas.top3 >= 20 ? 'atencao' : 'ruim', icone: Target, cor: '#1baf7a' },
+                { rotulo: 'Aparece em', valor: `${n(atual.metricas.encontrado)}%`, extra: `top 10 em ${n(atual.metricas.top10)}% dos pontos`, tom: null, icone: Search, cor: '#eb6834' },
+              ].map((m) => {
+                const Icone = m.icone
+                return (
+                  <div key={m.rotulo} className="relative overflow-hidden rounded-xl border border-borda bg-white p-3">
+                    {m.tom && <span className={`absolute inset-x-0 top-0 h-1 ${ESTILO_TOM[m.tom as 'bom'].forte}`} aria-hidden />}
+                    <p className="flex items-center gap-1.5 text-legenda text-texto-3"><span className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: `${m.cor}1f`, color: m.cor }}><Icone className="h-3 w-3" /></span>{m.rotulo}</p>
+                    <p className="mt-1 text-destaque font-bold tabular-nums text-texto">{m.valor}</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {m.tom && <SeloTom tom={m.tom as 'bom'} rotulo={m.tom === 'bom' ? 'Bom' : m.tom === 'atencao' ? 'Razoável' : 'Fraco'} />}
+                      {m.extra && <span className="text-legenda text-texto-3">{m.extra}</span>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,40rem)_minmax(0,1fr)]">
+              <MapaGrade centro={atual.centro} pontos={atual.pontos} rotulo={`Mapa de posições para ${atual.palavra}`} />
+              <div className="space-y-2">
+                <p className="flex items-center gap-1.5 text-rotulo font-semibold text-texto"><Users className="h-4 w-4 text-texto-3" /> Quem aparece no top 3</p>
+                <p className="text-legenda text-texto-3">Concorrentes mais frequentes nos {atual.metricas.pontos} pontos da grade</p>
+                {concorrentes.length === 0 ? <p className="text-rotulo text-texto-3">Sem concorrentes no top 3.</p> : (
+                  <ul className="divide-y divide-borda/60 rounded-xl border border-borda text-rotulo">
+                    {concorrentes.map((c) => {
+                      const l = nomes.get(c.id)
+                      return (
+                        <li key={c.id} className="flex items-center gap-2 px-3 py-2">
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold" title={l?.nome}>{l?.nome ?? 'Concorrente'}</span>
+                            {l?.nota != null && <span className="text-legenda text-texto-3">★ {n(l.nota)} · {n(l.avaliacoes)} avaliações</span>}
+                          </span>
+                          <span className="shrink-0 rounded-full bg-fundo px-2 py-0.5 text-legenda font-semibold tabular-nums text-texto-2" title="Pontos em que aparece no top 3">{c.vezes}/{atual.metricas.pontos}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+                <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-micro text-texto-3">
+                  {([['#1f8a4c', '1–3'], ['#5cb85c', '4–5'], ['#d9c516', '6–7'], ['#f08a24', '8–10'], ['#d64545', '11–20'], ['#9b9a96', 'fora do top 20']] as const).map(([cor, r]) => (
+                    <span key={r} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: cor }} />{r}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </Modulo>
       )}
       {lista.length > 0 && (
         <Modulo icone={BarChart3} titulo="Varreduras" descricao="Histórico (clique para abrir)">

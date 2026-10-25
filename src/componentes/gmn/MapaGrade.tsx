@@ -8,20 +8,29 @@ const LADO = 640
  */
 export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: PontoGrade[]; rotulo: string }) {
   const zoom = zoomParaCaber(pontos.length ? pontos : [centro], LADO)
+  // O zoom é inteiro: amplia o mapa (até 2x) para a grade preencher ~85% do quadro.
+  const px = (pontos.length ? pontos : [centro]).map((p) => pixel(p, zoom))
+  const extensao = Math.max(Math.max(...px.map((p) => p.x)) - Math.min(...px.map((p) => p.x)), Math.max(...px.map((p) => p.y)) - Math.min(...px.map((p) => p.y)), 1)
+  const escala = Math.min(2, Math.max(1, (LADO * 0.85) / extensao))
   const meio = pixel(centro, zoom)
-  const origem = { x: meio.x - LADO / 2, y: meio.y - LADO / 2 }
+  const origem = { x: meio.x * escala - LADO / 2, y: meio.y * escala - LADO / 2 }
+  const tile = 256 * escala
   const tiles: { x: number; y: number }[] = []
-  for (let tx = Math.floor(origem.x / 256); tx <= Math.floor((origem.x + LADO) / 256); tx++) {
-    for (let ty = Math.floor(origem.y / 256); ty <= Math.floor((origem.y + LADO) / 256); ty++) tiles.push({ x: tx, y: ty })
+  for (let tx = Math.floor(origem.x / tile); tx <= Math.floor((origem.x + LADO) / tile); tx++) {
+    for (let ty = Math.floor(origem.y / tile); ty <= Math.floor((origem.y + LADO) / tile); ty++) tiles.push({ x: tx, y: ty })
   }
   const pct = (v: number) => `${(v / LADO) * 100}%`
   const pos = (p: Ponto) => {
     const q = pixel(p, zoom)
-    return { left: pct(q.x - origem.x), top: pct(q.y - origem.y) }
+    return { left: pct(q.x * escala - origem.x), top: pct(q.y * escala - origem.y) }
   }
+  // Bolinha do tamanho do espaço entre pontos vizinhos (sem encostar), entre 4% e 8% do mapa.
+  const lado = Math.round(Math.sqrt(pontos.length)) || 1
+  const passo = lado > 1 ? (extensao * escala) / (lado - 1) : LADO * 0.08
+  const bolinha = (Math.min(Math.max(passo * 0.72, LADO * 0.04), LADO * 0.08) / LADO) * 100
   return (
     <figure className="space-y-1">
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-borda bg-[#e8e4da]" role="img" aria-label={rotulo}>
+      <div className="@container relative aspect-square w-full overflow-hidden rounded-xl border border-borda bg-[#e8e4da]" role="img" aria-label={rotulo}>
         {tiles.map((t) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiles públicos do OpenStreetMap
           <img
@@ -30,25 +39,25 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
             alt=""
             loading="lazy"
             className="absolute max-w-none select-none"
-            style={{ left: pct(t.x * 256 - origem.x), top: pct(t.y * 256 - origem.y), width: pct(256), height: pct(256) }}
+            style={{ left: pct(t.x * tile - origem.x), top: pct(t.y * tile - origem.y), width: pct(tile), height: pct(tile) }}
           />
         ))}
         {pontos.map((p, i) => {
           const c = corDaPosicao(p.posicao)
+          const noEndereco = i === Math.floor(pontos.length / 2)
           return (
             <span
               key={i}
-              title={p.posicao ? `${p.posicao}º lugar neste ponto` : 'Fora do top 20 neste ponto'}
-              className="absolute flex h-[7%] min-h-6 w-[7%] min-w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-[clamp(9px,1.6vw,13px)] font-bold shadow-md"
-              style={{ ...pos(p), background: c.fundo, color: c.texto }}
+              title={`${p.posicao ? `${p.posicao}º lugar neste ponto` : 'Fora do top 20 neste ponto'}${noEndereco ? ' (endereço do cliente)' : ''}`}
+              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 font-bold shadow-md ${noEndereco ? 'border-[#1d6fe0] ring-4 ring-[#1d6fe0]/35' : 'border-white'}`}
+              style={{ ...pos(p), width: `${bolinha}%`, height: `${bolinha}%`, fontSize: `${bolinha * 0.42}cqw`, background: c.fundo, color: c.texto }}
             >
               {rotuloPosicao(p.posicao)}
             </span>
           )
         })}
-        <span className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#1d6fe0] shadow" style={pos(centro)} title="Endereço do cliente" />
       </div>
-      <figcaption className="text-micro text-texto-3">Mapa © colaboradores do OpenStreetMap. Ponto azul: endereço do cliente.</figcaption>
+      <figcaption className="text-micro text-texto-3">Mapa © colaboradores do OpenStreetMap. Anel azul: o ponto no endereço do cliente.</figcaption>
     </figure>
   )
 }

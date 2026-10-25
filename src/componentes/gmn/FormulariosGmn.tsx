@@ -44,11 +44,11 @@ export function LigarLugar({ clienteId, sugestao }: { clienteId: string; sugesta
 }
 
 /** Palavra-chave, tamanho da grade e raio: roda o geogrid e abre o resultado. */
-export function NovaVarredura({ clienteId, base, palavraInicial }: { clienteId: string; base: string; palavraInicial: string }) {
+export function NovaVarredura({ clienteId, base, palavraInicial, gradeInicial = 5, raioInicial = 3 }: { clienteId: string; base: string; palavraInicial: string; gradeInicial?: number; raioInicial?: number }) {
   const router = useRouter()
   const [palavra, setPalavra] = useState(palavraInicial)
-  const [grade, setGrade] = useState(5)
-  const [raio, setRaio] = useState(3)
+  const [grade, setGrade] = useState(gradeInicial)
+  const [raio, setRaio] = useState(raioInicial)
   const [pendente, iniciar] = useTransition()
   return (
     <form
@@ -75,7 +75,7 @@ export function NovaVarredura({ clienteId, base, palavraInicial }: { clienteId: 
       <label className="block space-y-1">
         <span className={rotulo}>Raio</span>
         <select className={`${campo} w-28`} value={raio} onChange={(e) => setRaio(Number(e.target.value))}>
-          {[0.5, 1, 2, 3, 5, 8, 10, 15, 20].map((r) => <option key={r} value={r}>{r.toLocaleString('pt-BR')} km</option>)}
+          {[...new Set([0.5, 1, 2, 3, 5, 8, 10, 15, 20, raioInicial])].sort((a, b) => a - b).map((r) => <option key={r} value={r}>{r.toLocaleString('pt-BR')} km</option>)}
         </select>
       </label>
       <button type="submit" disabled={pendente} className={botaoPrimario}><Radar className="h-4 w-4" /> {pendente ? `Varrendo ${grade * grade} pontos…` : 'Rodar geogrid'}</button>
