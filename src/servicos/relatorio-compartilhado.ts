@@ -1,5 +1,5 @@
 import 'server-only'
-import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro } from '@/dominio/gmn'
+import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDivergente } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
@@ -34,6 +34,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const cm = campsMeta && !('erro' in campsMeta) ? campsMeta : null
   const cg = campsGoogle && !('erro' in campsGoogle) ? campsGoogle : null
   const telefoneComoWhatsapp = !c.whatsapp && c.telefone ? lerWhatsapp(c.telefone) ?? null : null
+  const divergente = lugar ? telefoneDivergente(lugar.telefone, [c.telefone, c.whatsapp]) : null
   const avisos = avisosInternos({
     whatsapp: c.whatsapp,
     telefoneComoWhatsapp,
@@ -41,7 +42,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     erroMeuNegocio: negocio && 'erro' in negocio ? negocio.erro : null,
     ativasSemEntrega: [...(cm?.ativasSemGasto.map((n) => `${n} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'ENABLED' && x.custo === 0).map((x) => `${x.nome} (Google)`) ?? [])],
     pausadasComGasto: [...(cm?.campanhas.filter((x) => x.status !== 'ACTIVE').map((x) => `${x.nome} (Meta)`) ?? []), ...(cg?.filter((x) => x.status !== 'ENABLED' && x.custo > 0).map((x) => `${x.nome} (Google)`) ?? [])],
-    avisosGoogle: goog && !('erro' in goog) ? avisosGoogle(totaisCampanhas(goog.campanhas)) : [],
+    avisosGoogle: [...(goog && !('erro' in goog) ? avisosGoogle(totaisCampanhas(goog.campanhas)) : []), ...(divergente ? [divergente] : [])],
   })
   const m = meta && !('erro' in meta) ? meta : null
   const g = goog && !('erro' in goog) ? totaisCampanhas(goog.campanhas) : null

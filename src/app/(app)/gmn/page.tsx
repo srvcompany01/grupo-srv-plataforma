@@ -11,7 +11,7 @@ import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarSaude, concorrentesDaGrade, liderDaGrade, linkAvaliacao, pctPrimeiro, textoProposta, type ColunaComparativo, type ItemSaude } from '@/dominio/gmn'
+import { analisarSaude, concorrentesDaGrade, liderDaGrade, linkAvaliacao, pctPrimeiro, telefoneDivergente, textoProposta, type ColunaComparativo, type ItemSaude } from '@/dominio/gmn'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoPrimario, campo } from '@/lib/ui'
@@ -85,6 +85,7 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
     return <Erro e={e} />
   }
   const evolucao = await places.evolucaoDoPerfil(sb, cliente.id)
+  const divergente = telefoneDivergente(s.detalhes.telefone, [cliente.telefone, cliente.whatsapp])
   const d = s.detalhes
   const avaliar = linkAvaliacao(placeId)
   return (
@@ -92,6 +93,7 @@ async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <Modulo icone={BarChart3} titulo="Análise de saúde do perfil" descricao={<><NomeCliente nome={cliente.nome} /> · o que qualquer pessoa vê no Google · atualizado a cada 24 h</>}>
           <div className="space-y-4">
+            {divergente && <p className="rounded-lg border border-aviso/40 bg-aviso-fundo/50 px-3 py-2 text-rotulo text-aviso-forte">{divergente}</p>}
             <Placar nota={s.nota} itens={s.itens} />
             <ItensSaude itens={s.itens} />
             <p className="text-legenda text-texto-3">Com a aprovação da API do Google Meu Negócio entram também postagens, vídeos, respostas às avaliações e o que só o dono vê.</p>

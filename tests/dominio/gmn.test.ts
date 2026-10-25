@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, avaliacoesPorMes, categoriasExtras, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, avaliacoesPorMes, categoriasExtras, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDivergente, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -129,5 +129,15 @@ describe('R2-2: avaliações novas pela foto diária', () => {
     expect(avaliacoesPorMes([{ dia: '2026-10-20', avaliacoes: 600 }, { dia: '2026-10-24', avaliacoes: 601 }])).toBeNull()
     const com = analisarSaude(perfil, '2026-10-31', null, [{ dia: '2026-10-01', avaliacoes: 613 }, { dia: '2026-10-31', avaliacoes: 613 }])
     expect(com.itens.find((i) => i.titulo === 'Avaliações novas')).toMatchObject({ tom: 'ruim', peso: 2 })
+  })
+})
+
+describe('R2-4: telefone divergente', () => {
+  it('avisa quando o do Google não bate com o telefone nem com o WhatsApp do cadastro', () => {
+    expect(telefoneDivergente('(91) 98325-0007', ['91984479696', null])).toMatch(/\(91\) 98325-0007.*91984479696/)
+    expect(telefoneDivergente('(91) 98325-0007', [null, '5591983250007'])).toBeNull()
+    expect(telefoneDivergente('(91) 3333-4444', ['9133334444'])).toBeNull()
+    expect(telefoneDivergente(null, ['91984479696'])).toBeNull()
+    expect(telefoneDivergente('(91) 98325-0007', [null, null])).toBeNull()
   })
 })

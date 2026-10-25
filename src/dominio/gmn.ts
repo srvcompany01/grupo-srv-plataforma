@@ -247,3 +247,15 @@ export function fraseGeogrid(palavra: string, m: Pick<MetricasGrade, 'top3' | 'p
   const base = `Top 3 no Google Maps em ${pct(m.top3)} da região para "${palavra}" (1º lugar em ${pct(primeiro)}, posição média ${m.posicaoMediaTotal.toLocaleString('pt-BR')}º)`
   return lider ? `${base}; quem mais aparece em 1º é ${lider.nome} (${pct(lider.pct)} dos pontos).` : `${base}.`
 }
+
+/**
+ * Telefone do perfil no Google diferente do cadastro (telefone e WhatsApp): compara os 8 últimos dígitos (ignora DDI,
+ * DDD e o 9 na frente). null quando bate ou falta um dos lados.
+ */
+export function telefoneDivergente(google: string | null, cadastro: (string | null)[]): string | null {
+  const fim = (t: string | null) => (t ?? '').replace(/\D/g, '').slice(-8)
+  const g = fim(google)
+  const doCadastro = cadastro.map(fim).filter((x) => x.length === 8)
+  if (g.length < 8 || !doCadastro.length || doCadastro.includes(g)) return null
+  return `Telefone do perfil no Google (${google}) é diferente do cadastro do cliente (${cadastro.filter(Boolean).join(' / ')}). Confira qual está certo: o do Google é o que o cliente final vê.`
+}
