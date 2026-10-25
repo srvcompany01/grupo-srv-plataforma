@@ -210,3 +210,22 @@ export function comparativo(colunas: ColunaComparativo[]): LinhaComparativo[] {
     simNao('Telefone', (p) => !!p.telefone),
   ]
 }
+
+/** % dos pontos em que o cliente está em 1º (as varreduras antigas não guardaram; sai dos pontos). */
+export const pctPrimeiro = (pontos: PontoGrade[]) => (pontos.length ? Math.round((pontos.filter((p) => p.posicao === 1).length / pontos.length) * 1000) / 10 : 0)
+
+/** O concorrente que mais aparece em 1º lugar na grade (fora o cliente), com a % dos pontos. */
+export function liderDaGrade(pontos: PontoGrade[], clienteId: string): { id: string; vezes: number; pct: number } | null {
+  const conta = new Map<string, number>()
+  for (const p of pontos) if (p.top[0] && p.top[0] !== clienteId) conta.set(p.top[0], (conta.get(p.top[0]) ?? 0) + 1)
+  const [id, vezes] = [...conta].sort((a, b) => b[1] - a[1])[0] ?? []
+  return id ? { id, vezes: vezes!, pct: Math.round((vezes! / pontos.length) * 1000) / 10 } : null
+}
+
+/** Frase honesta da posição no Maps: 1º lugar quando lidera; senão o top 3 e quem está em 1º. */
+export function fraseGeogrid(palavra: string, m: Pick<MetricasGrade, 'top3' | 'posicaoMediaTotal'>, primeiro: number, lider: { nome: string; pct: number } | null): string {
+  const pct = (v: number) => `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
+  if (primeiro >= 50) return `1º lugar no Google Maps em ${pct(primeiro)} da região para "${palavra}".`
+  const base = `Top 3 no Google Maps em ${pct(m.top3)} da região para "${palavra}" (1º lugar em ${pct(primeiro)}, posição média ${m.posicaoMediaTotal.toLocaleString('pt-BR')}º)`
+  return lider ? `${base}; quem mais aparece em 1º é ${lider.nome} (${pct(lider.pct)} dos pontos).` : `${base}.`
+}

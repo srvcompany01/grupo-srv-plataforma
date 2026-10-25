@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarSaude, comparativo, concorrentesDaGrade, corDaPosicao, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
+import { analisarSaude, comparativo, concorrentesDaGrade, corDaPosicao, fraseGeogrid, liderDaGrade, pctPrimeiro, gerarGrade, linkAvaliacao, metricasDaGrade, pioraNoGeogrid, pixel, raioDoVies, textoProposta, zoomParaCaber, type PerfilPublico } from '@/dominio/gmn'
 
 describe('geogrid', () => {
   const belem = { lat: -1.4558, lng: -48.4902 }
@@ -95,5 +95,17 @@ describe('comparativo com concorrentes', () => {
     expect(l('Saúde do perfil').tomCliente).toBe('atencao')
     expect(l('Nota').tomCliente).toBe('bom')
     expect(l('Site')).toMatchObject({ valores: ['Não', 'Sim', 'Não'], tomCliente: 'ruim' })
+  })
+})
+
+describe('R1-3: liderança no geogrid', () => {
+  const ponto = (posicao: number | null, top: string[]) => ({ lat: 0, lng: 0, posicao, top })
+  const pontos = [ponto(2, ['rival', 'eu', 'x']), ponto(2, ['rival', 'eu', 'y']), ponto(1, ['eu', 'rival', 'x']), ponto(3, ['rival', 'z', 'eu'])]
+  it('% em 1º, o concorrente líder e a frase que não esconde quem lidera', () => {
+    expect(pctPrimeiro(pontos)).toBe(25)
+    expect(liderDaGrade(pontos, 'eu')).toEqual({ id: 'rival', vezes: 3, pct: 75 })
+    const f = fraseGeogrid('compro ouro', { top3: 100, posicaoMediaTotal: 2 }, 25, { nome: 'Compra Ouro Pará', pct: 75 })
+    expect(f).toMatch(/Top 3 .* 100% da região.*1º lugar em 25%.*Compra Ouro Pará \(75% dos pontos\)/)
+    expect(fraseGeogrid('x', { top3: 100, posicaoMediaTotal: 1.2 }, 80, null)).toMatch(/^1º lugar no Google Maps em 80%/)
   })
 })

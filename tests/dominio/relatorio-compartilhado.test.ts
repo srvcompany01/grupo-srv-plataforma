@@ -4,7 +4,7 @@ import { leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilh
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
   anuncios: { investido: 7209.12, conversas: 276, formularios: 10, conversoesGoogle: 4.6, cliques: 3000, impressoes: 90000, custoPorLead: 24.8 },
-  instagram: { usuario: 'aurumbelem', seguidores: 5200, novosSeguidores: 180, alcance: 42000, visualizacoes: 90000, interacoes: 1200, posts: 12, engajamentoPosts: 3.1, melhorPost: null },
+  instagram: { usuario: 'aurumbelem', seguidores: 5200, novosSeguidores: 180, alcance: 143547, alcancePosts: 1012, visualizacoes: 90000, interacoes: 1200, posts: 12, engajamentoPosts: 3.1, melhorPost: null },
   gmn: { nota: 4.9, avaliacoes: 391, saude: 88, geogrid: null },
   destaques: [],
 }
@@ -29,5 +29,11 @@ describe('relatório para o cliente', () => {
   it('link do WhatsApp com o número do cliente ou sem número', () => {
     expect(linkWhatsapp('Oi 😊', '5591999999999')).toBe('https://wa.me/5591999999999?text=Oi%20%F0%9F%98%8A')
     expect(linkWhatsapp('Oi', null)).toBe('https://wa.me/?text=Oi')
+  })
+
+  it('R0-2: o texto usa o alcance dos posts e rotula o total da conta com anúncios', () => {
+    const t = textoWhatsapp(base, 'u')
+    expect(t).toMatch(/12 posts, que alcançaram 1\.012 pessoas \(alcance da conta com anúncios: 143\.547\)/)
+    expect(leadsDoRelatorio({ ...base.anuncios!, leadsSite: 5 })).toBe(296)
   })
 })

@@ -3,7 +3,7 @@ import { analisarSaude } from '@/dominio/gmn'
 import { totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { leadsDoRelatorio, linkWhatsapp, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -35,6 +35,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     investido: opcoes.mostrarInvestimento ? Math.round(investido * 100) / 100 : null,
     conversas: m?.conversas ?? 0,
     formularios: m?.formularios ?? 0,
+    leadsSite: m?.site ?? 0,
     conversoesGoogle: g?.conversoes ?? 0,
     cliques: (m?.cliques ?? 0) + (g?.cliques ?? 0),
     impressoes: (m?.impressoes ?? 0) + (g?.impressoes ?? 0),
@@ -48,12 +49,13 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const melhor = i ? [...i.posts].sort((a, b) => b.interacoes - a.interacoes)[0] : undefined
   const scan = scans[0]
   const dados: RelatorioCompartilhado = {
+    versao: VERSAO_RELATORIO,
     cliente: c.nome,
     de: periodo.de,
     ate: periodo.ate,
     geradoEm: new Date().toISOString(),
     anuncios,
-    instagram: i ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: i.alcance, visualizacoes: i.visualizacoes, interacoes: i.interacoes, posts: i.posts.length, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
+    instagram: i ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: i.alcance, alcancePosts: i.posts.reduce((s, p) => s + p.alcance, 0), visualizacoes: i.visualizacoes, interacoes: i.interacoes, posts: i.posts.length, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
     gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     destaques: [

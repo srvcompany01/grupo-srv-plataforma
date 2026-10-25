@@ -4,7 +4,12 @@
  */
 import type { MetricasGrade, PontoGrade, Ponto } from './gmn'
 
+/** 2 = leads contados por destino (sem somar conversa e "lead" da mesma pessoa) e alcance orgânico separado. */
+export const VERSAO_RELATORIO = 2
+
 export type RelatorioCompartilhado = {
+  /** Ausente nos relatórios de antes da versão 2 (contagem antiga de leads). */
+  versao?: number
   cliente: string
   de: string
   ate: string
@@ -14,19 +19,21 @@ export type RelatorioCompartilhado = {
     investido: number | null
     conversas: number
     formularios: number
+    /** Evento Lead do pixel do site (versão 2+). */
+    leadsSite?: number
     conversoesGoogle: number
     cliques: number
     impressoes: number
     custoPorLead: number | null
   } | null
-  instagram: { usuario: string; seguidores: number; novosSeguidores: number; alcance: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
+  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Alcance da CONTA (soma orgânico e anúncios). */ alcance: number; /** Alcance só dos posts do período (orgânico). Versão 2+. */ alcancePosts?: number; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string } | null } | null
   destaques: string[]
 }
 
 export const TOKEN_RELATORIO = /^[A-Za-z0-9]{32}$/
 
-export const leadsDoRelatorio = (a: NonNullable<RelatorioCompartilhado['anuncios']>) => a.conversas + a.formularios + Math.round(a.conversoesGoogle)
+export const leadsDoRelatorio = (a: NonNullable<RelatorioCompartilhado['anuncios']>) => a.conversas + a.formularios + (a.leadsSite ?? 0) + Math.round(a.conversoesGoogle)
 
 const data = (d: string) => d.split('-').reverse().slice(0, 2).join('/')
 const reais = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -46,7 +53,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   if (r.instagram) {
     linhas.push('*Instagram*')
     linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
-    linhas.push(`• ${num(r.instagram.alcance)} pessoas alcançadas · ${num(r.instagram.posts)} posts`)
+    linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts, que alcançaram ${num(r.instagram.alcancePosts)} pessoas (alcance da conta com anúncios: ${num(r.instagram.alcance)})` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
     linhas.push('')
   }
   if (r.gmn) {
