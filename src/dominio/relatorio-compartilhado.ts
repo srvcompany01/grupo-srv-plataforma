@@ -46,19 +46,40 @@ export type RelatorioCompartilhado = {
 export type CampanhaRelatorio = { plataforma: 'meta' | 'google'; nome: string; ativa: boolean; papel: 'lead' | 'marca'; gasto: number | null; resultado: number; rotuloResultado: string; custoPorResultado: number | null }
 
 /** Números de uma plataforma de anúncios. Meta: leads = conversas + formulários + site. Google: leads = conversões. */
-export type AnunciosPlataforma = { investido: number | null; leads: number; conversas: number; formularios: number; leadsSite: number; cliques: number; impressoes: number; custoPorLead: number | null }
+export type AnunciosPlataforma = {
+  investido: number | null
+  /** Só campanhas de captação (sem as de marca/tráfego). */
+  investidoCaptacao?: number | null
+  leads: number
+  conversas: number
+  formularios: number
+  leadsSite: number
+  cliques: number
+  impressoes: number
+  /** Investimento de captação ÷ leads. */
+  custoPorLead: number | null
+  /** Todo o investimento ÷ leads (só quando difere do de captação). */
+  custoPorLeadGeral?: number | null
+}
 
 const arred = (n: number) => Math.round(n * 100) / 100
 
-function plataforma(gasto: number, leads: number, resto: Omit<AnunciosPlataforma, 'investido' | 'leads' | 'custoPorLead'>, mostrarInvestimento: boolean): AnunciosPlataforma {
-  return { investido: mostrarInvestimento ? arred(gasto) : null, leads: arred(leads), ...resto, custoPorLead: mostrarInvestimento && leads && gasto ? arred(gasto / leads) : null }
+function plataforma(gasto: number, gastoMarca: number, leads: number, resto: Pick<AnunciosPlataforma, 'conversas' | 'formularios' | 'leadsSite' | 'cliques' | 'impressoes'>, mostrar: boolean): AnunciosPlataforma {
+  const captacao = gasto - gastoMarca
+  const cpl = (v: number) => (mostrar && leads && v ? arred(v / leads) : null)
+  return { investido: mostrar ? arred(gasto) : null, investidoCaptacao: mostrar ? arred(captacao) : null, leads: arred(leads), ...resto, custoPorLead: cpl(captacao), custoPorLeadGeral: gastoMarca > 0 ? cpl(gasto) : null }
 }
 
-export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: number } & Leads, mostrarInvestimento: boolean) =>
-  plataforma(m.gasto, totalLeads(m), { conversas: m.conversas, formularios: m.formularios, leadsSite: m.site, cliques: m.cliques, impressoes: m.impressoes }, mostrarInvestimento)
+/** gastoMarca: o que foi para campanhas de marca (gastoDeMarca), fora do custo por lead de captação. */
+export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: number } & Leads, gastoMarca: number, mostrarInvestimento: boolean) =>
+  plataforma(m.gasto, gastoMarca, totalLeads(m), { conversas: m.conversas, formularios: m.formularios, leadsSite: m.site, cliques: m.cliques, impressoes: m.impressoes }, mostrarInvestimento)
 
 export const anunciosGoogle = (g: { custo: number; conversoes: number; cliques: number; impressoes: number }, mostrarInvestimento: boolean) =>
-  plataforma(g.custo, g.conversoes, { conversas: 0, formularios: 0, leadsSite: 0, cliques: g.cliques, impressoes: g.impressoes }, mostrarInvestimento)
+  plataforma(g.custo, 0, g.conversoes, { conversas: 0, formularios: 0, leadsSite: 0, cliques: g.cliques, impressoes: g.impressoes }, mostrarInvestimento)
+
+/** "Custo por lead (campanhas de captação): R$ 16,17 · considerando todo o investimento: R$ 19,55". */
+export const rotuloCustoPorLead = (p: AnunciosPlataforma) =>
+  p.custoPorLead === null ? null : p.custoPorLeadGeral ? `Custo por lead (campanhas de captação): ${reais(p.custoPorLead)} · considerando todo o investimento: ${reais(p.custoPorLeadGeral)}` : `Custo por lead: ${reais(p.custoPorLead)}`
 
 export function campanhaMetaRelatorio(c: { nome: string; status: string; objetivo: string; gasto: number; cliquesLink: number; leads: Leads }, mostrarInvestimento: boolean): CampanhaRelatorio {
   const leads = totalLeads(c.leads)
@@ -86,7 +107,8 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
     linhas.push(`*${titulo}*`)
     if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
     linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)
-    if (p.custoPorLead !== null) linhas.push(`• Custo por lead: ${reais(p.custoPorLead)}`)
+    const cpl = rotuloCustoPorLead(p)
+    if (cpl) linhas.push(`• ${cpl}`)
     linhas.push('')
   }
   if (r.anuncios?.meta || r.anuncios?.google) {

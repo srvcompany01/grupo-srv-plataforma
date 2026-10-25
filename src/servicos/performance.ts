@@ -16,6 +16,8 @@ import { dados } from './resultado'
 export type MesPerformance = {
   mes: string
   investidoMeta: number
+  /** Do investidoMeta, o que foi para campanhas de marca (tráfego/conteúdo), que não buscam lead. */
+  investidoMetaMarca: number
   investidoGoogle: number
   formularios: number
   /** Dos formulários: leads dentro da Meta (formulário instantâneo, mensagem) e evento Lead do pixel do site. */
@@ -74,6 +76,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
       return {
         mes,
         investidoMeta: m?.get(mes)?.gasto ?? 0,
+        investidoMetaMarca: m?.get(mes)?.gastoMarca ?? 0,
         investidoGoogle: g?.get(mes)?.custo ?? 0,
         formularios: m?.get(mes)?.formularios ?? 0,
         leadsNaMeta: m?.get(mes)?.formularios ?? 0,

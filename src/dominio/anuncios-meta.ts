@@ -7,7 +7,7 @@
  *    não são reprovadas por não gerar lead.
  * Somam o diagnóstico da Meta (só com 500+ impressões) e a frequência.
  */
-import { leadsDasAcoes, totalLeads } from './performance'
+import { leadsDasAcoes, totalLeads, type Leads } from './performance'
 
 export type Ranking = 'acima' | 'media' | 'abaixo' | null
 export type Desempenho = 'bom' | 'medio' | 'fraco' | 'poucos-dados'
@@ -54,6 +54,9 @@ export function papelDoObjetivo(objetivo: string, temResultados: boolean): Papel
   if (['OUTCOME_TRAFFIC', 'OUTCOME_AWARENESS', 'LINK_CLICKS', 'REACH', 'BRAND_AWARENESS', 'POST_ENGAGEMENT', 'VIDEO_VIEWS'].includes(objetivo)) return 'marca'
   return temResultados ? 'lead' : 'marca'
 }
+
+/** Gasto das campanhas de MARCA (tráfego/conteúdo): sai do custo por lead "de captação". Mesma regra de papelDoObjetivo. */
+export const gastoDeMarca = (xs: { objetivo: string; gasto: number; leads: Leads }[]) => xs.reduce((s, x) => s + (papelDoObjetivo(x.objetivo, totalLeads(x.leads) > 0) === 'marca' ? x.gasto : 0), 0)
 
 export const ROTULO_PAPEL: Record<Papel, string> = { lead: 'Geração de leads', marca: 'Marca (tráfego/conteúdo)' }
 

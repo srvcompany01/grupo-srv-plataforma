@@ -2,7 +2,7 @@ import 'server-only'
 import type { PagoPorDia } from '@/dominio/insights'
 import { leadsDasAcoes, somarLeads, type Leads } from '@/dominio/performance'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { avaliarAnuncios, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
+import { avaliarAnuncios, gastoDeMarca, lerAnuncio, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 /**
  * API de Marketing do Meta com o token de um usuário do sistema do Gerenciador de Negócios (META_ACCESS_TOKEN, com
@@ -168,13 +168,13 @@ export async function conjuntosDoPeriodo(contaId: string, de: string, ate: strin
 }
 
 /** Investimento e leads da conta, mês a mês, entre `de` e `ate` (soma dos conjuntos). */
-export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number } & Leads> | { erro: string }> {
+export async function metaPorMes(contaId: string, de: string, ate: string): Promise<Map<string, { gasto: number; gastoMarca: number } & Leads> | { erro: string }> {
   const linhas = await conjuntosDoPeriodo(contaId, de, ate, true)
   if ('erro' in linhas) return linhas
-  const r = new Map<string, { gasto: number } & Leads>()
+  const r = new Map<string, { gasto: number; gastoMarca: number } & Leads>()
   for (const l of linhas) {
-    const atual = r.get(l.mes!) ?? { gasto: 0, formularios: 0, conversas: 0, site: 0 }
-    r.set(l.mes!, { gasto: atual.gasto + l.gasto, ...somarLeads([atual, l.leads]) })
+    const atual = r.get(l.mes!) ?? { gasto: 0, gastoMarca: 0, formularios: 0, conversas: 0, site: 0 }
+    r.set(l.mes!, { gasto: atual.gasto + l.gasto, gastoMarca: atual.gastoMarca + gastoDeMarca([l]), ...somarLeads([atual, l.leads]) })
   }
   return r
 }

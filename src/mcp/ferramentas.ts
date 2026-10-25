@@ -630,6 +630,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         ...h.erros,
         'formularios = todos os leads da Meta: leadsNaMeta (formulário instantâneo e leads em mensagens) + leadsSite (evento Lead do pixel do site).',
         'investidoMeta é o gasto da CONTA inteira na Meta (todas as campanhas, de qualquer objetivo) e investidoGoogle o da conta do Google Ads.',
+        'cpl = custo por lead GERAL (todo o investimento ÷ leads pagos). cplCaptacao = só o investimento das campanhas de captação (sem investidoMetaMarca, as de tráfego/conteúdo) ÷ leads pagos.',
         ...(h.meses.some((m) => m.mes === hoje.slice(0, 7)) ? [`${hoje.slice(0, 7)} está em andamento: o gasto de hoje é parcial, e a Meta e o Google recalculam os últimos dias (cliques inválidos, reprocessamento), então o valor pode subir ou cair alguns reais entre leituras. Mês fechado também pode receber ajuste da plataforma nas semanas seguintes.`] : []),
         ...(semFaturamento.length ? [`Faturamento e vendas não lançados em ${semFaturamento.join(', ')}: ROAS, custo por venda, ticket médio e conversão ficam nulos. Lance com registrar_resultado_mes (ou na aba Performance).`] : []),
         ...(!bio?.whatsapp ? ['O cliente não tem WhatsApp no cadastro: sem ele não dá para criar o link da bio.'] : !bio.slug ? ['O link da bio ainda não foi criado (aba Performance → cliente → Link da bio): cliquesLinkBio fica 0.'] : h.meses.every((m) => !m.cliquesLinkBio) ? [`Nenhum clique no link da bio (www.gruposrv.com.br/l/${bio.slug}) no período: confira se ele está na bio do Instagram.`] : []),
@@ -638,7 +639,10 @@ export const FERRAMENTAS: Ferramenta[] = [
       return {
         cliente: cliente.nome,
         avisos,
-        meses: h.meses.map((m) => ({ ...m, investido: p.investido(m), leadsPagos: p.leadsPagos(m), ...d.indicadores({ investido: p.investido(m), leadsPagos: p.leadsPagos(m), leadsOrganicos: m.leadsConfirmados, faturamento: m.faturamento, vendas: m.vendas }) })),
+        meses: h.meses.map((m) => {
+          const investidoCaptacao = p.investido(m) - m.investidoMetaMarca
+          return { ...m, investido: p.investido(m), investidoCaptacao, leadsPagos: p.leadsPagos(m), ...d.indicadores({ investido: p.investido(m), leadsPagos: p.leadsPagos(m), leadsOrganicos: m.leadsConfirmados, faturamento: m.faturamento, vendas: m.vendas }), cplCaptacao: p.leadsPagos(m) ? investidoCaptacao / p.leadsPagos(m) : null }
+        }),
       }
     },
   }),

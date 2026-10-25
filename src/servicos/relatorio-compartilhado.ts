@@ -12,6 +12,7 @@ import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
 import { lerWhatsapp } from './clientes-plataforma'
 import { instagramDoCliente } from './insights-instagram'
+import { gastoDeMarca } from '@/dominio/anuncios-meta'
 import { campanhasDoPeriodoMeta, totaisDoPeriodoMeta } from './meta-anuncios'
 import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
 
@@ -57,7 +58,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     cliques: (m?.cliques ?? 0) + (g?.cliques ?? 0),
     impressoes: (m?.impressoes ?? 0) + (g?.impressoes ?? 0),
     custoPorLead: null,
-    meta: m ? anunciosMeta(m, opcoes.mostrarInvestimento) : null,
+    meta: m ? anunciosMeta(m, cm ? gastoDeMarca(cm.campanhas) : 0, opcoes.mostrarInvestimento) : null,
     google: g ? anunciosGoogle(g, opcoes.mostrarInvestimento) : null,
   } : null
   if (anuncios) {

@@ -219,6 +219,7 @@ async function Panorama({ clientes, mes, hoje }: { clientes: Cliente[]; mes: str
   const total: MesPerformance = {
     mes,
     investidoMeta: somaN((m) => m.investidoMeta) ?? 0,
+    investidoMetaMarca: somaN((m) => m.investidoMetaMarca) ?? 0,
     investidoGoogle: somaN((m) => m.investidoGoogle) ?? 0,
     formularios: somaN((m) => m.formularios) ?? 0,
     leadsNaMeta: somaN((m) => m.leadsNaMeta) ?? 0,

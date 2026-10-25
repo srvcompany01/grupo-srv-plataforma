@@ -39,7 +39,7 @@ function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlatafo
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {p.investido !== null && <Cartao icone={BadgeDollarSign} cor="#2a78d6" rotulo="Investimento" valor={reais(p.investido)} />}
         <Cartao icone={Users} cor="#1baf7a" rotulo="Leads" valor={num(p.leads)} extra={detalhe} />
-        {p.custoPorLead !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por lead" valor={reais(p.custoPorLead)} />}
+        {p.custoPorLead !== null && <Cartao icone={Target} cor="#eb6834" rotulo={p.custoPorLeadGeral ? 'Custo por lead (campanhas de captação)' : 'Custo por lead'} valor={reais(p.custoPorLead)} extra={p.custoPorLeadGeral ? `Considerando todo o investimento: ${reais(p.custoPorLeadGeral)}` : undefined} />}
         <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Cliques" valor={num(p.cliques)} />
         <Cartao icone={Eye} cor="#e87ba4" rotulo="Impressões" valor={num(p.impressoes)} />
       </div>

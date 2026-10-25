@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { gastoDeMarca } from '@/dominio/anuncios-meta'
 import { anunciosGoogle, anunciosMeta, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
@@ -40,15 +41,27 @@ describe('relatório para o cliente', () => {
 
 describe('anúncios separados por plataforma', () => {
   it('Meta e Google com investido, leads e custo por lead próprios, sem somar', () => {
-    const meta = anunciosMeta({ gasto: 4047.52, cliques: 2000, impressoes: 80000, conversas: 182, formularios: 0, site: 3 }, true)
+    const meta = anunciosMeta({ gasto: 4047.52, cliques: 2000, impressoes: 80000, conversas: 182, formularios: 0, site: 3 }, 0, true)
     const google = anunciosGoogle({ custo: 1200, conversoes: 4.6, cliques: 900, impressoes: 10000 }, true)
     expect(meta).toMatchObject({ investido: 4047.52, leads: 185, custoPorLead: 21.88 })
     expect(google).toMatchObject({ investido: 1200, leads: 4.6, custoPorLead: 260.87 })
-    expect(anunciosMeta({ gasto: 10, cliques: 0, impressoes: 0, conversas: 1, formularios: 0, site: 0 }, false)).toMatchObject({ investido: null, custoPorLead: null })
+    expect(anunciosMeta({ gasto: 10, cliques: 0, impressoes: 0, conversas: 1, formularios: 0, site: 0 }, 0, false)).toMatchObject({ investido: null, custoPorLead: null })
     const t = textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google } }, 'u')
     expect(t).toMatch(/\*Meta Ads \(Instagram e Facebook\)\*\n• Investimento: R\$\s?4\.047,52\n• Leads: 185 \(182 conversas no WhatsApp\/Direct\)\n• Custo por lead: R\$\s?21,88/)
     expect(t).toMatch(/\*Google Ads\*\n• Investimento: R\$\s?1\.200,00\n• Leads: 4,6 \(conversões\)\n• Custo por lead: R\$\s?260,87/)
     expect(t).not.toMatch(/\*Anúncios\*/)
+  })
+
+  it('C3: custo por lead de captação (sem o gasto das campanhas de marca) e o geral, rotulados', () => {
+    const camps = [
+      { objetivo: 'OUTCOME_ENGAGEMENT', gasto: 1933, leads: { formularios: 0, conversas: 181, site: 0 } },
+      { objetivo: 'OUTCOME_TRAFFIC', gasto: 700, leads: { formularios: 0, conversas: 1, site: 0 } },
+    ]
+    expect(gastoDeMarca(camps)).toBe(700)
+    const meta = anunciosMeta({ gasto: 2633, cliques: 0, impressoes: 0, conversas: 182, formularios: 0, site: 0 }, gastoDeMarca(camps), true)
+    expect(meta).toMatchObject({ investido: 2633, investidoCaptacao: 1933, custoPorLead: 10.62, custoPorLeadGeral: 14.47 })
+    expect(textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google: null } }, 'u')).toMatch(/Custo por lead \(campanhas de captação\): R\$\s?10,62 · considerando todo o investimento: R\$\s?14,47/)
+    expect(anunciosMeta({ gasto: 100, cliques: 0, impressoes: 0, conversas: 10, formularios: 0, site: 0 }, 0, true).custoPorLeadGeral).toBeNull()
   })
 })
 
