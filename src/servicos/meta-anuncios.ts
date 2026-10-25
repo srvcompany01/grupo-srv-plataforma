@@ -311,6 +311,7 @@ export async function diagnosticoAcoesMeta(contaId: string, periodo: Pick<Period
     campanha: l.campanha, campanhaId: l.campanhaId, conjunto: l.conjunto, conjuntoId: l.conjuntoId, destino: l.destino,
     gasto: Math.round(l.gasto * 100) / 100, cliquesLink: l.cliquesLink, contado: l.leads,
     acoes: Object.fromEntries(l.acoes.filter((a) => /lead|messaging|link_click|contact/.test(a.action_type)).map((a) => [a.action_type, Number(a.value)])),
+    todasAsAcoes: Object.fromEntries(l.acoes.map((a) => [a.action_type, Number(a.value)])),
   }))
   const somaAcao = (t: string) => linhas.reduce((s, l) => s + Number(l.acoes.find((a) => a.action_type === t)?.value ?? 0), 0)
   return {

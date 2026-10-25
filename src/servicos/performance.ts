@@ -136,8 +136,13 @@ export async function configurarLinkBio(sb: Supabase, c: { id: string; nome: str
   return slug
 }
 
-/** Cliques no link da bio da plataforma (www.gruposrv.com.br/l/<cliente>) no período; null se a tabela não existir. */
+/**
+ * Cliques no link da bio da plataforma (www.gruposrv.com.br/l/<cliente>) no período. null = não medido: o cliente
+ * ainda não tem esse link (precisa do WhatsApp no cadastro) ou a tabela não existe. 0 só vale com o link criado.
+ */
 export async function cliquesLinkBioNoPeriodo(sb: Supabase, clienteId: string, de: string, ate: string): Promise<number | null> {
+  const cliente = await sb.from('clients').select('bio_slug').eq('id', clienteId).maybeSingle()
+  if (cliente.error || !cliente.data?.bio_slug) return null
   const { data, error } = await sb.from('bio_clicks').select('clicks').eq('client_id', clienteId).gte('day', de).lte('day', ate)
   return error ? null : (data ?? []).reduce((s, l) => s + l.clicks, 0)
 }

@@ -41,6 +41,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     whatsapp: c.whatsapp,
     telefoneComoWhatsapp,
     meuNegocioLigado: !!c.googlePerfil,
+    linkBioRastreado: cliquesLinkBio !== null,
     erroMeuNegocio: negocio && 'erro' in negocio ? negocio.erro : null,
     ativasSemEntrega: [...(cm?.ativasSemGasto.map((n) => `${n} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'ENABLED' && x.custo === 0).map((x) => `${x.nome} (Google)`) ?? [])],
     pausadasComGasto: [...(cm?.campanhas.filter((x) => x.status === 'PAUSED').map((x) => `${x.nome} (Meta)`) ?? []), ...(cg?.filter((x) => x.status === 'PAUSED' && x.custo > 0).map((x) => `${x.nome} (Google)`) ?? [])],

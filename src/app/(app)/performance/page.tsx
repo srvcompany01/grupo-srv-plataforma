@@ -96,7 +96,7 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
             <Fonte icone={ClipboardList} cor="#2a78d6" rotulo="Formulários instantâneos (Meta)" valor={inteiro(atual.formularios)} extra={atual.leadsSite ? `+ ${inteiro(atual.leadsSite)} leads do site` : undefined} />
             <Fonte icone={MessageCircle} cor="#1baf7a" rotulo="Conversas WhatsApp/Direct (Meta)" valor={inteiro(atual.conversas)} />
             <Fonte icone={Target} cor="#eb6834" rotulo="Conversões (Google Ads)" valor={cliente.googleAdsId ? inteiro(atual.conversoesGoogle) : 'sem conta'} />
-            <Fonte icone={Camera} cor="#e1306c" rotulo="Cliques nos links do perfil (Instagram)" valor={atual.cliquesPerfilInstagram === null ? (cliente.metaPaginaId ? 'Meta não entregou' : 'sem Página') : inteiro(atual.cliquesPerfilInstagram)} />
+            <Fonte icone={Camera} cor="#e1306c" rotulo="Toques nos botões de contato do perfil (Instagram)" valor={atual.cliquesPerfilInstagram === null ? (cliente.metaPaginaId ? 'Meta não entregou' : 'sem Página') : inteiro(atual.cliquesPerfilInstagram)} />
             <Fonte icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no link da bio (plataforma)" valor={inteiro(atual.cliquesLinkBio)} />
             <Fonte icone={UserCheck} cor="#1baf7a" rotulo="Leads confirmados da bio" valor={inteiro(atual.leadsConfirmados)} extra={atual.cliquesLinkBio ? `${pct((atual.leadsConfirmados / atual.cliquesLinkBio) * 100)} dos cliques` : undefined} />
             <Fonte icone={Wallet} cor="#2a78d6" rotulo="Investido Meta / Google" valor={`${reais(atual.investidoMeta)} / ${reais(atual.investidoGoogle)}`} />

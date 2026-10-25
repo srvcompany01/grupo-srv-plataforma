@@ -32,7 +32,8 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio }: { ig: ResumoInst
           { rotulo: 'Visualizações dos posts', valor: numero.format(organico.visualizacoes), icone: Eye, cor: '#1baf7a' },
           { rotulo: 'Interações nos posts', valor: numero.format(organico.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },
           { rotulo: 'Posts', valor: String(ig.posts.length), extra: `${porSemana.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por semana`, tom: tomFrequencia(porSemana), icone: LayoutGrid, cor: '#eb6834' },
-          ...(cliquesLinkBio == null ? [] : [{ rotulo: 'Cliques no link da bio', valor: numero.format(cliquesLinkBio), extra: 'pelo link da plataforma', icone: Link2, cor: '#1baf7a' }]),
+          ...(cliquesLinkBio === undefined ? [] : [{ rotulo: 'Cliques no link da bio', valor: cliquesLinkBio === null ? '—' : numero.format(cliquesLinkBio), extra: cliquesLinkBio === null ? 'sem link rastreado na bio' : 'pelo link da plataforma', icone: Link2, cor: '#1baf7a' }]),
+          { rotulo: 'Toques nos botões de contato', valor: numero.format(ig.cliquesPerfil), extra: 'ligar, rota e e-mail do perfil', icone: Radar, cor: '#6250d6' },
         ]}
       />
       <GraficoDiario titulo="Alcance dos posts pela data de publicação" dias={dias} series={[{ nome: 'Posts orgânicos', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />
