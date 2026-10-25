@@ -2,5 +2,6 @@
 !.env.example
 .dados
 .superpowers
+.playwright-mcp
 .next
 node_modules
