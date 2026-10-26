@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { formaDe, temTexto } from '@/dominio/kommo'
+import { classificacoesDasMensagens, formaDe, temTexto } from '@/dominio/kommo'
 import { usuarioAtual } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 
@@ -14,5 +14,5 @@ export async function GET(req: Request) {
   const { data, error } = await (await criarClienteServidor()).from('kommo_eventos_teste').select('id, conta, recebido_em, corpo').order('recebido_em', { ascending: false }).limit(limite)
   if (error) return NextResponse.json({ erro: error.message }, { status: 500 })
   const bruto = new URL(req.url).searchParams.get('bruto') === '1'
-  return NextResponse.json({ total: data.length, eventos: data.map((e) => ({ id: e.id, conta: e.conta, recebidoEm: e.recebido_em, trazTextoDeMensagem: temTexto(e.corpo), ...(bruto ? { corpo: e.corpo } : { forma: formaDe(e.corpo, 6) }) })) })
+  return NextResponse.json({ total: data.length, classificacoesDasMensagens: classificacoesDasMensagens(data.map((e) => e.corpo)), eventos: data.map((e) => ({ id: e.id, conta: e.conta, recebidoEm: e.recebido_em, trazTextoDeMensagem: temTexto(e.corpo), ...(bruto ? { corpo: e.corpo } : { forma: formaDe(e.corpo, 6) }) })) })
 }

@@ -54,3 +54,22 @@ export function temTexto(corpo: unknown): boolean {
   }
   return procurar(corpo, false)
 }
+
+/**
+ * Valores de campos que são só classificação (tipo da mensagem, tipo do autor, canal de origem), contados nos eventos de
+ * mensagem: mostra como o Kommo separa cliente, atendente e robô sem expor nome, telefone nem texto.
+ */
+export function classificacoesDasMensagens(corpos: unknown[]) {
+  const conta = (m: Record<string, number>, v: unknown) => { const k = String(v ?? 'sem'); m[k] = (m[k] ?? 0) + 1 }
+  const r = { message_type: {} as Record<string, number>, author_type: {} as Record<string, number>, origin: {} as Record<string, number>, element_type: {} as Record<string, number> }
+  for (const c of corpos) {
+    const add = ((c as Obj)?.message as Obj | undefined)?.add
+    for (const m of (Array.isArray(add) ? add : []) as Obj[]) {
+      conta(r.message_type, m.message_type)
+      conta(r.author_type, (m.author as Obj | undefined)?.type)
+      conta(r.origin, m.origin)
+      conta(r.element_type, m.element_type)
+    }
+  }
+  return r
+}

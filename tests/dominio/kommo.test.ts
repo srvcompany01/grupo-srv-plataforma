@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contaDoEvento, formaDe, lerFormularioKommo, temTexto } from '@/dominio/kommo'
+import { classificacoesDasMensagens, contaDoEvento, formaDe, lerFormularioKommo, temTexto } from '@/dominio/kommo'
 
 describe('webhook do Kommo', () => {
   it('formulário aninhado vira objeto, com listas pelos índices', () => {
@@ -25,5 +25,15 @@ describe('webhook do Kommo', () => {
     expect(temTexto({ message: { add: [{ id: '1', text: '' }] } })).toBe(false)
     expect(temTexto({ leads: { status: [{ id: '1', status_id: '142' }] }, account: { subdomain: 'a' } })).toBe(false)
     expect(temTexto({ text: 'fora de mensagem' })).toBe(false)
+  })
+
+  it('classifica as mensagens por tipo, autor e canal, sem devolver nome nem texto', () => {
+    const r = classificacoesDasMensagens([
+      { message: { add: [{ text: 'Oi', message_type: 'incoming', origin: 'waba', element_type: 'lead', author: { id: '1', name: 'Maria', type: 'contact' } }] } },
+      { message: { add: [{ text: 'Olá!', message_type: 'outgoing', origin: 'waba', element_type: 'lead', author: { id: '2', name: 'Ana', type: 'user' } }, { text: 'Bot', message_type: 'outgoing', origin: 'waba', author: { type: 'bot' } }] } },
+      { talk: { update: [{ talk_id: '1' }] } },
+    ])
+    expect(r).toEqual({ message_type: { incoming: 1, outgoing: 2 }, author_type: { contact: 1, user: 1, bot: 1 }, origin: { waba: 3 }, element_type: { lead: 2, sem: 1 } })
+    expect(JSON.stringify(r)).not.toMatch(/Maria|Ana|Oi|Olá/)
   })
 })
