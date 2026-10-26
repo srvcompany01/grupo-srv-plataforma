@@ -323,3 +323,21 @@ export async function diagnosticoAcoesMeta(contaId: string, periodo: Pick<Period
     conjuntos,
   }
 }
+
+/**
+ * Sonda (diagnóstico, só admin): pede à Meta, um a um, os campos que poderiam trazer visitas ao perfil e seguidores
+ * de uma campanha, e o que o conjunto otimiza. Campo que a Meta recusa volta com o erro; o que existe volta com o valor.
+ */
+export async function sondaCampanhaMeta(contaId: string, campanhaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>) {
+  const base = { level: 'adset', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campanhaId }]), limit: '50' }
+  const candidatos = ['results', 'cost_per_result', 'conversions', 'cost_per_conversion', 'unique_actions', 'cost_per_action_type', 'cost_per_unique_action_type', 'cost_per_inline_link_click', 'reach', 'frequency', 'optimization_goal', 'objective']
+  const campos = Object.fromEntries(await Promise.all(candidatos.map(async (f) => {
+    const r = await meta<{ data: Record<string, unknown>[] }>(`act_${contaId}/insights`, { ...base, fields: `adset_id,spend,${f}` })
+    return [f, 'erro' in r ? { erro: r.erro } : r.data.map((d) => ({ adset: d.adset_id, spend: d.spend, [f]: d[f] }))] as const
+  })))
+  const [campanha, conjuntos] = await Promise.all([
+    meta<Record<string, unknown>>(campanhaId, { fields: 'name,objective,buying_type,effective_status' }),
+    meta<{ data: Record<string, unknown>[] }>(`${campanhaId}/adsets`, { fields: 'id,name,optimization_goal,destination_type,promoted_object,billing_event,effective_status', limit: '50' }),
+  ])
+  return { campanha, conjuntos: 'erro' in conjuntos ? conjuntos : conjuntos.data, campos }
+}
