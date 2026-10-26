@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resumoDoEvento, segredoValido } from '@/dominio/whatsapp'
+import { limparEvento, resumoDoEvento, segredoValido } from '@/dominio/whatsapp'
 
 describe('webhook do WhatsApp (fase de teste)', () => {
   it('segredo: só aceita o mesmo valor, de qualquer tamanho', () => {
@@ -26,5 +26,13 @@ describe('webhook do WhatsApp (fase de teste)', () => {
   it('formatos estranhos não quebram', () => {
     expect(resumoDoEvento(null)).toMatchObject({ evento: '', texto: '', veioDeAnuncio: false })
     expect(resumoDoEvento({ data: [{ key: { remoteJid: '123@g.us' } }] })).toMatchObject({ grupo: true })
+  })
+
+  it('não guarda a chave da instância, o destino com o segredo, o servidor nem o segredo de criptografia da mensagem', () => {
+    const bruto = { event: 'messages.upsert', instance: 'x', apikey: 'CHAVE', destination: 'https://app/api?segredo=ABC', server_url: 'https://evo', data: { key: { fromMe: false }, message: { conversation: 'Oi', messageContextInfo: { messageSecret: { 0: 1 } } } } }
+    const limpo = limparEvento(bruto) as Record<string, unknown>
+    expect(JSON.stringify(limpo)).not.toMatch(/CHAVE|segredo=ABC|https:\/\/evo|messageSecret/)
+    expect(limpo).toMatchObject({ event: 'messages.upsert', instance: 'x', data: { key: { fromMe: false }, message: { conversation: 'Oi' } } })
+    expect(limparEvento(null)).toEqual({})
   })
 })

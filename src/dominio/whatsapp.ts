@@ -35,3 +35,20 @@ export function resumoDoEvento(corpo: unknown) {
     texto: texto.slice(0, 160),
   }
 }
+
+/**
+ * Tira do evento o que não deve ser guardado: a chave (apikey) da instância, o endereço de destino (que leva o segredo
+ * do webhook) e o servidor da Evolution, mais o segredo de criptografia da mensagem (messageContextInfo).
+ */
+export function limparEvento(corpo: unknown): unknown {
+  const c = obj(corpo)
+  const { apikey: _apikey, destination: _destino, server_url: _servidor, ...resto } = c
+  const dados = Array.isArray(resto.data) ? resto.data : [resto.data]
+  const limpos = dados.map((d) => {
+    const o = obj(d)
+    if (!o.message) return d
+    const { messageContextInfo: _ctx, ...mensagem } = obj(o.message)
+    return { ...o, message: mensagem }
+  })
+  return { ...resto, ...(resto.data === undefined ? {} : { data: Array.isArray(resto.data) ? limpos : limpos[0] }) }
+}
