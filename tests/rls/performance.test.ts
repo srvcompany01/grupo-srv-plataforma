@@ -40,6 +40,12 @@ describe('performance', () => {
     expect(await ler(db, ana, `select origem, views, visitantes from bio_visualizacoes`)).toEqual([{ origem: 'story', views: 3, visitantes: 2 }])
     expect(await ler(db, cli, `select * from bio_visualizacoes`)).toEqual([])
     await expect(ler(db, ana, `select * from bio_visitantes`)).resolves.toEqual([])
+    // Eventos de teste do WhatsApp: só o admin lê; ninguém grava pela API (só o endpoint, com a chave de serviço).
+    const adm = await criarUsuario(db, { role: 'admin' })
+    await db.query(`insert into wa_eventos_teste (instancia, evento, corpo) values ('aurum', 'messages.upsert', '{}'::jsonb)`)
+    expect(await ler(db, adm, `select instancia from wa_eventos_teste`)).toEqual([{ instancia: 'aurum' }])
+    expect(await ler(db, ana, `select * from wa_eventos_teste`)).toEqual([])
+    await expect(executar(db, adm, `insert into wa_eventos_teste (corpo) values ('{}'::jsonb)`, [])).rejects.toThrow(/row-level security/)
     await executar(db, ana, `insert into lead_confirmations (client_id, observacao) values ($1, 'Maria')`, [id])
     await executar(db, ana, `insert into client_monthly_results (client_id, month, revenue, sales) values ($1, '2026-10-01', 50000, 12)`, [id])
     expect(await ler(db, cli, `select * from client_monthly_results`)).toEqual([])
