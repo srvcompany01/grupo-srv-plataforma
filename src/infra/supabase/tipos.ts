@@ -41,6 +41,30 @@ export type Database = {
         Update: { client_id?: string; day?: string; clicks?: number; origem?: string }
         Relationships: []
       }
+      kommo_funis: {
+        Row: { pipeline_id: number; client_id: string; nome: string; created_at: string }
+        Insert: { pipeline_id: number; client_id: string; nome?: string; created_at?: string }
+        Update: { pipeline_id?: number; client_id?: string; nome?: string; created_at?: string }
+        Relationships: []
+      }
+      kommo_negocios: {
+        Row: { id: number; client_id: string; pipeline_id: number; status_id: number | null; valor: number; etiquetas: string[]; responsavel_id: number | null; criado_em: string | null; ganho_em: string | null; perdido_em: string | null; excluido_em: string | null; atualizado_em: string }
+        Insert: { id: number; client_id: string; pipeline_id: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
+        Update: { id?: number; client_id?: string; pipeline_id?: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
+        Relationships: []
+      }
+      wa_conversas: {
+        Row: { talk_id: number; client_id: string; lead_id: number | null; contato_id: number | null; origem: string; criada_em: string; atualizada_em: string }
+        Insert: { talk_id: number; client_id: string; lead_id?: number | null; contato_id?: number | null; origem?: string; criada_em: string; atualizada_em: string }
+        Update: { talk_id?: number; client_id?: string; lead_id?: number | null; contato_id?: number | null; origem?: string; criada_em?: string; atualizada_em?: string }
+        Relationships: []
+      }
+      wa_mensagens: {
+        Row: { id: string; client_id: string; talk_id: number; lead_id: number | null; papel: string; autor_tipo: string; autor_id: string; texto: string; criada_em: string }
+        Insert: { id: string; client_id: string; talk_id: number; lead_id?: number | null; papel: string; autor_tipo?: string; autor_id?: string; texto?: string; criada_em: string }
+        Update: { id?: string; client_id?: string; talk_id?: number; lead_id?: number | null; papel?: string; autor_tipo?: string; autor_id?: string; texto?: string; criada_em?: string }
+        Relationships: []
+      }
       kommo_eventos_teste: {
         Row: { id: string; conta: string; recebido_em: string; corpo: Json }
         Insert: { id?: string; conta?: string; recebido_em?: string; corpo: Json }
@@ -1844,6 +1868,7 @@ export type Database = {
       uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       bio_pagina: { Args: { p_slug: string }; Returns: { nome: string; logo: string | null; whatsapp: string | null; mensagem: string; links: Json }[] }
+      apagar_mensagens_antigas: { Args: Record<PropertyKey, never>; Returns: number }
       bio_visualizacao: { Args: { p_slug: string; p_origem: string; p_hash: string }; Returns: undefined }
       bio_visita: { Args: { p_slug: string; p_origem: string }; Returns: undefined }
       bio_botao: { Args: { p_slug: string; p_botao: string; p_contar: boolean }; Returns: { url: string | null; whatsapp: string | null; mensagem: string | null }[] }

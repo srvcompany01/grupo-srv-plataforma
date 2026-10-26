@@ -14,6 +14,7 @@ import { InstagramInsights } from '@/componentes/insights/InstagramInsights'
 import { SeloTom } from '@/componentes/insights/tom'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
+import { duracao } from '@/dominio/atendimento'
 import { analisarBio, ROTULO_ORIGEM } from '@/dominio/bio'
 import { analisarSaude } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
@@ -26,12 +27,13 @@ import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/go
 import { instagramDoCliente } from '@/servicos/insights-instagram'
 import { metaPorDiaPorTipo, resumoMetaPorTipo, seguidoresPagosNoPeriodo } from '@/servicos/meta-anuncios'
 import * as places from '@/servicos/places'
+import { atendimentoDoCliente } from '@/servicos/atendimento'
 import { resumoDaBio, resumoDaBioDeVarios } from '@/servicos/bio'
 import { cliquesLinkBioNoPeriodo, linkBioDoCliente } from '@/servicos/performance'
 import { calcularRelatorio } from '@/servicos/relatorio-compartilhado'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
-export type Aba = 'resumo' | 'meta' | 'google' | 'organico' | 'gmn' | 'bio' | 'evolucao' | 'lancamentos'
+export type Aba = 'resumo' | 'atendimento' | 'meta' | 'google' | 'organico' | 'gmn' | 'bio' | 'evolucao' | 'lancamentos'
 
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const reaisCurto = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })
@@ -372,6 +374,44 @@ export async function BioCliente({ c, periodo }: { c: Cliente; periodo: PeriodoA
       )}
       <Modulo icone={Star} titulo="Insights e recomendações do link da bio" descricao="O que os números mostram e o que fazer">
         <BlocoAnalise analise={analisarBio(r)} />
+      </Modulo>
+    </>
+  )
+}
+
+// ───────────────────────────── Atendimento (WhatsApp via Kommo) ─────────────────────────────
+
+const tempo = (seg: number | null) => (seg === null ? '—' : duracao(seg))
+
+export async function AtendimentoCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
+  const sb = await criarClienteServidor()
+  const r = await atendimentoDoCliente(sb, c.id, periodo.de, periodo.ate)
+  if (!r.ligado) return <Aviso>O funil do Kommo da <strong>{c.nome}</strong> ainda não foi ligado. Peça ao admin para ligar o funil a este cliente.</Aviso>
+  const { metricas: m, negocios: ng } = r
+  const dias = diasDoPeriodo(periodo)
+  const porDia = new Map(r.porDia.map((d) => [d.dia, d]))
+  return (
+    <>
+      <Modulo icone={MessageCircle} titulo="Atendimento no WhatsApp" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)} · só conversas e vendas registradas depois que a ligação com o Kommo foi feita</>}>
+        <div className="space-y-4">
+          <Numeros itens={[
+            { rotulo: 'Conversas', valor: n(m.conversas), extra: `${n(m.respondidas)} respondidas por uma pessoa${m.taxaDeResposta !== null ? ` (${pct(m.taxaDeResposta)})` : ''}`, icone: MessageCircle, cor: '#1baf7a' },
+            { rotulo: '1ª resposta (mediana)', valor: tempo(m.primeiraResposta.mediana), extra: `média ${tempo(m.primeiraResposta.media)} · 10% piores ${tempo(m.primeiraResposta.p90)}`, icone: Target, cor: '#2a78d6' },
+            { rotulo: 'Sem resposta há +1h', valor: n(m.semResposta), extra: m.soRobo ? `${n(m.soRobo)} só com resposta do robô` : undefined, icone: Users, cor: '#eb6834' },
+            { rotulo: 'Vendas', valor: n(ng.ganhos), extra: ng.receita ? `${reais(ng.receita)}${ng.ticket ? ` · ticket ${reais(ng.ticket)}` : ''}` : undefined, icone: BadgeDollarSign, cor: '#6250d6' },
+            { rotulo: 'Negócios novos', valor: n(ng.novos), extra: `${n(ng.perdidos)} perdidos${ng.taxaDeVenda !== null ? ` · ${pct(ng.taxaDeVenda)} viraram venda` : ''}`, icone: Star, cor: '#eda100' },
+          ]} />
+          <p className="text-legenda text-texto-3">Respondida em até 5 min: {m.primeiraResposta.ate5min === null ? '—' : pct(m.primeiraResposta.ate5min)} · até 15 min: {m.primeiraResposta.ate15min === null ? '—' : pct(m.primeiraResposta.ate15min)} · até 1 h: {m.primeiraResposta.ate60min === null ? '—' : pct(m.primeiraResposta.ate60min)}. Só conta resposta de uma pessoa; o robô não vale como resposta.</p>
+          <GraficoDiario titulo="Conversas novas e vendas por dia" dias={dias} series={[{ nome: 'Conversas', valores: dias.map((d) => porDia.get(d)?.conversas ?? 0) }, { nome: 'Vendas', valores: dias.map((d) => porDia.get(d)?.vendas ?? 0) }]} formato={(v) => n(Math.round(v))} />
+        </div>
+      </Modulo>
+      {r.porEtiqueta.length > 0 && (
+        <Modulo icone={Link2} titulo="Origem pelas etiquetas do Kommo" descricao="Negócios novos e vendas por etiqueta (um negócio com duas etiquetas conta nas duas)">
+          <ul className="space-y-1 text-rotulo">{r.porEtiqueta.map((e) => <li key={e.etiqueta} className="flex justify-between gap-3"><span className="text-texto-2">{e.etiqueta}</span><span className="tabular-nums"><strong>{n(e.leads)}</strong> negócios · <strong>{n(e.vendas)}</strong> vendas{e.receita ? ` · ${reais(e.receita)}` : ''}</span></li>)}</ul>
+        </Modulo>
+      )}
+      <Modulo icone={Star} titulo="Insights e recomendações do atendimento" descricao="O que os números mostram e o que fazer">
+        <BlocoAnalise analise={r.analise} />
       </Modulo>
     </>
   )
