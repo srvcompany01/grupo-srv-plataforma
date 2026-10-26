@@ -34,7 +34,7 @@ export type RelatorioCompartilhado = {
     meta?: AnunciosPlataforma | null
     google?: AnunciosPlataforma | null
   } | null
-  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Legado: na versão 3+, é igual a alcancePosts. */ alcance: number; /** Alcance acumulado somente dos posts publicados no período. */ alcancePosts?: number; /** Cliques no link da bio da plataforma no período. */ cliquesLinkBio?: number | null; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
+  instagram: { usuario: string; seguidores: number; novosSeguidores: number; /** Orgânicos x pagos (versão 4+): quem passou a seguir, quem saiu e quantos vieram dos anúncios pela atribuição da Meta. */ seguidoresGanhos?: number; seguidoresPerdidos?: number; seguidoresPagos?: number | null; seguidoresOrganicos?: number | null; /** Legado: na versão 3+, é igual a alcancePosts. */ alcance: number; /** Alcance acumulado somente dos posts publicados no período. */ alcancePosts?: number; /** Cliques no link da bio da plataforma no período. */ cliquesLinkBio?: number | null; visualizacoes: number; interacoes: number; posts: number; engajamentoPosts: number | null; melhorPost: { legenda: string; link: string; interacoes: number } | null } | null
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
   meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; /** Campo legado, removido pelo Google em 2026. */ conversas?: number; mensagens?: number; reservas?: number; pedidosComida?: number; cliquesCardapio?: number; avaliacoes?: AvaliacoesNegocio | null; palavrasChave?: PalavraChaveNegocio[]; palavrasPeriodo?: { de: string; ate: string } } | null
@@ -63,6 +63,8 @@ export type AnunciosPlataforma = {
   impressoes: number
   /** Investimento de captação ÷ leads. */
   custoPorLead: number | null
+  /** Seguidores do Instagram atribuídos aos anúncios, de todas as campanhas (Meta). */
+  seguidoresAnuncio?: number
   /** Todo o investimento ÷ leads (só quando difere do de captação). */
   custoPorLeadGeral?: number | null
   /** Detalhe da Meta na versão 4+: somente campanhas cujo objetivo é gerar contato. */
@@ -85,8 +87,8 @@ export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: nu
 
 /** Relatório Meta v4: cada finalidade tem seu investimento e sua métrica; não existe média de CPL com tráfego de perfil. */
 export const anunciosMetaSeparados = (m: {
-  total: { gasto: number; cliques: number; impressoes: number }
-  captacao: { gasto: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
+  total: { gasto: number; cliques: number; impressoes: number; seguidoresAnuncio: number }
+  captacao: { gasto: number; leads: number; conversas: number; formularios: number; site: number; seguidoresAnuncio: number; custoPorLead: number | null; campanhas: number }
   reconhecimento: { gasto: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; seguidoresAnuncio: number; custoPorSeguidor: number | null; custoPorClique: number | null; campanhas: number }
 }, mostrarInvestimento: boolean): AnunciosPlataforma => ({
   investido: mostrarInvestimento ? arred(m.total.gasto) : null,
@@ -98,6 +100,7 @@ export const anunciosMetaSeparados = (m: {
   cliques: arred(m.total.cliques),
   impressoes: arred(m.total.impressoes),
   custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null,
+  seguidoresAnuncio: arred(m.total.seguidoresAnuncio),
   captacao: { investido: mostrarInvestimento ? arred(m.captacao.gasto) : null, leads: arred(m.captacao.leads), conversas: arred(m.captacao.conversas), formularios: arred(m.captacao.formularios), leadsSite: arred(m.captacao.site), custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null, campanhas: m.captacao.campanhas },
   reconhecimento: { investido: mostrarInvestimento ? arred(m.reconhecimento.gasto) : null, cliquesLink: arred(m.reconhecimento.cliquesLink), visitasPerfil: arred(m.reconhecimento.visitasPerfil), custoPorVisitaPerfil: mostrarInvestimento && m.reconhecimento.custoPorVisitaPerfil !== null ? arred(m.reconhecimento.custoPorVisitaPerfil) : null, seguidoresAnuncio: arred(m.reconhecimento.seguidoresAnuncio), custoPorSeguidor: mostrarInvestimento && m.reconhecimento.custoPorSeguidor !== null ? arred(m.reconhecimento.custoPorSeguidor) : null, custoPorClique: mostrarInvestimento && m.reconhecimento.custoPorClique !== null ? arred(m.reconhecimento.custoPorClique) : null, campanhas: m.reconhecimento.campanhas },
 })
@@ -151,7 +154,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
       const rotuloMarca = p.reconhecimento.visitasPerfil ? 'visitas ao perfil' : 'cliques no link'
       if (p.reconhecimento.investido !== null) linhas.push(`• Reconhecimento/tráfego: ${reais(p.reconhecimento.investido)} · ${num(resultadoMarca)} ${rotuloMarca}${p.reconhecimento.visitasPerfil && p.reconhecimento.custoPorVisitaPerfil != null ? ` · custo por visita ${reais(p.reconhecimento.custoPorVisitaPerfil)}` : p.reconhecimento.custoPorClique === null ? '' : ` · custo por clique ${reais(p.reconhecimento.custoPorClique)}`}`)
       else if (resultadoMarca) linhas.push(`• Reconhecimento/tráfego: ${num(resultadoMarca)} ${rotuloMarca}`)
-      if (p.reconhecimento.seguidoresAnuncio) linhas.push(`• ${num(p.reconhecimento.seguidoresAnuncio)} novos seguidores pelos anúncios${p.reconhecimento.custoPorSeguidor != null ? ` · custo por seguidor ${reais(p.reconhecimento.custoPorSeguidor)}` : ''}`)
+      if (p.seguidoresAnuncio) linhas.push(`• ${num(p.seguidoresAnuncio)} novos seguidores pelos anúncios${p.reconhecimento.custoPorSeguidor != null ? ` · custo por seguidor nas campanhas de perfil ${reais(p.reconhecimento.custoPorSeguidor)}` : ''}`)
     } else {
       if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
       linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)
@@ -174,6 +177,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   if (r.instagram) {
     linhas.push('*Instagram*')
     linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
+    if (r.instagram.seguidoresPagos != null && r.instagram.seguidoresOrganicos != null) linhas.push(`• Novos seguidores: ${num(r.instagram.seguidoresOrganicos)} orgânicos e ${num(r.instagram.seguidoresPagos)} pelos anúncios`)
     linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts orgânicos, com ${num(r.instagram.alcancePosts)} de alcance e ${num(r.instagram.interacoes)} interações` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
     if (r.bio) linhas.push(`• ${num(r.bio.visitas)} visitas no link da bio e ${num(r.bio.toques)} toques nos botões${r.bio.toques ? ` (mais tocado: ${r.bio.botoes[0].rotulo})` : ''}`)
     else if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)

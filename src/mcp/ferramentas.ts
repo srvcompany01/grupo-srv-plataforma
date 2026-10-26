@@ -20,7 +20,7 @@ import { formatarDuracao } from '@/dominio/painel-projetos'
 import { lerCollabs } from '@/dominio/publicacao'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { totalLeads } from '@/dominio/performance'
-import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato } from '@/dominio/insights'
+import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato, separarSeguidores } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
 
 /** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
@@ -409,7 +409,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'insights_instagram_cliente',
-    descricao: 'Insights orgânicos do Instagram no período: seguidores, saldo de seguidores e, somente para os posts publicados no período, alcance, visualizações, interações, engajamento, desempenho por formato e recomendações. Métricas da conta que incluem anúncios são excluídas. Traz também cliquesLinkBio (cliques no link da bio da plataforma no período). O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
+    descricao: 'Insights orgânicos do Instagram no período: seguidores, saldo de seguidores (e seguidores_novos: ganhos, perdidos, orgânicos x pagos) e, somente para os posts publicados no período, alcance, visualizações, interações, engajamento, desempenho por formato e recomendações. Métricas da conta que incluem anúncios são excluídas. Traz também cliquesLinkBio (cliques no link da bio da plataforma no período). O cliente precisa ter a Página do Facebook (com o Instagram profissional ligado) no cadastro.',
     escrita: false,
     entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
     executar: async ({ sb }, a) => {
@@ -417,16 +417,17 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.metaPaginaId) throw new Error('Este cliente não tem a Página do Facebook no cadastro.')
       const p = periodoDaIA(a)
-      const [ig, cliquesLinkBio] = await Promise.all([(await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true), (await import('@/servicos/performance')).cliquesLinkBioNoPeriodo(sb, cliente.id, p.de, p.ate)])
+      const [ig, cliquesLinkBio, pagos] = await Promise.all([(await import('@/servicos/insights-instagram')).instagramDoCliente(cliente.metaPaginaId, p, true), (await import('@/servicos/performance')).cliquesLinkBioNoPeriodo(sb, cliente.id, p.de, p.ate), (await import('@/servicos/meta-anuncios')).seguidoresPagosNoPeriodo(cliente.metaContaId, p)])
       if ('erro' in ig) throw new Error(ig.erro)
       const organico = (await import('@/dominio/insights')).metricasOrganicas(ig)
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
       const avisos = [
         'alcance, visualizações e interações abaixo somam somente os posts publicados no período; métricas da conta que incluem anúncios foram excluídas.',
+        'seguidores_novos separa quem passou a seguir (ganhos) em organicos e pagos: pagos = seguidores que a Meta atribui aos anúncios (todas as campanhas); organicos = ganhos − pagos (a atribuição tem janela de clique e visualização, então pode passar dos ganhos do dia). saldo = ganhos − perdidos. novosSeguidores é o saldo (orgânico + pago).',
         ...(ig.posts.length ? [] : ['Nenhum post de feed/Reels no período (Stories não entram nesta conta).']),
         ...(ig.alcancePorDia.length < dias ? ['O Instagram leva até 48 horas para fechar o dia: os últimos dias podem faltar em alcancePorDia.'] : []),
       ]
-      return { cliente: cliente.nome, periodo: p, usuario: ig.usuario, seguidores: ig.seguidores, novosSeguidores: ig.novosSeguidores, cliquesLinkBio, ...organico, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
+      return { cliente: cliente.nome, periodo: p, usuario: ig.usuario, seguidores: ig.seguidores, novosSeguidores: ig.novosSeguidores, seguidores_novos: separarSeguidores({ ganhos: ig.seguidoresGanhos, perdidos: ig.seguidoresPerdidos, pagos }), cliquesLinkBio, ...organico, posts: ig.posts.map((x) => ({ id: x.id, formato: x.formato, em: x.em, link: x.link, legenda: x.legenda.slice(0, 200), alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes, curtidas: x.curtidas, comentarios: x.comentarios, salvamentos: x.salvamentos, compartilhamentos: x.compartilhamentos })), engajamentoPosts: engajamentoOrganico(ig), porFormato: porFormato(ig.posts), analise: analisarOrganico(ig, dias), avisos }
     },
   }),
 
@@ -444,12 +445,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       const dias = (Date.parse(p.ate) - Date.parse(p.de)) / 86_400_000 + 1
       const organico = d.ig ? (await import('@/dominio/insights')).metricasOrganicas(d.ig) : null
       const cliquesLinkBio = await (await import('@/servicos/performance')).cliquesLinkBioNoPeriodo(sb, cliente.id, p.de, p.ate)
+      const pagos = await (await import('@/servicos/meta-anuncios')).seguidoresPagosNoPeriodo(cliente.metaContaId, p)
       return {
         cliente: cliente.nome,
         periodo: p,
         avisos: d.erros,
         pago: { ...d.pago, analise: analisarPago(d.pago) },
-        organico: d.ig && organico ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, novosSeguidores: d.ig.novosSeguidores, cliquesLinkBio, ...organico, analise: analisarOrganico(d.ig, dias) } : null,
+        organico: d.ig && organico ? { usuario: d.ig.usuario, seguidores: d.ig.seguidores, novosSeguidores: d.ig.novosSeguidores, seguidores_novos: separarSeguidores({ ganhos: d.ig.seguidoresGanhos, perdidos: d.ig.seguidoresPerdidos, pagos }), cliquesLinkBio, ...organico, analise: analisarOrganico(d.ig, dias) } : null,
         combinado: { pagoPorDia: d.pagoPorDia, analise: analisarCombinado(d.ig, d.pagoPorDia, d.pago) },
       }
     },

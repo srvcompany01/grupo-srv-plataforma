@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { analisarCombinado, analisarOrganico, analisarPago, formatoDoPost, melhorDiaDaSemana, metricasOrganicas, porFormato, type PostIG, type ResumoInstagram } from '@/dominio/insights'
+import { analisarCombinado, analisarOrganico, analisarPago, formatoDoPost, melhorDiaDaSemana, metricasOrganicas, porFormato, separarSeguidores, type PostIG, type ResumoInstagram } from '@/dominio/insights'
 
 const post = (id: string, formato: PostIG['formato'], interacoes: number, em: string): PostIG => ({ id, legenda: `Post ${id}`, formato, link: '', imagem: null, em, curtidas: interacoes, comentarios: 0, alcance: interacoes * 10, visualizacoes: 0, salvamentos: 0, compartilhamentos: 0, interacoes })
-const ig = (posts: PostIG[]): ResumoInstagram => ({ usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 10, cliquesPerfil: 3, alcancePorDia: [{ dia: '2026-10-01', valor: 100 }, { dia: '2026-10-02', valor: 50 }], posts })
+const ig = (posts: PostIG[]): ResumoInstagram => ({ usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 10, seguidoresGanhos: 10, seguidoresPerdidos: 0, cliquesPerfil: 3, alcancePorDia: [{ dia: '2026-10-01', valor: 100 }, { dia: '2026-10-02', valor: 50 }], posts })
 
 describe('insights', () => {
   it('formato e agrupamento', () => {
@@ -60,7 +60,7 @@ describe('tons (limites iguais em toda a plataforma)', () => {
 
 describe('P1-5: amostra mínima e sem contradição', () => {
   const p = (id: string, formato: PostIG['formato'], interacoes: number, em: string): PostIG => ({ id, legenda: id, formato, link: '', imagem: null, em, curtidas: interacoes, comentarios: 0, alcance: 50, visualizacoes: 0, salvamentos: 0, compartilhamentos: 0, interacoes })
-  const poucos = { usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 0, cliquesPerfil: 0, alcancePorDia: [], posts: [p('a', 'Foto', 30, '2026-10-07T15:00:00Z'), p('b', 'Foto', 28, '2026-10-14T15:00:00Z'), p('c', 'Reels', 3, '2026-10-08T15:00:00Z'), p('d', 'Reels', 2, '2026-10-09T15:00:00Z')] }
+  const poucos = { usuario: 'x', seguidores: 1000, alcance: 500, visualizacoes: 900, interacoes: 50, contasEngajadas: 40, curtidas: 40, comentarios: 5, salvamentos: 2, compartilhamentos: 1, novosSeguidores: 0, seguidoresGanhos: 0, seguidoresPerdidos: 0, cliquesPerfil: 0, alcancePorDia: [], posts: [p('a', 'Foto', 30, '2026-10-07T15:00:00Z'), p('b', 'Foto', 28, '2026-10-14T15:00:00Z'), p('c', 'Reels', 3, '2026-10-08T15:00:00Z'), p('d', 'Reels', 2, '2026-10-09T15:00:00Z')] }
 
   it('com menos de 5 posts por formato não recomenda formato, nem dia com menos de 3 posts', () => {
     const a = analisarOrganico(poucos, 14)
@@ -73,5 +73,17 @@ describe('P1-5: amostra mínima e sem contradição', () => {
   it('não manda priorizar um formato que contradiga o melhor formato', () => {
     const recs = analisarOrganico(poucos, 14).recomendacoes.map((r) => r.texto).join(' | ')
     expect(recs).not.toMatch(/priorize Reels/)
+  })
+})
+
+describe('separarSeguidores', () => {
+  it('orgânico = ganhos − pagos (nunca negativo) e o saldo desconta quem saiu', () => {
+    expect(separarSeguidores({ ganhos: 400, perdidos: 60, pagos: 171 })).toEqual({ ganhos: 400, perdidos: 60, saldo: 340, pagos: 171, organicos: 229, pctPagos: 42.75 })
+    const passou = separarSeguidores({ ganhos: 100, perdidos: 0, pagos: 130 })
+    expect(passou).toMatchObject({ organicos: 0, pctPagos: 100 })
+  })
+
+  it('sem dado dos anúncios: não inventa o orgânico', () => {
+    expect(separarSeguidores({ ganhos: 400, perdidos: 60, pagos: null })).toMatchObject({ saldo: 340, pagos: null, organicos: null, pctPagos: null })
   })
 })

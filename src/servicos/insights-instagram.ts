@@ -46,15 +46,15 @@ async function totais(igId: string, j: { since: number; until: number }, cacheSe
   }
 }
 
-/** Seguiram − deixaram de seguir na janela (0 se a Meta não entregar). */
-async function saldoSeguidores(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<number> {
+/** Quem seguiu e quem deixou de seguir na janela (0 e 0 se a Meta não entregar). */
+async function movimentoSeguidores(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<{ ganhos: number; perdidos: number }> {
   try {
     const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'follows_and_unfollows', metric_type: 'total_value', period: 'day', breakdown: 'follow_type', since: String(j.since), until: String(j.until) }, cacheSeg })
     const res = r.data[0]?.total_value?.breakdowns?.[0]?.results ?? []
     const v = (t: string) => res.find((x) => x.dimension_values[0] === t)?.value ?? 0
-    return v('FOLLOWER') - v('NON_FOLLOWER')
+    return { ganhos: v('FOLLOWER'), perdidos: v('NON_FOLLOWER') }
   } catch {
-    return 0
+    return { ganhos: 0, perdidos: 0 }
   }
 }
 
@@ -135,7 +135,7 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
     const [perfil, tot, saldos, diario, brutos] = await Promise.all([
       graph<{ username: string; followers_count?: number }>(igId, { params: { fields: 'username,followers_count' }, cacheSeg }),
       Promise.all(js.map((j) => totais(igId, j, cacheSeg))),
-      Promise.all(js.map((j) => saldoSeguidores(igId, j, cacheSeg))),
+      Promise.all(js.map((j) => movimentoSeguidores(igId, j, cacheSeg))),
       detalhado ? Promise.all(js.map((j) => alcanceDiario(igId, j, cacheSeg))) : Promise.resolve([]),
       postsDoPeriodo(igId, periodo.de, periodo.ate, cacheSeg),
     ])
@@ -154,7 +154,9 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
       salvamentos: soma(tot, 'saves'),
       compartilhamentos: soma(tot, 'shares'),
       cliquesPerfil: soma(tot, 'profile_links_taps'),
-      novosSeguidores: saldos.reduce((s, x) => s + x, 0),
+      novosSeguidores: saldos.reduce((s, x) => s + x.ganhos - x.perdidos, 0),
+      seguidoresGanhos: saldos.reduce((s, x) => s + x.ganhos, 0),
+      seguidoresPerdidos: saldos.reduce((s, x) => s + x.perdidos, 0),
       alcancePorDia: diario.flat().filter((d) => d.dia >= periodo.de && d.dia <= periodo.ate),
       posts,
     }

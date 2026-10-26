@@ -1,7 +1,7 @@
 import 'server-only'
 import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDivergente } from '@/dominio/gmn'
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
-import { analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas } from '@/dominio/insights'
+import { analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas, separarSeguidores } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { anunciosGoogle, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { gerarToken } from '@/dominio/token'
@@ -49,6 +49,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
   const m = meta && !('erro' in meta) ? meta : null
   const g = goog && !('erro' in goog) ? totaisCampanhas(goog.campanhas) : null
   const i = ig && !('erro' in ig) ? ig : null
+  const segs = separarSeguidores({ ganhos: i?.seguidoresGanhos ?? 0, perdidos: i?.seguidoresPerdidos ?? 0, pagos: m ? m.total.seguidoresAnuncio : null })
   const investido = (m?.total.gasto ?? 0) + (g?.custo ?? 0)
   const anuncios: RelatorioCompartilhado['anuncios'] = m || g ? {
     investido: opcoes.mostrarInvestimento ? Math.round(investido * 100) / 100 : null,
@@ -83,7 +84,7 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
     ate: periodo.ate,
     geradoEm: new Date().toISOString(),
     anuncios,
-    instagram: i && organico ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, alcance: organico.alcance, alcancePosts: organico.alcance, cliquesLinkBio, visualizacoes: organico.visualizacoes, interacoes: organico.interacoes, posts: organico.posts, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
+    instagram: i && organico ? { usuario: i.usuario, seguidores: i.seguidores, novosSeguidores: i.novosSeguidores, seguidoresGanhos: i.seguidoresGanhos, seguidoresPerdidos: i.seguidoresPerdidos, seguidoresPagos: segs.pagos, seguidoresOrganicos: segs.organicos, alcance: organico.alcance, alcancePosts: organico.alcance, cliquesLinkBio, visualizacoes: organico.visualizacoes, interacoes: organico.interacoes, posts: organico.posts, engajamentoPosts: engajamentoOrganico(i), melhorPost: melhor ? { legenda: melhor.legenda.slice(0, 140), link: melhor.link, interacoes: melhor.interacoes } : null } : null,
     gmn: lugar ? { nota: lugar.nota, avaliacoes: lugar.avaliacoes, saude: analisarSaude(lugar.perfil, periodo.ate).nota, geogrid: scan ? { palavra: scan.palavra, metricas: scan.metricas, centro: scan.centro, pontos: scan.pontos, em: scan.em, primeiro, lider: liderInfo } : null } : null,
     // Só o que deu certo (tom "bom") vai como destaque para o cliente; o que precisa melhorar a agência conversa.
     campanhas: [

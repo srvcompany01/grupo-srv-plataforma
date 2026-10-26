@@ -32,7 +32,11 @@ export type ResumoInstagram = {
   comentarios: number
   salvamentos: number
   compartilhamentos: number
+  /** Saldo do período: quem seguiu − quem deixou de seguir (orgânico + anúncios). */
   novosSeguidores: number
+  /** Quem passou a seguir no período, sem descontar quem saiu (orgânico + anúncios). */
+  seguidoresGanhos: number
+  seguidoresPerdidos: number
   cliquesPerfil: number
   /** Alcance orgânico + pago da conta por dia (o Instagram não separa no total da conta). */
   alcancePorDia: { dia: string; valor: number }[]
@@ -216,4 +220,29 @@ export function analisarCombinado(ig: ResumoInstagram | null, pago: PagoPorDia[]
   if ((p.meta || p.google) && !ig) recomendacoes.push(it('atencao', 'Ligue o Instagram do cliente (Página do Facebook no cadastro) para cruzar o orgânico com o pago.'))
   if (ig && ig.posts.length < 8 && (p.meta || p.google)) recomendacoes.push(it('atencao', 'Quem clica no anúncio visita o perfil: mantenha o feed ativo (3+ posts por semana) para não perder a confiança de quem chega pelo pago.'))
   return { destaques, recomendacoes }
+}
+
+export type SeguidoresSeparados = {
+  /** Quem passou a seguir no período (orgânico + pago). */
+  ganhos: number
+  perdidos: number
+  saldo: number
+  /** Atribuídos aos anúncios pela Meta (todas as campanhas); null = sem dado de anúncios. */
+  pagos: number | null
+  /** Ganhos − pagos. A atribuição da Meta tem janela de cliques e visualizações, então pode passar dos ganhos do dia: nunca fica negativo. */
+  organicos: number | null
+  pctPagos: number | null
+}
+
+/** Separa os seguidores novos do Instagram em orgânicos e pagos (atribuídos aos anúncios pela Meta). */
+export function separarSeguidores(a: { ganhos: number; perdidos: number; pagos: number | null }): SeguidoresSeparados {
+  const pagos = a.pagos
+  return {
+    ganhos: a.ganhos,
+    perdidos: a.perdidos,
+    saldo: a.ganhos - a.perdidos,
+    pagos,
+    organicos: pagos === null ? null : Math.max(0, a.ganhos - pagos),
+    pctPagos: pagos === null || !a.ganhos ? null : Math.min(100, (pagos / a.ganhos) * 100),
+  }
 }

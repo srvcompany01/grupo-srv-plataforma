@@ -160,11 +160,11 @@ export type LinhaConjunto = {
   seguidoresAnuncio: number
 }
 
-export type ResumoCaptacaoMeta = { gasto: number; impressoes: number; cliques: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
+export type ResumoCaptacaoMeta = { seguidoresAnuncio: number; gasto: number; impressoes: number; cliques: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
 export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; seguidoresAnuncio: number; custoPorSeguidor: number | null; /** Seguidores ÷ visitas ao perfil (a "Conversão de Seguidores" do Gerenciador). */ taxaSeguidor: number | null; custoPorClique: number | null; campanhas: number }
 export type ResumoMetaPorTipo = { captacao: ResumoCaptacaoMeta; reconhecimento: ResumoReconhecimentoMeta; total: TotaisMeta }
 
-const vazioCaptacao = (): ResumoCaptacaoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, leads: 0, conversas: 0, formularios: 0, site: 0, custoPorLead: null, campanhas: 0 })
+const vazioCaptacao = (): ResumoCaptacaoMeta => ({ seguidoresAnuncio: 0, gasto: 0, impressoes: 0, cliques: 0, leads: 0, conversas: 0, formularios: 0, site: 0, custoPorLead: null, campanhas: 0 })
 const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorVisitaPerfil: null, seguidoresAnuncio: 0, custoPorSeguidor: null, taxaSeguidor: null, custoPorClique: null, campanhas: 0 })
 
 /**
@@ -189,6 +189,7 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
       captacao.conversas += l.leads.conversas
       captacao.formularios += l.leads.formularios
       captacao.site += l.leads.site
+      captacao.seguidoresAnuncio += l.seguidoresAnuncio
       campanhasCaptacao.add(l.campanhaId)
     } else {
       reconhecimento.gasto += l.gasto
@@ -222,6 +223,7 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
       formularios: captacao.formularios,
       conversas: captacao.conversas,
       site: captacao.site,
+      seguidoresAnuncio: captacao.seguidoresAnuncio + reconhecimento.seguidoresAnuncio,
     },
   }
 }
@@ -282,7 +284,7 @@ export async function metaPorMes(contaId: string, de: string, ate: string): Prom
   return r
 }
 
-export type TotaisMeta = { gasto: number; cliques: number; cliquesLink: number; impressoes: number } & Leads
+export type TotaisMeta = { gasto: number; cliques: number; cliquesLink: number; impressoes: number; /** Seguidores do Instagram atribuídos aos anúncios, de TODAS as campanhas (captação e perfil). */ seguidoresAnuncio: number } & Leads
 
 /** Totais separados por finalidade da campanha, para nunca misturar reconhecimento no CPL de captação. */
 export async function resumoMetaPorTipo(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<ResumoMetaPorTipo | { erro: string }> {
@@ -385,4 +387,11 @@ export async function sondaCampanhaMeta(contaId: string, campanhaId: string, per
     meta<{ data: Record<string, unknown>[] }>(`${campanhaId}/adsets`, { fields: 'id,name,optimization_goal,destination_type,promoted_object,billing_event,effective_status', limit: '50' }),
   ])
   return { campanha, conjuntos: 'erro' in conjuntos ? conjuntos : conjuntos.data, campos, porVariante }
+}
+
+/** Seguidores do Instagram atribuídos aos anúncios (todas as campanhas) no período; null = sem conta de anúncios ou a Meta não respondeu. */
+export async function seguidoresPagosNoPeriodo(contaId: string | null, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<number | null> {
+  if (!contaId) return null
+  const r = await resumoMetaPorTipo(contaId, periodo)
+  return 'erro' in r ? null : r.total.seguidoresAnuncio
 }

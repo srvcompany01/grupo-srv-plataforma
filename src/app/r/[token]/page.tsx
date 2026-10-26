@@ -53,7 +53,7 @@ function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlatafo
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {p.reconhecimento.investido !== null && <Cartao icone={BadgeDollarSign} cor="#6250d6" rotulo="Investimento" valor={reais(p.reconhecimento.investido)} extra={`${p.reconhecimento.campanhas} campanha${p.reconhecimento.campanhas === 1 ? '' : 's'}`} />}
             <Cartao icone={MousePointerClick} cor="#6250d6" rotulo={rotuloMarca} valor={num(resultadoMarca)} extra={p.reconhecimento.visitasPerfil ? `${num(p.reconhecimento.cliquesLink)} cliques no link` : undefined} />
-            {(p.reconhecimento.seguidoresAnuncio ?? 0) > 0 && <Cartao icone={Users} cor="#6250d6" rotulo="Novos seguidores pelos anúncios" valor={num(p.reconhecimento.seguidoresAnuncio!)} extra={p.reconhecimento.custoPorSeguidor != null ? `${reais(p.reconhecimento.custoPorSeguidor)} por seguidor` : undefined} />}
+            {(p.seguidoresAnuncio ?? 0) > 0 && <Cartao icone={Users} cor="#6250d6" rotulo="Novos seguidores pelos anúncios" valor={num(p.seguidoresAnuncio!)} extra={p.reconhecimento.custoPorSeguidor != null ? `${reais(p.reconhecimento.custoPorSeguidor)} por seguidor nas campanhas de perfil` : 'todas as campanhas'} />}
             {p.reconhecimento.visitasPerfil > 0 && p.reconhecimento.custoPorVisitaPerfil != null
               ? <Cartao icone={Target} cor="#eb6834" rotulo="Custo por visita ao perfil" valor={reais(p.reconhecimento.custoPorVisitaPerfil)} />
               : p.reconhecimento.custoPorClique !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por clique" valor={reais(p.reconhecimento.custoPorClique)} />}
@@ -170,7 +170,7 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
         {r.instagram && (
           <Secao titulo={`Instagram @${r.instagram.usuario}`} icone={Camera}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Cartao icone={Users} cor="#6250d6" rotulo="Seguidores" valor={num(r.instagram.seguidores)} extra={`${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} no período`} />
+              <Cartao icone={Users} cor="#6250d6" rotulo="Seguidores" valor={num(r.instagram.seguidores)} extra={`${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} no período${r.instagram.seguidoresOrganicos != null && r.instagram.seguidoresPagos != null ? ` · ${num(r.instagram.seguidoresOrganicos)} orgânicos e ${num(r.instagram.seguidoresPagos)} pelos anúncios` : ''}`} />
               {r.instagram.alcancePosts !== undefined ? (
                 <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance dos posts (orgânico)" valor={num(r.instagram.alcancePosts)} extra={`${num(r.instagram.visualizacoes)} visualizações dos posts`} />
               ) : (

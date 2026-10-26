@@ -27,7 +27,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/google-agencia'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
-import { metaPorDiaPorTipo, resumoMetaPorTipo } from '@/servicos/meta-anuncios'
+import { metaPorDiaPorTipo, resumoMetaPorTipo, seguidoresPagosNoPeriodo } from '@/servicos/meta-anuncios'
 import * as places from '@/servicos/places'
 import { resumoDaBio, resumoDaBioDeVarios } from '@/servicos/bio'
 import { cliquesLinkBioNoPeriodo, linkBioDoCliente } from '@/servicos/performance'
@@ -185,7 +185,7 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
             tot?.reconhecimento.visitasPerfil
               ? { rotulo: 'Custo por visita ao perfil', valor: tot.reconhecimento.custoPorVisitaPerfil === null ? '—' : reais(tot.reconhecimento.custoPorVisitaPerfil), extra: `${compacto(tot.reconhecimento.visitasPerfil)} visitas`, icone: MousePointerClick, cor: '#e87ba4' }
               : { rotulo: 'CPC de reconhecimento', valor: tot?.reconhecimento.custoPorClique === null || !tot ? '—' : reais(tot.reconhecimento.custoPorClique), icone: MousePointerClick, cor: '#e87ba4' },
-            ...(tot?.reconhecimento.seguidoresAnuncio ? [{ rotulo: 'Seguidores pelos anúncios', valor: n(tot.reconhecimento.seguidoresAnuncio), extra: [tot.reconhecimento.custoPorSeguidor === null ? '' : `${reais(tot.reconhecimento.custoPorSeguidor)} por seguidor`, tot.reconhecimento.taxaSeguidor === null ? '' : `${pct(tot.reconhecimento.taxaSeguidor)} das visitas`].filter(Boolean).join(' · ') || undefined, icone: Users, cor: '#6250d6' }] : []),
+            ...(tot?.total.seguidoresAnuncio ? [{ rotulo: 'Seguidores pelos anúncios', valor: n(tot.total.seguidoresAnuncio), extra: [tot.reconhecimento.custoPorSeguidor === null ? '' : `${reais(tot.reconhecimento.custoPorSeguidor)} por seguidor (campanhas de perfil)`, tot.reconhecimento.seguidoresAnuncio ? `${n(tot.reconhecimento.seguidoresAnuncio)} em campanhas de perfil` : '', tot.captacao.seguidoresAnuncio ? `${n(tot.captacao.seguidoresAnuncio)} em campanhas de captação` : '', tot.reconhecimento.taxaSeguidor === null ? '' : `${pct(tot.reconhecimento.taxaSeguidor)} das visitas ao perfil`].filter(Boolean).join(' · ') || undefined, icone: Users, cor: '#6250d6' }] : []),
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
           <GraficoDiario titulo="Investimento diário por tipo de campanha" dias={dias} series={[{ nome: 'Captação', valores: dias.map((x) => diaMap.get(x)?.captacao.gasto ?? 0) }, { nome: 'Reconhecimento', valores: dias.map((x) => diaMap.get(x)?.reconhecimento.gasto ?? 0) }]} formato={reaisCurto} />
@@ -278,14 +278,14 @@ async function OrganicoTodos({ clientes, periodo }: { clientes: Cliente[]; perio
 
 async function OrganicoCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
   if (!c.metaPaginaId) return <><Aviso>A <strong>{c.nome}</strong> não tem a Página do Facebook (Instagram) no cadastro.</Aviso><EmBreve itens={OUTRAS_REDES} /></>
-  const [ig, cliquesLinkBio] = await Promise.all([instagramDoCliente(c.metaPaginaId, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate))])
+  const [ig, cliquesLinkBio, seguidoresPagos] = await Promise.all([instagramDoCliente(c.metaPaginaId, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate)), seguidoresPagosNoPeriodo(c.metaContaId, periodo)])
   const dias = diasDoPeriodo(periodo)
   return (
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? 'Instagram' : `Instagram @${ig.usuario}`} descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
         {'erro' in ig ? <Erro texto={ig.erro} /> : (
           <div className="space-y-4">
-            <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} />
+            <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
             <p className="text-legenda text-texto-3">Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
           </div>
         )}

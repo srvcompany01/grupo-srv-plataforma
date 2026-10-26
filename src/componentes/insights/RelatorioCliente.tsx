@@ -32,7 +32,7 @@ function Secao({ icone: Icone, titulo, descricao, cor, children }: { icone: type
 }
 
 /** Relatório do cliente em três partes: tráfego pago, orgânico e os dois juntos (com gráficos e recomendações). */
-export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliquesLinkBio }: { dados: DadosDoCliente; periodo: PeriodoAnuncios; seletor: ReactNode; extraOrganico?: ReactNode; cliquesLinkBio?: number | null }) {
+export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliquesLinkBio, seguidoresPagos }: { dados: DadosDoCliente; periodo: PeriodoAnuncios; seletor: ReactNode; extraOrganico?: ReactNode; cliquesLinkBio?: number | null; seguidoresPagos?: number | null }) {
   const { ig, pago, pagoPorDia } = dados
   const dias = diasDoPeriodo(periodo)
   const total = (pago.meta?.gasto ?? 0) + (pago.google?.custo ?? 0)
@@ -75,7 +75,7 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
         <Secao icone={Sprout} titulo="Orgânico" descricao="Instagram (e, quando liberados, Google Meu Negócio e TikTok)" cor="#d55181">
           {ig ? (
             <>
-              <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} />
+              <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
               <BlocoAnalise analise={analisarOrganico(ig, dias.length)} />
             </>
           ) : (

@@ -47,7 +47,7 @@ it('C6: separa captação de reconhecimento antes de calcular CPL, incluindo con
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
     const u = new URL(url)
     const corpo = u.pathname.endsWith('/insights') && u.searchParams.get('fields')?.includes('instagram_profile_follow')
-      ? { data: [{ date_start: '2026-10-18', adset_id: 's2', instagram_profile_follow: '222' }] }
+      ? { data: [{ date_start: '2026-10-18', adset_id: 's2', instagram_profile_follow: '222' }, { date_start: '2026-10-18', adset_id: 's1', instagram_profile_follow: '10' }] }
       : u.pathname.endsWith('/insights') && u.searchParams.get('fields')?.includes('results')
       ? { data: [{ date_start: '2026-10-18', adset_id: 's2', results: [{ indicator: 'profile_visit_view', values: [{ value: '1800' }] }] }] }
       : u.pathname.endsWith('/insights')
@@ -64,7 +64,10 @@ it('C6: separa captação de reconhecimento antes de calcular CPL, incluindo con
   if ('erro' in r) throw new Error(r.erro)
   expect(r.captacao).toMatchObject({ gasto: 1500, conversas: 120, formularios: 0, site: 30, leads: 150, custoPorLead: 10, campanhas: 2 })
   expect(r.reconhecimento).toMatchObject({ gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorVisitaPerfil: expect.closeTo(700 / 1800), seguidoresAnuncio: 222, custoPorSeguidor: expect.closeTo(700 / 222), taxaSeguidor: expect.closeTo((222 / 1800) * 100), custoPorClique: expect.closeTo(700 / 2301), campanhas: 1 })
-  expect(r.total).toMatchObject({ gasto: 2200, conversas: 120, site: 30 })
+  expect(r.total).toMatchObject({ gasto: 2200, conversas: 120, site: 30, seguidoresAnuncio: 232 })
+  // Campanha de leads também traz seguidores: entram no total e na captação, sem virar custo por seguidor do perfil.
+  expect(r.captacao.seguidoresAnuncio).toBe(10)
+  expect(r.reconhecimento.custoPorSeguidor).toBeCloseTo(700 / 222)
 })
 
 it('numeroDaMeta: texto, lista de valores e lixo', () => {
