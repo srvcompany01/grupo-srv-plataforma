@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { limparEvento, segredoValido } from '@/dominio/whatsapp'
+import { ignorarEvento, limparEvento, segredoValido } from '@/dominio/whatsapp'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Json } from '@/infra/supabase/tipos'
 
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: 'JSON inválido.' }, { status: 400 })
   }
   const c = (corpo && typeof corpo === 'object' && !Array.isArray(corpo) ? corpo : {}) as Record<string, unknown>
+  if (ignorarEvento(corpo)) return NextResponse.json({ ok: true, ignorado: true })
   const guardar = limparEvento(corpo) as Json
   const sb = criarClienteAdmin()
   const { error } = await sb.from('wa_eventos_teste').insert({ instancia: String(u.searchParams.get('instancia') ?? c.instance ?? c.instanceName ?? '').slice(0, 80), evento: String(c.event ?? '').slice(0, 80), corpo: guardar })

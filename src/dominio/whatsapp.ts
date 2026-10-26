@@ -36,19 +36,28 @@ export function resumoDoEvento(corpo: unknown) {
   }
 }
 
+/** Conteúdo binário e chaves de criptografia que não servem para classificar lead nem venda (só pesam e expõem). */
+const CHAVES_DESCARTADAS = new Set(['jpegThumbnail', 'mediaKey', 'fileSha256', 'fileEncSha256', 'midQualityFileSha256', 'axolotlSenderKeyDistributionMessage', 'messageSecret', 'senderKeyHash', 'recipientKeyHash', 'scanLengths', 'url', 'directPath', 'messageContextInfo'])
+
+function podar(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(podar)
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v as Obj).filter(([k]) => !CHAVES_DESCARTADAS.has(k)).map(([k, x]) => [k, podar(x)]))
+  return v
+}
+
 /**
  * Tira do evento o que não deve ser guardado: a chave (apikey) da instância, o endereço de destino (que leva o segredo
- * do webhook) e o servidor da Evolution, mais o segredo de criptografia da mensagem (messageContextInfo).
+ * do webhook), o servidor da Evolution e os blocos binários e de criptografia da mensagem.
  */
 export function limparEvento(corpo: unknown): unknown {
+  const { apikey: _apikey, destination: _destino, server_url: _servidor, ...resto } = obj(corpo)
+  return podar(resto)
+}
+
+/** Grupos, status, canais e listas de transmissão não são leads nem vendas: nem entram na tabela (privacidade e ruído). */
+export function ignorarEvento(corpo: unknown): boolean {
   const c = obj(corpo)
-  const { apikey: _apikey, destination: _destino, server_url: _servidor, ...resto } = c
-  const dados = Array.isArray(resto.data) ? resto.data : [resto.data]
-  const limpos = dados.map((d) => {
-    const o = obj(d)
-    if (!o.message) return d
-    const { messageContextInfo: _ctx, ...mensagem } = obj(o.message)
-    return { ...o, message: mensagem }
-  })
-  return { ...resto, ...(resto.data === undefined ? {} : { data: Array.isArray(resto.data) ? limpos : limpos[0] }) }
+  const d = obj(Array.isArray(c.data) ? c.data[0] : c.data)
+  const jid = String(obj(d.key).remoteJid ?? '')
+  return jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@newsletter')
 }

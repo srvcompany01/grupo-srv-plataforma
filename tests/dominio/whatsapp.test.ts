@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { limparEvento, resumoDoEvento, segredoValido } from '@/dominio/whatsapp'
+import { ignorarEvento, limparEvento, resumoDoEvento, segredoValido } from '@/dominio/whatsapp'
 
 describe('webhook do WhatsApp (fase de teste)', () => {
   it('segredo: só aceita o mesmo valor, de qualquer tamanho', () => {
@@ -34,5 +34,22 @@ describe('webhook do WhatsApp (fase de teste)', () => {
     expect(JSON.stringify(limpo)).not.toMatch(/CHAVE|segredo=ABC|https:\/\/evo|messageSecret/)
     expect(limpo).toMatchObject({ event: 'messages.upsert', instance: 'x', data: { key: { fromMe: false }, message: { conversation: 'Oi' } } })
     expect(limparEvento(null)).toEqual({})
+  })
+
+  it('tira blocos binários e de criptografia, mas mantém o texto e o contexto do anúncio', () => {
+    const bruto = { event: 'messages.upsert', data: { key: { remoteJid: '5591@s.whatsapp.net' }, message: { imageMessage: { caption: 'Oi', jpegThumbnail: { 0: 1 }, mediaKey: { 0: 2 }, url: 'https://mmg.whatsapp.net/x', contextInfo: { externalAdReply: { sourceId: '9' } } } } } }
+    const limpo = limparEvento(bruto)
+    expect(JSON.stringify(limpo)).not.toMatch(/jpegThumbnail|mediaKey|mmg\.whatsapp/)
+    expect(JSON.stringify(limpo)).toMatch(/"caption":"Oi"/)
+    expect(JSON.stringify(limpo)).toMatch(/"sourceId":"9"/)
+  })
+
+  it('grupos, canais e listas de transmissão são ignorados; conversa 1:1 não', () => {
+    const evento = (jid: string) => ({ event: 'messages.upsert', data: { key: { remoteJid: jid } } })
+    expect(ignorarEvento(evento('1203634@g.us'))).toBe(true)
+    expect(ignorarEvento(evento('status@broadcast'))).toBe(true)
+    expect(ignorarEvento(evento('120363@newsletter'))).toBe(true)
+    expect(ignorarEvento(evento('559184512842@s.whatsapp.net'))).toBe(false)
+    expect(ignorarEvento({ event: 'connection.update', data: { state: 'open' } })).toBe(false)
   })
 })
