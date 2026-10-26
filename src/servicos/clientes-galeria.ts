@@ -4,7 +4,8 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
 export type CampoCliente = { id: string; nome: string; tipo: TipoCampoCliente; naCapa: boolean; posicao: number; opcoes: OpcaoCampoCliente[] }
-export type Capa = { url: string | null; credito: string | null }
+/** `logo`: a logo do cliente (a mesma da página da bio), quadradinha por cima da capa. */
+export type Capa = { url: string | null; credito: string | null; logo: string | null }
 
 export async function listarCamposCliente(sb: Supabase): Promise<CampoCliente[]> {
   const linhas = dados(await sb.from('client_fields').select('id, name, kind, show_on_card, position, options').order('position').order('created_at'))
@@ -32,7 +33,7 @@ async function resolverCapa(valor: string | null): Promise<string | null> {
 }
 
 export async function capasDosClientes(sb: Supabase): Promise<Record<string, Capa>> {
-  const linhas = dados(await sb.from('clients').select('id, cover_url, cover_credit'))
-  const capas = await Promise.all(linhas.map(async (l) => [l.id, { url: await resolverCapa(l.cover_url), credito: l.cover_credit }] as const))
+  const linhas = dados(await sb.from('clients').select('id, cover_url, cover_credit, bio_logo'))
+  const capas = await Promise.all(linhas.map(async (l) => [l.id, { url: await resolverCapa(l.cover_url), credito: l.cover_credit, logo: await resolverCapa(l.bio_logo) }] as const))
   return Object.fromEntries(capas)
 }

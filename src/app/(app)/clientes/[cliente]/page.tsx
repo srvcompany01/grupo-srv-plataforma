@@ -31,6 +31,7 @@ import { ExcluirCliente } from './ExcluirCliente'
 import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { relatoriosDoCliente } from '@/servicos/relatorio-compartilhado'
 import { SeletorCapa } from './SeletorCapa'
+import { SeletorLogo } from './SeletorLogo'
 
 export default async function Cliente({ params, searchParams }: PageProps<'/clientes/[cliente]'>) {
   const { cliente: id } = await params
@@ -73,15 +74,21 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <Link href="/clientes" className="absolute left-3 top-3 rounded-full bg-black/40 px-3 py-1 text-rotulo font-medium text-white backdrop-blur hover:bg-black/55">← Clientes</Link>
           <div className="absolute bottom-3 left-4 right-4 flex flex-wrap items-end justify-between gap-2">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-end gap-3">
+              {capa?.logo && (
+                // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
+                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl border-2 border-white bg-white object-cover shadow-lg" />
+              )}
+              <div className="min-w-0">
               <h1 className="truncate text-2xl font-bold text-white drop-shadow md:text-3xl">{cliente.nome}</h1>
               {cliente.razaoSocial && <p className="truncate text-rotulo text-white/85">{cliente.razaoSocial}</p>}
+              </div>
             </div>
             <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-legenda font-semibold text-texto">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
           </div>
           {capa?.credito && <span className="absolute right-2 top-3 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
         </div>
-        {podeGerir && <div className="border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /></div>}
+        {podeGerir && <div className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

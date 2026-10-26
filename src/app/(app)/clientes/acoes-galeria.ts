@@ -93,3 +93,23 @@ export async function salvarCamposClienteAcao(clienteId: string, valores: Record
   atualizado(clienteId)
   return r
 }
+
+/** Logo do cliente (guardada em bio_logo: é a mesma da página da bio). */
+export async function iniciarUploadLogoAcao(clienteId: string, mime: string, tamanho: number): Promise<{ url: string; chave: string } | { erro: string }> {
+  return iniciarUploadCapaAcao(clienteId, mime, tamanho)
+}
+
+export async function salvarLogoAcao(clienteId: string, chave: string | null): Promise<Resultado> {
+  if (!(await exigirGestao())) return { erro: 'Sem permissão.' }
+  if (!UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
+  if (chave !== null && !chaveDeCapaValida(chave, clienteId)) return { erro: 'Imagem inválida.' }
+  const sb = await criarClienteServidor()
+  const r = await tentar(async () => {
+    const { error, count } = await sb.from('clients').update({ bio_logo: chave }, { count: 'exact' }).eq('id', clienteId)
+    if (error) throw error
+    if (!count) throw { code: '42501' }
+  }, chave ? 'Logo atualizada.' : 'Logo removida.')
+  atualizado(clienteId)
+  revalidatePath('/performance')
+  return r
+}

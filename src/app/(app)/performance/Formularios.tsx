@@ -89,7 +89,7 @@ export function LinkBio({ clienteId, url, urls, mensagem, whatsapp, logo, links,
           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={pendente} onChange={(e) => { const f = e.target.files?.[0]; if (f) enviarLogo(f); e.target.value = '' }} />
         </label>
         {logo && <button type="button" disabled={pendente} className={botaoFantasma} onClick={() => iniciar(async () => { avisar(await salvarLogoBioAcao(clienteId, null), true) })}>Remover logo</button>}
-        <span className="text-legenda text-texto-3">JPG, PNG ou WebP, até 5 MB. A página mostra só a logo e o nome do cliente.</span>
+        <span className="text-legenda text-texto-3">JPG, PNG ou WebP, até 5 MB. É a mesma logo da galeria de clientes; a página da bio mostra só ela e o nome do cliente.</span>
       </div>
       <label className="block space-y-1">
         <span className={rotulo}>Mensagem que já chega escrita no WhatsApp de atendimento{whatsapp ? ` (${whatsapp})` : ''}</span>
