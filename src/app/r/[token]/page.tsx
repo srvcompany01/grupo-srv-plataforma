@@ -5,6 +5,8 @@ import type { ReactNode } from 'react'
 import { MapaGrade, Medidor } from '@/componentes/gmn/MapaGrade'
 import { Marca } from '@/componentes/Marca'
 import { fraseGeogrid } from '@/dominio/gmn'
+import { separarSeguidores } from '@/dominio/insights'
+import { SeguidoresDoPeriodo } from '@/componentes/insights/SeguidoresDoPeriodo'
 import { leadsDoRelatorio, type AnunciosPlataforma } from '@/dominio/relatorio-compartilhado'
 import { relatorioPorToken } from '@/servicos/relatorio-compartilhado'
 
@@ -169,8 +171,9 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
 
         {r.instagram && (
           <Secao titulo={`Instagram @${r.instagram.usuario}`} icone={Camera}>
+            {r.instagram.seguidoresGanhos !== undefined && <SeguidoresDoPeriodo s={separarSeguidores({ ganhos: r.instagram.seguidoresGanhos, perdidos: r.instagram.seguidoresPerdidos ?? 0, pagos: r.instagram.seguidoresPagos ?? null })} />}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Cartao icone={Users} cor="#6250d6" rotulo="Seguidores" valor={num(r.instagram.seguidores)} extra={`${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} no período${r.instagram.seguidoresOrganicos != null && r.instagram.seguidoresPagos != null ? ` · ${num(r.instagram.seguidoresOrganicos)} orgânicos e ${num(r.instagram.seguidoresPagos)} pelos anúncios` : ''}`} />
+              <Cartao icone={Users} cor="#6250d6" rotulo="Seguidores" valor={num(r.instagram.seguidores)} extra={`saldo ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} no período`} />
               {r.instagram.alcancePosts !== undefined ? (
                 <Cartao icone={Eye} cor="#2a78d6" rotulo="Alcance dos posts (orgânico)" valor={num(r.instagram.alcancePosts)} extra={`${num(r.instagram.visualizacoes)} visualizações dos posts`} />
               ) : (

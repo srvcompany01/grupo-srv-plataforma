@@ -55,6 +55,13 @@ it('orgânico: os cliques no link da bio entram no texto do WhatsApp', () => {
   expect(textoWhatsapp({ ...base, instagram: { ...base.instagram!, cliquesLinkBio: 0 } }, 'u')).not.toMatch(/link da bio/)
 })
 
+it('seguidores: o total ganho vem primeiro e embaixo anúncios, orgânicos e quem saiu', () => {
+  const t = textoWhatsapp({ ...base, instagram: { ...base.instagram!, seguidoresGanhos: 400, seguidoresPerdidos: 60, seguidoresPagos: 171, seguidoresOrganicos: 229 } }, 'u')
+  expect(t).toMatch(/400 seguidores ganhos no período \(total 5\.200\)\n  - 171 pelos anúncios · 229 orgânicos · 60 deixaram de seguir/)
+  const semAnuncios = textoWhatsapp({ ...base, instagram: { ...base.instagram!, seguidoresGanhos: 400, seguidoresPerdidos: 60, seguidoresPagos: null, seguidoresOrganicos: null } }, 'u')
+  expect(semAnuncios).toMatch(/400 seguidores ganhos[^\n]*\n  - 60 deixaram de seguir/)
+})
+
 describe('anúncios separados por plataforma', () => {
   it('Meta e Google com investido, leads e custo por lead próprios, sem somar', () => {
     const meta = anunciosMeta({ gasto: 4047.52, cliques: 2000, impressoes: 80000, conversas: 182, formularios: 0, site: 3 }, 0, true)

@@ -1,6 +1,7 @@
 import { ExternalLink, Eye, Heart, LayoutGrid, Link2, PlayCircle, Radar, Users } from 'lucide-react'
 import { engajamentoOrganico, metricasOrganicas, porFormato, separarSeguidores, tomAlcanceBase, tomEngajamento, tomFrequencia, tomVariacao, type ResumoInstagram } from '@/dominio/insights'
 import { Numeros } from './BlocoAnalise'
+import { SeguidoresDoPeriodo } from './SeguidoresDoPeriodo'
 import { GraficoDiario } from './GraficoDiario'
 import { SeloTom } from './tom'
 
@@ -26,10 +27,10 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
   const porSemana = (ig.posts.length / Math.max(1, dias.length)) * 7
   return (
     <div className="@container space-y-4">
+      {seg && <SeguidoresDoPeriodo s={seg} />}
       <Numeros
         itens={[
           { rotulo: 'Seguidores', valor: numero.format(ig.seguidores), extra: ig.novosSeguidores ? `${ig.novosSeguidores > 0 ? '▲ +' : '▼ '}${numero.format(ig.novosSeguidores)} no período` : undefined, tom: tomVariacao(ig.novosSeguidores), rotuloTom: ig.novosSeguidores > 0 ? 'Crescendo' : 'Caindo', icone: Users, cor: '#6250d6' },
-          ...(seg ? [{ rotulo: 'Seguidores orgânicos', valor: seg.organicos === null ? '—' : numero.format(seg.organicos), extra: seg.pagos === null ? 'sem dado dos anúncios' : `${numero.format(seg.pagos)} vieram dos anúncios · ${numero.format(seg.perdidos)} deixaram de seguir`, icone: Users, cor: '#1baf7a' }] : []),
           { rotulo: 'Alcance dos posts', valor: numero.format(organico.alcance), extra: ig.seguidores && organico.posts ? `${pct((organico.alcance / organico.posts / ig.seguidores) * 100)} da base por post` : undefined, tom: organico.posts ? tomAlcanceBase(organico.alcance / organico.posts, ig.seguidores) : undefined, icone: Radar, cor: '#2a78d6' },
           { rotulo: 'Visualizações dos posts', valor: numero.format(organico.visualizacoes), icone: Eye, cor: '#1baf7a' },
           { rotulo: 'Interações nos posts', valor: numero.format(organico.interacoes), extra: engajamentoOrganico(ig) === null ? 'sem posts no período' : `${pct(engajamentoOrganico(ig)!)} de engajamento`, tom: engajamentoOrganico(ig) === null ? undefined : tomEngajamento(engajamentoOrganico(ig)!), icone: Heart, cor: '#e87ba4' },

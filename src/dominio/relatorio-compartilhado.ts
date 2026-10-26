@@ -176,8 +176,11 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
   }
   if (r.instagram) {
     linhas.push('*Instagram*')
-    linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
-    if (r.instagram.seguidoresPagos != null && r.instagram.seguidoresOrganicos != null) linhas.push(`• Novos seguidores: ${num(r.instagram.seguidoresOrganicos)} orgânicos e ${num(r.instagram.seguidoresPagos)} pelos anúncios`)
+    if (r.instagram.seguidoresGanhos !== undefined) {
+      linhas.push(`• ${num(r.instagram.seguidoresGanhos)} seguidores ganhos no período (total ${num(r.instagram.seguidores)})`)
+      if (r.instagram.seguidoresPagos != null && r.instagram.seguidoresOrganicos != null) linhas.push(`  - ${num(r.instagram.seguidoresPagos)} pelos anúncios · ${num(r.instagram.seguidoresOrganicos)} orgânicos · ${num(r.instagram.seguidoresPerdidos ?? 0)} deixaram de seguir`)
+      else linhas.push(`  - ${num(r.instagram.seguidoresPerdidos ?? 0)} deixaram de seguir`)
+    } else linhas.push(`• ${r.instagram.novosSeguidores >= 0 ? '+' : ''}${num(r.instagram.novosSeguidores)} seguidores (total ${num(r.instagram.seguidores)})`)
     linhas.push(r.instagram.alcancePosts !== undefined ? `• ${num(r.instagram.posts)} posts orgânicos, com ${num(r.instagram.alcancePosts)} de alcance e ${num(r.instagram.interacoes)} interações` : `• ${num(r.instagram.alcance)} pessoas alcançadas pela conta (orgânico + anúncios) · ${num(r.instagram.posts)} posts`)
     if (r.bio) linhas.push(`• ${num(r.bio.visitas)} visitas no link da bio e ${num(r.bio.toques)} toques nos botões${r.bio.toques ? ` (mais tocado: ${r.bio.botoes[0].rotulo})` : ''}`)
     else if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)

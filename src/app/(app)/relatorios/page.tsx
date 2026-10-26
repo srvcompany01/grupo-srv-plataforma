@@ -504,7 +504,7 @@ async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnu
           { rotulo: 'Investido (Meta + Google)', valor: reais(investido), extra: [meta?.investido ? `Meta ${reais(meta.investido)}` : '', google?.investido ? `Google ${reais(google.investido)}` : ''].filter(Boolean).join(' · ') || undefined, icone: BadgeDollarSign, cor: '#2a78d6' },
           { rotulo: 'Leads Meta (captação)', valor: meta ? n(meta.captacao?.leads ?? meta.leads) : '—', extra: meta?.captacao?.custoPorLead != null ? `CPL ${reais(meta.captacao.custoPorLead)}` : undefined, icone: Users, cor: '#1baf7a' },
           { rotulo: 'Conversões Google', valor: google ? n(google.leads) : '—', extra: google?.custoPorLead != null ? `${reais(google.custoPorLead)} por conversão` : undefined, icone: Target, cor: '#eb6834' },
-          { rotulo: 'Novos seguidores', valor: ig ? `${ig.novosSeguidores >= 0 ? '+' : ''}${n(ig.novosSeguidores)}` : '—', extra: ig?.seguidoresOrganicos != null && ig.seguidoresPagos != null ? `${n(ig.seguidoresOrganicos)} orgânicos · ${n(ig.seguidoresPagos)} pelos anúncios` : undefined, icone: Camera, cor: '#6250d6' },
+          { rotulo: 'Seguidores ganhos', valor: ig?.seguidoresGanhos !== undefined ? n(ig.seguidoresGanhos) : '—', extra: ig?.seguidoresGanhos === undefined ? undefined : [ig.seguidoresPagos != null ? `${n(ig.seguidoresPagos)} anúncios` : '', ig.seguidoresOrganicos != null ? `${n(ig.seguidoresOrganicos)} orgânicos` : '', `${n(ig.seguidoresPerdidos ?? 0)} saíram`].filter(Boolean).join(' · '), icone: Camera, cor: '#6250d6' },
           { rotulo: 'Visitas ao link da bio', valor: d.bio ? n(d.bio.visitas) : '—', extra: d.bio ? `${n(d.bio.toques)} toques nos botões` : 'sem visitas ou sem página da bio', icone: Link2, cor: '#1baf7a' },
           { rotulo: 'Nota no Google', valor: d.gmn?.nota != null ? `★ ${n(d.gmn.nota)}` : '—', extra: d.gmn ? `${n(d.gmn.avaliacoes)} avaliações` : undefined, icone: Star, cor: '#eda100' },
         ]} />
@@ -528,8 +528,13 @@ async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnu
         ] : []} />
         <CartaoCanal titulo="Orgânico (Instagram)" icone={Camera} cor="#d55181" href={h('organico')} vazio={semIg} linhas={ig ? [
           ['Seguidores', n(ig.seguidores)],
-          ['Novos (saldo)', `${ig.novosSeguidores >= 0 ? '+' : ''}${n(ig.novosSeguidores)}${ig.seguidoresPerdidos ? ` · ${n(ig.seguidoresPerdidos)} saíram` : ''}`],
-          ...(ig.seguidoresOrganicos != null && ig.seguidoresPagos != null ? [['Orgânicos × pagos', `${n(ig.seguidoresOrganicos)} × ${n(ig.seguidoresPagos)}`] as LinhaCanal] : []),
+          ...(ig.seguidoresGanhos !== undefined ? [
+            ['Seguidores ganhos', n(ig.seguidoresGanhos)] as LinhaCanal,
+            ['↳ Pelos anúncios', ig.seguidoresPagos != null ? n(ig.seguidoresPagos) : '—'] as LinhaCanal,
+            ['↳ Orgânicos', ig.seguidoresOrganicos != null ? n(ig.seguidoresOrganicos) : '—'] as LinhaCanal,
+            ['Deixaram de seguir', n(ig.seguidoresPerdidos ?? 0)] as LinhaCanal,
+          ] : []),
+          ['Saldo do período', `${ig.novosSeguidores >= 0 ? '+' : ''}${n(ig.novosSeguidores)}`],
           ['Alcance dos posts', n(ig.alcancePosts ?? ig.alcance)],
           ['Posts · interações', `${n(ig.posts)} · ${n(ig.interacoes)}${ig.engajamentoPosts !== null ? ` (${pct(ig.engajamentoPosts)})` : ''}`],
           ['Cliques no link da bio', ig.cliquesLinkBio == null ? 'não medido' : n(ig.cliquesLinkBio)],
