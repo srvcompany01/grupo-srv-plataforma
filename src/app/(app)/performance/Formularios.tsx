@@ -23,11 +23,11 @@ export function LancarMes({ clienteId, mes, faturamento, vendas, notas }: { clie
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1">
-          <span className={rotulo}>Faturamento do mês (R$)</span>
-          <input className={campo} inputMode="decimal" placeholder="25.000,00" value={v.faturamento} onChange={(e) => setV({ ...v, faturamento: e.target.value })} />
+          <span className={rotulo}>Faturamento do mês (R$) · obrigatório</span>
+          <input className={campo} inputMode="decimal" required placeholder="25.000,00" value={v.faturamento} onChange={(e) => setV({ ...v, faturamento: e.target.value })} />
         </label>
         <label className="block space-y-1">
-          <span className={rotulo}>Número de vendas</span>
+          <span className={rotulo}>Número de vendas (opcional)</span>
           <input className={campo} inputMode="numeric" placeholder="12" value={v.vendas} onChange={(e) => setV({ ...v, vendas: e.target.value })} />
         </label>
       </div>

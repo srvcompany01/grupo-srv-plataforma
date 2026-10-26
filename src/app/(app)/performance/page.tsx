@@ -79,7 +79,7 @@ function kpis(m: MesPerformance, ant: MesPerformance | null): Numero[] {
     { rotulo: 'Custo por lead', valor: reais(i.cpl), extra: 'só leads pagos', icone: ClipboardList, cor: '#eb6834' },
     { rotulo: 'Faturamento', valor: reais(m.faturamento), extra: m.faturamento === null ? 'não lançado' : seta(vFat), tom: vFat === undefined ? undefined : tomVariacao(vFat), rotuloTom: vFat !== undefined && vFat >= 0 ? 'Subindo' : 'Caindo', icone: BadgeDollarSign, cor: '#1baf7a' },
     { rotulo: 'ROAS', valor: vezes(i.roas), extra: 'faturamento ÷ investido', tom: i.roas === null ? undefined : i.roas >= 3 ? 'bom' : i.roas >= 1 ? 'atencao' : 'ruim', rotuloTom: i.roas === null ? undefined : i.roas >= 3 ? 'Saudável' : i.roas >= 1 ? 'Apertado' : 'Prejuízo', icone: TrendingUp, cor: '#eda100' },
-    { rotulo: 'Vendas', valor: inteiro(m.vendas), extra: i.conversao === null ? undefined : `${pct(i.conversao)} dos leads · ticket ${reais(i.ticketMedio)}`, icone: ShoppingBag, cor: '#e87ba4' },
+    { rotulo: 'Vendas (opcional)', valor: inteiro(m.vendas), extra: i.conversao === null ? (m.vendas === null ? 'não informado' : undefined) : `${pct(i.conversao)} dos leads · ticket ${reais(i.ticketMedio)}`, icone: ShoppingBag, cor: '#e87ba4' },
   ]
 }
 

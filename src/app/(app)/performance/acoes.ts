@@ -27,6 +27,7 @@ export async function salvarResultadoMesAcao(clienteId: string, mes: string, r: 
   const faturamento = numero(r.faturamento)
   const vendas = numero(r.vendas)
   if (faturamento === undefined) return { erro: 'Faturamento inválido (ex.: 25.000,00).' }
+  if (faturamento === null) return { erro: 'Informe o faturamento do mês: é o único campo obrigatório (o número de vendas é opcional).' }
   if (vendas === undefined || (vendas !== null && !Number.isInteger(vendas))) return { erro: 'Número de vendas inválido.' }
   const res = await tentar(async () => perf.salvarResultadoMes(await criarClienteServidor(), clienteId, mes, { faturamento, vendas, notas: String(r.notas ?? '') }), 'Resultado do mês salvo.')
   revalidatePath('/performance')

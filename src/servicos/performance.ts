@@ -95,7 +95,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
 }
 
 /** Lança (ou corrige) o faturamento e as vendas do mês. Vazio = não informado. */
-export async function salvarResultadoMes(sb: Supabase, clienteId: string, mes: string, r: { faturamento: number | null; vendas: number | null; notas: string }): Promise<void> {
+export async function salvarResultadoMes(sb: Supabase, clienteId: string, mes: string, r: { faturamento: number; vendas: number | null; notas: string }): Promise<void> {
   dados(await sb.from('client_monthly_results').upsert({ client_id: clienteId, month: `${mes}-01`, revenue: r.faturamento, sales: r.vendas, notes: r.notas.slice(0, 500), updated_at: new Date().toISOString() }).select('client_id'))
 }
 
