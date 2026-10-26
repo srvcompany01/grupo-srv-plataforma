@@ -66,11 +66,15 @@ function kpis(m: MesPerformance, ant: MesPerformance | null): Numero[] {
   const i = numerosDe(m)
   const variacao = (a: number, b: number | undefined) => (b === undefined || !b ? undefined : ((a - b) / b) * 100)
   const vInv = variacao(investido(m), ant ? investido(ant) : undefined)
+  const vMeta = variacao(m.investidoMeta, ant?.investidoMeta)
+  const vGoogle = variacao(m.investidoGoogle, ant?.investidoGoogle)
   const vLeads = variacao(i.leads, ant ? numerosDe(ant).leads : undefined)
   const vFat = m.faturamento === null ? undefined : variacao(m.faturamento, ant?.faturamento ?? undefined)
   const seta = (v: number | undefined) => (v === undefined ? undefined : `${v >= 0 ? '▲ +' : '▼ '}${pct(v)} vs mês anterior`)
   return [
-    { rotulo: 'Investido em anúncios', valor: reais(investido(m)), extra: seta(vInv), icone: Wallet, cor: '#2a78d6' },
+    { rotulo: 'Investido total (Meta + Google)', valor: reais(investido(m)), extra: [seta(vInv), `Meta ${reais(m.investidoMeta)} · Google ${reais(m.investidoGoogle)}`].filter(Boolean).join(' · '), icone: Wallet, cor: '#2a78d6' },
+    { rotulo: 'Investido na Meta', valor: reais(m.investidoMeta), extra: seta(vMeta), icone: Wallet, cor: '#0866ff' },
+    { rotulo: 'Investido no Google Ads', valor: reais(m.investidoGoogle), extra: seta(vGoogle), icone: Wallet, cor: '#eb6834' },
     { rotulo: 'Leads (pagos + bio)', valor: inteiro(i.leads), extra: seta(vLeads), tom: vLeads === undefined ? undefined : tomVariacao(vLeads), rotuloTom: vLeads !== undefined && vLeads >= 0 ? 'Subindo' : 'Caindo', icone: Target, cor: '#6250d6' },
     { rotulo: 'Custo por lead', valor: reais(i.cpl), extra: 'só leads pagos', icone: ClipboardList, cor: '#eb6834' },
     { rotulo: 'Faturamento', valor: reais(m.faturamento), extra: m.faturamento === null ? 'não lançado' : seta(vFat), tom: vFat === undefined ? undefined : tomVariacao(vFat), rotuloTom: vFat !== undefined && vFat >= 0 ? 'Subindo' : 'Caindo', icone: BadgeDollarSign, cor: '#1baf7a' },
@@ -103,7 +107,9 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
             <Fonte icone={Camera} cor="#e1306c" rotulo="Toques nos botões de contato do perfil (Instagram)" valor={atual.cliquesPerfilInstagram === null ? (cliente.metaPaginaId ? 'Meta não entregou' : 'sem Página') : inteiro(atual.cliquesPerfilInstagram)} />
             <Fonte icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no link da bio (plataforma)" valor={inteiro(atual.cliquesLinkBio)} />
             <Fonte icone={UserCheck} cor="#1baf7a" rotulo="Leads confirmados da bio" valor={inteiro(atual.leadsConfirmados)} extra={atual.cliquesLinkBio ? `${pct((atual.leadsConfirmados / atual.cliquesLinkBio) * 100)} dos cliques` : undefined} />
-            <Fonte icone={Wallet} cor="#2a78d6" rotulo="Investido Meta / Google" valor={`${reais(atual.investidoMeta)} / ${reais(atual.investidoGoogle)}`} />
+            <Fonte icone={Wallet} cor="#0866ff" rotulo="Investido na Meta" valor={reais(atual.investidoMeta)} />
+            <Fonte icone={Wallet} cor="#eb6834" rotulo="Investido no Google Ads" valor={reais(atual.investidoGoogle)} />
+            <Fonte icone={Wallet} cor="#2a78d6" rotulo="Investido total" valor={reais(investido(atual))} />
             <Fonte icone={BadgeDollarSign} cor="#eda100" rotulo="Custo por venda" valor={reais(numerosDe(atual).custoPorVenda)} />
           </div>
         </div>
@@ -153,7 +159,8 @@ async function PorCliente({ cliente, mes, hoje }: { cliente: Cliente; mes: strin
         ) : (
           <div className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-2">
-              <GraficoDiario titulo="Investido x faturamento" dias={meses} rotulo={rotuloMesCurto} formato={(n) => reais(n)} series={[{ nome: 'Investido', valores: h.meses.map(investido) }, { nome: 'Faturamento', valores: h.meses.map((m) => m.faturamento ?? 0) }]} />
+              <GraficoDiario titulo="Investido x faturamento" dias={meses} rotulo={rotuloMesCurto} formato={(n) => reais(n)} series={[{ nome: 'Investido total', valores: h.meses.map(investido) }, { nome: 'Faturamento', valores: h.meses.map((m) => m.faturamento ?? 0) }]} />
+              <GraficoDiario titulo="Investido por plataforma" dias={meses} rotulo={rotuloMesCurto} formato={(n) => reais(n)} series={[{ nome: 'Meta', valores: h.meses.map((m) => m.investidoMeta) }, { nome: 'Google Ads', valores: h.meses.map((m) => m.investidoGoogle) }]} />
               <GraficoDiario titulo="Leads por mês" dias={meses} rotulo={rotuloMesCurto} tipo="barras" formato={(n) => inteiro(n)} series={[{ nome: 'Leads', valores: h.meses.map((m) => numerosDe(m).leads) }]} />
             </div>
             <TabelaMeses linhas={[...h.meses].reverse().map((m) => ({ chave: m.mes, rotulo: <span className="capitalize">{rotuloMesLongo(m.mes)}</span>, m }))} />
@@ -183,7 +190,9 @@ function TabelaMeses({ linhas, total }: { linhas: { chave: string; rotulo: React
     return (
       <tr key={chave} className={`border-b border-borda/60 last:border-0 ${forte ? 'bg-fundo font-bold' : ''}`}>
         <td className="py-2 pr-3">{rotulo}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{reais(investido(m))}</td>
+        <td className="py-2 pr-3 text-right font-semibold tabular-nums">{reais(investido(m))}</td>
+        <td className="py-2 pr-3 text-right tabular-nums">{reais(m.investidoMeta)}</td>
+        <td className="py-2 pr-3 text-right tabular-nums">{reais(m.investidoGoogle)}</td>
         <td className="py-2 pr-3 text-right tabular-nums">{inteiro(leadsPagos(m))}</td>
         <td className="py-2 pr-3 text-right tabular-nums">{m.cliquesPerfilInstagram === null ? '—' : inteiro(m.cliquesPerfilInstagram)}</td>
         <td className="py-2 pr-3 text-right tabular-nums">{inteiro(m.cliquesLinkBio)}</td>
@@ -197,11 +206,13 @@ function TabelaMeses({ linhas, total }: { linhas: { chave: string; rotulo: React
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[56rem] text-rotulo">
+      <table className="w-full min-w-[64rem] text-rotulo">
         <thead>
           <tr className="border-b border-borda text-left text-legenda text-texto-3">
             <th className="py-2 pr-3 font-medium" />
-            <th className="py-2 pr-3 text-right font-medium">Investido</th>
+            <th className="py-2 pr-3 text-right font-medium">Investido total</th>
+            <th className="py-2 pr-3 text-right font-medium">Meta</th>
+            <th className="py-2 pr-3 text-right font-medium">Google</th>
             <th className="py-2 pr-3 text-right font-medium">Leads pagos</th>
             <th className="py-2 pr-3 text-right font-medium">Cliques perfil IG</th>
             <th className="py-2 pr-3 text-right font-medium">Cliques bio</th>
