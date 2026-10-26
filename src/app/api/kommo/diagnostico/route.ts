@@ -34,18 +34,29 @@ export async function GET() {
   const origens = await chamar('origens', '/sources')
   const perdas = await chamar('motivos de perda', '/leads/loss_reasons')
   const negocios = await chamar('negócios recentes', '/leads?limit=5&with=contacts,loss_reason,source_id&order[updated_at]=desc')
-  const mensagens = await chamar('eventos de mensagem', '/events?limit=5&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message')
-  const conversas = await chamar('conversas (talks)', '/talks?limit=5')
+  const mensagens = await chamar('eventos de mensagem', '/events?limit=100&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message')
+  const conversas = await chamar('conversas (talks)', '/talks?limit=100')
+  const etapas = await chamar('mudanças de etapa', '/events?limit=5&filter[type][]=lead_status_changed')
+  const camposContato = await chamar('campos dos contatos', '/contacts/custom_fields?limit=250')
   const e = (v: unknown) => (v && typeof v === 'object' ? ((v as { _embedded?: Record<string, unknown[]> })._embedded ?? {}) : {})
+  const contar = (xs: (string | number | null | undefined)[]) => xs.reduce<Record<string, number>>((m, x) => ({ ...m, [String(x ?? 'sem')]: (m[String(x ?? 'sem')] ?? 0) + 1 }), {})
+  const eventosMsg = (e(mensagens.json).events ?? []) as { type?: string; created_at?: number; created_by?: number; value_after?: { message?: { origin?: string } }[] }[]
+  const talks = (e(conversas.json).talks ?? []) as { origin?: string; status?: string; source_id?: number; is_in_work?: boolean }[]
   const pipelines = (e(funis.json).pipelines ?? []) as { id: number; name: string; _embedded?: { statuses?: { id: number; name: string; type: number }[] } }[]
   const camposLista = (e(campos.json).custom_fields ?? []) as { id: number; name: string; type: string; code?: string }[]
   return NextResponse.json({
     conta: { status: conta.status, nome: (conta.json as { name?: string } | null)?.name ?? null, subdominio: (conta.json as { subdomain?: string } | null)?.subdomain ?? null, pais: (conta.json as { country?: string } | null)?.country ?? null },
-    funis: pipelines.map((p) => ({ id: p.id, nome: p.name, etapas: (p._embedded?.statuses ?? []).map((s) => ({ id: s.id, nome: s.name, tipo: s.type === 142 ? 'ganho' : s.type === 143 ? 'perdido' : 'andamento' })) })),
+    funis: pipelines.map((p) => ({ id: p.id, nome: p.name, etapas: (p._embedded?.statuses ?? []).map((s) => ({ id: s.id, nome: s.name, tipo: s.id === 142 ? 'ganho' : s.id === 143 ? 'perdido' : 'andamento' })) })),
     camposDosNegocios: camposLista.map((c) => ({ id: c.id, nome: c.name, tipo: c.type, codigo: c.code ?? null })),
     camposQueInteressam: camposLista.filter((c) => /ctwa|click|clique|origem|source|utm|an[uú]ncio|valor|campanha/i.test(c.name)).map((c) => c.name),
     origens: { status: origens.status, itens: ((e(origens.json).sources ?? []) as { id: number; name: string; origin_code?: string }[]).map((s) => ({ id: s.id, nome: s.name, codigo: s.origin_code ?? null })) },
     motivosDePerda: { status: perdas.status, itens: ((e(perdas.json).loss_reasons ?? []) as { name: string }[]).map((m) => m.name) },
+    leituraDeMensagens: {
+      eventos: { amostra: eventosMsg.length, porTipo: contar(eventosMsg.map((x) => x.type)), porOrigemDoCanal: contar(eventosMsg.map((x) => x.value_after?.[0]?.message?.origin)), atendentesDistintosNasEnviadas: new Set(eventosMsg.filter((x) => x.type === 'outgoing_chat_message').map((x) => x.created_by)).size, de: eventosMsg.length ? new Date(Math.min(...eventosMsg.map((x) => x.created_at ?? 0)) * 1000).toISOString() : null, ate: eventosMsg.length ? new Date(Math.max(...eventosMsg.map((x) => x.created_at ?? 0)) * 1000).toISOString() : null },
+      conversas: { amostra: talks.length, porOrigemDoCanal: contar(talks.map((x) => x.origin)), porSituacao: contar(talks.map((x) => x.status)), origensDeLeadDistintas: new Set(talks.map((x) => x.source_id)).size },
+      mudancasDeEtapa: { status: etapas.status, forma: formaDe(e(etapas.json).events?.[0]) },
+      camposDosContatos: ((e(camposContato.json).custom_fields ?? []) as { name: string }[]).map((c) => c.name),
+    },
     amostras: {
       negocios: { status: negocios.status, forma: formaDe(e(negocios.json).leads?.[0]) },
       eventosDeMensagem: { status: mensagens.status, quantidade: ((e(mensagens.json).events ?? []) as unknown[]).length, forma: formaDe(e(mensagens.json).events?.[0]) },
