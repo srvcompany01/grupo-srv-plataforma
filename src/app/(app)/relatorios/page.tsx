@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, Heart, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Camera, Heart, LayoutDashboard, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, Radar, Search, Send, Star, Target, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
@@ -31,11 +31,13 @@ import { metaPorDiaPorTipo, resumoMetaPorTipo, seguidoresPagosNoPeriodo } from '
 import * as places from '@/servicos/places'
 import { resumoDaBio, resumoDaBioDeVarios } from '@/servicos/bio'
 import { cliquesLinkBioNoPeriodo, linkBioDoCliente } from '@/servicos/performance'
+import { calcularRelatorio } from '@/servicos/relatorio-compartilhado'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
 export const maxDuration = 120
 
 const ABAS = [
+  ['panorama', 'Panorama', LayoutDashboard],
   ['meta', 'Meta Ads', Megaphone],
   ['google', 'Google Ads', Search],
   ['organico', 'Orgânico', Camera],
@@ -60,7 +62,8 @@ export default async function Relatorios({ searchParams }: PageProps<'/relatorio
   const sb = await criarClienteServidor()
   const clientes = (await listarClientes(sb)).filter((c) => !c.interno && c.status !== 'encerrado')
   const escolhido = clientes.find((c) => c.id === texto(sp.cliente)) ?? null
-  const aba: Aba = (ABAS.map((a) => a[0]) as string[]).includes(texto(sp.aba)) ? (texto(sp.aba) as Aba) : 'meta'
+  // Com um cliente escolhido o padrão é o panorama dele (todos os canais juntos); sem cliente, a comparação de Meta Ads.
+  const aba: Aba = (ABAS.map((a) => a[0]) as string[]).includes(texto(sp.aba)) ? (texto(sp.aba) as Aba) : escolhido ? 'panorama' : 'meta'
   const q = consultaPeriodo(periodo)
   const link = (a: Aba) => `/relatorios?aba=${a}${escolhido ? `&cliente=${escolhido.id}` : ''}${q ? `&${q}` : ''}`
   const seletor = <SeletorPeriodo base={`/relatorios?aba=${aba}${escolhido ? `&cliente=${escolhido.id}` : ''}`} periodo={periodo} hoje={hoje} />
@@ -93,7 +96,8 @@ export default async function Relatorios({ searchParams }: PageProps<'/relatorio
       )}
 
       <Suspense key={`${aba}-${escolhido?.id}-${q}`} fallback={<Modulo icone={Target} titulo="Relatório" descricao="Buscando os números…"><p className="py-8 text-center text-rotulo text-texto-3">Carregando…</p></Modulo>}>
-        {aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
+        {aba === 'panorama' ? (escolhido ? <PanoramaCliente c={escolhido} periodo={periodo} /> : <PanoramaEscolha clientes={clientes} periodo={periodo} />)
+          : aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
           : aba === 'google' ? (escolhido ? <GoogleCliente c={escolhido} periodo={periodo} /> : <GoogleTodos clientes={clientes} periodo={periodo} />)
           : aba === 'organico' ? (escolhido ? <OrganicoCliente c={escolhido} periodo={periodo} /> : <OrganicoTodos clientes={clientes} periodo={periodo} />)
           : aba === 'gmn' ? (escolhido ? <GmnCliente c={escolhido} periodo={periodo} /> : <GmnTodos clientes={clientes} />)
@@ -437,5 +441,131 @@ async function BioCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios
         <BlocoAnalise analise={analisarBio(r)} />
       </Modulo>
     </>
+  )
+}
+
+// ───────────────────────────── Panorama ─────────────────────────────
+
+/** Sem cliente escolhido: a lista para abrir o panorama de um deles (cada canal já tem a comparação entre clientes). */
+function PanoramaEscolha({ clientes, periodo }: { clientes: Cliente[]; periodo: PeriodoAnuncios }) {
+  return (
+    <Modulo icone={LayoutDashboard} titulo="Panorama por cliente" descricao="Escolha um cliente para ver todos os canais juntos: Meta Ads, Google Ads, orgânico, Google Meu Negócio e link da bio">
+      {clientes.length === 0 ? <Aviso>Nenhum cliente ativo.</Aviso> : (
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {clientes.map((c) => (
+            <li key={c.id}>
+              <Link href={hrefCliente('panorama', c, periodo)} className="flex items-center justify-between gap-2 rounded-xl border border-borda bg-white px-3 py-2.5 hover:bg-hover">
+                <NomeCliente nome={c.nome} />
+                <span className="flex shrink-0 gap-1 text-micro text-texto-3">{c.metaContaId && 'Meta'}{c.googleAdsId && ' · Google'}{c.metaPaginaId && ' · IG'}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modulo>
+  )
+}
+
+type LinhaCanal = [rotulo: string, valor: ReactNode]
+
+function CartaoCanal({ titulo, icone: Icone, cor, href, linhas, vazio }: { titulo: string; icone: typeof Camera; cor: string; href: string; linhas: LinhaCanal[]; vazio?: string }) {
+  return (
+    <section className="flex flex-col gap-2 rounded-2xl border border-borda bg-white p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-corpo font-bold text-texto"><span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${cor}1f`, color: cor }}><Icone className="h-4 w-4" /></span>{titulo}</h3>
+        <Link href={href} className="text-legenda font-semibold text-[#1d6fe0] hover:underline">Ver detalhes</Link>
+      </div>
+      {vazio ? <p className="py-3 text-rotulo text-texto-3">{vazio}</p> : (
+        <dl className="space-y-1.5 text-rotulo">
+          {linhas.map(([r, v]) => <div key={r} className="flex items-baseline justify-between gap-3 border-b border-borda/50 pb-1 last:border-0"><dt className="text-texto-2">{r}</dt><dd className="text-right font-semibold tabular-nums text-texto">{v}</dd></div>)}
+        </dl>
+      )}
+    </section>
+  )
+}
+
+/** Panorama de um cliente: os mesmos números do relatório que vai para ele, todos os canais numa tela. */
+async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncios }) {
+  const { dados: d, avisos } = await calcularRelatorio(await criarClienteServidor(), c, periodo, { mostrarInvestimento: true })
+  const meta = d.anuncios?.meta ?? null
+  const google = d.anuncios?.google ?? null
+  const ig = d.instagram
+  const investido = (meta?.investido ?? 0) + (google?.investido ?? 0)
+  const h = (aba: Aba) => hrefCliente(aba, c, periodo)
+  const semMeta = !c.metaContaId ? 'Sem conta de anúncios do Meta no cadastro.' : !meta ? 'Sem dados da Meta neste período.' : undefined
+  const semGoogle = !c.googleAdsId ? 'Sem conta do Google Ads no cadastro.' : !google ? 'Sem dados do Google Ads neste período (ou o Google não está conectado).' : undefined
+  const semIg = !c.metaPaginaId ? 'Sem a Página do Facebook (Instagram) no cadastro.' : !ig ? 'O Instagram não respondeu neste período.' : undefined
+  const semGmn = !c.googlePlaceId ? 'Perfil do Google ainda não ligado (aba GMN).' : !d.gmn ? 'Sem dados do Google neste período.' : undefined
+  const geo = d.gmn?.geogrid
+  return (
+    <div className="space-y-4">
+      <Modulo icone={LayoutDashboard} titulo="Panorama" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)} · todos os canais</>}>
+        <Numeros itens={[
+          { rotulo: 'Investido (Meta + Google)', valor: reais(investido), extra: [meta?.investido ? `Meta ${reais(meta.investido)}` : '', google?.investido ? `Google ${reais(google.investido)}` : ''].filter(Boolean).join(' · ') || undefined, icone: BadgeDollarSign, cor: '#2a78d6' },
+          { rotulo: 'Leads Meta (captação)', valor: meta ? n(meta.captacao?.leads ?? meta.leads) : '—', extra: meta?.captacao?.custoPorLead != null ? `CPL ${reais(meta.captacao.custoPorLead)}` : undefined, icone: Users, cor: '#1baf7a' },
+          { rotulo: 'Conversões Google', valor: google ? n(google.leads) : '—', extra: google?.custoPorLead != null ? `${reais(google.custoPorLead)} por conversão` : undefined, icone: Target, cor: '#eb6834' },
+          { rotulo: 'Novos seguidores', valor: ig ? `${ig.novosSeguidores >= 0 ? '+' : ''}${n(ig.novosSeguidores)}` : '—', extra: ig?.seguidoresOrganicos != null && ig.seguidoresPagos != null ? `${n(ig.seguidoresOrganicos)} orgânicos · ${n(ig.seguidoresPagos)} pelos anúncios` : undefined, icone: Camera, cor: '#6250d6' },
+          { rotulo: 'Visitas ao link da bio', valor: d.bio ? n(d.bio.visitas) : '—', extra: d.bio ? `${n(d.bio.toques)} toques nos botões` : 'sem visitas ou sem página da bio', icone: Link2, cor: '#1baf7a' },
+          { rotulo: 'Nota no Google', valor: d.gmn?.nota != null ? `★ ${n(d.gmn.nota)}` : '—', extra: d.gmn ? `${n(d.gmn.avaliacoes)} avaliações` : undefined, icone: Star, cor: '#eda100' },
+        ]} />
+      </Modulo>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CartaoCanal titulo="Meta Ads" icone={Megaphone} cor="#0866ff" href={h('meta')} vazio={semMeta} linhas={meta ? [
+          ['Investido', meta.investido === null ? '—' : reais(meta.investido)],
+          ['Leads (captação)', `${n(meta.captacao?.leads ?? meta.leads)}${meta.captacao?.custoPorLead != null ? ` · CPL ${reais(meta.captacao.custoPorLead)}` : ''}`],
+          ...(meta.reconhecimento ? [
+            ['Reconhecimento / tráfego', meta.reconhecimento.investido === null ? '—' : reais(meta.reconhecimento.investido)] as LinhaCanal,
+            ['Visitas ao perfil', `${n(meta.reconhecimento.visitasPerfil)}${meta.reconhecimento.custoPorVisitaPerfil != null ? ` · ${reais(meta.reconhecimento.custoPorVisitaPerfil)} cada` : ''}`] as LinhaCanal,
+          ] : []),
+          ['Seguidores pelos anúncios', `${n(meta.seguidoresAnuncio ?? 0)}${meta.reconhecimento?.custoPorSeguidor != null ? ` · ${reais(meta.reconhecimento.custoPorSeguidor)} cada (perfil)` : ''}`],
+        ] : []} />
+        <CartaoCanal titulo="Google Ads" icone={Search} cor="#eb6834" href={h('google')} vazio={semGoogle} linhas={google ? [
+          ['Investido', google.investido === null ? '—' : reais(google.investido)],
+          ['Conversões', n(google.leads)],
+          ['Custo por conversão', google.custoPorLead === null ? '—' : reais(google.custoPorLead)],
+          ['Cliques · impressões', `${n(google.cliques)} · ${compacto(google.impressoes)}`],
+        ] : []} />
+        <CartaoCanal titulo="Orgânico (Instagram)" icone={Camera} cor="#d55181" href={h('organico')} vazio={semIg} linhas={ig ? [
+          ['Seguidores', n(ig.seguidores)],
+          ['Novos (saldo)', `${ig.novosSeguidores >= 0 ? '+' : ''}${n(ig.novosSeguidores)}${ig.seguidoresPerdidos ? ` · ${n(ig.seguidoresPerdidos)} saíram` : ''}`],
+          ...(ig.seguidoresOrganicos != null && ig.seguidoresPagos != null ? [['Orgânicos × pagos', `${n(ig.seguidoresOrganicos)} × ${n(ig.seguidoresPagos)}`] as LinhaCanal] : []),
+          ['Alcance dos posts', n(ig.alcancePosts ?? ig.alcance)],
+          ['Posts · interações', `${n(ig.posts)} · ${n(ig.interacoes)}${ig.engajamentoPosts !== null ? ` (${pct(ig.engajamentoPosts)})` : ''}`],
+          ['Cliques no link da bio', ig.cliquesLinkBio == null ? 'não medido' : n(ig.cliquesLinkBio)],
+        ] : []} />
+        <CartaoCanal titulo="Google Meu Negócio" icone={MapPin} cor="#1baf7a" href={h('gmn')} vazio={semGmn} linhas={d.gmn ? [
+          ['Nota · avaliações', `${d.gmn.nota != null ? `★ ${n(d.gmn.nota)}` : '—'} · ${n(d.gmn.avaliacoes)}`],
+          ['Saúde do perfil', `${d.gmn.saude}/100`],
+          ...(geo ? [['Geogrid', `top 3 em ${pct(geo.metricas.top3)}${geo.primeiro !== undefined ? ` · 1º em ${pct(geo.primeiro)}` : ''}`] as LinhaCanal] : []),
+          ...(d.meuNegocio ? [
+            ['Visualizações do perfil', n(d.meuNegocio.visualizacoes)] as LinhaCanal,
+            ['Ligações · rotas · site', `${n(d.meuNegocio.ligacoes)} · ${n(d.meuNegocio.rotas)} · ${n(d.meuNegocio.site)}`] as LinhaCanal,
+            ...(d.meuNegocio.avaliacoes ? [['Avaliações novas', n(d.meuNegocio.avaliacoes.novas)] as LinhaCanal] : []),
+          ] : []),
+        ] : []} />
+        <CartaoCanal titulo="Link da bio" icone={Link2} cor="#6250d6" href={h('bio')} vazio={d.bio ? undefined : 'Sem visitas à página da bio neste período (ou a página ainda não foi criada).'} linhas={d.bio ? [
+          ['Visitas', n(d.bio.visitas)],
+          ['Toques nos botões', `${n(d.bio.toques)}${d.bio.visitas ? ` · ${n(d.bio.toques / d.bio.visitas)} por visita` : ''}`],
+          ...(d.bio.botoes[0] ? [['Botão mais tocado', `${d.bio.botoes[0].rotulo} (${n(d.bio.botoes[0].toques)})`] as LinhaCanal] : []),
+        ] : []} />
+        <CartaoCanal titulo="Campanhas do período" icone={Target} cor="#2a78d6" href={h('meta')} vazio={d.campanhas?.length ? undefined : 'Nenhuma campanha gastou neste período.'} linhas={(d.campanhas ?? []).slice(0, 6).map((x): LinhaCanal => [`${x.plataforma === 'meta' ? 'Meta' : 'Google'} · ${x.nome}`.slice(0, 48), `${x.gasto === null ? '' : `${reais(x.gasto)} · `}${n(x.resultado)} ${x.rotuloResultado}${x.custoPorResultado != null ? ` · ${reais(x.custoPorResultado)}` : ''}`])} />
+      </div>
+
+      {(d.destaques.length > 0 || avisos.length > 0) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {d.destaques.length > 0 && (
+            <Modulo icone={Star} titulo="Destaques do período" descricao="O que foi bem">
+              <ul className="space-y-1.5 text-rotulo">{d.destaques.map((t) => <li key={t} className="rounded-lg border border-sucesso/30 bg-sucesso-fundo/50 px-3 py-2">{t}</li>)}</ul>
+            </Modulo>
+          )}
+          {avisos.length > 0 && (
+            <Modulo icone={Target} titulo="Pontos de atenção" descricao="Só para a equipe">
+              <ul className="space-y-1.5 text-rotulo">{avisos.map((t) => <li key={t} className="rounded-lg border border-aviso/40 bg-aviso-fundo/50 px-3 py-2">{t}</li>)}</ul>
+            </Modulo>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

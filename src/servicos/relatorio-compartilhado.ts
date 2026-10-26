@@ -19,8 +19,11 @@ import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from
 const BASE = () => process.env.NEXT_PUBLIC_URL_BASE ?? 'https://app.gruposrv.com.br'
 export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
 
-/** Junta os números do período (o que der: cada fonte que falhar fica de fora) e guarda a foto. */
-export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
+/**
+ * Junta os números do período de um cliente (o que der: cada fonte que falhar fica de fora). É a mesma conta do
+ * relatório enviado ao cliente e do panorama da aba Relatórios: nada é calculado duas vezes de jeitos diferentes.
+ */
+export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean }): Promise<{ dados: RelatorioCompartilhado; avisos: string[] }> {
   const google = c.googleAdsId ? await situacaoGoogle() : null
   const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio] = await Promise.all([
     c.metaContaId ? resumoMetaPorTipo(c.metaContaId, periodo) : null,
@@ -100,6 +103,12 @@ export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<Per
       ...(scan ? [{ tom: 'bom' as const, texto: fraseGeogrid(scan.palavra, scan.metricas, primeiro, liderInfo) }] : []),
     ].filter((d) => d.tom === 'bom' && (opcoes.mostrarInvestimento || !/R\$/.test(d.texto))).map((d) => d.texto).slice(0, 5),
   }
+  return { dados, avisos }
+}
+
+/** Calcula o relatório e guarda a foto dos números (link público com token). */
+export async function gerarRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean; automatico?: boolean }): Promise<{ id: string; url: string; texto: string; whatsapp: string | null; avisos: string[]; dados: RelatorioCompartilhado }> {
+  const { dados, avisos } = await calcularRelatorio(sb, c, periodo, opcoes)
   const token = gerarToken()
   const { data, error } = await sb.from('client_reports').insert({ token, client_id: c.id, de: periodo.de, ate: periodo.ate, dados: dados as unknown as Json, automatico: !!opcoes.automatico }).select('id').single()
   if (error) throw error

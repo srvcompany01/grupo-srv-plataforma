@@ -213,7 +213,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'GMN (Google Meu Negócio, aba GMN): pelos dados PÚBLICOS do Google (Places API), sem depender da API do Business Profile. Primeiro ligue o lugar do cliente no Google (gmn_buscar_lugares + definir_lugar_google_cliente). gmn_cliente traz o perfil, a nota de saúde de 0 a 100 (Fraco/Razoável/Bom por item), as avaliações em destaque, a evolução e o link de avaliação. gmn_geogrid roda a palavra-chave numa grade ao redor do endereço e guarda a posição em cada ponto (próxima da do Maps, não idêntica); gmn_varreduras lê as varreduras com os concorrentes do top 3; gmn_acompanhar liga o geogrid automático toda segunda, com aviso se a posição piorar. Prospecção: gmn_buscar_lugares (segmento + cidade) e gmn_analisar_lugar (pré-análise e texto de abordagem).',
-        'Aba Relatórios (equipe): análise por canal em 5 abas, de todos os clientes ou de um, no período: Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente) e Link da bio (link_bio_cliente: visitas e toques em cada botão); com cliente escolhido, o botão de enviar o relatório (gerar_relatorio_cliente).',
+        'Aba Relatórios (equipe): análise por canal em 6 abas, de todos os clientes ou de um, no período: Panorama (um cliente com todos os canais juntos; panorama_cliente), Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente) e Link da bio (link_bio_cliente: visitas e toques em cada botão); com cliente escolhido, o botão de enviar o relatório (gerar_relatorio_cliente).',
         'Relatório para o cliente: gerar_relatorio_cliente cria um link público com os números do período e o texto do WhatsApp, com Meta Ads e Google Ads separados (investido, leads e custo por lead de cada um, em dados.anuncios.meta e dados.anuncios.google); na página do cliente há o mesmo botão e a lista dos gerados. No dia 1 a plataforma gera o do mês anterior de cada cliente ativo e avisa a equipe no sino para enviar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
@@ -662,6 +662,20 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await (await import('@/servicos/performance')).salvarResultadoMes(sb, a.clienteId, a.mes, { faturamento: a.faturamento, vendas: a.vendas, notas: a.notas ?? '' })
       return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'panorama_cliente',
+    descricao: 'Panorama geral de UM cliente no período, todos os canais juntos (a aba Relatórios → Panorama): Meta Ads (captação separada de reconhecimento, visitas ao perfil, seguidores pelos anúncios), Google Ads, Instagram orgânico (seguidores orgânicos x pagos, alcance dos posts, cliques no link da bio), Google Meu Negócio (nota, saúde, geogrid, métricas e avaliações novas), link da bio (visitas e toques por botão), campanhas do período, destaques e pontos de atenção. Não guarda nada e não gera link (para o relatório do cliente use gerar_relatorio_cliente); Meta e Google ficam separados, nunca somados em leads ou custo por lead.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const p = periodoDaIA(a)
+      const { dados, avisos } = await (await import('@/servicos/relatorio-compartilhado')).calcularRelatorio(sb, cliente, p, { mostrarInvestimento: true })
+      return { periodo: p, ...dados, avisosInternos: avisos }
     },
   }),
 
