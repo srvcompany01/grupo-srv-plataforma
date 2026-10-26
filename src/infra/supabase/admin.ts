@@ -12,7 +12,7 @@ import type { Database } from './tipos'
  * - publicação de posts na Meta (servicos/publicacao-meta.ts, rotina /api/cron/publicar) e a resposta do cliente no portal
  *   (aprovar/pedir ajuste), sempre depois de conferir que o post é do cliente logado;
  * - endpoint público de leads das landing pages (app/api/leads): grava em landing_leads e envia o formulário de leads;
- * - webhook da Evolution API (app/api/whatsapp/eventos): grava o evento só depois de conferir o segredo.
+ * - webhook da Evolution API (app/api/whatsapp/eventos) e do Kommo (app/api/kommo/webhook): gravam o evento só depois de conferir o segredo.
  */
 export function criarClienteAdmin() {
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY

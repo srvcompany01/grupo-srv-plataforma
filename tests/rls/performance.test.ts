@@ -46,6 +46,11 @@ describe('performance', () => {
     expect(await ler(db, adm, `select instancia from wa_eventos_teste`)).toEqual([{ instancia: 'aurum' }])
     expect(await ler(db, ana, `select * from wa_eventos_teste`)).toEqual([])
     await expect(executar(db, adm, `insert into wa_eventos_teste (corpo) values ('{}'::jsonb)`, [])).rejects.toThrow(/row-level security/)
+    // Eventos de teste do Kommo: só o admin lê; ninguém grava pela API.
+    await db.query(`insert into kommo_eventos_teste (conta, corpo) values ('aurum', '{}'::jsonb)`)
+    expect(await ler(db, adm, `select conta from kommo_eventos_teste`)).toEqual([{ conta: 'aurum' }])
+    expect(await ler(db, ana, `select * from kommo_eventos_teste`)).toEqual([])
+    await expect(executar(db, adm, `insert into kommo_eventos_teste (corpo) values ('{}'::jsonb)`, [])).rejects.toThrow(/row-level security/)
     await executar(db, ana, `insert into lead_confirmations (client_id, observacao) values ($1, 'Maria')`, [id])
     await executar(db, ana, `insert into client_monthly_results (client_id, month, revenue, sales) values ($1, '2026-10-01', 50000, 12)`, [id])
     expect(await ler(db, cli, `select * from client_monthly_results`)).toEqual([])

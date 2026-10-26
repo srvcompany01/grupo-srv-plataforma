@@ -41,6 +41,12 @@ export type Database = {
         Update: { client_id?: string; day?: string; clicks?: number; origem?: string }
         Relationships: []
       }
+      kommo_eventos_teste: {
+        Row: { id: string; conta: string; recebido_em: string; corpo: Json }
+        Insert: { id?: string; conta?: string; recebido_em?: string; corpo: Json }
+        Update: { id?: string; conta?: string; recebido_em?: string; corpo?: Json }
+        Relationships: []
+      }
       wa_eventos_teste: {
         Row: { id: string; instancia: string; evento: string; recebido_em: string; corpo: Json }
         Insert: { id?: string; instancia?: string; evento?: string; recebido_em?: string; corpo: Json }
