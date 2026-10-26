@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
@@ -9,13 +10,15 @@ import { consultaPeriodo, lerPeriodo } from '@/dominio/periodo-anuncios'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes } from '@/servicos/clientes-plataforma'
+import { horarioDoCliente } from '@/servicos/atendimento'
+import { HorarioAtendimento } from './HorarioAtendimento'
 import { Aviso, AtendimentoCliente } from '../performance/canais'
 
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
 
 /** Atendimento no WhatsApp de cada cliente (dados do Kommo): tempos de resposta, conversas, vendas e origem. */
 export default async function Atendimento({ searchParams }: PageProps<'/atendimento'>) {
-  await exigirEquipe()
+  const eu = await exigirEquipe()
   const sp = await searchParams
   const hoje = dataDeHoje(new Date())
   const periodo = lerPeriodo(sp, hoje)
@@ -36,7 +39,14 @@ export default async function Atendimento({ searchParams }: PageProps<'/atendime
           {escolhido && <SeletorPeriodo base={`/atendimento?cliente=${escolhido.id}`} periodo={periodo} hoje={hoje} />}
         </div>
       </div>
-      {escolhido ? <AtendimentoCliente c={escolhido} periodo={periodo} /> : (
+      {escolhido ? (
+        <>
+          <AtendimentoCliente c={escolhido} periodo={periodo} />
+          <Modulo icone={Clock} titulo="Horário de atendimento" descricao="O tempo de resposta e os avisos de conversa sem resposta contam só dentro deste expediente">
+            <HorarioAtendimento key={escolhido.id} clienteId={escolhido.id} horario={await horarioDoCliente(sb, escolhido.id)} podeEditar={eu.papel === 'admin' || eu.papel === 'gestor'} />
+          </Modulo>
+        </>
+      ) : (
         <Modulo icone={IconeWhatsapp} titulo="Escolha um cliente" descricao="Conversas, tempo de resposta, vendas e origem do WhatsApp de cada cliente">
           {clientes.length === 0 ? <Aviso>Nenhum cliente ativo.</Aviso> : (
             <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

@@ -53,6 +53,12 @@ export type Database = {
         Update: { id?: number; client_id?: string; pipeline_id?: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
         Relationships: []
       }
+      wa_alertas: {
+        Row: { talk_id: number; mensagem_em: string; client_id: string; avisado_em: string }
+        Insert: { talk_id: number; mensagem_em: string; client_id: string; avisado_em?: string }
+        Update: { talk_id?: number; mensagem_em?: string; client_id?: string; avisado_em?: string }
+        Relationships: []
+      }
       wa_conversas: {
         Row: { talk_id: number; client_id: string; lead_id: number | null; contato_id: number | null; origem: string; criada_em: string; atualizada_em: string }
         Insert: { talk_id: number; client_id: string; lead_id?: number | null; contato_id?: number | null; origem?: string; criada_em: string; atualizada_em: string }
@@ -436,6 +442,9 @@ export type Database = {
           meta_ad_account_id: string | null
           whatsapp: string | null
           whatsapp_atendimento: string | null
+          atend_abre: number
+          atend_fecha: number
+          atend_dias: number[]
           bio_slug: string | null
           bio_logo: string | null
           google_place_id: string | null
@@ -465,6 +474,9 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
+          atend_abre?: number
+          atend_fecha?: number
+          atend_dias?: number[]
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null
@@ -494,6 +506,9 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
+          atend_abre?: number
+          atend_fecha?: number
+          atend_dias?: number[]
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null

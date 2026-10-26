@@ -1,4 +1,5 @@
 import 'server-only'
+import { avisarSemResposta } from './atendimento'
 import { lerEventoKommo, negocioDaApi, planejarEvento, type NegocioGuardado, type NegocioKommo } from '@/dominio/kommo'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 
@@ -47,5 +48,7 @@ export async function processarEventoKommo(corpo: unknown): Promise<{ negocios: 
   for (const x of plano.excluidos) await sb.from('kommo_negocios').update({ excluido_em: x.excluido_em, atualizado_em: x.excluido_em }).eq('id', x.id)
   if (plano.conversas.length) await sb.from('wa_conversas').upsert(plano.conversas, { onConflict: 'talk_id', ignoreDuplicates: true })
   if (plano.mensagens.length) await sb.from('wa_mensagens').upsert(plano.mensagens, { onConflict: 'id', ignoreDuplicates: true })
+  // A cada evento com mensagem, confere se alguma conversa daquele cliente está esperando resposta há tempo demais.
+  for (const c of new Set(plano.mensagens.map((m) => m.client_id))) await avisarSemResposta(c).catch((err) => console.error('aviso sem resposta', err))
   return { negocios: plano.negocios.length + plano.excluidos.length, conversas: plano.conversas.length, mensagens: plano.mensagens.length, ignorados: plano.ignorados }
 }

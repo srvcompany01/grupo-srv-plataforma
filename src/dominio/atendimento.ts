@@ -20,6 +20,27 @@ export type MetricasAtendimento = {
   tempoMedioDeResposta: number | null
 }
 
+/** Expediente do cliente: minutos desde 0h (horário de Belém) e dias da semana (0 = domingo). */
+export type Horario = { abre: number; fecha: number; dias: number[] }
+export const HORARIO_PADRAO: Horario = { abre: 8 * 60, fecha: 18 * 60, dias: [1, 2, 3, 4, 5] }
+
+const FUSO_MS = -3 * 3_600_000 // Belém, sem horário de verão
+const DIA_MS = 86_400_000
+
+/** Segundos entre dois instantes contando só o expediente; sem horário, o tempo corrido. */
+export function segundosUteis(de: number, ate: number, h?: Horario): number {
+  if (ate <= de) return 0
+  if (!h) return (ate - de) / 1000
+  let total = 0
+  for (let d = Math.floor((de + FUSO_MS) / DIA_MS); d <= Math.floor((ate + FUSO_MS) / DIA_MS); d++) {
+    if (!h.dias.includes(new Date(d * DIA_MS).getUTCDay())) continue
+    const ini = d * DIA_MS - FUSO_MS + h.abre * 60_000
+    const fim = d * DIA_MS - FUSO_MS + h.fecha * 60_000
+    total += Math.max(0, Math.min(fim, ate) - Math.max(ini, de))
+  }
+  return total / 1000
+}
+
 const MIN = 60
 const percentil = (xs: number[], p: number) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.min(xs.length - 1, Math.ceil(xs.length * p) - 1)] : null)
 const mediana = (xs: number[]) => {
@@ -29,7 +50,7 @@ const mediana = (xs: number[]) => {
 const media = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null)
 const pct = (xs: number[], limite: number, total: number) => (total ? (xs.filter((x) => x <= limite).length / total) * 100 : null)
 
-export function metricasDeAtendimento(mensagens: MensagemAtendimento[], agora: number, limiteSemRespostaSeg = 3600): MetricasAtendimento {
+export function metricasDeAtendimento(mensagens: MensagemAtendimento[], agora: number, limiteSemRespostaSeg = 3600, horario?: Horario): MetricasAtendimento {
   const porConversa = new Map<string, MensagemAtendimento[]>()
   for (const m of mensagens) porConversa.set(m.conversa, [...(porConversa.get(m.conversa) ?? []), m])
   const primeiras: number[] = []
@@ -46,18 +67,18 @@ export function metricasDeAtendimento(mensagens: MensagemAtendimento[], agora: n
     const resposta = msgs.find((m) => m.papel === 'atendente' && m.em >= primeiraDoCliente.em)
     if (resposta) {
       respondidas++
-      primeiras.push((resposta.em - primeiraDoCliente.em) / 1000)
+      primeiras.push(segundosUteis(primeiraDoCliente.em, resposta.em, horario))
     } else if (msgs.some((m) => m.papel === 'robo' && m.em >= primeiraDoCliente.em)) soRobo++
     // Cada rodada: o cliente escreve (uma ou mais mensagens seguidas) e espera o próximo atendente.
     let inicioDaRodada: number | null = null
     for (const m of msgs) {
       if (m.papel === 'cliente') inicioDaRodada ??= m.em
       else if (m.papel === 'atendente' && inicioDaRodada !== null) {
-        turnos.push((m.em - inicioDaRodada) / 1000)
+        turnos.push(segundosUteis(inicioDaRodada, m.em, horario))
         inicioDaRodada = null
       }
     }
-    if (!resposta && (agora - primeiraDoCliente.em) / 1000 > limiteSemRespostaSeg) semResposta++
+    if (!resposta && segundosUteis(primeiraDoCliente.em, agora, horario) > limiteSemRespostaSeg) semResposta++
   }
   return {
     conversas,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { duracao, metricasDeAtendimento, type MensagemAtendimento } from '@/dominio/atendimento'
+import { duracao, metricasDeAtendimento, segundosUteis, type MensagemAtendimento } from '@/dominio/atendimento'
 import { mascararTexto } from '@/dominio/privacidade'
 
 const t0 = Date.parse('2026-10-26T12:00:00Z')
@@ -54,5 +54,24 @@ describe('mascarar dados pessoais', () => {
 
   it('não mexe em número curto, ano nem quantidade', () => {
     expect(mascararTexto('Quero 2 peças, tamanho 38, para 2027. Sai às 18:30 do dia 12/10.')).toBe('Quero 2 peças, tamanho 38, para 2027. Sai às 18:30 do dia 12/10.')
+  })
+})
+
+describe('horário de atendimento', () => {
+  const h = { abre: 8 * 60, fecha: 18 * 60, dias: [1, 2, 3, 4, 5] } // seg a sex, 8h às 18h (Belém)
+  const em = (iso: string) => Date.parse(iso)
+  it('conta só o expediente: sexta 17h às segunda 9h = 2 h', () => {
+    expect(segundosUteis(em('2026-10-23T20:00:00Z'), em('2026-10-26T12:00:00Z'), h)).toBe(2 * 3600) // sex 17h → seg 9h (Belém)
+  })
+  it('dentro do mesmo expediente é o tempo corrido; sem horário também', () => {
+    expect(segundosUteis(em('2026-10-26T12:00:00Z'), em('2026-10-26T12:30:00Z'), h)).toBe(1800)
+    expect(segundosUteis(em('2026-10-24T12:00:00Z'), em('2026-10-24T13:00:00Z'))).toBe(3600)
+  })
+  it('sábado e domingo não contam; resposta de madrugada vira 0', () => {
+    expect(segundosUteis(em('2026-10-24T12:00:00Z'), em('2026-10-25T20:00:00Z'), h)).toBe(0)
+  })
+  it('a primeira resposta usa o expediente: cliente às 23h, resposta às 8h30 = 30 min', () => {
+    const msgs = [{ conversa: 'a', papel: 'cliente' as const, em: em('2026-10-27T02:00:00Z') }, { conversa: 'a', papel: 'atendente' as const, em: em('2026-10-27T11:30:00Z') }]
+    expect(metricasDeAtendimento(msgs, em('2026-10-27T12:00:00Z'), 3600, h).primeiraResposta.mediana).toBe(1800)
   })
 })
