@@ -104,6 +104,12 @@ async function meta<T>(caminho: string, params: Record<string, string>, cacheSeg
   }
 }
 
+/** `results` do Insights: [{ indicator: 'profile_visit_view', values: [{ value: '7873' }] }]. */
+export type ResultadoMeta = { indicator?: string; values?: { value?: string }[] }
+
+/** Soma dos resultados que são visita ao perfil (indicador profile_visit_view). */
+export const visitasPerfilDosResultados = (r: ResultadoMeta[] | undefined) => (r ?? []).reduce((s, x) => s + (/profile_visit/.test(x.indicator ?? '') ? (x.values ?? []).reduce((t, v) => t + Number(v.value ?? 0), 0) : 0), 0)
+
 type DetalheConjunto = { id: string; destination_type?: string; campaign?: { effective_status?: string; objective?: string } }
 
 /**
@@ -141,17 +147,16 @@ export type LinhaConjunto = {
   cliquesLink: number
   leads: Leads
   acoes: Acoes
+  /** Visitas ao perfil do Instagram (resultado de campanhas otimizadas para isso); 0 nas demais. */
+  visitasPerfil: number
 }
 
 export type ResumoCaptacaoMeta = { gasto: number; impressoes: number; cliques: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
-export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorClique: number | null; campanhas: number }
+export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; custoPorClique: number | null; campanhas: number }
 export type ResumoMetaPorTipo = { captacao: ResumoCaptacaoMeta; reconhecimento: ResumoReconhecimentoMeta; total: TotaisMeta }
 
 const vazioCaptacao = (): ResumoCaptacaoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, leads: 0, conversas: 0, formularios: 0, site: 0, custoPorLead: null, campanhas: 0 })
-const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorClique: null, campanhas: 0 })
-
-/** A Meta varia o nome da ação por posicionamento; só usamos visita explícita ao perfil quando ela vier na resposta. */
-export const visitasPerfilDasAcoes = (acoes: Acoes) => acoes.reduce((s, a) => s + (['profile_visit', 'ig_profile_visit', 'instagram_profile_visit', 'onsite_conversion.profile_visit'].includes(a.action_type) ? Number(a.value ?? 0) : 0), 0)
+const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorVisitaPerfil: null, custoPorClique: null, campanhas: 0 })
 
 /**
  * Separa captação de reconhecimento antes de calcular médias. O papel é decidido pela campanha inteira, para um
@@ -162,6 +167,7 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
   for (const l of linhas) porCampanha.set(l.campanhaId, somarLeads([porCampanha.get(l.campanhaId) ?? { formularios: 0, conversas: 0, site: 0 }, l.leads]))
   const captacao = vazioCaptacao()
   const reconhecimento = vazioReconhecimento()
+  let gastoComVisitas = 0
   const campanhasCaptacao = new Set<string>()
   const campanhasReconhecimento = new Set<string>()
   for (const l of linhas) {
@@ -179,7 +185,8 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
       reconhecimento.impressoes += l.impressoes
       reconhecimento.cliques += l.cliques
       reconhecimento.cliquesLink += l.cliquesLink
-      reconhecimento.visitasPerfil += visitasPerfilDasAcoes(l.acoes)
+      reconhecimento.visitasPerfil += l.visitasPerfil
+      if (l.visitasPerfil > 0) gastoComVisitas += l.gasto
       campanhasReconhecimento.add(l.campanhaId)
     }
   }
@@ -188,6 +195,7 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
   captacao.custoPorLead = captacao.leads ? captacao.gasto / captacao.leads : null
   reconhecimento.campanhas = campanhasReconhecimento.size
   // Quando a Meta não devolve "visita ao perfil", o clique no link é o indicador disponível para a campanha de tráfego.
+  reconhecimento.custoPorVisitaPerfil = reconhecimento.visitasPerfil ? gastoComVisitas / reconhecimento.visitasPerfil : null
   reconhecimento.custoPorClique = reconhecimento.cliquesLink ? reconhecimento.gasto / reconhecimento.cliquesLink : null
   return {
     captacao,
@@ -211,13 +219,19 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
  */
 export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, granularidade: 'total' | 'mensal' | 'diaria' = 'total'): Promise<LinhaConjunto[] | { erro: string }> {
   const cacheSeg = cacheDoPeriodo({ de, ate })
-  const ins = await meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
-      level: 'adset', fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(granularidade === 'mensal' ? { time_increment: 'monthly' } : granularidade === 'diaria' ? { time_increment: '1' } : {}),
-  }, cacheSeg)
+  const periodo = { level: 'adset', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(granularidade === 'mensal' ? { time_increment: 'monthly' } : granularidade === 'diaria' ? { time_increment: '1' } : {}) }
+  const [ins, resultados] = await Promise.all([
+    meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
+      ...periodo, fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions',
+    }, cacheSeg),
+    // O "resultado" que o Gerenciador mostra (ex.: visitas ao perfil) só vem no campo `results`, não em `actions`. Se falhar, só ficamos sem ele.
+    meta<{ data: { date_start: string; adset_id: string; results?: ResultadoMeta[] }[] }>(`act_${contaId}/insights`, { ...periodo, fields: 'adset_id,results' }, cacheSeg),
+  ])
   if ('erro' in ins) return ins
   // ponytail: até 500 linhas de insights por consulta; paginar se alguma conta passar disso.
   const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))], cacheSeg)
   const destino = new Map([...det].map(([id, c]) => [id, c.destination_type ?? null]))
+  const visitas = new Map(('erro' in resultados ? [] : resultados.data).map((r) => [`${r.adset_id}|${r.date_start}`, visitasPerfilDosResultados(r.results)]))
   return ins.data.map((d) => ({
     mes: granularidade === 'mensal' ? d.date_start.slice(0, 7) : null,
     dia: granularidade === 'diaria' ? d.date_start : null,
@@ -234,6 +248,7 @@ export async function conjuntosDoPeriodo(contaId: string, de: string, ate: strin
     cliquesLink: Number(d.inline_link_clicks ?? 0),
     leads: leadsDasAcoes(d.actions, destino.get(d.adset_id)),
     acoes: d.actions ?? [],
+    visitasPerfil: visitas.get(`${d.adset_id}|${d.date_start}`) ?? 0,
   }))
 }
 
@@ -330,7 +345,19 @@ export async function diagnosticoAcoesMeta(contaId: string, periodo: Pick<Period
  */
 export async function sondaCampanhaMeta(contaId: string, campanhaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>) {
   const base = { level: 'adset', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campanhaId }]), limit: '50' }
-  const candidatos = ['results', 'cost_per_result', 'conversions', 'cost_per_conversion', 'unique_actions', 'cost_per_action_type', 'cost_per_unique_action_type', 'cost_per_inline_link_click', 'reach', 'frequency', 'optimization_goal', 'objective']
+  const candidatos = ['results', 'cost_per_result', 'conversions', 'cost_per_conversion', 'unique_actions', 'cost_per_action_type', 'cost_per_unique_action_type', 'cost_per_inline_link_click', 'reach', 'frequency', 'optimization_goal', 'objective', 'follows', 'new_followers', 'instagram_follows', 'instagram_profile_visits']
+  // Seguidores ganhos pelo anúncio: o mesmo `actions` com a atribuição do Gerenciador, outras janelas e quebras por destino/alvo.
+  const variantes: Record<string, Record<string, string>> = {
+    atribuicaoUnificada: { fields: 'adset_id,actions', use_unified_attribution_setting: 'true' },
+    janelas: { fields: 'adset_id,actions', action_attribution_windows: '["1d_click","7d_click","1d_view","28d_click"]' },
+    porDestino: { fields: 'adset_id,actions', action_breakdowns: 'action_type,action_destination' },
+    porAlvo: { fields: 'adset_id,actions', action_breakdowns: 'action_type,action_target_id' },
+    comPlataforma: { fields: 'adset_id,actions', breakdowns: 'publisher_platform' },
+  }
+  const porVariante = Object.fromEntries(await Promise.all(Object.entries(variantes).map(async ([nome, extra]) => {
+    const r = await meta<{ data: Record<string, unknown>[] }>(`act_${contaId}/insights`, { ...base, ...extra }, 0)
+    return [nome, 'erro' in r ? { erro: r.erro } : r.data.map((d) => ({ adset: d.adset_id, plataforma: d.publisher_platform, acoes: Object.fromEntries(((d.actions ?? []) as { action_type: string; value: string; action_destination?: string; action_target_id?: string }[]).map((x) => [`${x.action_type}${x.action_destination ? `@${x.action_destination}` : ''}${x.action_target_id ? `#${x.action_target_id}` : ''}`, x.value])) }))] as const
+  })))
   const campos = Object.fromEntries(await Promise.all(candidatos.map(async (f) => {
     const r = await meta<{ data: Record<string, unknown>[] }>(`act_${contaId}/insights`, { ...base, fields: `adset_id,spend,${f}` })
     return [f, 'erro' in r ? { erro: r.erro } : r.data.map((d) => ({ adset: d.adset_id, spend: d.spend, [f]: d[f] }))] as const
@@ -339,5 +366,5 @@ export async function sondaCampanhaMeta(contaId: string, campanhaId: string, per
     meta<Record<string, unknown>>(campanhaId, { fields: 'name,objective,buying_type,effective_status' }),
     meta<{ data: Record<string, unknown>[] }>(`${campanhaId}/adsets`, { fields: 'id,name,optimization_goal,destination_type,promoted_object,billing_event,effective_status', limit: '50' }),
   ])
-  return { campanha, conjuntos: 'erro' in conjuntos ? conjuntos : conjuntos.data, campos }
+  return { campanha, conjuntos: 'erro' in conjuntos ? conjuntos : conjuntos.data, campos, porVariante }
 }

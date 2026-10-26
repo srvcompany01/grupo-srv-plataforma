@@ -330,7 +330,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!cliente) throw new Error('Cliente não encontrado.')
       if (!cliente.metaContaId) throw new Error('Este cliente não tem conta de anúncios do Meta cadastrada.')
       const ma = await import('@/servicos/meta-anuncios')
-      const [r, conta] = await Promise.all([ma.anunciosAtivos(cliente.metaContaId, periodoDaIA(a)), ma.totaisDoPeriodoMeta(cliente.metaContaId, periodoDaIA(a))])
+      const [r, conta, porTipo] = await Promise.all([ma.anunciosAtivos(cliente.metaContaId, periodoDaIA(a)), ma.totaisDoPeriodoMeta(cliente.metaContaId, periodoDaIA(a)), ma.resumoMetaPorTipo(cliente.metaContaId, periodoDaIA(a))])
       if ('erro' in r) throw new Error(r.erro)
       // Sem a URL da imagem (longa e expira) e sem campos vazios: cabe inteiro na resposta.
       const anuncios = r.anuncios.map(({ imagem, texto, qualidade, engajamento, conversao, custoPorResultado, visualizacoesVideo, link, cliques, ...x }) => ({
@@ -347,6 +347,8 @@ export const FERRAMENTAS: Ferramenta[] = [
         totais: totaisAnuncios(r.anuncios),
         totaisAtivos: totaisAnuncios(r.anuncios),
         totaisConta: 'erro' in conta ? { erro: conta.erro } : { ...conta, gasto: Math.round(conta.gasto * 100) / 100, leads: totalLeads(conta), custoPorLead: totalLeads(conta) ? Math.round((conta.gasto / totalLeads(conta)) * 100) / 100 : null },
+        // captacao = campanhas de LEAD (leads e custo por lead); reconhecimento = campanhas de MARCA (tráfego para o perfil): visitasPerfil e custoPorVisitaPerfil vêm do resultado da Meta (profile_visit_view); cliques no link e custo por clique são o apoio.
+        porTipo: 'erro' in porTipo ? { erro: porTipo.erro } : { captacao: porTipo.captacao, reconhecimento: porTipo.reconhecimento },
         origemDosTotais: 'totaisAtivos soma só os anúncios ATIVOS agora (os listados); totaisConta soma todas as campanhas que gastaram no período, inclusive as pausadas no meio dele — use totaisConta para investimento e leads do período.',
         referencias: {
           comoCalcula: 'Média de cada papel = gasto ÷ resultados (lead) ou gasto ÷ cliques no link (marca), só com os anúncios de 500+ impressões no período; por isso pode diferir do total da conta.',

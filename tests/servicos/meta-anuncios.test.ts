@@ -46,10 +46,12 @@ it('C6: separa captação de reconhecimento antes de calcular CPL, incluindo con
   process.env.META_ACCESS_TOKEN = 't'
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
     const u = new URL(url)
-    const corpo = u.pathname.endsWith('/insights')
+    const corpo = u.pathname.endsWith('/insights') && u.searchParams.get('fields')?.includes('results')
+      ? { data: [{ date_start: '2026-10-18', adset_id: 's2', results: [{ indicator: 'profile_visit_view', values: [{ value: '1800' }] }] }] }
+      : u.pathname.endsWith('/insights')
       ? { data: [
         linha('c1', 'WHATS', 's1', 1200, { 'onsite_conversion.messaging_conversation_started_7d': 120 }),
-        linha('c2', 'PERFIL', 's2', 700, { link_click: 2301, profile_visit: 1800 }),
+        linha('c2', 'PERFIL', 's2', 700, { link_click: 2301 }),
         linha('c3', 'SITE', 's3', 300, { 'offsite_conversion.fb_pixel_lead': 30 }),
       ] }
       : u.searchParams.get('ids') ? Object.fromEntries(u.searchParams.get('ids')!.split(',').map((id) => [id, DETALHES[id as keyof typeof DETALHES]]))
@@ -59,6 +61,6 @@ it('C6: separa captação de reconhecimento antes de calcular CPL, incluindo con
   const r = await resumoMetaPorTipo('1', { de: '2026-10-18', ate: '2026-10-24' })
   if ('erro' in r) throw new Error(r.erro)
   expect(r.captacao).toMatchObject({ gasto: 1500, conversas: 120, formularios: 0, site: 30, leads: 150, custoPorLead: 10, campanhas: 2 })
-  expect(r.reconhecimento).toMatchObject({ gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorClique: expect.closeTo(700 / 2301), campanhas: 1 })
+  expect(r.reconhecimento).toMatchObject({ gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorVisitaPerfil: expect.closeTo(700 / 1800), custoPorClique: expect.closeTo(700 / 2301), campanhas: 1 })
   expect(r.total).toMatchObject({ gasto: 2200, conversas: 120, site: 30 })
 })

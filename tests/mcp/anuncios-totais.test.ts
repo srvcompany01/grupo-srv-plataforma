@@ -8,6 +8,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('server-only', () => ({}))
 vi.mock('@/servicos/meta-anuncios', () => ({
   anunciosAtivos: async () => ({ anuncios: [{ id: 'a', nome: 'Ativo', campanha: 'C', conjunto: 'J', objetivo: 'OUTCOME_ENGAGEMENT', titulo: '', texto: '', imagem: null, video: false, link: null, impressoes: 10000, alcance: 0, cliques: 100, cliquesLink: 80, ctr: 1, cpm: 0, cpc: 0, gasto: 381.98, frequencia: 1, visualizacoesVideo: 0, resultados: 20, custoPorResultado: 19.1, qualidade: null, engajamento: null, conversao: null, papel: 'lead', desempenho: 'medio', motivos: [] }] }),
+  resumoMetaPorTipo: async () => ({ captacao: { gasto: 774.46, leads: 40 }, reconhecimento: { gasto: 0, visitasPerfil: 0 } }),
   totaisDoPeriodoMeta: async () => ({ gasto: 774.46, cliques: 300, cliquesLink: 250, impressoes: 40000, formularios: 0, conversas: 40, site: 0 }),
 }))
 

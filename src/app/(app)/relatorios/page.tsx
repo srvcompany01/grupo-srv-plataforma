@@ -182,7 +182,9 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
             { rotulo: 'Captação', valor: reais(tot?.captacao.gasto ?? 0), extra: tot ? [tot.captacao.conversas ? `${n(tot.captacao.conversas)} conversas` : '', tot.captacao.formularios ? `${n(tot.captacao.formularios)} formulários` : '', tot.captacao.site ? `${n(tot.captacao.site)} do site` : ''].filter(Boolean).join(' · ') || `${n(tot.captacao.leads)} leads` : undefined, icone: Users, cor: '#1baf7a' },
             { rotulo: 'CPL de captação', valor: tot?.captacao.custoPorLead === null || !tot ? '—' : reais(tot.captacao.custoPorLead), icone: Target, cor: '#eb6834' },
             { rotulo: 'Reconhecimento', valor: reais(tot?.reconhecimento.gasto ?? 0), extra: tot ? `${compacto(tot.reconhecimento.visitasPerfil || tot.reconhecimento.cliquesLink)} ${tot.reconhecimento.visitasPerfil ? 'visitas ao perfil' : 'cliques no link'}` : undefined, icone: MousePointerClick, cor: '#6250d6' },
-            { rotulo: 'CPC de reconhecimento', valor: tot?.reconhecimento.custoPorClique === null || !tot ? '—' : reais(tot.reconhecimento.custoPorClique), icone: MousePointerClick, cor: '#e87ba4' },
+            tot?.reconhecimento.visitasPerfil
+              ? { rotulo: 'Custo por visita ao perfil', valor: tot.reconhecimento.custoPorVisitaPerfil === null ? '—' : reais(tot.reconhecimento.custoPorVisitaPerfil), extra: `${compacto(tot.reconhecimento.visitasPerfil)} visitas`, icone: MousePointerClick, cor: '#e87ba4' }
+              : { rotulo: 'CPC de reconhecimento', valor: tot?.reconhecimento.custoPorClique === null || !tot ? '—' : reais(tot.reconhecimento.custoPorClique), icone: MousePointerClick, cor: '#e87ba4' },
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
           <GraficoDiario titulo="Investimento diário por tipo de campanha" dias={dias} series={[{ nome: 'Captação', valores: dias.map((x) => diaMap.get(x)?.captacao.gasto ?? 0) }, { nome: 'Reconhecimento', valores: dias.map((x) => diaMap.get(x)?.reconhecimento.gasto ?? 0) }]} formato={reaisCurto} />
