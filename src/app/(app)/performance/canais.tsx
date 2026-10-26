@@ -33,7 +33,7 @@ import { cliquesLinkBioNoPeriodo, linkBioDoCliente } from '@/servicos/performanc
 import { calcularRelatorio } from '@/servicos/relatorio-compartilhado'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
-export type Aba = 'resumo' | 'atendimento' | 'meta' | 'google' | 'organico' | 'gmn' | 'bio' | 'evolucao' | 'lancamentos'
+export type Aba = 'resumo' | 'meta' | 'google' | 'organico' | 'gmn' | 'bio' | 'evolucao' | 'lancamentos'
 
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const reaisCurto = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })

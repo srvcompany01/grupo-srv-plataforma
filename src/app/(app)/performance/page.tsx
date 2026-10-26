@@ -1,4 +1,4 @@
-import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, MessageCircle, Link2, MapPin, Megaphone, Search, Send, Target, type LucideIcon } from 'lucide-react'
+import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, Link2, MapPin, Megaphone, Search, Send, Target, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
@@ -13,7 +13,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoSecundario } from '@/lib/ui'
 import { listarClientes } from '@/servicos/clientes-plataforma'
-import { Aviso, AtendimentoCliente, BioCliente, BioTodos, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
+import { Aviso, BioCliente, BioTodos, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
 import { EvolucaoCliente, LancamentosCliente, PanoramaMensal, ResultadoDoMes, SeletorMes } from './mensal'
 
 export const maxDuration = 120
@@ -21,7 +21,6 @@ export const maxDuration = 120
 const ABAS: [Aba, string, LucideIcon, boolean][] = [
   ['resumo', 'Resumo', LayoutDashboard, false],
   ['evolucao', 'Evolução', CalendarRange, true],
-  ['atendimento', 'Atendimento', MessageCircle, true],
   ['meta', 'Meta Ads', Megaphone, false],
   ['google', 'Google Ads', Search, false],
   ['organico', 'Orgânico', Camera, false],
@@ -50,7 +49,7 @@ export default async function Performance({ searchParams }: PageProps<'/performa
   const aba: Aba = abasVisiveis.some(([a]) => a === pedida) ? (pedida as Aba) : 'resumo'
 
   // Meta Ads, Google Ads, Orgânico, GMN e Link da bio usam o período livre; Evolução e Lançamentos, o mês; o Resumo usa os dois.
-  const doPeriodo = aba === 'atendimento' || aba === 'meta' || aba === 'google' || aba === 'organico' || aba === 'gmn' || aba === 'bio' || (aba === 'resumo' && !!escolhido)
+  const doPeriodo = aba === 'meta' || aba === 'google' || aba === 'organico' || aba === 'gmn' || aba === 'bio' || (aba === 'resumo' && !!escolhido)
   const q = consultaPeriodo(periodo)
   const base = `/performance?aba=${aba}${escolhido ? `&cliente=${escolhido.id}` : ''}${aba === 'resumo' || aba === 'evolucao' || aba === 'lancamentos' ? `&mes=${mes}` : ''}`
   const link = (a: Aba) => `/performance?aba=${a}${escolhido ? `&cliente=${escolhido.id}` : ''}${q ? `&${q}` : ''}&mes=${mes}`
@@ -106,7 +105,6 @@ export default async function Performance({ searchParams }: PageProps<'/performa
         )
           : aba === 'evolucao' ? (escolhido ? <EvolucaoCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para ver a evolução mês a mês.</Aviso>)
           : aba === 'lancamentos' ? (escolhido ? <LancamentosCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para lançar o faturamento e configurar a página da bio.</Aviso>)
-          : aba === 'atendimento' ? (escolhido ? <AtendimentoCliente c={escolhido} periodo={periodo} /> : <Aviso>Escolha um cliente para ver o atendimento no WhatsApp.</Aviso>)
           : aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
           : aba === 'google' ? (escolhido ? <GoogleCliente c={escolhido} periodo={periodo} /> : <GoogleTodos clientes={clientes} periodo={periodo} />)
           : aba === 'organico' ? (escolhido ? <OrganicoCliente c={escolhido} periodo={periodo} /> : <OrganicoTodos clientes={clientes} periodo={periodo} />)
