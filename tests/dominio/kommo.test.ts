@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classificacoesDasMensagens, contaDoEvento, formaDe, lerFormularioKommo, temTexto } from '@/dominio/kommo'
+import { classificacoesDasMensagens, classificacoesDosNegocios, contaDoEvento, formaDe, lerFormularioKommo, temTexto } from '@/dominio/kommo'
 
 describe('webhook do Kommo', () => {
   it('formulário aninhado vira objeto, com listas pelos índices', () => {
@@ -35,5 +35,15 @@ describe('webhook do Kommo', () => {
     ])
     expect(r).toEqual({ message_type: { incoming: 1, outgoing: 2 }, author_type: { contact: 1, user: 1, bot: 1 }, origin: { waba: 3 }, element_type: { lead: 2, sem: 1 } })
     expect(JSON.stringify(r)).not.toMatch(/Maria|Ana|Oi|Olá/)
+  })
+
+  it('classifica os eventos de negócio: etapa nova, anterior, funil, etiquetas e valor, sem nomes', () => {
+    const r = classificacoesDosNegocios([
+      { leads: { status: [{ id: '1', name: 'Maria', price: '1250', status_id: '142', old_status_id: '107884167', pipeline_id: '13978643', tags: [{ id: '9', name: 'Meta Ads' }] }], update: [{ id: '1', name: 'Maria', price: '1250', status_id: '142', pipeline_id: '13978643' }] } },
+      { leads: { delete: [{ id: '2', status_id: '107884155', pipeline_id: '13978643' }] } },
+      { message: { add: [{ text: 'oi' }] } },
+    ])
+    expect(r).toEqual({ eventos: { status: 1, update: 1, delete: 1 }, etapaNova: { '142': 2, '107884155': 1 }, etapaAnterior: { '107884167': 1 }, funil: { '13978643': 3 }, etiquetas: { 'Meta Ads': 1 }, comValor: 2 })
+    expect(JSON.stringify(r)).not.toMatch(/Maria/)
   })
 })

@@ -73,3 +73,26 @@ export function classificacoesDasMensagens(corpos: unknown[]) {
   }
   return r
 }
+
+/**
+ * O que os eventos de negócio dizem sobre o funil, sem nome, telefone nem texto: para qual etapa e funil os negócios foram
+ * movidos (ids), de qual etapa saíram e que etiquetas carregam. Venda = etapa 142 (ganho); perda = 143.
+ */
+export function classificacoesDosNegocios(corpos: unknown[]) {
+  const conta = (m: Record<string, number>, v: unknown) => { const k = String(v ?? 'sem'); m[k] = (m[k] ?? 0) + 1 }
+  const r = { eventos: {} as Record<string, number>, etapaNova: {} as Record<string, number>, etapaAnterior: {} as Record<string, number>, funil: {} as Record<string, number>, etiquetas: {} as Record<string, number>, comValor: 0 }
+  for (const c of corpos) {
+    const leads = (c as Obj)?.leads as Obj | undefined
+    for (const [evento, lista] of Object.entries(leads ?? {})) {
+      for (const l of (Array.isArray(lista) ? lista : []) as Obj[]) {
+        conta(r.eventos, evento)
+        conta(r.etapaNova, l.status_id)
+        if (l.old_status_id !== undefined) conta(r.etapaAnterior, l.old_status_id)
+        conta(r.funil, l.pipeline_id)
+        for (const t of (Array.isArray(l.tags) ? l.tags : []) as Obj[]) conta(r.etiquetas, t.name)
+        if (Number(l.price) > 0) r.comValor++
+      }
+    }
+  }
+  return r
+}
