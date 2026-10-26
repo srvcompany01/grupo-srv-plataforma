@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, Star, Target, TriangleAlert, Users } from 'lucide-react'
+import { BadgeDollarSign, Camera, CheckCircle2, ExternalLink, Eye, Heart, Link2, MapPin, Megaphone, MessageCircle, MousePointerClick, ShoppingBag, Star, Target, TrendingUp, TriangleAlert, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -7,7 +7,8 @@ import { Marca } from '@/componentes/Marca'
 import { fraseGeogrid } from '@/dominio/gmn'
 import { separarSeguidores } from '@/dominio/insights'
 import { SeguidoresDoPeriodo } from '@/componentes/insights/SeguidoresDoPeriodo'
-import { leadsDoRelatorio, type AnunciosPlataforma } from '@/dominio/relatorio-compartilhado'
+import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
+import { leadsDoRelatorio, type AnunciosPlataforma, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { ImprimirAoAbrir } from '@/componentes/relatorios/ImprimirAoAbrir'
 import { relatorioPorToken } from '@/servicos/relatorio-compartilhado'
 
@@ -24,6 +25,73 @@ function Cartao({ icone: Icone, cor, rotulo, valor, extra }: { icone: typeof Eye
       <p className="mt-1 text-destaque font-bold tabular-nums text-texto">{valor}</p>
       {extra && <p className="text-legenda text-texto-3">{extra}</p>}
     </div>
+  )
+}
+
+const mesLongo = (mes: string) => new Date(`${mes}-01T12:00:00Z`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+const mesCurto = (mes: string) => new Date(`${mes}-01T12:00:00Z`).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace('.', '')
+
+/** O que a aba Performance mostra: resultado do mês (mês inteiro) com investimento, leads, faturamento e vendas, e os últimos 12 meses. */
+function Resultados({ res }: { res: NonNullable<RelatorioCompartilhado['resultados']> }) {
+  const a = res.atual
+  const origens = [a.formularios ? `${num(a.formularios)} formulários` : '', a.conversas ? `${num(a.conversas)} conversas` : '', a.leadsSite ? `${num(a.leadsSite)} do site` : '', a.conversoesGoogle ? `${num(a.conversoesGoogle)} do Google` : '', a.leadsOrganicos ? `${num(a.leadsOrganicos)} orgânicos` : ''].filter(Boolean).join(' · ')
+  const meses = res.meses.filter((m) => (m.investido ?? 0) > 0 || m.leads > 0 || m.faturamento !== null)
+  const comInvestimento = meses.some((m) => m.investido !== null)
+  const reaisCurto = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: v >= 1000 ? 0 : 2 })
+  const dias = meses.map((m) => m.mes)
+  return (
+    <Secao titulo={`Resultado de ${mesLongo(res.mes)}`} icone={TrendingUp}>
+      <p className="text-legenda text-texto-3">{res.emAndamento ? 'Mês em andamento: números até hoje. ' : ''}Mês inteiro (não só o período do relatório): anúncios da Meta e do Google, orgânico da bio e o faturamento informado pela equipe.</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {a.investido !== null && <Cartao icone={BadgeDollarSign} cor="#2a78d6" rotulo="Investido total" valor={reais(a.investido)} extra={`Meta ${reais(a.investidoMeta ?? 0)} · Google ${reais(a.investidoGoogle ?? 0)}`} />}
+        <Cartao icone={Users} cor="#1baf7a" rotulo="Leads (pagos + orgânicos)" valor={num(a.leads)} extra={origens || undefined} />
+        {a.cpl !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por lead (pagos)" valor={reais(a.cpl)} />}
+        {a.faturamento !== null && <Cartao icone={BadgeDollarSign} cor="#1baf7a" rotulo="Faturamento" valor={reais(a.faturamento)} />}
+        {a.roas !== null && <Cartao icone={TrendingUp} cor="#eda100" rotulo="ROAS" valor={`${num(a.roas)}x`} extra="faturamento ÷ investido" />}
+        {a.vendas !== null && <Cartao icone={ShoppingBag} cor="#e87ba4" rotulo="Vendas" valor={num(a.vendas)} extra={a.conversao !== null ? `${num(a.conversao)}% dos leads` : undefined} />}
+        {a.custoPorVenda !== null && <Cartao icone={Target} cor="#6250d6" rotulo="Custo por venda" valor={reais(a.custoPorVenda)} />}
+        {a.ticketMedio !== null && <Cartao icone={BadgeDollarSign} cor="#2a78d6" rotulo="Ticket médio" valor={reais(a.ticketMedio)} />}
+        {a.cliquesPerfilInstagram !== null && <Cartao icone={Camera} cor="#e1306c" rotulo="Toques nos botões de contato do perfil" valor={num(a.cliquesPerfilInstagram)} extra="ligar, rota e e-mail do Instagram" />}
+        {a.cliquesLinkBio > 0 && <Cartao icone={Link2} cor="#1baf7a" rotulo="Cliques no link da bio" valor={num(a.cliquesLinkBio)} />}
+      </div>
+      {meses.length > 1 && (
+        <div className="space-y-3">
+          <p className="text-rotulo font-semibold text-texto-2">Mês a mês</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {comInvestimento && <GraficoDiario titulo="Investido x faturamento" dias={dias} rotulo={mesCurto} formato={reaisCurto} series={[{ nome: 'Investido', valores: meses.map((m) => m.investido ?? 0) }, { nome: 'Faturamento', valores: meses.map((m) => m.faturamento ?? 0) }]} />}
+            <GraficoDiario titulo="Leads por mês" dias={dias} rotulo={mesCurto} tipo="barras" formato={(v) => num(v)} series={[{ nome: 'Leads', valores: meses.map((m) => m.leads) }]} />
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-borda bg-white">
+            <table className="w-full min-w-[40rem] text-rotulo">
+              <thead>
+                <tr className="border-b border-borda text-left text-legenda text-texto-3">
+                  <th className="px-3 py-2 font-medium">Mês</th>
+                  {comInvestimento && <><th className="px-3 py-2 text-right font-medium">Investido</th><th className="px-3 py-2 text-right font-medium">Meta</th><th className="px-3 py-2 text-right font-medium">Google</th></>}
+                  <th className="px-3 py-2 text-right font-medium">Leads</th>
+                  {comInvestimento && <th className="px-3 py-2 text-right font-medium">CPL</th>}
+                  <th className="px-3 py-2 text-right font-medium">Faturamento</th>
+                  <th className="px-3 py-2 text-right font-medium">Vendas</th>
+                  {comInvestimento && <th className="px-3 py-2 text-right font-medium">ROAS</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {[...meses].reverse().map((m) => (
+                  <tr key={m.mes} className="border-b border-borda/60 last:border-0">
+                    <td className="px-3 py-1.5 font-medium capitalize">{mesLongo(m.mes)}</td>
+                    {comInvestimento && <><td className="px-3 py-1.5 text-right font-semibold tabular-nums">{m.investido === null ? '—' : reais(m.investido)}</td><td className="px-3 py-1.5 text-right tabular-nums">{m.investidoMeta === null ? '—' : reais(m.investidoMeta)}</td><td className="px-3 py-1.5 text-right tabular-nums">{m.investidoGoogle === null ? '—' : reais(m.investidoGoogle)}</td></>}
+                    <td className="px-3 py-1.5 text-right tabular-nums">{num(m.leads)}</td>
+                    {comInvestimento && <td className="px-3 py-1.5 text-right tabular-nums">{m.cpl === null ? '—' : reais(m.cpl)}</td>}
+                    <td className="px-3 py-1.5 text-right tabular-nums">{m.faturamento === null ? '—' : reais(m.faturamento)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{m.vendas === null ? '—' : num(m.vendas)}</td>
+                    {comInvestimento && <td className="px-3 py-1.5 text-right tabular-nums">{m.roas === null ? '—' : `${num(m.roas)}x`}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </Secao>
   )
 }
 
@@ -138,6 +206,8 @@ export default async function Relatorio({ params, searchParams }: PageProps<'/r/
             </div>
           </Secao>
         )}
+
+        {r.resultados && <Resultados res={r.resultados} />}
 
         {r.campanhas && r.campanhas.length > 0 && (
           <Secao titulo="Campanhas do período" icone={Megaphone}>

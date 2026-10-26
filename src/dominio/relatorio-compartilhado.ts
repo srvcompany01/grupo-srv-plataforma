@@ -4,7 +4,7 @@
  */
 import { papelDoObjetivo } from './anuncios-meta'
 import { fraseGeogrid, type MetricasGrade, type PontoGrade, type Ponto } from './gmn'
-import { totalLeads, type Leads } from './performance'
+import { indicadores, totalLeads, type Leads } from './performance'
 import type { AvaliacoesNegocio, PalavraChaveNegocio } from './google'
 
 /** 4 = Meta separa captação de reconhecimento; CPL nunca inclui investimento de tráfego/perfil. */
@@ -38,6 +38,8 @@ export type RelatorioCompartilhado = {
   gmn: { nota: number | null; avaliacoes: number; saude: number; geogrid: { palavra: string; metricas: MetricasGrade; centro: Ponto; pontos: PontoGrade[]; em: string; /** % dos pontos em 1º e o concorrente que mais aparece em 1º (versão 2+). */ primeiro?: number; lider?: { nome: string; pct: number } | null } | null } | null
   /** Métricas do Meu Negócio no período (quando o perfil está ligado e a API responde). */
   meuNegocio?: { visualizacoes: number; buscas: number; mapas: number; ligacoes: number; site: number; rotas: number; /** Campo legado, removido pelo Google em 2026. */ conversas?: number; mensagens?: number; reservas?: number; pedidosComida?: number; cliquesCardapio?: number; avaliacoes?: AvaliacoesNegocio | null; palavrasChave?: PalavraChaveNegocio[]; palavrasPeriodo?: { de: string; ate: string } } | null
+  /** O que a aba Performance mostra: resultado do mês do fim do período (mês inteiro) e os últimos 12 meses, com o faturamento e as vendas lançados. */
+  resultados?: { mes: string; emAndamento: boolean; atual: MesRelatorio; meses: MesRelatorio[] } | null
   /** Página da bio do cliente: visitas e toques em cada botão no período (só quando houve visita). */
   bio?: { /** Cliques no link da bio. */ cliques?: number; /** Legado (versão 4): igual a cliques. */ visitas?: number; visualizacoes?: number; pessoas?: number; toques: number; /** Toques no botão do WhatsApp (cada um é um lead orgânico). */ leadsOrganicos?: number; botoes: { rotulo: string; toques: number }[] } | null
   /** Só para a equipe (a página pública não mostra). */
@@ -74,6 +76,58 @@ export type AnunciosPlataforma = {
 }
 
 const arred = (n: number) => Math.round(n * 100) / 100
+
+/** Um mês de resultado: investimento (Meta, Google e total), leads por origem, faturamento, vendas e os indicadores. null = não informado. */
+export type MesRelatorio = {
+  mes: string
+  /** null quando a agência escolheu não mostrar o investimento (aí CPL, ROAS e custo por venda também saem). */
+  investido: number | null
+  investidoMeta: number | null
+  investidoGoogle: number | null
+  formularios: number
+  conversas: number
+  leadsSite: number
+  conversoesGoogle: number
+  leadsPagos: number
+  /** Toques no botão do WhatsApp da página da bio. */
+  leadsOrganicos: number
+  leads: number
+  cliquesPerfilInstagram: number | null
+  cliquesLinkBio: number
+  faturamento: number | null
+  vendas: number | null
+  cpl: number | null
+  roas: number | null
+  custoPorVenda: number | null
+  ticketMedio: number | null
+  /** Vendas ÷ leads, em %. */
+  conversao: number | null
+}
+
+export type EntradaMes = { mes: string; investidoMeta: number; investidoGoogle: number; formularios: number; conversas: number; leadsSite: number; conversoesGoogle: number; leadsOrganicos: number; cliquesLinkBio: number; cliquesPerfilInstagram: number | null; faturamento: number | null; vendas: number | null }
+
+/** Mesma conta da aba Performance (`indicadores`), pronta para o relatório; esconde o que depende do investimento quando ele não pode aparecer. */
+export function mesDoRelatorio(m: EntradaMes, mostrarInvestimento: boolean): MesRelatorio {
+  const investido = m.investidoMeta + m.investidoGoogle
+  const leadsPagos = m.formularios + m.conversas + m.leadsSite + Math.round(m.conversoesGoogle)
+  const i = indicadores({ investido, leadsPagos, leadsOrganicos: m.leadsOrganicos, faturamento: m.faturamento, vendas: m.vendas })
+  const r = (v: number | null) => (v === null ? null : arred(v))
+  return {
+    mes: m.mes,
+    investido: mostrarInvestimento ? arred(investido) : null,
+    investidoMeta: mostrarInvestimento ? arred(m.investidoMeta) : null,
+    investidoGoogle: mostrarInvestimento ? arred(m.investidoGoogle) : null,
+    formularios: m.formularios, conversas: m.conversas, leadsSite: m.leadsSite, conversoesGoogle: arred(m.conversoesGoogle),
+    leadsPagos, leadsOrganicos: m.leadsOrganicos, leads: i.leads,
+    cliquesPerfilInstagram: m.cliquesPerfilInstagram, cliquesLinkBio: m.cliquesLinkBio,
+    faturamento: m.faturamento, vendas: m.vendas,
+    cpl: mostrarInvestimento ? r(i.cpl) : null,
+    roas: mostrarInvestimento ? r(i.roas) : null,
+    custoPorVenda: mostrarInvestimento ? r(i.custoPorVenda) : null,
+    ticketMedio: r(i.ticketMedio),
+    conversao: r(i.conversao),
+  }
+}
 
 function plataforma(gasto: number, gastoMarca: number, leads: number, resto: Pick<AnunciosPlataforma, 'conversas' | 'formularios' | 'leadsSite' | 'cliques' | 'impressoes'>, mostrar: boolean): AnunciosPlataforma {
   const captacao = gasto - gastoMarca
@@ -201,6 +255,16 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
       linhas.push(`• ${num(r.meuNegocio.ligacoes)} ligações · ${num(r.meuNegocio.rotas)} rotas · ${num(r.meuNegocio.site)} cliques no site`)
       if (r.meuNegocio.avaliacoes) linhas.push(`• ${num(r.meuNegocio.avaliacoes.novas)} avaliações novas no período${r.meuNegocio.avaliacoes.notaMedia === null ? '' : ` · média ★ ${num(r.meuNegocio.avaliacoes.notaMedia)}`}`)
     }
+    linhas.push('')
+  }
+  if (r.resultados) {
+    const a = r.resultados.atual
+    const mes = new Date(`${r.resultados.mes}-01T12:00:00Z`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    linhas.push(`*Resultado de ${mes}${r.resultados.emAndamento ? ' (até hoje)' : ''}*`)
+    if (a.investido !== null) linhas.push(`• Investido: ${reais(a.investido)} (Meta ${reais(a.investidoMeta ?? 0)} · Google ${reais(a.investidoGoogle ?? 0)})`)
+    linhas.push(`• Leads: ${num(a.leads)} (${num(a.leadsPagos)} pagos + ${num(a.leadsOrganicos)} orgânicos)${a.cpl !== null ? ` · custo por lead ${reais(a.cpl)}` : ''}`)
+    if (a.faturamento !== null) linhas.push(`• Faturamento: ${reais(a.faturamento)}${a.roas !== null ? ` · ROAS ${num(a.roas)}x` : ''}`)
+    if (a.vendas !== null) linhas.push(`• ${num(a.vendas)} vendas${a.custoPorVenda !== null ? ` · custo por venda ${reais(a.custoPorVenda)}` : ''}${a.ticketMedio !== null ? ` · ticket médio ${reais(a.ticketMedio)}` : ''}`)
     linhas.push('')
   }
   linhas.push(`Relatório completo: ${url}`)

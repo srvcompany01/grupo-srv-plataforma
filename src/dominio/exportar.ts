@@ -41,6 +41,36 @@ export function planilhaDoRelatorio(d: RelatorioCompartilhado, avisos: string[])
     ['Avaliações no Google', d.gmn ? inteiro(d.gmn.avaliacoes) : null],
   ]))
 
+  if (d.resultados) {
+    const a = d.resultados.atual
+    abas.push(aba(`Resultado do mês`, [
+      ['Mês', `${d.resultados.mes.split('-').reverse().join('/')}${d.resultados.emAndamento ? ' (em andamento)' : ''}`],
+      ['Investido total', moeda(a.investido)],
+      ['  Meta', moeda(a.investidoMeta)],
+      ['  Google Ads', moeda(a.investidoGoogle)],
+      ['Leads (pagos + orgânicos)', inteiro(a.leads)],
+      ['  formulários', inteiro(a.formularios)],
+      ['  conversas (WhatsApp/Direct)', inteiro(a.conversas)],
+      ['  site', inteiro(a.leadsSite)],
+      ['  conversões do Google', dec(a.conversoesGoogle)],
+      ['  orgânicos (WhatsApp da bio)', inteiro(a.leadsOrganicos)],
+      ['Custo por lead (pagos)', moeda(a.cpl)],
+      ['Faturamento', moeda(a.faturamento)],
+      ['ROAS', dec(a.roas)],
+      ['Vendas', inteiro(a.vendas)],
+      ['Custo por venda', moeda(a.custoPorVenda)],
+      ['Ticket médio', moeda(a.ticketMedio)],
+      ['Conversão (vendas ÷ leads)', pct(a.conversao)],
+      ['Toques nos botões de contato do perfil', inteiro(a.cliquesPerfilInstagram)],
+      ['Cliques no link da bio', inteiro(a.cliquesLinkBio)],
+    ]))
+    abas.push({
+      nome: 'Mês a mês',
+      larguras: [14, 16, 16, 16, 12, 12, 12, 16, 10, 8],
+      linhas: [['Mês', 'Investido total', 'Meta', 'Google', 'Leads', 'Leads orgânicos', 'CPL', 'Faturamento', 'Vendas', 'ROAS'], ...d.resultados.meses.filter((m) => (m.investido ?? 0) > 0 || m.leads > 0 || m.faturamento !== null).map((m): Celula[] => [m.mes.split('-').reverse().join('/'), moeda(m.investido), moeda(m.investidoMeta), moeda(m.investidoGoogle), inteiro(m.leads), inteiro(m.leadsOrganicos), moeda(m.cpl), moeda(m.faturamento), inteiro(m.vendas), dec(m.roas)])],
+    })
+  }
+
   if (meta) {
     abas.push(aba('Meta Ads', [
       ['Investido total', moeda(meta.investido)],

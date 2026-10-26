@@ -3,7 +3,9 @@ import { analisarSaude, fraseGeogrid, liderDaGrade, pctPrimeiro, telefoneDiverge
 import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { analisarOrganico, analisarPago, engajamentoOrganico, metricasOrganicas, separarSeguidores } from '@/dominio/insights'
 import type { PeriodoAnuncios } from '@/dominio/periodo-anuncios'
-import { anunciosGoogle, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { anunciosGoogle, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, mesDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, TOKEN_RELATORIO, VERSAO_RELATORIO, type MesRelatorio, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { dataDeHoje } from '@/dominio/filtros'
+import { mesDe, mesesAte } from '@/dominio/performance'
 import { gerarToken } from '@/dominio/token'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -12,7 +14,7 @@ import type { Cliente } from './clientes-plataforma'
 import { campanhasGoogle, estruturaGoogle, metricasDoNegocio, situacaoGoogle } from './google-agencia'
 import { instagramDoCliente } from './insights-instagram'
 import { resumoDaBio } from './bio'
-import { cliquesLinkBioNoPeriodo } from './performance'
+import { cliquesLinkBioNoPeriodo, historicoDoCliente } from './performance'
 import { campanhasDoPeriodoMeta, resumoMetaPorTipo } from './meta-anuncios'
 import { detalhesDoLugar, placesConfigurado, resumoDosLugares, varreduras } from './places'
 
@@ -25,7 +27,9 @@ export const urlDoRelatorio = (token: string) => `${BASE()}/r/${token}`
  */
 export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, opcoes: { mostrarInvestimento: boolean }): Promise<{ dados: RelatorioCompartilhado; avisos: string[] }> {
   const google = c.googleAdsId ? await situacaoGoogle() : null
-  const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio] = await Promise.all([
+  const hoje = dataDeHoje(new Date())
+  const mesFim = mesDe(periodo.ate)
+  const [meta, goog, ig, lugar, scans, campsMeta, campsGoogle, negocio, historico] = await Promise.all([
     c.metaContaId ? resumoMetaPorTipo(c.metaContaId, periodo) : null,
     c.googleAdsId && google?.conectado ? campanhasGoogle(c.googleAdsId, periodo) : null,
     c.metaPaginaId ? instagramDoCliente(c.metaPaginaId, periodo, true) : null,
@@ -34,6 +38,8 @@ export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<
     c.metaContaId ? campanhasDoPeriodoMeta(c.metaContaId, periodo) : null,
     c.googleAdsId && google?.conectado ? estruturaGoogle(c.googleAdsId, periodo) : null,
     c.googlePerfil ? metricasDoNegocio(c.googlePerfil, periodo.de, periodo.ate) : null,
+    // Resultado do mês e mês a mês (a aba Performance): mês inteiro do fim do período e os 12 anteriores.
+    historicoDoCliente(sb, c, mesesAte(mesFim, 12), hoje, !!google?.conectado).catch(() => null),
   ])
   const cliquesLinkBio = await cliquesLinkBioNoPeriodo(sb, c.id, periodo.de, periodo.ate)
   const resumoBio = cliquesLinkBio === null ? null : await resumoDaBio(sb, c.id, periodo.de, periodo.ate, !!c.whatsappAtendimento)
@@ -72,6 +78,10 @@ export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<
     const investidoCaptacao = (m?.captacao.gasto ?? 0) + (g?.custo ?? 0)
     anuncios.custoPorLead = leads && investidoCaptacao ? Math.round((investidoCaptacao / leads) * 100) / 100 : null
   }
+  const mesesRelatorio = historico ? historico.meses.map((m) => mesDoRelatorio(m, opcoes.mostrarInvestimento)) : []
+  const atualMes = mesesRelatorio.find((m) => m.mes === mesFim)
+  const comDados = (m: MesRelatorio) => (m.investido ?? 0) > 0 || m.leads > 0 || m.faturamento !== null || m.cliquesLinkBio > 0
+  const resultadosDoPeriodo = atualMes && mesesRelatorio.some(comDados) ? { mes: mesFim, emAndamento: mesFim === hoje.slice(0, 7), atual: atualMes, meses: mesesRelatorio } : null
   const dias = Math.round((Date.parse(periodo.ate) - Date.parse(periodo.de)) / 86_400_000) + 1
   const melhor = i ? [...i.posts].sort((a, b) => b.interacoes - a.interacoes)[0] : undefined
   const organico = i ? metricasOrganicas(i) : null
@@ -94,6 +104,7 @@ export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<
       ...(cm ? cm.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
       ...(cg ? cg.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
     ],
+    resultados: resultadosDoPeriodo,
     bio: resumoBio && (resumoBio.cliques > 0 || resumoBio.visualizacoes > 0) ? { cliques: resumoBio.cliques, visualizacoes: resumoBio.visualizacoes, pessoas: resumoBio.pessoas, toques: resumoBio.toques, leadsOrganicos: resumoBio.leadsOrganicos, botoes: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ rotulo: b.rotulo, toques: b.toques })) } : null,
     meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, mensagens: negocio.mensagens, reservas: negocio.reservas, pedidosComida: negocio.pedidosComida, cliquesCardapio: negocio.cliquesCardapio, avaliacoes: negocio.avaliacoes, palavrasChave: negocio.palavrasChave, palavrasPeriodo: negocio.palavrasPeriodo } : null,
     avisosInternos: avisos,

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { unzipSync, strFromU8 } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { planilhaDoRelatorio, planilhaMensal } from '@/dominio/exportar'
-import type { RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { mesDoRelatorio, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 import { coluna, gerarXlsx, nomeDeAba } from '@/dominio/xlsx'
 
 const dados: RelatorioCompartilhado = {
@@ -15,6 +15,7 @@ const dados: RelatorioCompartilhado = {
   bio: { cliques: 100, visualizacoes: 85, pessoas: 70, toques: 64, leadsOrganicos: 50, botoes: [{ rotulo: 'WhatsApp', toques: 50 }, { rotulo: 'Localização', toques: 14 }] },
   campanhas: [{ plataforma: 'meta', nome: 'CBO / TRAF-INSTA', ativa: true, papel: 'marca', gasto: 2397.3, resultado: 7912, rotuloResultado: 'cliques no link', custoPorResultado: 0.3 }],
   destaques: ['Top 3 em 98,8% da região'],
+  resultados: { mes: '2026-10', emAndamento: true, atual: mesDoRelatorio({ mes: '2026-10', investidoMeta: 7970.68, investidoGoogle: 3479.29, formularios: 0, conversas: 491, leadsSite: 0, conversoesGoogle: 68, leadsOrganicos: 50, cliquesLinkBio: 200, cliquesPerfilInstagram: null, faturamento: 80000, vendas: 20 }, true), meses: [mesDoRelatorio({ mes: '2026-09', investidoMeta: 8983.62, investidoGoogle: 696.47, formularios: 0, conversas: 440, leadsSite: 318, conversoesGoogle: 8, leadsOrganicos: 0, cliquesLinkBio: 0, cliquesPerfilInstagram: 0, faturamento: null, vendas: null }, true)] },
 }
 
 describe('planilha .xlsx', () => {
@@ -45,12 +46,17 @@ describe('planilha .xlsx', () => {
 
   it('o relatório do cliente vira abas com os mesmos números (Meta e Google separados)', () => {
     const abas = planilhaDoRelatorio(dados, ['Cliente sem WhatsApp'])
-    expect(abas.map((a) => a.nome)).toEqual(['Resumo', 'Meta Ads', 'Google Ads', 'Instagram', 'Google Meu Negócio', 'Link da bio', 'Campanhas', 'Destaques e avisos'])
+    expect(abas.map((a) => a.nome)).toEqual(['Resumo', 'Resultado do mês', 'Mês a mês', 'Meta Ads', 'Google Ads', 'Instagram', 'Google Meu Negócio', 'Link da bio', 'Campanhas', 'Destaques e avisos'])
     const resumo = Object.fromEntries(abas[0].linhas.slice(1).map((l) => [l[0] as string, l[1]]))
     expect(resumo['Investido na Meta']).toEqual({ v: 7970.68, f: 'moeda' })
     expect(resumo['Investido no Google Ads']).toEqual({ v: 3479.29, f: 'moeda' })
     expect(resumo['Leads orgânicos (WhatsApp da bio)']).toEqual({ v: 50, f: 'inteiro' })
     expect(resumo['  orgânicos']).toEqual({ v: 229, f: 'inteiro' })
+    const res = Object.fromEntries(abas.find((a) => a.nome === 'Resultado do mês')!.linhas.slice(1).map((l) => [l[0] as string, l[1]]))
+    expect(res['Faturamento']).toEqual({ v: 80000, f: 'moeda' })
+    expect(res['Vendas']).toEqual({ v: 20, f: 'inteiro' })
+    expect(res['ROAS']).toMatchObject({ f: 'decimal' })
+    expect(abas.find((a) => a.nome === 'Mês a mês')!.linhas).toHaveLength(2)
     const bio = abas.find((a) => a.nome === 'Link da bio')!
     expect(bio.linhas.some((l) => l[0] === 'WhatsApp' && (l[1] as { v: number }).v === 50)).toBe(true)
     const camps = abas.find((a) => a.nome === 'Campanhas')!

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gastoDeMarca } from '@/dominio/anuncios-meta'
-import { anunciosGoogle, anunciosMeta, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
+import { mesDoRelatorio, anunciosGoogle, anunciosMeta, anunciosMetaSeparados, avisosInternos, campanhaGoogleRelatorio, campanhaMetaRelatorio, leadsDoRelatorio, linkWhatsapp, referenciaRelatorio, relatorioDeveSerSubstituido, textoWhatsapp, type RelatorioCompartilhado } from '@/dominio/relatorio-compartilhado'
 
 const base: RelatorioCompartilhado = {
   cliente: 'Aurum Belém', de: '2026-10-01', ate: '2026-10-31', geradoEm: '2026-11-01T12:00:00Z',
@@ -60,6 +60,41 @@ it('seguidores: o total ganho vem primeiro e embaixo anúncios, orgânicos e que
   expect(t).toMatch(/400 seguidores ganhos no período \(total 5\.200\)\n  - 171 pelos anúncios · 229 orgânicos · 60 deixaram de seguir/)
   const semAnuncios = textoWhatsapp({ ...base, instagram: { ...base.instagram!, seguidoresGanhos: 400, seguidoresPerdidos: 60, seguidoresPagos: null, seguidoresOrganicos: null } }, 'u')
   expect(semAnuncios).toMatch(/400 seguidores ganhos[^\n]*\n  - 60 deixaram de seguir/)
+})
+
+describe('resultado do mês no relatório (o mesmo da aba Performance)', () => {
+  const m = { mes: '2026-10', investidoMeta: 7970.68, investidoGoogle: 3479.29, formularios: 0, conversas: 491, leadsSite: 0, conversoesGoogle: 68, leadsOrganicos: 50, cliquesLinkBio: 200, cliquesPerfilInstagram: null, faturamento: 80000, vendas: 20 }
+
+  it('investimento, leads por origem, faturamento, ROAS, custo por venda, ticket e conversão', () => {
+    const r = mesDoRelatorio(m, true)
+    expect(r).toMatchObject({ investido: 11449.97, investidoMeta: 7970.68, investidoGoogle: 3479.29, leadsPagos: 559, leadsOrganicos: 50, leads: 609, faturamento: 80000, vendas: 20 })
+    expect(r.cpl).toBeCloseTo(20.48, 2)
+    expect(r.roas).toBeCloseTo(6.99, 2)
+    expect(r.custoPorVenda).toBeCloseTo(572.5, 1)
+    expect(r.ticketMedio).toBe(4000)
+    expect(r.conversao).toBeCloseTo(3.28, 2)
+  })
+
+  it('sem mostrar o investimento, nada que dependa dele aparece (CPL, ROAS, custo por venda); faturamento e vendas continuam', () => {
+    const r = mesDoRelatorio(m, false)
+    expect(r).toMatchObject({ investido: null, investidoMeta: null, investidoGoogle: null, cpl: null, roas: null, custoPorVenda: null, faturamento: 80000, vendas: 20, ticketMedio: 4000 })
+  })
+
+  it('vendas e faturamento são opcionais: sem eles saem null, sem quebrar', () => {
+    const r = mesDoRelatorio({ ...m, faturamento: null, vendas: null }, true)
+    expect(r).toMatchObject({ faturamento: null, vendas: null, roas: null, custoPorVenda: null, ticketMedio: null, conversao: null })
+    expect(r.cpl).not.toBeNull()
+  })
+
+  it('o texto do WhatsApp traz o bloco do mês', () => {
+    const atual = mesDoRelatorio(m, true)
+    const t = textoWhatsapp({ ...base, resultados: { mes: '2026-10', emAndamento: true, atual, meses: [atual] } }, 'u')
+    expect(t).toMatch(/\*Resultado de outubro de 2026 \(até hoje\)\*/)
+    expect(t).toMatch(/Investido: R\$\s?11\.449,97 \(Meta R\$\s?7\.970,68 · Google R\$\s?3\.479,29\)/)
+    expect(t).toMatch(/Leads: 609 \(559 pagos \+ 50 orgânicos\) · custo por lead R\$\s?20,48/)
+    expect(t).toMatch(/Faturamento: R\$\s?80\.000,00 · ROAS 7x/)
+    expect(t).toMatch(/20 vendas · custo por venda R\$\s?572,50 · ticket médio R\$\s?4\.000,00/)
+  })
 })
 
 describe('anúncios separados por plataforma', () => {
