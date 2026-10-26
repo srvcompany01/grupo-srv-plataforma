@@ -84,12 +84,13 @@ describe('anúncios separados por plataforma', () => {
     const meta = anunciosMetaSeparados({
       total: { gasto: 2200, cliques: 500, impressoes: 30000 },
       captacao: { gasto: 1500, leads: 150, conversas: 120, formularios: 10, site: 20, custoPorLead: 10, campanhas: 2 },
-      reconhecimento: { gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorVisitaPerfil: 700 / 1800, custoPorClique: 700 / 2301, campanhas: 1 },
+      reconhecimento: { gasto: 700, cliquesLink: 2301, visitasPerfil: 1800, custoPorVisitaPerfil: 700 / 1800, seguidoresAnuncio: 222, custoPorSeguidor: 700 / 222, custoPorClique: 700 / 2301, campanhas: 1 },
     }, true)
     expect(meta).toMatchObject({ investido: 2200, custoPorLead: 10, captacao: { investido: 1500, leads: 150, leadsSite: 20 }, reconhecimento: { investido: 700, visitasPerfil: 1800, custoPorVisitaPerfil: 0.39 } })
     const t = textoWhatsapp({ ...base, anuncios: { ...base.anuncios!, meta, google: null } }, 'u')
     expect(t).toMatch(/Captação: R\$\s?1\.500,00 · 150 leads.*CPL R\$\s?10,00/)
     expect(t).toMatch(/Reconhecimento\/tráfego: R\$\s?700,00 · 1\.800 visitas ao perfil · custo por visita R\$\s?0,39/)
+    expect(t).toMatch(/222 novos seguidores pelos anúncios · custo por seguidor R\$\s?3,15/)
   })
 })
 

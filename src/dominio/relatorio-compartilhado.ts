@@ -68,7 +68,7 @@ export type AnunciosPlataforma = {
   /** Detalhe da Meta na versão 4+: somente campanhas cujo objetivo é gerar contato. */
   captacao?: { investido: number | null; leads: number; conversas: number; formularios: number; leadsSite: number; custoPorLead: number | null; campanhas: number }
   /** Detalhe da Meta na versão 4+: tráfego/reconhecimento, medido por visitas explícitas ou cliques no link. */
-  reconhecimento?: { investido: number | null; cliquesLink: number; visitasPerfil: number; /** Investimento ÷ visitas ao perfil (campanhas otimizadas para visita ao perfil). */ custoPorVisitaPerfil?: number | null; custoPorClique: number | null; campanhas: number }
+  reconhecimento?: { investido: number | null; cliquesLink: number; visitasPerfil: number; /** Investimento ÷ visitas ao perfil (campanhas otimizadas para visita ao perfil). */ custoPorVisitaPerfil?: number | null; /** Seguidores do Instagram atribuídos aos anúncios e o custo de cada um (quando a Meta entrega). */ seguidoresAnuncio?: number; custoPorSeguidor?: number | null; custoPorClique: number | null; campanhas: number }
 }
 
 const arred = (n: number) => Math.round(n * 100) / 100
@@ -87,7 +87,7 @@ export const anunciosMeta = (m: { gasto: number; cliques: number; impressoes: nu
 export const anunciosMetaSeparados = (m: {
   total: { gasto: number; cliques: number; impressoes: number }
   captacao: { gasto: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
-  reconhecimento: { gasto: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; custoPorClique: number | null; campanhas: number }
+  reconhecimento: { gasto: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; seguidoresAnuncio: number; custoPorSeguidor: number | null; custoPorClique: number | null; campanhas: number }
 }, mostrarInvestimento: boolean): AnunciosPlataforma => ({
   investido: mostrarInvestimento ? arred(m.total.gasto) : null,
   investidoCaptacao: mostrarInvestimento ? arred(m.captacao.gasto) : null,
@@ -99,7 +99,7 @@ export const anunciosMetaSeparados = (m: {
   impressoes: arred(m.total.impressoes),
   custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null,
   captacao: { investido: mostrarInvestimento ? arred(m.captacao.gasto) : null, leads: arred(m.captacao.leads), conversas: arred(m.captacao.conversas), formularios: arred(m.captacao.formularios), leadsSite: arred(m.captacao.site), custoPorLead: mostrarInvestimento && m.captacao.custoPorLead !== null ? arred(m.captacao.custoPorLead) : null, campanhas: m.captacao.campanhas },
-  reconhecimento: { investido: mostrarInvestimento ? arred(m.reconhecimento.gasto) : null, cliquesLink: arred(m.reconhecimento.cliquesLink), visitasPerfil: arred(m.reconhecimento.visitasPerfil), custoPorVisitaPerfil: mostrarInvestimento && m.reconhecimento.custoPorVisitaPerfil !== null ? arred(m.reconhecimento.custoPorVisitaPerfil) : null, custoPorClique: mostrarInvestimento && m.reconhecimento.custoPorClique !== null ? arred(m.reconhecimento.custoPorClique) : null, campanhas: m.reconhecimento.campanhas },
+  reconhecimento: { investido: mostrarInvestimento ? arred(m.reconhecimento.gasto) : null, cliquesLink: arred(m.reconhecimento.cliquesLink), visitasPerfil: arred(m.reconhecimento.visitasPerfil), custoPorVisitaPerfil: mostrarInvestimento && m.reconhecimento.custoPorVisitaPerfil !== null ? arred(m.reconhecimento.custoPorVisitaPerfil) : null, seguidoresAnuncio: arred(m.reconhecimento.seguidoresAnuncio), custoPorSeguidor: mostrarInvestimento && m.reconhecimento.custoPorSeguidor !== null ? arred(m.reconhecimento.custoPorSeguidor) : null, custoPorClique: mostrarInvestimento && m.reconhecimento.custoPorClique !== null ? arred(m.reconhecimento.custoPorClique) : null, campanhas: m.reconhecimento.campanhas },
 })
 
 export const anunciosGoogle = (g: { custo: number; conversoes: number; cliques: number; impressoes: number }, mostrarInvestimento: boolean) =>
@@ -151,6 +151,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
       const rotuloMarca = p.reconhecimento.visitasPerfil ? 'visitas ao perfil' : 'cliques no link'
       if (p.reconhecimento.investido !== null) linhas.push(`• Reconhecimento/tráfego: ${reais(p.reconhecimento.investido)} · ${num(resultadoMarca)} ${rotuloMarca}${p.reconhecimento.visitasPerfil && p.reconhecimento.custoPorVisitaPerfil != null ? ` · custo por visita ${reais(p.reconhecimento.custoPorVisitaPerfil)}` : p.reconhecimento.custoPorClique === null ? '' : ` · custo por clique ${reais(p.reconhecimento.custoPorClique)}`}`)
       else if (resultadoMarca) linhas.push(`• Reconhecimento/tráfego: ${num(resultadoMarca)} ${rotuloMarca}`)
+      if (p.reconhecimento.seguidoresAnuncio) linhas.push(`• ${num(p.reconhecimento.seguidoresAnuncio)} novos seguidores pelos anúncios${p.reconhecimento.custoPorSeguidor != null ? ` · custo por seguidor ${reais(p.reconhecimento.custoPorSeguidor)}` : ''}`)
     } else {
       if (p.investido !== null) linhas.push(`• Investimento: ${reais(p.investido)}`)
       linhas.push(`• Leads: ${num(p.leads)}${detalhe}`)

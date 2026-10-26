@@ -185,6 +185,7 @@ async function MetaCliente({ c, periodo }: { c: Cliente; periodo: PeriodoAnuncio
             tot?.reconhecimento.visitasPerfil
               ? { rotulo: 'Custo por visita ao perfil', valor: tot.reconhecimento.custoPorVisitaPerfil === null ? '—' : reais(tot.reconhecimento.custoPorVisitaPerfil), extra: `${compacto(tot.reconhecimento.visitasPerfil)} visitas`, icone: MousePointerClick, cor: '#e87ba4' }
               : { rotulo: 'CPC de reconhecimento', valor: tot?.reconhecimento.custoPorClique === null || !tot ? '—' : reais(tot.reconhecimento.custoPorClique), icone: MousePointerClick, cor: '#e87ba4' },
+            ...(tot?.reconhecimento.seguidoresAnuncio ? [{ rotulo: 'Seguidores pelos anúncios', valor: n(tot.reconhecimento.seguidoresAnuncio), extra: [tot.reconhecimento.custoPorSeguidor === null ? '' : `${reais(tot.reconhecimento.custoPorSeguidor)} por seguidor`, tot.reconhecimento.taxaSeguidor === null ? '' : `${pct(tot.reconhecimento.taxaSeguidor)} das visitas`].filter(Boolean).join(' · ') || undefined, icone: Users, cor: '#6250d6' }] : []),
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
           <GraficoDiario titulo="Investimento diário por tipo de campanha" dias={dias} series={[{ nome: 'Captação', valores: dias.map((x) => diaMap.get(x)?.captacao.gasto ?? 0) }, { nome: 'Reconhecimento', valores: dias.map((x) => diaMap.get(x)?.reconhecimento.gasto ?? 0) }]} formato={reaisCurto} />

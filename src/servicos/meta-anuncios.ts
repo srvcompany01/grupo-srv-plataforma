@@ -110,6 +110,13 @@ export type ResultadoMeta = { indicator?: string; values?: { value?: string }[] 
 /** Soma dos resultados que são visita ao perfil (indicador profile_visit_view). */
 export const visitasPerfilDosResultados = (r: ResultadoMeta[] | undefined) => (r ?? []).reduce((s, x) => s + (/profile_visit/.test(x.indicator ?? '') ? (x.values ?? []).reduce((t, v) => t + Number(v.value ?? 0), 0) : 0), 0)
 
+/** A Meta devolve número como texto ("7873") ou, em alguns campos, uma lista de { value }. */
+export function numeroDaMeta(v: unknown): number {
+  if (Array.isArray(v)) return v.reduce<number>((s, x) => s + numeroDaMeta((x as { value?: unknown })?.value), 0)
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
 type DetalheConjunto = { id: string; destination_type?: string; campaign?: { effective_status?: string; objective?: string } }
 
 /**
@@ -149,14 +156,16 @@ export type LinhaConjunto = {
   acoes: Acoes
   /** Visitas ao perfil do Instagram (resultado de campanhas otimizadas para isso); 0 nas demais. */
   visitasPerfil: number
+  /** Seguidores do Instagram atribuídos ao anúncio (instagram_profile_follow); 0 se a Meta não entregar. */
+  seguidoresAnuncio: number
 }
 
 export type ResumoCaptacaoMeta = { gasto: number; impressoes: number; cliques: number; leads: number; conversas: number; formularios: number; site: number; custoPorLead: number | null; campanhas: number }
-export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; custoPorClique: number | null; campanhas: number }
+export type ResumoReconhecimentoMeta = { gasto: number; impressoes: number; cliques: number; cliquesLink: number; visitasPerfil: number; custoPorVisitaPerfil: number | null; seguidoresAnuncio: number; custoPorSeguidor: number | null; /** Seguidores ÷ visitas ao perfil (a "Conversão de Seguidores" do Gerenciador). */ taxaSeguidor: number | null; custoPorClique: number | null; campanhas: number }
 export type ResumoMetaPorTipo = { captacao: ResumoCaptacaoMeta; reconhecimento: ResumoReconhecimentoMeta; total: TotaisMeta }
 
 const vazioCaptacao = (): ResumoCaptacaoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, leads: 0, conversas: 0, formularios: 0, site: 0, custoPorLead: null, campanhas: 0 })
-const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorVisitaPerfil: null, custoPorClique: null, campanhas: 0 })
+const vazioReconhecimento = (): ResumoReconhecimentoMeta => ({ gasto: 0, impressoes: 0, cliques: 0, cliquesLink: 0, visitasPerfil: 0, custoPorVisitaPerfil: null, seguidoresAnuncio: 0, custoPorSeguidor: null, taxaSeguidor: null, custoPorClique: null, campanhas: 0 })
 
 /**
  * Separa captação de reconhecimento antes de calcular médias. O papel é decidido pela campanha inteira, para um
@@ -168,6 +177,7 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
   const captacao = vazioCaptacao()
   const reconhecimento = vazioReconhecimento()
   let gastoComVisitas = 0
+  let gastoComSeguidores = 0
   const campanhasCaptacao = new Set<string>()
   const campanhasReconhecimento = new Set<string>()
   for (const l of linhas) {
@@ -187,6 +197,8 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
       reconhecimento.cliquesLink += l.cliquesLink
       reconhecimento.visitasPerfil += l.visitasPerfil
       if (l.visitasPerfil > 0) gastoComVisitas += l.gasto
+      reconhecimento.seguidoresAnuncio += l.seguidoresAnuncio
+      if (l.seguidoresAnuncio > 0) gastoComSeguidores += l.gasto
       campanhasReconhecimento.add(l.campanhaId)
     }
   }
@@ -196,6 +208,8 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
   reconhecimento.campanhas = campanhasReconhecimento.size
   // Quando a Meta não devolve "visita ao perfil", o clique no link é o indicador disponível para a campanha de tráfego.
   reconhecimento.custoPorVisitaPerfil = reconhecimento.visitasPerfil ? gastoComVisitas / reconhecimento.visitasPerfil : null
+  reconhecimento.custoPorSeguidor = reconhecimento.seguidoresAnuncio ? gastoComSeguidores / reconhecimento.seguidoresAnuncio : null
+  reconhecimento.taxaSeguidor = reconhecimento.visitasPerfil && reconhecimento.seguidoresAnuncio ? (reconhecimento.seguidoresAnuncio / reconhecimento.visitasPerfil) * 100 : null
   reconhecimento.custoPorClique = reconhecimento.cliquesLink ? reconhecimento.gasto / reconhecimento.cliquesLink : null
   return {
     captacao,
@@ -220,18 +234,21 @@ export function resumirMetaPorTipo(linhas: LinhaConjunto[]): ResumoMetaPorTipo {
 export async function conjuntosDoPeriodo(contaId: string, de: string, ate: string, granularidade: 'total' | 'mensal' | 'diaria' = 'total'): Promise<LinhaConjunto[] | { erro: string }> {
   const cacheSeg = cacheDoPeriodo({ de, ate })
   const periodo = { level: 'adset', time_range: JSON.stringify({ since: de, until: ate }), limit: '500', ...(granularidade === 'mensal' ? { time_increment: 'monthly' } : granularidade === 'diaria' ? { time_increment: '1' } : {}) }
-  const [ins, resultados] = await Promise.all([
+  const [ins, resultados, seguidores] = await Promise.all([
     meta<{ data: { date_start: string; campaign_id: string; campaign_name: string; adset_id: string; adset_name: string; spend?: string; impressions?: string; clicks?: string; inline_link_clicks?: string; actions?: Acoes }[] }>(`act_${contaId}/insights`, {
       ...periodo, fields: 'campaign_id,campaign_name,adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,actions',
     }, cacheSeg),
     // O "resultado" que o Gerenciador mostra (ex.: visitas ao perfil) só vem no campo `results`, não em `actions`. Se falhar, só ficamos sem ele.
     meta<{ data: { date_start: string; adset_id: string; results?: ResultadoMeta[] }[] }>(`act_${contaId}/insights`, { ...periodo, fields: 'adset_id,results' }, cacheSeg),
+    // Seguidores do Instagram atribuídos ao anúncio (a coluna "Seguidores no Instagram" do Gerenciador). Se a Meta não entregar, fica 0.
+    meta<{ data: { date_start: string; adset_id: string; instagram_profile_follow?: unknown }[] }>(`act_${contaId}/insights`, { ...periodo, fields: 'adset_id,instagram_profile_follow' }, cacheSeg),
   ])
   if ('erro' in ins) return ins
   // ponytail: até 500 linhas de insights por consulta; paginar se alguma conta passar disso.
   const det = await detalhesDosConjuntos([...new Set(ins.data.map((d) => d.adset_id))], cacheSeg)
   const destino = new Map([...det].map(([id, c]) => [id, c.destination_type ?? null]))
   const visitas = new Map(('erro' in resultados ? [] : resultados.data).map((r) => [`${r.adset_id}|${r.date_start}`, visitasPerfilDosResultados(r.results)]))
+  const ganhos = new Map(('erro' in seguidores ? [] : seguidores.data).map((r) => [`${r.adset_id}|${r.date_start}`, numeroDaMeta(r.instagram_profile_follow)]))
   return ins.data.map((d) => ({
     mes: granularidade === 'mensal' ? d.date_start.slice(0, 7) : null,
     dia: granularidade === 'diaria' ? d.date_start : null,
@@ -249,6 +266,7 @@ export async function conjuntosDoPeriodo(contaId: string, de: string, ate: strin
     leads: leadsDasAcoes(d.actions, destino.get(d.adset_id)),
     acoes: d.actions ?? [],
     visitasPerfil: visitas.get(`${d.adset_id}|${d.date_start}`) ?? 0,
+    seguidoresAnuncio: ganhos.get(`${d.adset_id}|${d.date_start}`) ?? 0,
   }))
 }
 
@@ -343,9 +361,9 @@ export async function diagnosticoAcoesMeta(contaId: string, periodo: Pick<Period
  * Sonda (diagnóstico, só admin): pede à Meta, um a um, os campos que poderiam trazer visitas ao perfil e seguidores
  * de uma campanha, e o que o conjunto otimiza. Campo que a Meta recusa volta com o erro; o que existe volta com o valor.
  */
-export async function sondaCampanhaMeta(contaId: string, campanhaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>) {
+export async function sondaCampanhaMeta(contaId: string, campanhaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>, extras: string[] = []) {
   const base = { level: 'adset', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campanhaId }]), limit: '50' }
-  const candidatos = ['results', 'cost_per_result', 'conversions', 'cost_per_conversion', 'unique_actions', 'cost_per_action_type', 'cost_per_unique_action_type', 'cost_per_inline_link_click', 'reach', 'frequency', 'optimization_goal', 'objective', 'follows', 'new_followers', 'instagram_follows', 'instagram_profile_visits']
+  const candidatos = ['results', 'cost_per_result', 'conversions', 'cost_per_conversion', 'unique_actions', 'cost_per_action_type', 'cost_per_unique_action_type', 'cost_per_inline_link_click', 'reach', 'frequency', 'optimization_goal', 'objective', 'instagram_profile_follow', 'instagram_profile_visits', ...extras]
   // Seguidores ganhos pelo anúncio: o mesmo `actions` com a atribuição do Gerenciador, outras janelas e quebras por destino/alvo.
   const variantes: Record<string, Record<string, string>> = {
     atribuicaoUnificada: { fields: 'adset_id,actions', use_unified_attribution_setting: 'true' },

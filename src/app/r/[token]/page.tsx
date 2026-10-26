@@ -53,6 +53,7 @@ function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlatafo
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {p.reconhecimento.investido !== null && <Cartao icone={BadgeDollarSign} cor="#6250d6" rotulo="Investimento" valor={reais(p.reconhecimento.investido)} extra={`${p.reconhecimento.campanhas} campanha${p.reconhecimento.campanhas === 1 ? '' : 's'}`} />}
             <Cartao icone={MousePointerClick} cor="#6250d6" rotulo={rotuloMarca} valor={num(resultadoMarca)} extra={p.reconhecimento.visitasPerfil ? `${num(p.reconhecimento.cliquesLink)} cliques no link` : undefined} />
+            {(p.reconhecimento.seguidoresAnuncio ?? 0) > 0 && <Cartao icone={Users} cor="#6250d6" rotulo="Novos seguidores pelos anúncios" valor={num(p.reconhecimento.seguidoresAnuncio!)} extra={p.reconhecimento.custoPorSeguidor != null ? `${reais(p.reconhecimento.custoPorSeguidor)} por seguidor` : undefined} />}
             {p.reconhecimento.visitasPerfil > 0 && p.reconhecimento.custoPorVisitaPerfil != null
               ? <Cartao icone={Target} cor="#eb6834" rotulo="Custo por visita ao perfil" valor={reais(p.reconhecimento.custoPorVisitaPerfil)} />
               : p.reconhecimento.custoPorClique !== null && <Cartao icone={Target} cor="#eb6834" rotulo="Custo por clique" valor={reais(p.reconhecimento.custoPorClique)} />}
