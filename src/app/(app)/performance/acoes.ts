@@ -12,7 +12,6 @@ import * as perf from '@/servicos/performance'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
-const DIA = /^\d{4}-\d{2}-\d{2}$/
 /** "12.345,67" ou "12345.67" → número; vazio → null; inválido → undefined. */
 const numero = (v: string) => {
   const t = String(v ?? '').trim().replace(/[R$\s]/g, '')
@@ -30,22 +29,6 @@ export async function salvarResultadoMesAcao(clienteId: string, mes: string, r: 
   if (faturamento === null) return { erro: 'Informe o faturamento do mês: é o único campo obrigatório (o número de vendas é opcional).' }
   if (vendas === undefined || (vendas !== null && !Number.isInteger(vendas))) return { erro: 'Número de vendas inválido.' }
   const res = await tentar(async () => perf.salvarResultadoMes(await criarClienteServidor(), clienteId, mes, { faturamento, vendas, notas: String(r.notas ?? '') }), 'Resultado do mês salvo.')
-  revalidatePath('/performance')
-  return res
-}
-
-export async function confirmarLeadAcao(clienteId: string, dia: string, observacao: string): Promise<Resultado> {
-  await exigirEquipe()
-  if (!UUID.test(clienteId) || !DIA.test(dia)) return { erro: 'Dados inválidos.' }
-  const res = await tentar(async () => perf.confirmarLead(await criarClienteServidor(), clienteId, dia, String(observacao ?? '')), 'Lead confirmado.')
-  revalidatePath('/performance')
-  return res
-}
-
-export async function removerLeadAcao(id: string): Promise<Resultado> {
-  await exigirEquipe()
-  if (!UUID.test(id)) return { erro: 'Lead inválido.' }
-  const res = await tentar(async () => perf.removerLeadConfirmado(await criarClienteServidor(), id), 'Lead removido.')
   revalidatePath('/performance')
   return res
 }

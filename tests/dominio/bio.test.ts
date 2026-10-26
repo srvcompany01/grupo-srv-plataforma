@@ -41,6 +41,7 @@ describe('página da bio', () => {
 describe('relatório da bio', () => {
   const resumo = montarResumoBio({
     visitas: [{ day: '2026-10-20', origem: 'bio', clicks: 40 }, { day: '2026-10-21', origem: 'bio', clicks: 30 }, { day: '2026-10-21', origem: 'story', clicks: 30 }],
+    visualizacoes: [{ day: '2026-10-20', origem: 'bio', views: 36, visitantes: 30 }, { day: '2026-10-21', origem: 'bio', views: 24, visitantes: 20 }, { day: '2026-10-21', origem: 'story', views: 25, visitantes: 20 }],
     botoes: [
       { botao: 'whatsapp', rotulo: 'WhatsApp', day: '2026-10-20', clicks: 30 },
       { botao: 'whatsapp', rotulo: 'WhatsApp', day: '2026-10-21', clicks: 20 },
@@ -51,25 +52,47 @@ describe('relatório da bio', () => {
     temWhatsapp: true,
   })
 
-  it('soma visitas e toques por botão, inclusive botão sem toque e botão removido', () => {
-    expect(resumo).toMatchObject({ visitas: 100, toques: 64 })
+  it('separa cliques (quem tocou no link) de visualizações (a página abriu) e conta pessoas distintas', () => {
+    expect(resumo).toMatchObject({ cliques: 100, visualizacoes: 85, pessoas: 70, toques: 64 })
+    expect(resumo.porOrigem).toEqual([{ origem: 'bio', cliques: 70, visualizacoes: 60 }, { origem: 'story', cliques: 30, visualizacoes: 25 }])
+    expect(resumo.porDia).toEqual([{ dia: '2026-10-20', cliques: 40, visualizacoes: 36, toques: 30 }, { dia: '2026-10-21', cliques: 60, visualizacoes: 49, toques: 34 }])
+  })
+
+  it('lead orgânico = toque no botão do WhatsApp (cada toque é um lead); outros botões não contam', () => {
+    expect(resumo.leadsOrganicos).toBe(50)
+    expect(montarResumoBio({ visitas: [], botoes: [{ botao: 'maps', rotulo: 'Maps', day: '2026-10-20', clicks: 9 }], links: [{ id: 'maps', rotulo: 'Maps' }], temWhatsapp: true }).leadsOrganicos).toBe(0)
+  })
+
+  it('botões: todos aparecem, inclusive sem toque e já removidos', () => {
     expect(resumo.botoes.map((b) => [b.rotulo, b.toques, b.ativo])).toEqual([['WhatsApp', 50, true], ['Localização', 10, true], ['Catálogo antigo', 4, false], ['Nosso site', 0, true]])
-    expect(resumo.porOrigem).toEqual([{ origem: 'bio', visitas: 70 }, { origem: 'story', visitas: 30 }])
-    expect(resumo.porDia).toEqual([{ dia: '2026-10-20', visitas: 40, toques: 30 }, { dia: '2026-10-21', visitas: 60, toques: 34 }])
   })
 
-  it('insights: botão líder com a fatia dos toques, botão parado, origem e pico', () => {
+  it('insights: quem clica e desiste, botão líder, leads orgânicos, botão parado e origem', () => {
     const a = analisarBio(resumo)
-    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/O botão WhatsApp concentra 78,1% dos toques \(50 de 64\)/)
-    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/70% das visitas vêm de link da bio/)
+    const dest = a.destaques.map((d) => d.texto).join(' ')
+    expect(dest).toMatch(/100 cliques no link da bio, 85 visualizações da página \(70 pessoas distintas por dia\) e 64 toques/)
+    expect(dest).toMatch(/85% dos cliques abriram a página/)
+    expect(dest).toMatch(/50 leads orgânicos/)
+    expect(dest).toMatch(/O botão WhatsApp concentra 78,1% dos toques \(50 de 64\)/)
+    expect(dest).toMatch(/70% dos cliques vêm de link da bio/)
     expect(a.recomendacoes.map((d) => d.texto).join(' ')).toMatch(/Sem nenhum toque no período: Nosso site/)
-    expect(a.recomendacoes.map((d) => d.tom)).not.toContain('ruim')
   })
 
-  it('sem visita e sem toque: avisa e recomenda', () => {
-    expect(analisarBio(montarResumoBio({ visitas: [], botoes: [], links: [], temWhatsapp: true })).destaques[0].texto).toMatch(/Ninguém abriu/)
-    const sem = analisarBio(montarResumoBio({ visitas: [{ day: '2026-10-20', origem: 'bio', clicks: 30 }], botoes: [], links: [], temWhatsapp: true }))
+  it('muita gente clica e a página não abre: recomenda ver a velocidade e o endereço', () => {
+    const r = montarResumoBio({ visitas: [{ day: '2026-10-20', origem: 'bio', clicks: 100 }], visualizacoes: [{ day: '2026-10-20', origem: 'bio', views: 40, visitantes: 35 }], botoes: [], links: [], temWhatsapp: true })
+    const rec = analisarBio(r).recomendacoes
+    expect(rec[0]).toMatchObject({ tom: 'ruim' })
+    expect(rec[0].texto).toMatch(/Só 40% dos cliques chegaram a abrir/)
+  })
+
+  it('sem clique e sem toque: avisa e recomenda', () => {
+    expect(analisarBio(montarResumoBio({ visitas: [], botoes: [], links: [], temWhatsapp: true })).destaques[0].texto).toMatch(/Ninguém clicou/)
+    const sem = analisarBio(montarResumoBio({ visitas: [{ day: '2026-10-20', origem: 'bio', clicks: 30 }], visualizacoes: [{ day: '2026-10-20', origem: 'bio', views: 30, visitantes: 25 }], botoes: [], links: [], temWhatsapp: true }))
     expect(sem.destaques.map((d) => d.texto).join(' ')).toMatch(/ninguém toca em nenhum botão/)
     expect(sem.recomendacoes[0].tom).toBe('ruim')
+  })
+
+  it('o caminho /<cliente>/v chega na rota da visualização', () => {
+    expect(caminhoInternoDaBio('/aurum-belem/v')).toBe('/l/aurum-belem/v')
   })
 })

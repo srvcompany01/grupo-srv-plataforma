@@ -25,7 +25,6 @@ import {
   Wallet,
   TrendingUp,
   MapPin,
-  FileBarChart,
   Shapes,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -61,8 +60,7 @@ function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'anuncios', href: '/anuncios', rotulo: 'Anúncios', curto: 'Anúncios', Icone: Megaphone },
     { id: 'insights', href: '/insights', rotulo: 'Insights', curto: 'Insights', Icone: ChartNoAxesCombined },
     { id: 'gmn', href: '/gmn', rotulo: 'Google Meu Negócio', curto: 'GMN', Icone: MapPin },
-    { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Result.', Icone: TrendingUp },
-    { id: 'relatorios', href: '/relatorios', rotulo: 'Relatórios', curto: 'Relatórios', Icone: FileBarChart },
+    { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Perform.', Icone: TrendingUp },
     { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
     { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
     { id: 'time', href: '/time', rotulo: 'Time', curto: 'Time', Icone: UsersRound },
@@ -88,7 +86,7 @@ const estaEm = (caminho: string, href: string) => caminho === href || caminho.st
  * grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto no fim.
  */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
-  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'relatorios', 'agendamentos', 'blog'] },
+  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'agendamentos', 'blog'] },
   { id: 'gestao', rotulo: 'Gestão', curto: 'Gestão', Icone: LayoutDashboard, itens: ['painel', 'clientes', 'projetos', 'time', 'reunioes', 'financeiro'] },
   { id: 'ferramentas', rotulo: 'Ferramentas', curto: 'Ferram.', Icone: Shapes, itens: ['documentos', 'quadros', 'funis', 'formularios'] },
 ]

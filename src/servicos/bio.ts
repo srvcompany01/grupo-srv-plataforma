@@ -36,17 +36,19 @@ export async function resumoDaBio(sb: Supabase, clienteId: string, de: string, a
   return mapa.get(clienteId)!
 }
 
-/** O mesmo resumo para vários clientes de uma vez (3 consultas, qualquer quantidade de clientes). */
+/** O mesmo resumo para vários clientes de uma vez (4 consultas, qualquer quantidade de clientes). */
 export async function resumoDaBioDeVarios(sb: Supabase, clientes: { id: string; temWhatsapp: boolean }[], de: string, ate: string): Promise<Map<string, ResumoBio>> {
   const ids = clientes.map((c) => c.id)
-  const [v, b, l] = await Promise.all([
+  const [v, w, b, l] = await Promise.all([
     sb.from('bio_clicks').select('client_id, day, origem, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
+    sb.from('bio_visualizacoes').select('client_id, day, origem, views, visitantes').in('client_id', ids).gte('day', de).lte('day', ate),
     sb.from('bio_botao_clicks').select('client_id, botao, rotulo, day, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
     sb.from('bio_links').select('client_id, id, rotulo, position').in('client_id', ids).order('position'),
   ])
   const por = <T extends { client_id: string }>(xs: T[] | null) => (xs ?? []).reduce((m, x) => m.set(x.client_id, [...(m.get(x.client_id) ?? []), x]), new Map<string, T[]>())
   const visitas = por(v.data)
+  const visualizacoes = por(w.data)
   const botoes = por(b.data)
   const links = por(l.data)
-  return new Map(clientes.map((c) => [c.id, montarResumoBio({ visitas: visitas.get(c.id) ?? [], botoes: botoes.get(c.id) ?? [], links: links.get(c.id) ?? [], temWhatsapp: c.temWhatsapp })]))
+  return new Map(clientes.map((c) => [c.id, montarResumoBio({ visitas: visitas.get(c.id) ?? [], visualizacoes: visualizacoes.get(c.id) ?? [], botoes: botoes.get(c.id) ?? [], links: links.get(c.id) ?? [], temWhatsapp: c.temWhatsapp })]))
 }

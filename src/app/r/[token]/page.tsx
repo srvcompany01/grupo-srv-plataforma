@@ -8,6 +8,7 @@ import { fraseGeogrid } from '@/dominio/gmn'
 import { separarSeguidores } from '@/dominio/insights'
 import { SeguidoresDoPeriodo } from '@/componentes/insights/SeguidoresDoPeriodo'
 import { leadsDoRelatorio, type AnunciosPlataforma } from '@/dominio/relatorio-compartilhado'
+import { ImprimirAoAbrir } from '@/componentes/relatorios/ImprimirAoAbrir'
 import { relatorioPorToken } from '@/servicos/relatorio-compartilhado'
 
 export const metadata: Metadata = { title: 'Relatório · Grupo SRV', robots: { index: false, follow: false } }
@@ -78,7 +79,8 @@ function Plataforma({ titulo, p, detalhe }: { titulo: string; p: AnunciosPlatafo
 }
 
 /** Relatório público que a agência envia ao cliente (link com token). Mostra só a foto guardada dos números. */
-export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
+export default async function Relatorio({ params, searchParams }: PageProps<'/r/[token]'>) {
+  const imprimir = (await searchParams).imprimir === '1'
   const leitura = await relatorioPorToken((await params).token)
   if (!leitura) notFound()
   const r = leitura.dados
@@ -101,6 +103,9 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
   const a = r.anuncios
   return (
     <main className="min-h-dvh bg-fundo px-4 py-6 sm:py-10">
+      {imprimir && <ImprimirAoAbrir />}
+      {/* Impressão / PDF: fundo branco, cores mantidas e sem quebrar cartões no meio. */}
+      <style>{'@media print { @page { margin: 12mm } body, main { background: #fff !important } section { break-inside: avoid } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }'}</style>
       <div className="mx-auto max-w-4xl space-y-4">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -213,8 +218,10 @@ export default async function Relatorio({ params }: PageProps<'/r/[token]'>) {
         {r.bio && (
           <Secao titulo="Link da bio do Instagram" icone={Link2}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Cartao icone={Users} cor="#1baf7a" rotulo="Visitas ao link da bio" valor={num(r.bio.visitas)} extra="pessoas que abriram o link" />
-              <Cartao icone={MousePointerClick} cor="#6250d6" rotulo="Toques nos botões" valor={num(r.bio.toques)} extra={r.bio.visitas ? `${num(r.bio.toques / r.bio.visitas)} por visita` : undefined} />
+              <Cartao icone={MousePointerClick} cor="#1baf7a" rotulo="Cliques no link da bio" valor={num(r.bio.cliques ?? r.bio.visitas ?? 0)} extra="vezes que tocaram no link do perfil" />
+              {r.bio.visualizacoes != null && <Cartao icone={Eye} cor="#2a78d6" rotulo="Visualizações da página" valor={num(r.bio.visualizacoes)} extra={r.bio.pessoas ? `${num(r.bio.pessoas)} pessoas distintas por dia` : 'a página chegou a abrir'} />}
+              <Cartao icone={Target} cor="#6250d6" rotulo="Toques nos botões" valor={num(r.bio.toques)} extra={r.bio.visualizacoes ? `${num(r.bio.toques / r.bio.visualizacoes)} por visualização` : undefined} />
+              {r.bio.leadsOrganicos != null && <Cartao icone={Users} cor="#eb6834" rotulo="Leads orgânicos" valor={num(r.bio.leadsOrganicos)} extra="toques no botão do WhatsApp" />}
             </div>
             {r.bio.botoes.length > 0 && (
               <ul className="space-y-2 rounded-xl border border-borda bg-white p-3">

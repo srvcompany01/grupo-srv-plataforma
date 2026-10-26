@@ -198,6 +198,7 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
             <span className="text-legenda text-texto-3">{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
             {!r.revogado && <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>}
             <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline"><ExternalLink className="h-3.5 w-3.5" /> Abrir</a>
+            {!r.revogado && <a href={`${r.url}?imprimir=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline" title="Abre o relatório já na impressão: escolha Salvar como PDF">PDF</a>}
           </li>
         ))}
       </ul>

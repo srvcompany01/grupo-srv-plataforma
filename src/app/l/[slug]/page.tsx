@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { ehRobo, origemDaBio, slugValido } from '@/dominio/bio'
 import { urlLeitura } from '@/infra/r2'
+import { Visualizacao } from './Visualizacao'
 import { criarClientePublico } from '@/infra/supabase/publico'
 
 export const dynamic = 'force-dynamic'
@@ -29,14 +30,16 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
   const { slug } = await params
   const p = await ler(slug)
   if (!p) notFound()
-  if (!ehRobo((await headers()).get('user-agent'))) {
-    const o = (await searchParams).o
-    await criarClientePublico().rpc('bio_visita', { p_slug: slug, p_origem: origemDaBio(Array.isArray(o) ? o[0] : o) })
-  }
+  const o = (await searchParams).o
+  const origem = origemDaBio(Array.isArray(o) ? o[0] : o)
+  const humano = !ehRobo((await headers()).get('user-agent'))
+  // O clique conta ao pedir a página; a visualização, quando ela abre no aparelho (Visualizacao).
+  if (humano) await criarClientePublico().rpc('bio_visita', { p_slug: slug, p_origem: origem })
   const base = `/l/${slug}/ir`
   const botoes = [...(p.whatsapp ? [{ id: 'whatsapp', rotulo: 'Chamar no WhatsApp' }] : []), ...p.links]
   return (
     <main className="flex min-h-dvh flex-col items-center bg-white px-5 py-14 text-black">
+      {humano && <Visualizacao origem={origem} />}
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
           {p.logo ? (

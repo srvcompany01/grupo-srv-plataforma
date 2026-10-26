@@ -1,6 +1,6 @@
 'use client'
 
-import { ExternalLink, FileText, MessageCircle } from 'lucide-react'
+import { Download, ExternalLink, FileText, MessageCircle } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { gerarRelatorioAcao } from '@/app/(app)/clientes/acoes-relatorio'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
@@ -70,6 +70,7 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
             {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> Enviar no WhatsApp do cliente</a>}
             {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Abrir WhatsApp e escolher o contato</a>}
             <a href={pronto.url} target="_blank" rel="noreferrer" className={botaoSecundario}><ExternalLink className="h-4 w-4" /> Ver relatório</a>
+            <a href={`${pronto.url}?imprimir=1`} target="_blank" rel="noreferrer" className={botaoSecundario}><Download className="h-4 w-4" /> Baixar PDF</a>
             <CopiarTexto texto={pronto.texto} rotulo="Copiar texto" />
           </div>
           {pronto.avisos.length > 0 && (

@@ -94,7 +94,7 @@ export async function calcularRelatorio(sb: Supabase, c: Cliente, periodo: Pick<
       ...(cm ? cm.campanhas.map((x) => campanhaMetaRelatorio(x, opcoes.mostrarInvestimento)) : []),
       ...(cg ? cg.filter((x) => x.custo > 0).sort((a, b) => b.custo - a.custo).map((x) => campanhaGoogleRelatorio(x, opcoes.mostrarInvestimento)) : []),
     ],
-    bio: resumoBio && resumoBio.visitas > 0 ? { visitas: resumoBio.visitas, toques: resumoBio.toques, botoes: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ rotulo: b.rotulo, toques: b.toques })) } : null,
+    bio: resumoBio && (resumoBio.cliques > 0 || resumoBio.visualizacoes > 0) ? { cliques: resumoBio.cliques, visualizacoes: resumoBio.visualizacoes, pessoas: resumoBio.pessoas, toques: resumoBio.toques, leadsOrganicos: resumoBio.leadsOrganicos, botoes: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ rotulo: b.rotulo, toques: b.toques })) } : null,
     meuNegocio: negocio && !('erro' in negocio) ? { visualizacoes: negocio.visualizacoes, buscas: negocio.buscas, mapas: negocio.mapas, ligacoes: negocio.ligacoes, site: negocio.site, rotas: negocio.rotas, mensagens: negocio.mensagens, reservas: negocio.reservas, pedidosComida: negocio.pedidosComida, cliquesCardapio: negocio.cliquesCardapio, avaliacoes: negocio.avaliacoes, palavrasChave: negocio.palavrasChave, palavrasPeriodo: negocio.palavrasPeriodo } : null,
     avisosInternos: avisos,
     destaques: [

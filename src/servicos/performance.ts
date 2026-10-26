@@ -27,7 +27,8 @@ export type MesPerformance = {
   conversoesGoogle: number
   cliquesPerfilInstagram: number | null
   cliquesLinkBio: number
-  leadsConfirmados: number
+  /** Leads orgânicos: toques no botão do WhatsApp (atendimento) da página da bio no mês. */
+  leadsOrganicos: number
   faturamento: number | null
   vendas: number | null
   notas: string
@@ -46,7 +47,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
     c.googleAdsId && googleConectado ? googlePorMes(c.googleAdsId, de, ate) : null,
     c.metaPaginaId ? cliquesNoPerfilPorMes(c.metaPaginaId, intervalos) : null,
     sb.from('bio_clicks').select('day, clicks').eq('client_id', c.id).gte('day', de).lte('day', ate),
-    sb.from('lead_confirmations').select('day').eq('client_id', c.id).gte('day', de).lte('day', ate),
+    sb.from('bio_botao_clicks').select('day, clicks').eq('client_id', c.id).eq('botao', 'whatsapp').gte('day', de).lte('day', ate),
     sb.from('client_monthly_results').select('month, revenue, sales, notes').eq('client_id', c.id).gte('month', de).lte('month', ate),
   ])
   const erros: string[] = []
@@ -67,7 +68,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
     return r
   }
   const cliquesMes = somaPorMes(cliques.data, (l) => l.clicks)
-  const confirmadosMes = somaPorMes(confirmados.data, () => 1)
+  const confirmadosMes = somaPorMes(confirmados.data, (l) => l.clicks)
   const resultadoMes = new Map((resultados.data ?? []).map((r) => [String(r.month).slice(0, 7), r]))
   return {
     erros,
@@ -85,7 +86,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
         conversoesGoogle: g?.get(mes)?.conversoes ?? 0,
         cliquesPerfilInstagram: i ? (i.get(mes) ?? null) : null,
         cliquesLinkBio: cliquesMes.get(mes) ?? 0,
-        leadsConfirmados: confirmadosMes.get(mes) ?? 0,
+        leadsOrganicos: confirmadosMes.get(mes) ?? 0,
         faturamento: r?.revenue === null || r?.revenue === undefined ? null : Number(r.revenue),
         vendas: r?.sales ?? null,
         notas: r?.notes ?? '',
@@ -97,23 +98,6 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
 /** Lança (ou corrige) o faturamento e as vendas do mês. Vazio = não informado. */
 export async function salvarResultadoMes(sb: Supabase, clienteId: string, mes: string, r: { faturamento: number; vendas: number | null; notas: string }): Promise<void> {
   dados(await sb.from('client_monthly_results').upsert({ client_id: clienteId, month: `${mes}-01`, revenue: r.faturamento, sales: r.vendas, notes: r.notas.slice(0, 500), updated_at: new Date().toISOString() }).select('client_id'))
-}
-
-export type LeadConfirmado = { id: string; dia: string; observacao: string; por: string }
-
-export async function leadsConfirmadosDoMes(sb: Supabase, clienteId: string, mes: string, hoje: string): Promise<LeadConfirmado[]> {
-  const { de, ate } = intervaloDoMes(mes, hoje)
-  const { data, error } = await sb.from('lead_confirmations').select('id, day, observacao, profiles!lead_confirmations_created_by_fkey(full_name)').eq('client_id', clienteId).gte('day', de).lte('day', ate).order('created_at', { ascending: false })
-  if (error) return []
-  return (data as unknown as { id: string; day: string; observacao: string; profiles: { full_name: string } | null }[]).map((l) => ({ id: l.id, dia: l.day, observacao: l.observacao, por: l.profiles?.full_name ?? '' }))
-}
-
-export async function confirmarLead(sb: Supabase, clienteId: string, dia: string, observacao: string): Promise<void> {
-  dados(await sb.from('lead_confirmations').insert({ client_id: clienteId, day: dia, observacao: observacao.trim().slice(0, 200), origem: 'instagram_bio' }).select('id'))
-}
-
-export async function removerLeadConfirmado(sb: Supabase, id: string): Promise<void> {
-  dados(await sb.from('lead_confirmations').delete().eq('id', id).select('id'))
 }
 
 /** Link da bio do cliente: cria o endereço (/l/<nome>) se ainda não existir; guarda a mensagem. */

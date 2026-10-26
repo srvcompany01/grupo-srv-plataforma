@@ -41,6 +41,18 @@ export type Database = {
         Update: { client_id?: string; day?: string; clicks?: number; origem?: string }
         Relationships: []
       }
+      bio_visualizacoes: {
+        Row: { client_id: string; day: string; origem: string; views: number; visitantes: number }
+        Insert: { client_id: string; day: string; origem?: string; views?: number; visitantes?: number }
+        Update: { client_id?: string; day?: string; origem?: string; views?: number; visitantes?: number }
+        Relationships: []
+      }
+      bio_visitantes: {
+        Row: { client_id: string; day: string; h: string }
+        Insert: { client_id: string; day: string; h: string }
+        Update: { client_id?: string; day?: string; h?: string }
+        Relationships: []
+      }
       bio_botao_clicks: {
         Row: { client_id: string; botao: string; day: string; clicks: number; rotulo: string | null }
         Insert: { client_id: string; botao: string; day: string; clicks?: number; rotulo?: string | null }
@@ -1820,6 +1832,7 @@ export type Database = {
       uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       bio_pagina: { Args: { p_slug: string }; Returns: { nome: string; logo: string | null; whatsapp: string | null; mensagem: string; links: Json }[] }
+      bio_visualizacao: { Args: { p_slug: string; p_origem: string; p_hash: string }; Returns: undefined }
       bio_visita: { Args: { p_slug: string; p_origem: string }; Returns: undefined }
       bio_botao: { Args: { p_slug: string; p_botao: string; p_contar: boolean }; Returns: { url: string | null; whatsapp: string | null; mensagem: string | null }[] }
       registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
