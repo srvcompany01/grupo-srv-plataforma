@@ -44,3 +44,13 @@ export function formaDe(v: unknown, fundura = 3): unknown {
   if (v && typeof v === 'object') return fundura <= 0 ? '{…}' : Object.fromEntries(Object.entries(v as Obj).map(([k, x]) => [k, formaDe(x, fundura - 1)]))
   return v === null ? 'null' : typeof v
 }
+
+/** O evento traz o texto de alguma mensagem de chat (campo `text` não vazio dentro de `message`)? Não devolve o texto. */
+export function temTexto(corpo: unknown): boolean {
+  const procurar = (v: unknown, dentroDeMensagem: boolean): boolean => {
+    if (Array.isArray(v)) return v.some((x) => procurar(x, dentroDeMensagem))
+    if (v && typeof v === 'object') return Object.entries(v as Obj).some(([k, x]) => (dentroDeMensagem && k === 'text' && typeof x === 'string' && x.length > 0) || procurar(x, dentroDeMensagem || /^message$/i.test(k)))
+    return false
+  }
+  return procurar(corpo, false)
+}

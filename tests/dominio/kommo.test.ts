@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contaDoEvento, formaDe, lerFormularioKommo } from '@/dominio/kommo'
+import { contaDoEvento, formaDe, lerFormularioKommo, temTexto } from '@/dominio/kommo'
 
 describe('webhook do Kommo', () => {
   it('formulário aninhado vira objeto, com listas pelos índices', () => {
@@ -18,5 +18,12 @@ describe('webhook do Kommo', () => {
     const forma = formaDe({ id: 1, name: 'Maria Silva', price: 1250, custom_fields_values: [{ field_name: 'Telefone', values: [{ value: '5591999999999' }] }], loss_reason: null })
     expect(JSON.stringify(forma)).not.toMatch(/Maria|5591999999999|1250/)
     expect(forma).toMatchObject({ id: 'number', name: 'string', price: 'number', loss_reason: 'null' })
+  })
+
+  it('temTexto avisa se o evento traz o texto da mensagem, sem devolvê-lo', () => {
+    expect(temTexto({ message: { add: [{ id: '1', text: 'Oi, quero saber o preço' }] } })).toBe(true)
+    expect(temTexto({ message: { add: [{ id: '1', text: '' }] } })).toBe(false)
+    expect(temTexto({ leads: { status: [{ id: '1', status_id: '142' }] }, account: { subdomain: 'a' } })).toBe(false)
+    expect(temTexto({ text: 'fora de mensagem' })).toBe(false)
   })
 })
