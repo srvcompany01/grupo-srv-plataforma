@@ -87,8 +87,14 @@ export function resolverRespostas(perguntas: Pergunta[], escolhas: unknown): Res
   return saida
 }
 
-/** Mensagem pronta do WhatsApp: a do cliente e, embaixo, o que a pessoa respondeu (o atendente já sabe o que ela quer). */
-export const mensagemComRespostas = (base: string, respostas: Resposta[]) => `${base.trim()}\n\n${respostas.map((r) => `• ${r.p} ${r.o}`).join('\n')}`.trim()
+/**
+ * Mensagem pronta do WhatsApp: a do cliente e, embaixo, o que a pessoa respondeu (o atendente já sabe o que ela quer).
+ * Cada pergunta (em negrito do WhatsApp) e a resposta ficam em linhas próprias, com uma linha em branco entre os pares.
+ */
+export const mensagemComRespostas = (base: string, respostas: Resposta[]) => [base.trim(), ...respostas.map((r) => `*${r.p}*\n${r.o}`)].filter(Boolean).join('\n\n')
+
+/** Endereço oficial do WhatsApp com a mensagem (direto no api.whatsapp.com, sem o redirecionamento do wa.me). */
+export const urlDoWhatsapp = (numero: string, mensagem: string) => `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`
 
 export type RespostasDoQuiz = { pergunta: string; total: number; opcoes: { opcao: string; n: number }[] }
 

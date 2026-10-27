@@ -214,7 +214,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'GMN (Google Meu Negócio, aba GMN): pelos dados PÚBLICOS do Google (Places API), sem depender da API do Business Profile. Primeiro ligue o lugar do cliente no Google (gmn_buscar_lugares + definir_lugar_google_cliente). gmn_cliente traz o perfil, a nota de saúde de 0 a 100 (Fraco/Razoável/Bom por item), as avaliações em destaque, a evolução e o link de avaliação. gmn_geogrid roda a palavra-chave numa grade ao redor do endereço e guarda a posição em cada ponto (próxima da do Maps, não idêntica); gmn_varreduras lê as varreduras com os concorrentes do top 3; gmn_acompanhar liga o geogrid automático toda segunda, com aviso se a posição piorar. Prospecção: gmn_buscar_lugares (segmento + cidade) e gmn_analisar_lugar (pré-análise e texto de abordagem).',
-        'Performance e Relatórios são uma área só (a aba Performance; /relatorios apenas redireciona para ela). Sem cliente: o resumo de todos os clientes no mês (investimento da Meta, do Google e total, leads, CPL, faturamento, ROAS) e a comparação por canal. Com um cliente, as abas: Resumo (panorama_cliente + resultado do mês), Evolução (12 meses; performance_cliente), Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), Orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente), e Lançamentos (faturamento obrigatório e vendas opcionais com registrar_resultado_mes). A página da bio e o quiz não ficam mais na Performance: vivem no Biolytics. Há botão para enviar o relatório ao cliente (gerar_relatorio_cliente: link, WhatsApp e PDF) e para baixar a planilha .xlsx do período. Lead orgânico = pessoa que conclui o quiz (até 3 perguntas, de 2 a 4 opções, editáveis em Lançamentos; sem perguntas vale um quiz padrão) da página da bio e então abre o WhatsApp de atendimento.',
+        'Performance e Relatórios são uma área só (a aba Performance; /relatorios apenas redireciona para ela). Sem cliente: o resumo de todos os clientes no mês (investimento da Meta, do Google e total, leads, CPL, faturamento, ROAS) e a comparação por canal. Com um cliente, as abas: Resumo (panorama_cliente + resultado do mês), Evolução (12 meses; performance_cliente), Projeção (projecao_cliente: próximos 3 meses a partir da média dos últimos 3 meses fechados, com cenários de manter o ritmo, investir mais, mais leads orgânicos, conversão melhor e tudo junto, e recomendações), Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), Orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente), e Lançamentos (faturamento obrigatório e vendas opcionais com registrar_resultado_mes). A página da bio e o quiz não ficam mais na Performance: vivem no Biolytics. Há botão para enviar o relatório ao cliente (gerar_relatorio_cliente: link, WhatsApp e PDF) e para baixar a planilha .xlsx do período. Lead orgânico = pessoa que conclui o quiz (até 3 perguntas, de 2 a 4 opções, editáveis em Lançamentos; sem perguntas vale um quiz padrão) da página da bio e então abre o WhatsApp de atendimento.',
         'Relatório para o cliente: gerar_relatorio_cliente cria um link público com os números do período e o texto do WhatsApp, com Meta Ads e Google Ads separados (investido, leads e custo por lead de cada um, em dados.anuncios.meta e dados.anuncios.google); na página do cliente há o mesmo botão e a lista dos gerados. No dia 1 a plataforma gera o do mês anterior de cada cliente ativo e avisa a equipe no sino para enviar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
@@ -716,6 +716,30 @@ export const FERRAMENTAS: Ferramenta[] = [
       await svc.salvarAparencia(sb, cliente.id, { botaoTexto: a.textoBotao, botaoFundo: a.corFundoBotao, botaoLetra: a.corLetraBotao, titulo: a.titulo, descricao: a.descricao })
       await svc.salvarPerguntasBio(sb, cliente.id, a.perguntas.map((p) => ({ pergunta: p.pergunta, opcoes: p.opcoes.join('\n') })))
       return { ok: true, perguntas: a.perguntas.length || 'quiz padrão' }
+    },
+  }),
+
+  definir({
+    nome: 'projecao_cliente',
+    descricao: 'Projeção dos próximos 3 meses do cliente, a partir da média dos últimos 3 meses fechados com faturamento e vendas lançados (Meta, Google, leads orgânicos): base (investimento, leads, conversão, CPL, CPA = custo por cliente, ticket médio, ROAS) e cinco cenários (manter o ritmo, investir mais, mais leads orgânicos, conversão melhor, tudo junto) com totais de 3 meses e mês a mês, mais insights e recomendações. As melhorias entram aos poucos (1/3, 2/3, 100%) e mais verba rende menos que proporcional. base=null: faltam faturamento e vendas lançados (registrar_resultado_mes).',
+    escrita: false,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      investirMaisPct: z.number().min(0).max(300).optional().describe('% a mais de investimento no cenário; padrão 30'),
+      organicoMaisPct: z.number().min(0).max(500).optional().describe('% a mais de leads orgânicos; padrão 50'),
+      conversaoMelhorPct: z.number().min(0).max(100).optional().describe('% de melhora relativa na conversão; padrão 20'),
+    },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const [pj, pr, gg, dom] = await Promise.all([import('@/servicos/performance'), import('@/servicos/projecao'), import('@/servicos/google-agencia'), import('@/dominio/projecao')])
+      const hoje = dataDeHoje(new Date())
+      const meses = pr.mesesDaBase(hoje)
+      const h = await pj.historicoDoCliente(sb, cliente, meses, hoje, (await gg.situacaoGoogle()).conectado)
+      const base = dom.baseDaProjecao(h.meses.map(pr.paraBase))
+      if (!base) return { cliente: cliente.nome, mesesDaBase: meses, base: null, aviso: 'Lance o faturamento e as vendas de pelo menos um dos meses (registrar_resultado_mes).' }
+      const cenarios = dom.projetar(base, { investimento: a.investirMaisPct ?? dom.AJUSTES_PADRAO.investimento, organico: a.organicoMaisPct ?? dom.AJUSTES_PADRAO.organico, conversao: a.conversaoMelhorPct ?? dom.AJUSTES_PADRAO.conversao })
+      return { cliente: cliente.nome, mesesDaBase: meses, base, cenarios, analise: dom.analisarProjecao(base, cenarios), erros: h.erros }
     },
   }),
 

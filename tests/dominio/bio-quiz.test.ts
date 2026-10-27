@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerAparencia, lerPerguntas, lerQuizDaPagina, mensagemComRespostas, perguntasDaPagina, QUIZ_PADRAO, resolverRespostas, resumirQuiz } from '@/dominio/bio-quiz'
+import { urlDoWhatsapp, lerAparencia, lerPerguntas, lerQuizDaPagina, mensagemComRespostas, perguntasDaPagina, QUIZ_PADRAO, resolverRespostas, resumirQuiz } from '@/dominio/bio-quiz'
 
 const quiz = [{ pergunta: 'O que procura?', opcoes: ['Anel', 'Colar'] }, { pergunta: 'Quando?', opcoes: ['Hoje', 'Mês que vem', 'Só olhando'] }]
 
@@ -31,7 +31,10 @@ describe('quiz da bio', () => {
   })
 
   it('a mensagem do WhatsApp leva as respostas', () => {
-    expect(mensagemComRespostas('Olá! Vim pelo Instagram', [{ p: 'O que procura?', o: 'Anel' }])).toBe('Olá! Vim pelo Instagram\n\n• O que procura? Anel')
+    const m = mensagemComRespostas('Olá! Vim pelo Instagram', [{ p: 'O que procura?', o: 'Anel' }, { p: 'Quando?', o: 'Hoje' }])
+    expect(m).toBe('Olá! Vim pelo Instagram\n\n*O que procura?*\nAnel\n\n*Quando?*\nHoje')
+    // As quebras de linha seguem no endereço (%0A), que é o que o WhatsApp lê.
+    expect(urlDoWhatsapp('5591999999999', m)).toBe('https://api.whatsapp.com/send?phone=5591999999999&text=Ol%C3%A1!%20Vim%20pelo%20Instagram%0A%0A*O%20que%20procura%3F*%0AAnel%0A%0A*Quando%3F*%0AHoje')
   })
 
   it('resumo das respostas por pergunta, da mais escolhida para a menos', () => {

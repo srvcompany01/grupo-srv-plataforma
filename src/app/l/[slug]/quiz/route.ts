@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { ehRobo, origemDaBio, slugValido } from '@/dominio/bio'
-import { lerQuizDaPagina, mensagemComRespostas, resolverRespostas } from '@/dominio/bio-quiz'
+import { lerQuizDaPagina, mensagemComRespostas, resolverRespostas, urlDoWhatsapp } from '@/dominio/bio-quiz'
 import { criarClientePublico } from '@/infra/supabase/publico'
 import { hashDoVisitante } from '../visitante'
 
@@ -38,5 +38,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     console.error('bio_lead sem WhatsApp', slug)
     return NextResponse.json({ erro: 'WhatsApp indisponível.', codigo: 'sem-whatsapp' }, { status: 404, headers: SEM_CACHE })
   }
-  return NextResponse.json({ url: `https://wa.me/${d.whatsapp}?text=${encodeURIComponent(mensagemComRespostas(d.mensagem ?? '', respostas))}` }, { headers: SEM_CACHE })
+  return NextResponse.json({ url: urlDoWhatsapp(d.whatsapp, mensagemComRespostas(d.mensagem ?? '', respostas)) }, { headers: SEM_CACHE })
 }

@@ -1,4 +1,4 @@
-import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, MapPin, Megaphone, Search, Send, Target, type LucideIcon } from 'lucide-react'
+import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, MapPin, Megaphone, Search, Send, Target, TrendingUp, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
@@ -15,6 +15,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoSecundario } from '@/lib/ui'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { Aviso, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
+import { ProjecaoCliente } from './projecao'
 import { EvolucaoCliente, LancamentosCliente, PanoramaMensal, ResultadoDoMes, SeletorMes } from './mensal'
 
 export const maxDuration = 120
@@ -22,6 +23,7 @@ export const maxDuration = 120
 const ABAS: [Aba, string, LucideIcon, boolean][] = [
   ['resumo', 'Resumo', LayoutDashboard, false],
   ['evolucao', 'Evolução', CalendarRange, true],
+  ['projecao', 'Projeção', TrendingUp, true],
   ['meta', 'Meta Ads', Megaphone, false],
   ['google', 'Google Ads', Search, false],
   ['organico', 'Orgânico', Camera, false],
@@ -106,6 +108,7 @@ export default async function Performance({ searchParams }: PageProps<'/performa
           ) : <PanoramaMensal clientes={clientes} mes={mes} hoje={hoje} acoes={seletorMes} />
         )
           : aba === 'evolucao' ? (escolhido ? <EvolucaoCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para ver a evolução mês a mês.</Aviso>)
+          : aba === 'projecao' ? (escolhido ? <ProjecaoCliente cliente={escolhido} hoje={hoje} ajustesBrutos={{ inv: texto(sp.inv) || undefined, org: texto(sp.org) || undefined, conv: texto(sp.conv) || undefined }} /> : <Aviso>Escolha um cliente para ver a projeção dos próximos 3 meses.</Aviso>)
           : aba === 'lancamentos' ? (escolhido ? <LancamentosCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para lançar o faturamento.</Aviso>)
           : aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
           : aba === 'google' ? (escolhido ? <GoogleCliente c={escolhido} periodo={periodo} /> : <GoogleTodos clientes={clientes} periodo={periodo} />)
