@@ -412,6 +412,11 @@ export type Database = {
           meta_ad_account_id: string | null
           whatsapp: string | null
           whatsapp_atendimento: string | null
+          bio_botao_texto: string | null
+          bio_botao_fundo: string | null
+          bio_botao_letra: string | null
+          bio_quiz_titulo: string | null
+          bio_quiz_descricao: string | null
           bio_slug: string | null
           bio_logo: string | null
           google_place_id: string | null
@@ -441,6 +446,11 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
+          bio_botao_texto?: string | null
+          bio_botao_fundo?: string | null
+          bio_botao_letra?: string | null
+          bio_quiz_titulo?: string | null
+          bio_quiz_descricao?: string | null
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null
@@ -470,6 +480,11 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
+          bio_botao_texto?: string | null
+          bio_botao_fundo?: string | null
+          bio_botao_letra?: string | null
+          bio_quiz_titulo?: string | null
+          bio_quiz_descricao?: string | null
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null

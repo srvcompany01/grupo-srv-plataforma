@@ -698,13 +698,23 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'definir_quiz_bio_cliente',
-    descricao: 'Define as perguntas do quiz do WhatsApp da página da bio do cliente (Biolytics): até 3 perguntas de múltipla escolha, cada uma com 2 a 4 opções de até 40 caracteres (pergunta até 80). Substitui todas as perguntas atuais; lista vazia volta ao quiz padrão. Só admin e gestor. O WhatsApp só abre na página depois de a pessoa responder, e só então conta um lead orgânico.',
+    descricao: 'Define o quiz do WhatsApp da página da bio do cliente (Biolytics): aparência (texto e cores do botão, título e descrição do quiz; omitidos voltam ao padrão) e até 3 perguntas de múltipla escolha, cada uma com 2 a 4 opções de até 40 caracteres (pergunta até 80). Substitui todas as perguntas atuais; lista vazia volta ao quiz padrão. Só admin e gestor. O WhatsApp só abre na página depois de a pessoa responder, e só então conta um lead orgânico.',
     escrita: true,
-    entrada: { clienteId: id('Cliente (id de listar_clientes)'), perguntas: z.array(z.object({ pergunta: z.string().min(1).max(80), opcoes: z.array(z.string().min(1).max(40)).min(2).max(4) })).max(3) },
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      perguntas: z.array(z.object({ pergunta: z.string().min(1).max(80), opcoes: z.array(z.string().min(1).max(40)).min(2).max(4) })).max(3),
+      textoBotao: z.string().max(40).optional().describe('Texto do botão do WhatsApp (vazio = "Chamar no WhatsApp")'),
+      corFundoBotao: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Cor do botão, #rrggbb; informe junto com corLetraBotao'),
+      corLetraBotao: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Cor da letra do botão, #rrggbb'),
+      titulo: z.string().max(80).optional().describe('Título mostrado no começo do quiz'),
+      descricao: z.string().max(200).optional().describe('Descrição mostrada no começo do quiz'),
+    },
     executar: async ({ sb }, a) => {
       const cliente = await buscarCliente(sb, a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
-      await (await import('@/servicos/bio')).salvarPerguntasBio(sb, cliente.id, a.perguntas.map((p) => ({ pergunta: p.pergunta, opcoes: p.opcoes.join('\n') })))
+      const svc = await import('@/servicos/bio')
+      await svc.salvarAparencia(sb, cliente.id, { botaoTexto: a.textoBotao, botaoFundo: a.corFundoBotao, botaoLetra: a.corLetraBotao, titulo: a.titulo, descricao: a.descricao })
+      await svc.salvarPerguntasBio(sb, cliente.id, a.perguntas.map((p) => ({ pergunta: p.pergunta, opcoes: p.opcoes.join('\n') })))
       return { ok: true, perguntas: a.perguntas.length || 'quiz padrão' }
     },
   }),

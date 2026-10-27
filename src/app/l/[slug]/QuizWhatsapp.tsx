@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Pergunta } from '@/dominio/bio-quiz'
+import type { QuizDaPagina } from '@/dominio/bio-quiz'
 
 type Estado = { etapa: number; escolhas: number[]; enviando: boolean; url: string | null; erro: string | null }
 const INICIO: Estado = { etapa: 0, escolhas: [], enviando: false, url: null, erro: null }
@@ -12,7 +12,10 @@ const caminhoQuiz = () => `${location.pathname.replace(/\/$/, '')}/quiz`
 const botaoBase = 'block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors'
 
 /** O botão do WhatsApp da bio: abre um quiz curto e só libera a conversa (e conta o lead) depois da última resposta. */
-export function QuizWhatsapp({ rotulo, perguntas, origem, destaque }: { rotulo: string; perguntas: Pergunta[]; origem: string; destaque: boolean }) {
+export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: string; quiz: QuizDaPagina; origem: string; destaque: boolean }) {
+  const { perguntas, aparencia } = quiz
+  // Cores escolhidas pelo cliente; sem elas, o padrão preto e branco da página.
+  const cores = aparencia.botaoFundo ? { backgroundColor: aparencia.botaoFundo, color: aparencia.botaoLetra, borderColor: aparencia.botaoFundo } : undefined
   const [aberto, setAberto] = useState(false)
   const [s, setS] = useState<Estado>(INICIO)
 
@@ -44,7 +47,7 @@ export function QuizWhatsapp({ rotulo, perguntas, origem, destaque }: { rotulo: 
   const q = perguntas[s.etapa]
   return (
     <>
-      <button type="button" onClick={abrir} className={`${botaoBase} ${destaque ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
+      <button type="button" onClick={abrir} style={cores} className={`${botaoBase} ${cores ? 'hover:opacity-85' : destaque ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
         {rotulo}
       </button>
       {aberto && (
@@ -54,7 +57,7 @@ export function QuizWhatsapp({ rotulo, perguntas, origem, destaque }: { rotulo: 
               <div className="space-y-4 text-center">
                 <p className="text-lg font-semibold">Tudo certo!</p>
                 <p className="text-sm text-black/70">Abrindo o WhatsApp…</p>
-                <a href={s.url} className={`${botaoBase} bg-black text-white`}>Abrir o WhatsApp</a>
+                <a href={s.url} style={cores} className={`${botaoBase} ${cores ? '' : 'bg-black text-white'}`}>Abrir o WhatsApp</a>
               </div>
             ) : (
               <div className="space-y-5">
@@ -62,6 +65,12 @@ export function QuizWhatsapp({ rotulo, perguntas, origem, destaque }: { rotulo: 
                   <span>{s.etapa + 1} de {perguntas.length}</span>
                   <button type="button" onClick={() => setAberto(false)} disabled={s.enviando} className="underline-offset-2 hover:underline">Fechar</button>
                 </div>
+                {s.etapa === 0 && (aparencia.titulo || aparencia.descricao) && (
+                  <div className="space-y-1.5">
+                    {aparencia.titulo && <h2 className="text-2xl font-semibold leading-tight">{aparencia.titulo}</h2>}
+                    {aparencia.descricao && <p className="text-sm text-black/70">{aparencia.descricao}</p>}
+                  </div>
+                )}
                 <p className="text-xl font-semibold leading-snug">{q.pergunta}</p>
                 <div className="flex flex-col gap-2.5">
                   {q.opcoes.map((o, i) => (

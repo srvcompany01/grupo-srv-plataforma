@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
-import { MAXIMO_PERGUNTAS, QUIZ_PADRAO, type Pergunta } from '@/dominio/bio-quiz'
+import { MAXIMO_PERGUNTAS, QUIZ_PADRAO, TEXTO_PADRAO_BOTAO, type AparenciaQuiz, type Pergunta } from '@/dominio/bio-quiz'
 import { adicionarLinkBioAcao, configurarLinkBioAcao, iniciarUploadLogoBioAcao, removerLinkBioAcao, salvarLogoBioAcao, salvarQuizBioAcao, salvarResultadoMesAcao } from './acoes'
 
 const moeda = (n: number | null) => (n === null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -147,29 +147,67 @@ export function LinkBio({ clienteId, url, urls, mensagem, whatsapp, logo, links,
   )
 }
 
-/** Perguntas do quiz do WhatsApp da página da bio: a pessoa responde antes de o WhatsApp abrir e só então conta um lead orgânico. */
-export function QuizBio({ clienteId, perguntas }: { clienteId: string; perguntas: Pergunta[] }) {
+/** Quiz do WhatsApp da página da bio: aparência do botão, título e descrição, e as perguntas. Só vira lead quem termina o quiz. */
+export function QuizBio({ clienteId, perguntas, aparencia }: { clienteId: string; perguntas: Pergunta[]; aparencia: AparenciaQuiz }) {
   const [quiz, setQuiz] = useState(() => Array.from({ length: MAXIMO_PERGUNTAS }, (_, i) => ({ pergunta: perguntas[i]?.pergunta ?? '', opcoes: (perguntas[i]?.opcoes ?? []).join('\n') })))
+  const [ap, setAp] = useState(aparencia)
   const [pendente, iniciar] = useTransition()
+  const fundo = ap.botaoFundo || '#000000'
+  const letra = ap.botaoLetra || '#ffffff'
+  const mudar = (campoAp: keyof AparenciaQuiz, valor: string) => setAp({ ...ap, [campoAp]: valor })
   return (
-    <div className="space-y-3">
-      <p className="text-legenda text-texto-3">
-        A pessoa responde a essas perguntas antes de o WhatsApp abrir; só aí conta um lead orgânico (uma vez por pessoa por dia), e as respostas vão na mensagem. Até {MAXIMO_PERGUNTAS} perguntas, de 2 a 4 opções cada, uma por linha.
-        {perguntas.length === 0 && ' Enquanto estiver vazio, a página usa o quiz padrão: ' + QUIZ_PADRAO.map((q) => `"${q.pergunta}"`).join(' e ') + '.'}
-      </p>
-      {quiz.map((q, i) => (
-        <div key={i} className="grid gap-2 sm:grid-cols-2">
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <p className={rotulo}>Botão do WhatsApp</p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
           <label className="block space-y-1">
-            <span className={rotulo}>Pergunta {i + 1}</span>
-            <input className={campo} maxLength={80} placeholder={i === 0 ? 'Qual serviço você procura?' : ''} value={q.pergunta} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, pergunta: e.target.value } : x)))} />
+            <span className={rotulo}>Texto do botão</span>
+            <input className={campo} maxLength={40} placeholder={TEXTO_PADRAO_BOTAO} value={ap.botaoTexto} onChange={(e) => mudar('botaoTexto', e.target.value)} />
           </label>
           <label className="block space-y-1">
-            <span className={rotulo}>Opções (uma por linha)</span>
-            <textarea className={campo} rows={3} placeholder={i === 0 ? 'Opção A\nOpção B\nOpção C' : undefined} value={q.opcoes} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, opcoes: e.target.value } : x)))} />
+            <span className={rotulo}>Cor do botão</span>
+            <input type="color" className="h-10 w-20 cursor-pointer rounded-lg border border-borda bg-white p-1" value={fundo} onChange={(e) => mudar('botaoFundo', e.target.value)} />
+          </label>
+          <label className="block space-y-1">
+            <span className={rotulo}>Cor da letra</span>
+            <input type="color" className="h-10 w-20 cursor-pointer rounded-lg border border-borda bg-white p-1" value={letra} onChange={(e) => mudar('botaoLetra', e.target.value)} />
           </label>
         </div>
-      ))}
-      <button type="button" disabled={pendente} className={botaoPrimario} onClick={() => iniciar(async () => { avisar(await salvarQuizBioAcao(clienteId, quiz), true) })}>Salvar quiz</button>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full border px-6 py-3 text-base font-medium" style={{ backgroundColor: fundo, color: letra, borderColor: fundo }}>{ap.botaoTexto || TEXTO_PADRAO_BOTAO}</span>
+          {(ap.botaoFundo || ap.botaoLetra) && <button type="button" className={botaoFantasma} onClick={() => setAp({ ...ap, botaoFundo: '', botaoLetra: '' })}>Voltar às cores padrão</button>}
+          <span className="text-legenda text-texto-3">Prévia. Sem escolher cores, o botão segue o padrão preto e branco da página.</span>
+        </div>
+      </div>
+      <div className="grid gap-3 border-t border-borda pt-3 sm:grid-cols-2">
+        <label className="block space-y-1">
+          <span className={rotulo}>Título do quiz (opcional)</span>
+          <input className={campo} maxLength={80} placeholder="Antes de falar com a gente" value={ap.titulo} onChange={(e) => mudar('titulo', e.target.value)} />
+        </label>
+        <label className="block space-y-1">
+          <span className={rotulo}>Descrição (opcional)</span>
+          <textarea className={campo} rows={2} maxLength={200} placeholder="Responda 2 perguntas rápidas para a gente te atender melhor." value={ap.descricao} onChange={(e) => mudar('descricao', e.target.value)} />
+        </label>
+      </div>
+      <div className="space-y-3 border-t border-borda pt-3">
+        <p className="text-legenda text-texto-3">
+          A pessoa responde a essas perguntas antes de o WhatsApp abrir; só aí conta um lead orgânico (uma vez por pessoa por dia), e as respostas vão na mensagem. Até {MAXIMO_PERGUNTAS} perguntas, de 2 a 4 opções cada, uma por linha.
+          {perguntas.length === 0 && ' Enquanto estiver vazio, a página usa o quiz padrão: ' + QUIZ_PADRAO.map((q) => `"${q.pergunta}"`).join(' e ') + '.'}
+        </p>
+        {quiz.map((q, i) => (
+          <div key={i} className="grid gap-2 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className={rotulo}>Pergunta {i + 1}</span>
+              <input className={campo} maxLength={80} placeholder={i === 0 ? 'Qual serviço você procura?' : ''} value={q.pergunta} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, pergunta: e.target.value } : x)))} />
+            </label>
+            <label className="block space-y-1">
+              <span className={rotulo}>Opções (uma por linha)</span>
+              <textarea className={campo} rows={3} placeholder={i === 0 ? 'Opção A\nOpção B\nOpção C' : undefined} value={q.opcoes} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, opcoes: e.target.value } : x)))} />
+            </label>
+          </div>
+        ))}
+      </div>
+      <button type="button" disabled={pendente} className={botaoPrimario} onClick={() => iniciar(async () => { avisar(await salvarQuizBioAcao(clienteId, quiz, ap), true) })}>Salvar</button>
     </div>
   )
 }

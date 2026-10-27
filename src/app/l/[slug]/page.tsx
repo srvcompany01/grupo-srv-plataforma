@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { ehRobo, hostEhDaBio, origemDaBio, slugValido } from '@/dominio/bio'
-import { perguntasDaPagina } from '@/dominio/bio-quiz'
+import { lerQuizDaPagina, TEXTO_PADRAO_BOTAO } from '@/dominio/bio-quiz'
 import { urlLeitura } from '@/infra/r2'
 import { QuizWhatsapp } from './QuizWhatsapp'
 import { Visualizacao } from './Visualizacao'
@@ -21,7 +21,7 @@ const ler = cache(async (slug: string) => {
   if (!d) return null
   const logo = d.logo ? await urlLeitura(d.logo).catch(() => null) : null
   // O número do WhatsApp fica no servidor: só sai depois do quiz (rota /quiz).
-  return { nome: d.nome, logo, temWhatsapp: !!d.whatsapp, links: (d.links ?? []) as { id: string; rotulo: string }[], perguntas: perguntasDaPagina(quiz) }
+  return { nome: d.nome, logo, temWhatsapp: !!d.whatsapp, links: (d.links ?? []) as { id: string; rotulo: string }[], quiz: lerQuizDaPagina(quiz) }
 })
 
 export async function generateMetadata({ params }: PageProps<'/l/[slug]'>): Promise<Metadata> {
@@ -41,7 +41,7 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
   if (humano) await criarClientePublico().rpc('bio_visita', { p_slug: slug, p_origem: origem })
   // No domínio dedicado o endereço público é /<cliente>; no do aplicativo, /l/<cliente>.
   const base = hostEhDaBio((await headers()).get('host'), process.env.BIO_DOMINIO) ? `/${slug}/ir` : `/l/${slug}/ir`
-  const botoes = [...(p.temWhatsapp ? [{ id: 'whatsapp', rotulo: 'Chamar no WhatsApp' }] : []), ...p.links]
+  const botoes = [...(p.temWhatsapp ? [{ id: 'whatsapp', rotulo: p.quiz.aparencia.botaoTexto || TEXTO_PADRAO_BOTAO }] : []), ...p.links]
   return (
     <main className="flex min-h-dvh flex-col items-center bg-white px-5 py-14 text-black">
       {humano && <Visualizacao origem={origem} />}
@@ -57,7 +57,7 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
         </div>
         <nav className="flex w-full flex-col gap-3">
           {botoes.map((b, i) => b.id === 'whatsapp' ? (
-            <QuizWhatsapp key={b.id} rotulo={b.rotulo} perguntas={p.perguntas} origem={origem} destaque={i === 0} />
+            <QuizWhatsapp key={b.id} rotulo={b.rotulo} quiz={p.quiz} origem={origem} destaque={i === 0} />
           ) : (
             <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
               {b.rotulo}

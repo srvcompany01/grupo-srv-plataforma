@@ -32,9 +32,12 @@ describe('performance', () => {
     expect(await ler(db, cli, `select * from bio_botao_clicks`)).toEqual([])
     await expect(executar(db, ana, `insert into bio_links (client_id, rotulo, url) values ($1, 'X', 'https://a.com')`, [id])).rejects.toThrow(/row-level security/)
     // Quiz: perguntas públicas (vazio = padrão do app); lead = quiz concluído, uma vez por pessoa por dia, e só então sai o WhatsApp.
-    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: [] }])
+    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: expect.objectContaining({ perguntas: [], titulo: null }) }])
     await db.query(`insert into bio_perguntas (client_id, position, pergunta, opcoes) values ($1, 0, 'O que procura?', array['Anel', 'Colar'])`, [id])
-    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: [{ pergunta: 'O que procura?', opcoes: ['Anel', 'Colar'] }] }])
+    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: expect.objectContaining({ perguntas: [{ pergunta: 'O que procura?', opcoes: ['Anel', 'Colar'] }] }) }])
+    await db.query(`update clients set bio_botao_texto = 'Fale conosco', bio_botao_fundo = '#25D366', bio_botao_letra = '#ffffff', bio_quiz_titulo = 'Antes de falar' where id = $1`, [id])
+    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: expect.objectContaining({ titulo: 'Antes de falar', botaoTexto: 'Fale conosco', botaoFundo: '#25D366', botaoLetra: '#ffffff', descricao: null }) }])
+    await expect(db.query(`update clients set bio_botao_fundo = 'verde' where id = $1`, [id])).rejects.toThrow()
     const resp = `'[{"p":"O que procura?","o":"Anel"}]'::jsonb`
     expect(await ler(db, null, `select * from bio_lead('ouro', 'story', 'ccccccccccccccccccccccccccccccc1', ${resp})`)).toEqual([{ whatsapp: '5591999999999', mensagem: 'Olá! Vim pelo Instagram 😊' }])
     await ler(db, null, `select * from bio_lead('ouro', 'story', 'ccccccccccccccccccccccccccccccc1', ${resp})`)

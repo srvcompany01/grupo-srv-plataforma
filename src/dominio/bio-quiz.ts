@@ -30,6 +30,41 @@ export function lerPerguntas(brutas: { pergunta: string; opcoes: string }[]): Pe
   return saida
 }
 
+/** Aparência: texto e cores do botão do WhatsApp, título e descrição do quiz. Vazio = padrão. */
+export type AparenciaQuiz = { botaoTexto: string; botaoFundo: string; botaoLetra: string; titulo: string; descricao: string }
+export const TEXTO_PADRAO_BOTAO = 'Chamar no WhatsApp'
+export const APARENCIA_PADRAO: AparenciaQuiz = { botaoTexto: '', botaoFundo: '', botaoLetra: '', titulo: '', descricao: '' }
+const HEX = /^#[0-9a-fA-F]{6}$/
+
+/** Valida o que a equipe digitou: textos aparados, cores #rrggbb (ou vazio), tamanhos dentro do limite do banco. */
+export function lerAparencia(e: Partial<AparenciaQuiz>): AparenciaQuiz | { erro: string } {
+  const t = (v: unknown) => String(v ?? '').trim()
+  const a = { botaoTexto: t(e.botaoTexto), botaoFundo: t(e.botaoFundo), botaoLetra: t(e.botaoLetra), titulo: t(e.titulo), descricao: t(e.descricao) }
+  if (a.botaoTexto.length > 40) return { erro: 'O texto do botão pode ter até 40 caracteres.' }
+  if (a.titulo.length > 80) return { erro: 'O título pode ter até 80 caracteres.' }
+  if (a.descricao.length > 200) return { erro: 'A descrição pode ter até 200 caracteres.' }
+  for (const c of [a.botaoFundo, a.botaoLetra]) if (c && !HEX.test(c)) return { erro: 'Use cores no formato #000000.' }
+  // Só uma das cores: a outra ficaria ilegível (ex.: fundo preto com letra preta).
+  if (!!a.botaoFundo !== !!a.botaoLetra) return { erro: 'Escolha as duas cores do botão (fundo e letra), ou nenhuma para o padrão.' }
+  if (a.botaoFundo && a.botaoFundo.toLowerCase() === a.botaoLetra.toLowerCase()) return { erro: 'O fundo e a letra do botão não podem ter a mesma cor.' }
+  return a
+}
+
+export type QuizDaPagina = { perguntas: Pergunta[]; aparencia: AparenciaQuiz }
+
+/** Lê o que `bio_quiz_pagina` devolve: perguntas (vazias ou inválidas = quiz padrão) e aparência. Aceita também a lista antiga. */
+export function lerQuizDaPagina(bruto: unknown): QuizDaPagina {
+  const o = (bruto && typeof bruto === 'object' && !Array.isArray(bruto) ? bruto : {}) as Record<string, unknown>
+  const texto = (v: unknown) => (typeof v === 'string' ? v : '')
+  const cor = (v: unknown) => (typeof v === 'string' && HEX.test(v) ? v : '')
+  const fundo = cor(o.botaoFundo)
+  const letra = cor(o.botaoLetra)
+  return {
+    perguntas: perguntasDaPagina(Array.isArray(bruto) ? bruto : o.perguntas),
+    aparencia: { botaoTexto: texto(o.botaoTexto), botaoFundo: fundo && letra ? fundo : '', botaoLetra: fundo && letra ? letra : '', titulo: texto(o.titulo), descricao: texto(o.descricao) },
+  }
+}
+
 /** Lê as perguntas que o banco devolve (jsonb); inválido ou vazio = quiz padrão. */
 export function perguntasDaPagina(bruto: unknown): Pergunta[] {
   const lista = Array.isArray(bruto) ? bruto : []

@@ -3,7 +3,7 @@ import { Modulo } from '@/componentes/Modulo'
 import { urlDaBio, type ResumoBio } from '@/dominio/bio'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { paginaBioDoCliente, perguntasDoCliente } from '@/servicos/bio'
+import { aparenciaDoCliente, paginaBioDoCliente, perguntasDoCliente } from '@/servicos/bio'
 import type { Cliente } from '@/servicos/clientes-plataforma'
 import { linkBioDoCliente } from '@/servicos/performance'
 import { LinkBio, QuizBio } from '../performance/Formularios'
@@ -31,10 +31,11 @@ export async function ConfigurarBio({ c, r }: { c: Cliente; r: ResumoBio | null 
 
 /** Perguntas do quiz do cliente. */
 export async function ConfigurarQuiz({ c }: { c: Cliente }) {
-  const perguntas = await perguntasDoCliente(await criarClienteServidor(), c.id)
+  const sb = await criarClienteServidor()
+  const [perguntas, aparencia] = await Promise.all([perguntasDoCliente(sb, c.id), aparenciaDoCliente(sb, c.id)])
   return (
-    <Modulo icone={Settings2} titulo="Perguntas do quiz" descricao="O que a pessoa responde antes de o WhatsApp abrir">
-      <QuizBio key={JSON.stringify(perguntas)} clienteId={c.id} perguntas={perguntas} />
+    <Modulo icone={Settings2} titulo="Botão e quiz do WhatsApp" descricao="Aparência do botão, título, descrição e as perguntas que a pessoa responde antes de o WhatsApp abrir">
+      <QuizBio key={JSON.stringify([perguntas, aparencia])} clienteId={c.id} perguntas={perguntas} aparencia={aparencia} />
     </Modulo>
   )
 }

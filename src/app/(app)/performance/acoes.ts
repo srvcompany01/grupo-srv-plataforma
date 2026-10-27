@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { AparenciaQuiz } from '@/dominio/bio-quiz'
 import { chaveDeCapaValida, validarCapa } from '@/dominio/clientes-galeria'
 import { gerarChaveCliente, urlUpload } from '@/infra/r2'
 import * as bio from '@/servicos/bio'
@@ -90,11 +91,15 @@ export async function removerLinkBioAcao(clienteId: string, id: string): Promise
   return res
 }
 
-/** Perguntas do quiz do WhatsApp da página da bio (até 3). Lista vazia volta ao quiz padrão. */
-export async function salvarQuizBioAcao(clienteId: string, perguntas: { pergunta: string; opcoes: string }[]): Promise<Resultado> {
+/** Quiz do WhatsApp da página da bio: perguntas (até 3; lista vazia = quiz padrão) e aparência (botão, título e descrição). */
+export async function salvarQuizBioAcao(clienteId: string, perguntas: { pergunta: string; opcoes: string }[], aparencia: Partial<AparenciaQuiz>): Promise<Resultado> {
   if (!(await exigirGestaoBio(clienteId)) || !Array.isArray(perguntas)) return { erro: 'Sem permissão.' }
   const limpas = perguntas.slice(0, 10).map((q) => ({ pergunta: String(q?.pergunta ?? ''), opcoes: String(q?.opcoes ?? '') }))
-  const res = await tentar(async () => bio.salvarPerguntasBio(await criarClienteServidor(), clienteId, limpas), 'Quiz salvo.')
+  const res = await tentar(async () => {
+    const sb = await criarClienteServidor()
+    await bio.salvarAparencia(sb, clienteId, aparencia ?? {})
+    await bio.salvarPerguntasBio(sb, clienteId, limpas)
+  }, 'Quiz salvo.')
   revalidarBio()
   return res
 }

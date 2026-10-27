@@ -1,6 +1,6 @@
 import 'server-only'
 import { lerLinkBio, MAXIMO_LINKS_BIO, montarResumoBio, type ResumoBio } from '@/dominio/bio'
-import { lerPerguntas, type Pergunta } from '@/dominio/bio-quiz'
+import { APARENCIA_PADRAO, lerAparencia, lerPerguntas, type AparenciaQuiz, type Pergunta } from '@/dominio/bio-quiz'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
@@ -68,4 +68,16 @@ export async function salvarPerguntasBio(sb: Supabase, clienteId: string, brutas
   if ('erro' in perguntas) throw { code: 'P0001', message: perguntas.erro }
   dados(await sb.from('bio_perguntas').delete().eq('client_id', clienteId).select('id'))
   if (perguntas.length) dados(await sb.from('bio_perguntas').insert(perguntas.map((q, i) => ({ client_id: clienteId, position: i, pergunta: q.pergunta, opcoes: q.opcoes }))).select('id'))
+}
+
+/** Aparência do botão do WhatsApp e do quiz do cliente (vazio = padrão). */
+export async function aparenciaDoCliente(sb: Supabase, clienteId: string): Promise<AparenciaQuiz> {
+  const { data } = await sb.from('clients').select('bio_botao_texto, bio_botao_fundo, bio_botao_letra, bio_quiz_titulo, bio_quiz_descricao').eq('id', clienteId).maybeSingle()
+  return data ? { botaoTexto: data.bio_botao_texto ?? '', botaoFundo: data.bio_botao_fundo ?? '', botaoLetra: data.bio_botao_letra ?? '', titulo: data.bio_quiz_titulo ?? '', descricao: data.bio_quiz_descricao ?? '' } : APARENCIA_PADRAO
+}
+
+export async function salvarAparencia(sb: Supabase, clienteId: string, bruta: Partial<AparenciaQuiz>): Promise<void> {
+  const a = lerAparencia(bruta)
+  if ('erro' in a) throw { code: 'P0001', message: a.erro }
+  dados(await sb.from('clients').update({ bio_botao_texto: a.botaoTexto || null, bio_botao_fundo: a.botaoFundo || null, bio_botao_letra: a.botaoLetra || null, bio_quiz_titulo: a.titulo || null, bio_quiz_descricao: a.descricao || null }).eq('id', clienteId).select('id'))
 }

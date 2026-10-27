@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerPerguntas, mensagemComRespostas, perguntasDaPagina, QUIZ_PADRAO, resolverRespostas, resumirQuiz } from '@/dominio/bio-quiz'
+import { lerAparencia, lerPerguntas, lerQuizDaPagina, mensagemComRespostas, perguntasDaPagina, QUIZ_PADRAO, resolverRespostas, resumirQuiz } from '@/dominio/bio-quiz'
 
 const quiz = [{ pergunta: 'O que procura?', opcoes: ['Anel', 'Colar'] }, { pergunta: 'Quando?', opcoes: ['Hoje', 'Mês que vem', 'Só olhando'] }]
 
@@ -39,5 +39,25 @@ describe('quiz da bio', () => {
     const r = resumirQuiz([l('Anel', 'Hoje'), l('Colar', 'Hoje'), l('Anel', 'Só olhando'), { respostas: 'lixo' }])
     expect(r[0]).toEqual({ pergunta: 'O que procura?', total: 3, opcoes: [{ opcao: 'Anel', n: 2 }, { opcao: 'Colar', n: 1 }] })
     expect(r[1].opcoes[0]).toEqual({ opcao: 'Hoje', n: 2 })
+  })
+
+  it('aparência: cores #rrggbb sempre em par, textos dentro do limite', () => {
+    expect(lerAparencia({ botaoTexto: ' Fale conosco ', botaoFundo: '#25D366', botaoLetra: '#ffffff', titulo: ' Oi ' })).toEqual({ botaoTexto: 'Fale conosco', botaoFundo: '#25D366', botaoLetra: '#ffffff', titulo: 'Oi', descricao: '' })
+    expect(lerAparencia({})).toEqual({ botaoTexto: '', botaoFundo: '', botaoLetra: '', titulo: '', descricao: '' })
+    expect(lerAparencia({ botaoFundo: '#25D366' })).toHaveProperty('erro')
+    expect(lerAparencia({ botaoFundo: 'verde', botaoLetra: '#fff' })).toHaveProperty('erro')
+    expect(lerAparencia({ botaoFundo: '#111111', botaoLetra: '#111111' })).toHaveProperty('erro')
+    expect(lerAparencia({ botaoTexto: 'a'.repeat(41) })).toHaveProperty('erro')
+    expect(lerAparencia({ titulo: 'a'.repeat(81) })).toHaveProperty('erro')
+    expect(lerAparencia({ descricao: 'a'.repeat(201) })).toHaveProperty('erro')
+  })
+
+  it('o que a página recebe: perguntas + aparência; formato antigo (lista) e lixo viram padrão', () => {
+    const q = lerQuizDaPagina({ perguntas: quiz, titulo: 'Oi', descricao: null, botaoTexto: 'Fale', botaoFundo: '#25D366', botaoLetra: '#fff' })
+    expect(q.perguntas).toEqual(quiz)
+    expect(q.aparencia).toEqual({ botaoTexto: 'Fale', botaoFundo: '', botaoLetra: '', titulo: 'Oi', descricao: '' }) // cor inválida (#fff) descarta o par
+    expect(lerQuizDaPagina([...quiz]).perguntas).toEqual(quiz)
+    expect(lerQuizDaPagina(null).perguntas).toEqual(QUIZ_PADRAO)
+    expect(lerQuizDaPagina({ botaoFundo: '#25D366', botaoLetra: '#ffffff' }).aparencia).toMatchObject({ botaoFundo: '#25D366', botaoLetra: '#ffffff' })
   })
 })
