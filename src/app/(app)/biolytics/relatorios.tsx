@@ -1,6 +1,6 @@
-import { Eye, Link2, MousePointerClick, Sparkles, Star, Target, Users } from 'lucide-react'
+import { ArrowDown, ArrowRight, Eye, Link2, MousePointerClick, Sparkles, Star, Target, Users, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { BlocoAnalise, Numeros } from '@/componentes/insights/BlocoAnalise'
 import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
 import { Modulo } from '@/componentes/Modulo'
@@ -16,6 +16,40 @@ const q = (periodo: PeriodoAnuncios) => (consultaPeriodo(periodo) ? `&${consulta
 export const hrefBiolytics = (aba: string, c: Cliente, periodo: PeriodoAnuncios) => `/biolytics?aba=${aba}&cliente=${c.id}${q(periodo)}`
 
 export const Vazio = ({ children }: { children: ReactNode }) => <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
+
+/** Etapa do funil: cada número e, entre eles, a seta com a taxa de conversão de uma etapa para a próxima. */
+type Etapa = { rotulo: string; valor: number; extra?: string; icone: LucideIcon; cor: string }
+
+function Funil({ etapas }: { etapas: Etapa[] }) {
+  return (
+    <div className="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:gap-0">
+      {etapas.map((e, i) => {
+        const Icone = e.icone
+        const anterior = etapas[i - 1]
+        const taxa = anterior && anterior.valor > 0 ? pct((e.valor / anterior.valor) * 100) : '—'
+        return (
+          <Fragment key={e.rotulo}>
+            {anterior && (
+              <div className="flex shrink-0 flex-row items-center justify-center gap-1.5 py-0.5 md:w-20 md:flex-col md:gap-0.5 md:py-0" aria-label={`Conversão de ${anterior.rotulo} para ${e.rotulo}: ${taxa}`}>
+                <span className="text-rotulo font-bold tabular-nums text-texto">{taxa}</span>
+                <ArrowDown className="h-5 w-5 text-texto-3 md:hidden" aria-hidden />
+                <ArrowRight className="hidden h-5 w-5 text-texto-3 md:block" aria-hidden />
+              </div>
+            )}
+            <div className="min-w-0 flex-1 rounded-xl border border-borda bg-white p-3">
+              <div className="flex items-center gap-1.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ background: `${e.cor}1f`, color: e.cor }}><Icone className="h-3.5 w-3.5" /></span>
+                <p className="truncate text-micro text-texto-3">{e.rotulo}</p>
+              </div>
+              <p className="mt-1 text-destaque font-bold tabular-nums text-texto">{n(e.valor)}</p>
+              {e.extra && <p className="text-micro text-texto-3">{e.extra}</p>}
+            </div>
+          </Fragment>
+        )
+      })}
+    </div>
+  )
+}
 
 /** Sem cliente escolhido: todos os clientes lado a lado. */
 export function VisaoTodos({ linhas, periodo }: { linhas: { c: Cliente; r: ResumoBio | null }[]; periodo: PeriodoAnuncios }) {
@@ -60,11 +94,11 @@ export function GeralCliente({ c, periodo, r, ativos }: { c: Cliente; periodo: P
     <>
       {r && (
         <Modulo icone={Link2} titulo="Visão geral" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
-          <Numeros itens={[
-            { rotulo: 'Leads orgânicos', valor: n(r.leadsOrganicos), extra: 'quiz concluído', icone: Users, cor: '#eb6834' },
-            { rotulo: 'Cliques no link da bio', valor: n(r.cliques), extra: r.cliques ? `${pct((r.visualizacoes / r.cliques) * 100)} abriram a página` : undefined, icone: MousePointerClick, cor: '#1baf7a' },
-            { rotulo: 'Visualizações', valor: n(r.visualizacoes), icone: Eye, cor: '#2a78d6' },
-            { rotulo: 'Abriram o quiz', valor: n(r.quiz.iniciaram), extra: r.quiz.iniciaram ? `${pct((r.quiz.concluiram / r.quiz.iniciaram) * 100)} terminaram` : undefined, icone: Target, cor: '#6250d6' },
+          <Funil etapas={[
+            { rotulo: 'Cliques no link da bio', valor: r.cliques, extra: 'tocaram no link do perfil', icone: MousePointerClick, cor: '#1baf7a' },
+            { rotulo: 'Visualizações', valor: r.visualizacoes, extra: 'a página abriu', icone: Eye, cor: '#2a78d6' },
+            { rotulo: 'Abriram o quiz', valor: r.quiz.iniciaram, extra: 'tocaram no WhatsApp', icone: Target, cor: '#6250d6' },
+            { rotulo: 'Leads orgânicos', valor: r.leadsOrganicos, extra: 'quiz concluído', icone: Users, cor: '#eb6834' },
           ]} />
         </Modulo>
       )}
