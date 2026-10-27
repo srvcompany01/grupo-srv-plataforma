@@ -16,7 +16,7 @@ export function destinoPorPapel(caminho: string, papel: PapelUsuario | null, ati
   if (rotaPublica(caminho)) return null
   if (!papel || !ativo) return '/login'
   const cliente = papel === 'cliente'
-  if (caminho === '/') return cliente ? '/portal' : '/inicio'
+  if (caminho === '/') return cliente ? '/portal' : '/home'
   const noPortal = comecaCom(caminho, '/portal')
   if (cliente && !noPortal) return '/portal'
   if (!cliente && noPortal) return '/inicio'

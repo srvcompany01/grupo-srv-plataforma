@@ -39,7 +39,7 @@ describe('destinoPorPapel', () => {
     ['/portal/tarefas/1', 'cliente', true, null],
     ['/portal', 'membro', true, '/inicio'],
     ['/portal/x', 'admin', true, '/inicio'],
-    ['/', 'gestor', true, '/inicio'],
+    ['/', 'gestor', true, '/home'],
     ['/', 'cliente', true, '/portal'],
     ['/listas/1', 'membro', true, null],
     ['/config/usuarios', 'admin', true, null],

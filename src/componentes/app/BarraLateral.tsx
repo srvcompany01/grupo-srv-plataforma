@@ -17,6 +17,7 @@ import {
   Mic,
   Newspaper,
   PanelLeftClose,
+  House,
   PenTool,
   Pin,
   Settings,
@@ -52,6 +53,7 @@ type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: 
 /** Atalhos dos módulos: na faixa de ícones (desktop) e no topo do menu (celular). `curto` = rótulo da faixa. */
 function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
   return [
+    { id: 'home', href: '/home', rotulo: 'Home', curto: 'Home', Icone: House },
     { id: 'tarefas', href: '/inicio', rotulo: 'Minhas tarefas', curto: 'Tarefas', Icone: CheckSquare },
     { id: 'chat', href: '/chat', rotulo: 'Chat', curto: 'Chat', Icone: MessagesSquare, contador: chatNaoLidas },
     { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Agenda', Icone: CalendarDays },
@@ -92,7 +94,7 @@ const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLuc
   { id: 'gestao', rotulo: 'Gestão', curto: 'Gestão', Icone: LayoutDashboard, itens: ['painel', 'clientes', 'projetos', 'time', 'reunioes', 'financeiro'] },
   { id: 'ferramentas', rotulo: 'Ferramentas', curto: 'Ferram.', Icone: Shapes, itens: ['documentos', 'quadros', 'funis', 'formularios'] },
 ]
-const SOLTOS_NO_TOPO = ['tarefas', 'chat', 'agenda']
+const SOLTOS_NO_TOPO = ['home', 'tarefas', 'chat', 'agenda']
 
 export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'papel' | 'chatNaoLidas' | 'ordemInicio'>) {
   const caminho = usePathname()
