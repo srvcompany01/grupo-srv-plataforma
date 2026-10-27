@@ -50,7 +50,7 @@ describe('planilha .xlsx', () => {
     const resumo = Object.fromEntries(abas[0].linhas.slice(1).map((l) => [l[0] as string, l[1]]))
     expect(resumo['Investido na Meta']).toEqual({ v: 7970.68, f: 'moeda' })
     expect(resumo['Investido no Google Ads']).toEqual({ v: 3479.29, f: 'moeda' })
-    expect(resumo['Leads orgânicos (WhatsApp da bio)']).toEqual({ v: 50, f: 'inteiro' })
+    expect(resumo['Leads orgânicos (quiz da bio)']).toEqual({ v: 50, f: 'inteiro' })
     expect(resumo['  orgânicos']).toEqual({ v: 229, f: 'inteiro' })
     const res = Object.fromEntries(abas.find((a) => a.nome === 'Resultado do mês')!.linhas.slice(1).map((l) => [l[0] as string, l[1]]))
     expect(res['Faturamento']).toEqual({ v: 80000, f: 'moeda' })

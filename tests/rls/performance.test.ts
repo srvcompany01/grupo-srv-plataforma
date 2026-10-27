@@ -9,11 +9,8 @@ describe('performance', () => {
     const cli = await criarUsuario(db, { role: 'cliente' })
     const { rows } = await db.query<{ id: string }>(`insert into public.clients (name, whatsapp, whatsapp_atendimento, bio_slug) values ('Ouro', '5591988887777', '5591999999999', 'ouro') returning id`)
     const id = rows[0].id
-    expect(await ler(db, null, `select * from registrar_clique_bio('ouro')`)).toEqual([{ whatsapp: '5591999999999', mensagem: 'Olá! Vim pelo Instagram 😊' }])
-    await ler(db, null, `select * from registrar_clique_bio('ouro')`)
-    expect(await ler(db, null, `select * from registrar_clique_bio('nao-existe')`)).toEqual([])
-    expect(await ler(db, ana, `select clicks from bio_clicks`)).toEqual([{ clicks: 2 }])
-    expect(await ler(db, cli, `select clicks from bio_clicks`)).toEqual([])
+    // A função antiga entregava o WhatsApp direto ao anônimo e furava o quiz: foi removida.
+    await expect(ler(db, null, `select * from registrar_clique_bio('ouro')`)).rejects.toThrow()
     // Página da bio: dados públicos sem contar; visita por origem; toque por botão (WhatsApp ou link extra).
     await db.query(`insert into bio_links (client_id, rotulo, url, position) values ($1, 'Site', 'https://aurum.com.br', 0)`, [id])
     const pagina = await ler<{ nome: string; whatsapp: string; links: { id: string; rotulo: string }[] }>(db, null, `select nome, whatsapp, links from bio_pagina('ouro')`)
@@ -21,8 +18,10 @@ describe('performance', () => {
     expect(await ler(db, null, `select * from bio_pagina('nao-existe')`)).toEqual([])
     await ler(db, null, `select bio_visita('ouro', 'story')`)
     await ler(db, null, `select bio_visita('ouro', 'Inválida!')`)
-    expect(await ler(db, ana, `select origem, clicks from bio_clicks order by origem`)).toEqual([{ origem: 'bio', clicks: 3 }, { origem: 'story', clicks: 1 }])
-    expect(await ler(db, null, `select * from bio_botao('ouro', 'whatsapp', true)`)).toEqual([{ url: null, whatsapp: '5591999999999', mensagem: 'Olá! Vim pelo Instagram 😊' }])
+    expect(await ler(db, ana, `select origem, clicks from bio_clicks order by origem`)).toEqual([{ origem: 'bio', clicks: 1 }, { origem: 'story', clicks: 1 }])
+    expect(await ler(db, cli, `select clicks from bio_clicks`)).toEqual([])
+    // O toque no WhatsApp só conta: o número não sai daqui (só do quiz concluído, em bio_lead).
+    expect(await ler(db, null, `select * from bio_botao('ouro', 'whatsapp', true)`)).toEqual([])
     expect(await ler(db, null, `select * from bio_botao('ouro', $$${pagina[0].links[0].id}$$, true)`)).toEqual([{ url: 'https://aurum.com.br', whatsapp: null, mensagem: null }])
     expect(await ler(db, null, `select * from bio_botao('ouro', 'inexistente', true)`)).toEqual([])
     await ler(db, null, `select * from bio_botao('ouro', 'whatsapp', false)`)
@@ -32,6 +31,20 @@ describe('performance', () => {
     expect(await ler(db, ana, `select botao, rotulo from bio_botao_clicks order by botao`)).toEqual([{ botao: pagina[0].links[0].id, rotulo: 'Site' }, { botao: 'whatsapp', rotulo: 'WhatsApp' }])
     expect(await ler(db, cli, `select * from bio_botao_clicks`)).toEqual([])
     await expect(executar(db, ana, `insert into bio_links (client_id, rotulo, url) values ($1, 'X', 'https://a.com')`, [id])).rejects.toThrow(/row-level security/)
+    // Quiz: perguntas públicas (vazio = padrão do app); lead = quiz concluído, uma vez por pessoa por dia, e só então sai o WhatsApp.
+    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: [] }])
+    await db.query(`insert into bio_perguntas (client_id, position, pergunta, opcoes) values ($1, 0, 'O que procura?', array['Anel', 'Colar'])`, [id])
+    expect(await ler(db, null, `select bio_quiz_pagina('ouro') as q`)).toEqual([{ q: [{ pergunta: 'O que procura?', opcoes: ['Anel', 'Colar'] }] }])
+    const resp = `'[{"p":"O que procura?","o":"Anel"}]'::jsonb`
+    expect(await ler(db, null, `select * from bio_lead('ouro', 'story', 'ccccccccccccccccccccccccccccccc1', ${resp})`)).toEqual([{ whatsapp: '5591999999999', mensagem: 'Olá! Vim pelo Instagram 😊' }])
+    await ler(db, null, `select * from bio_lead('ouro', 'story', 'ccccccccccccccccccccccccccccccc1', ${resp})`)
+    await ler(db, null, `select * from bio_lead('ouro', 'Inválida!', 'ccccccccccccccccccccccccccccccc2', ${resp})`)
+    expect(await ler(db, null, `select * from bio_lead('nao-existe', 'bio', 'x', '[]'::jsonb)`)).toEqual([])
+    expect(await ler(db, ana, `select origem from bio_leads order by origem`)).toEqual([{ origem: 'bio' }, { origem: 'story' }])
+    expect(await ler(db, cli, `select * from bio_leads`)).toEqual([])
+    expect(await ler(db, cli, `select * from bio_perguntas`)).toEqual([])
+    await expect(executar(db, ana, `insert into bio_perguntas (client_id, pergunta, opcoes) values ($1, 'X', array['a','b'])`, [id])).rejects.toThrow(/row-level security/)
+    await expect(db.query(`insert into bio_perguntas (client_id, pergunta, opcoes) values ($1, 'X', array['a'])`, [id])).rejects.toThrow()
     // Visualização (a página abriu): conta toda vez; pessoa distinta = hash diário, uma vez por dia.
     await ler(db, null, `select bio_visualizacao('ouro', 'story', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')`)
     await ler(db, null, `select bio_visualizacao('ouro', 'story', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')`)
@@ -40,17 +53,6 @@ describe('performance', () => {
     expect(await ler(db, ana, `select origem, views, visitantes from bio_visualizacoes`)).toEqual([{ origem: 'story', views: 3, visitantes: 2 }])
     expect(await ler(db, cli, `select * from bio_visualizacoes`)).toEqual([])
     await expect(ler(db, ana, `select * from bio_visitantes`)).resolves.toEqual([])
-    // Eventos de teste do WhatsApp: só o admin lê; ninguém grava pela API (só o endpoint, com a chave de serviço).
-    const adm = await criarUsuario(db, { role: 'admin' })
-    await db.query(`insert into wa_eventos_teste (instancia, evento, corpo) values ('aurum', 'messages.upsert', '{}'::jsonb)`)
-    expect(await ler(db, adm, `select instancia from wa_eventos_teste`)).toEqual([{ instancia: 'aurum' }])
-    expect(await ler(db, ana, `select * from wa_eventos_teste`)).toEqual([])
-    await expect(executar(db, adm, `insert into wa_eventos_teste (corpo) values ('{}'::jsonb)`, [])).rejects.toThrow(/row-level security/)
-    // Eventos de teste do Kommo: só o admin lê; ninguém grava pela API.
-    await db.query(`insert into kommo_eventos_teste (conta, corpo) values ('aurum', '{}'::jsonb)`)
-    expect(await ler(db, adm, `select conta from kommo_eventos_teste`)).toEqual([{ conta: 'aurum' }])
-    expect(await ler(db, ana, `select * from kommo_eventos_teste`)).toEqual([])
-    await expect(executar(db, adm, `insert into kommo_eventos_teste (corpo) values ('{}'::jsonb)`, [])).rejects.toThrow(/row-level security/)
     await executar(db, ana, `insert into lead_confirmations (client_id, observacao) values ($1, 'Maria')`, [id])
     await executar(db, ana, `insert into client_monthly_results (client_id, month, revenue, sales) values ($1, '2026-10-01', 50000, 12)`, [id])
     expect(await ler(db, cli, `select * from client_monthly_results`)).toEqual([])

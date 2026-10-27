@@ -1,19 +1,16 @@
-import { BadgeDollarSign, CalendarRange, Camera, ClipboardList, Link2, MessageCircle, MousePointerClick, ShoppingBag, Target, TrendingUp, UserCheck, Wallet } from 'lucide-react'
+import { BadgeDollarSign, CalendarRange, Camera, ClipboardList, MessageCircle, MousePointerClick, ShoppingBag, Target, TrendingUp, UserCheck, Wallet } from 'lucide-react'
 import { Numeros, type Numero } from '@/componentes/insights/BlocoAnalise'
 import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
 import { Modulo } from '@/componentes/Modulo'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { tomVariacao } from '@/dominio/insights'
-import { indicadores, intervaloDoMes, mesAnterior, mesesAte, rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
+import { indicadores, mesAnterior, mesesAte, rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoSecundario, campo } from '@/lib/ui'
 import type { Cliente } from '@/servicos/clientes-plataforma'
 import { situacaoGoogle } from '@/servicos/google-agencia'
-import { urlDaBio } from '@/dominio/bio'
-import { urlLeitura } from '@/infra/r2'
-import { paginaBioDoCliente, resumoDaBio } from '@/servicos/bio'
 import { historicoDoCliente, investido, leadsPagos, linkBioDoCliente, type MesPerformance } from '@/servicos/performance'
-import { LancarMes, LinkBio } from './Formularios'
+import { LancarMes } from './Formularios'
 
 const reais = (n: number | null) => (n === null ? '—' : n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: n >= 1000 ? 0 : 2 }))
 const inteiro = (n: number | null) => (n === null ? '—' : Math.round(n).toLocaleString('pt-BR'))
@@ -190,7 +187,7 @@ export async function ResultadoDoMes({ cliente, mes, hoje, acoes }: { cliente: C
             <Fonte icone={Target} cor="#eb6834" rotulo="Conversões (Google Ads)" valor={cliente.googleAdsId ? inteiro(atual.conversoesGoogle) : 'sem conta'} />
             <Fonte icone={Camera} cor="#e1306c" rotulo="Toques nos botões de contato do perfil (Instagram)" valor={atual.cliquesPerfilInstagram === null ? (cliente.metaPaginaId ? 'Meta não entregou' : 'sem Página') : inteiro(atual.cliquesPerfilInstagram)} />
             <Fonte icone={MousePointerClick} cor="#6250d6" rotulo="Cliques no link da bio" valor={bio?.slug ? inteiro(atual.cliquesLinkBio) : 'sem página da bio'} />
-            <Fonte icone={UserCheck} cor="#eb6834" rotulo="Leads orgânicos (WhatsApp da bio)" valor={bio?.slug ? inteiro(atual.leadsOrganicos) : 'sem página da bio'} extra={bio?.slug && atual.cliquesLinkBio ? `${pct((atual.leadsOrganicos / atual.cliquesLinkBio) * 100)} dos cliques` : undefined} />
+            <Fonte icone={UserCheck} cor="#eb6834" rotulo="Leads orgânicos (quiz da bio)" valor={bio?.slug ? inteiro(atual.leadsOrganicos) : 'sem página da bio'} extra={bio?.slug && atual.cliquesLinkBio ? `${pct((atual.leadsOrganicos / atual.cliquesLinkBio) * 100)} dos cliques` : undefined} />
             <Fonte icone={Wallet} cor="#0866ff" rotulo="Investido na Meta" valor={reais(atual.investidoMeta)} />
             <Fonte icone={Wallet} cor="#eb6834" rotulo="Investido no Google Ads" valor={reais(atual.investidoGoogle)} />
             <Fonte icone={Wallet} cor="#2a78d6" rotulo="Investido total" valor={reais(investido(atual))} />
@@ -228,31 +225,15 @@ export async function EvolucaoCliente({ cliente, mes, hoje, acoes }: { cliente: 
   )
 }
 
-/** O que a equipe lança (faturamento e vendas do mês) e a página da bio (logo, botões, mensagem e endereços). */
+/** O que a equipe lança: faturamento e vendas do mês. A página da bio, o quiz e o resto da captação ficam no Biolytics. */
 export async function LancamentosCliente({ cliente, mes, hoje, acoes }: { cliente: Cliente; mes: string; hoje: string; acoes?: React.ReactNode }) {
   const sb = await criarClienteServidor()
   const google = await situacaoGoogle()
-  const [bio, paginaBio, h] = await Promise.all([linkBioDoCliente(sb, cliente.id), paginaBioDoCliente(sb, cliente.id), historicoDoCliente(sb, cliente, [mes], hoje, google.conectado)])
+  const h = await historicoDoCliente(sb, cliente, [mes], hoje, google.conectado)
   const atual = h.meses[0]
-  const intervalo = intervaloDoMes(mes, hoje)
-  const [resumoBio, logoBio] = await Promise.all([resumoDaBio(sb, cliente.id, intervalo.de, intervalo.ate, !!bio?.whatsapp), paginaBio.logo ? urlLeitura(paginaBio.logo).catch(() => null) : null])
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Modulo icone={BadgeDollarSign} titulo="Lançar o mês" descricao={`Faturamento (obrigatório) e vendas (opcional) de ${rotuloMesLongo(mes)} · só a equipe vê`} acoes={acoes}>
-        <LancarMes key={mes} clienteId={cliente.id} mes={mes} faturamento={atual.faturamento} vendas={atual.vendas} notas={atual.notas} />
-      </Modulo>
-      <Modulo icone={Link2} titulo="Link da bio" descricao="Página simples com a logo do cliente e os botões dele (sem a marca da agência): cada clique, visualização e toque são contados">
-        <LinkBio
-          clienteId={cliente.id}
-          url={bio?.slug ? urlDaBio(bio.slug) : null}
-          urls={bio?.slug ? [{ rotulo: 'Link da bio', url: urlDaBio(bio.slug) }, { rotulo: 'Stories', url: urlDaBio(bio.slug, 'story') }, { rotulo: 'Anúncios', url: urlDaBio(bio.slug, 'anuncio') }] : []}
-          mensagem={bio?.mensagem ?? 'Olá! Vim pelo Instagram 😊'}
-          whatsapp={bio?.whatsapp ?? null}
-          logo={logoBio}
-          links={paginaBio.links}
-          resumo={{ porOrigem: resumoBio.porOrigem.map((o) => ({ origem: o.origem, cliques: o.cliques })), porBotao: resumoBio.botoes.filter((b) => b.toques > 0).map((b) => ({ botao: b.rotulo, cliques: b.toques })) }}
-        />
-      </Modulo>
-    </div>
+    <Modulo icone={BadgeDollarSign} titulo="Lançar o mês" descricao={`Faturamento (obrigatório) e vendas (opcional) de ${rotuloMesLongo(mes)} · só a equipe vê`} acoes={acoes}>
+      <LancarMes key={mes} clienteId={cliente.id} mes={mes} faturamento={atual.faturamento} vendas={atual.vendas} notas={atual.notas} />
+    </Modulo>
   )
 }

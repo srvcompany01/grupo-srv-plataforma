@@ -41,54 +41,6 @@ export type Database = {
         Update: { client_id?: string; day?: string; clicks?: number; origem?: string }
         Relationships: []
       }
-      kommo_funis: {
-        Row: { pipeline_id: number; client_id: string; nome: string; created_at: string }
-        Insert: { pipeline_id: number; client_id: string; nome?: string; created_at?: string }
-        Update: { pipeline_id?: number; client_id?: string; nome?: string; created_at?: string }
-        Relationships: []
-      }
-      kommo_negocios: {
-        Row: { id: number; client_id: string; pipeline_id: number; status_id: number | null; valor: number; etiquetas: string[]; responsavel_id: number | null; criado_em: string | null; ganho_em: string | null; perdido_em: string | null; excluido_em: string | null; atualizado_em: string }
-        Insert: { id: number; client_id: string; pipeline_id: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
-        Update: { id?: number; client_id?: string; pipeline_id?: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
-        Relationships: []
-      }
-      wa_analises: {
-        Row: { talk_id: number; client_id: string; conversa_em: string; analisada_em: string; mensagens: number; nota: number; resultado: string; resumo: string; motivo_perda: string; objecoes: string[]; pontos_fortes: string[]; melhorias: string[] }
-        Insert: { talk_id: number; client_id: string; conversa_em: string; analisada_em?: string; mensagens: number; nota: number; resultado: string; resumo?: string; motivo_perda?: string; objecoes?: string[]; pontos_fortes?: string[]; melhorias?: string[] }
-        Update: { talk_id?: number; client_id?: string; conversa_em?: string; analisada_em?: string; mensagens?: number; nota?: number; resultado?: string; resumo?: string; motivo_perda?: string; objecoes?: string[]; pontos_fortes?: string[]; melhorias?: string[] }
-        Relationships: []
-      }
-      wa_alertas: {
-        Row: { talk_id: number; mensagem_em: string; client_id: string; avisado_em: string }
-        Insert: { talk_id: number; mensagem_em: string; client_id: string; avisado_em?: string }
-        Update: { talk_id?: number; mensagem_em?: string; client_id?: string; avisado_em?: string }
-        Relationships: []
-      }
-      wa_conversas: {
-        Row: { talk_id: number; client_id: string; lead_id: number | null; contato_id: number | null; origem: string; criada_em: string; atualizada_em: string }
-        Insert: { talk_id: number; client_id: string; lead_id?: number | null; contato_id?: number | null; origem?: string; criada_em: string; atualizada_em: string }
-        Update: { talk_id?: number; client_id?: string; lead_id?: number | null; contato_id?: number | null; origem?: string; criada_em?: string; atualizada_em?: string }
-        Relationships: []
-      }
-      wa_mensagens: {
-        Row: { id: string; client_id: string; talk_id: number; lead_id: number | null; papel: string; autor_tipo: string; autor_id: string; texto: string; criada_em: string }
-        Insert: { id: string; client_id: string; talk_id: number; lead_id?: number | null; papel: string; autor_tipo?: string; autor_id?: string; texto?: string; criada_em: string }
-        Update: { id?: string; client_id?: string; talk_id?: number; lead_id?: number | null; papel?: string; autor_tipo?: string; autor_id?: string; texto?: string; criada_em?: string }
-        Relationships: []
-      }
-      kommo_eventos_teste: {
-        Row: { id: string; conta: string; recebido_em: string; corpo: Json }
-        Insert: { id?: string; conta?: string; recebido_em?: string; corpo: Json }
-        Update: { id?: string; conta?: string; recebido_em?: string; corpo?: Json }
-        Relationships: []
-      }
-      wa_eventos_teste: {
-        Row: { id: string; instancia: string; evento: string; recebido_em: string; corpo: Json }
-        Insert: { id?: string; instancia?: string; evento?: string; recebido_em?: string; corpo: Json }
-        Update: { id?: string; instancia?: string; evento?: string; recebido_em?: string; corpo?: Json }
-        Relationships: []
-      }
       bio_visualizacoes: {
         Row: { client_id: string; day: string; origem: string; views: number; visitantes: number }
         Insert: { client_id: string; day: string; origem?: string; views?: number; visitantes?: number }
@@ -99,6 +51,18 @@ export type Database = {
         Row: { client_id: string; day: string; h: string }
         Insert: { client_id: string; day: string; h: string }
         Update: { client_id?: string; day?: string; h?: string }
+        Relationships: []
+      }
+      bio_perguntas: {
+        Row: { id: string; client_id: string; position: number; pergunta: string; opcoes: string[]; created_at: string }
+        Insert: { id?: string; client_id: string; position?: number; pergunta: string; opcoes: string[]; created_at?: string }
+        Update: { id?: string; client_id?: string; position?: number; pergunta?: string; opcoes?: string[]; created_at?: string }
+        Relationships: []
+      }
+      bio_leads: {
+        Row: { client_id: string; day: string; visitante: string; origem: string; respostas: Json; criado_em: string }
+        Insert: { client_id: string; day: string; visitante: string; origem?: string; respostas?: Json; criado_em?: string }
+        Update: { client_id?: string; day?: string; visitante?: string; origem?: string; respostas?: Json; criado_em?: string }
         Relationships: []
       }
       bio_botao_clicks: {
@@ -448,9 +412,6 @@ export type Database = {
           meta_ad_account_id: string | null
           whatsapp: string | null
           whatsapp_atendimento: string | null
-          atend_abre: number
-          atend_fecha: number
-          atend_dias: number[]
           bio_slug: string | null
           bio_logo: string | null
           google_place_id: string | null
@@ -480,9 +441,6 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
-          atend_abre?: number
-          atend_fecha?: number
-          atend_dias?: number[]
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null
@@ -512,9 +470,6 @@ export type Database = {
           meta_ad_account_id?: string | null
           whatsapp?: string | null
           whatsapp_atendimento?: string | null
-          atend_abre?: number
-          atend_fecha?: number
-          atend_dias?: number[]
           bio_slug?: string | null
           bio_logo?: string | null
           google_place_id?: string | null
@@ -1889,11 +1844,11 @@ export type Database = {
       uso_armazenamento: { Args: Record<PropertyKey, never>; Returns: { tipo: string; arquivos: number; bytes: number }[] }
       is_gestor_ou_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       bio_pagina: { Args: { p_slug: string }; Returns: { nome: string; logo: string | null; whatsapp: string | null; mensagem: string; links: Json }[] }
-      apagar_mensagens_antigas: { Args: Record<PropertyKey, never>; Returns: number }
       bio_visualizacao: { Args: { p_slug: string; p_origem: string; p_hash: string }; Returns: undefined }
       bio_visita: { Args: { p_slug: string; p_origem: string }; Returns: undefined }
       bio_botao: { Args: { p_slug: string; p_botao: string; p_contar: boolean }; Returns: { url: string | null; whatsapp: string | null; mensagem: string | null }[] }
-      registrar_clique_bio: { Args: { p_slug: string }; Returns: { whatsapp: string | null; mensagem: string }[] }
+      bio_quiz_pagina: { Args: { p_slug: string }; Returns: Json }
+      bio_lead: { Args: { p_slug: string; p_origem: string; p_hash: string; p_respostas: Json }; Returns: { whatsapp: string | null; mensagem: string | null }[] }
       blog_contar_visita: { Args: { p_slug: string }; Returns: undefined }
       blog_registrar_eventos: { Args: { p_slug: string; p_eventos: string[] }; Returns: undefined }
       registrar_presenca: { Args: { p_ativo: boolean }; Returns: undefined }

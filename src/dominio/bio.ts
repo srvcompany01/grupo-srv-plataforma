@@ -1,3 +1,4 @@
+import { resumirQuiz, type RespostasDoQuiz } from './bio-quiz'
 import type { Analise, Item } from './insights'
 
 /**
@@ -22,9 +23,9 @@ export function urlDaBio(slug: string, origem: string | null = null, dominio: st
 
 /** Reescreve o caminho que chega no domínio da bio para a rota interna; null = não existe (página em branco 404). */
 export function caminhoInternoDaBio(caminho: string): string | null {
-  const m = caminho.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/ir\/([a-z0-9-]{1,40})|\/(v))?\/?$/)
+  const m = caminho.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/ir\/([a-z0-9-]{1,40})|\/(v|quiz))?\/?$/)
   if (!m) return null
-  return m[2] ? `/l/${m[1]}/ir/${m[2]}` : m[3] ? `/l/${m[1]}/v` : `/l/${m[1]}`
+  return m[2] ? `/l/${m[1]}/ir/${m[2]}` : m[3] ? `/l/${m[1]}/${m[3]}` : `/l/${m[1]}`
 }
 
 export const hostEhDaBio = (host: string | null, dominio: string | undefined) => !!dominio && !!host && host.split(':')[0].toLowerCase() === dominio.toLowerCase()
@@ -55,10 +56,12 @@ export type ResumoBio = {
   pessoas: number
   /** Toques somados em todos os botões. */
   toques: number
-  /** Leads orgânicos: toques no botão do WhatsApp (atendimento). Cada toque é um lead. */
+  /** Leads orgânicos: pessoas que concluíram o quiz (uma por dia) e abriram o WhatsApp. */
   leadsOrganicos: number
+  /** Quiz: quem tocou no botão do WhatsApp (abriu o quiz), quem concluiu e o que respondeu. */
+  quiz: { iniciaram: number; concluiram: number; respostas: RespostasDoQuiz[] }
   porOrigem: { origem: string; cliques: number; visualizacoes: number }[]
-  porDia: { dia: string; cliques: number; visualizacoes: number; toques: number }[]
+  porDia: { dia: string; cliques: number; visualizacoes: number; toques: number; leads: number }[]
   /** Todos os botões da página (inclusive sem toque) e os já removidos que tiveram toque no período. */
   botoes: { id: string; rotulo: string; toques: number; ativo: boolean }[]
 }
@@ -66,11 +69,12 @@ export type ResumoBio = {
 type LinhaClique = { day: string; origem: string; clicks: number }
 type LinhaVisualizacao = { day: string; origem: string; views: number; visitantes: number }
 type LinhaBotao = { botao: string; rotulo: string | null; day: string; clicks: number }
+type LinhaLead = { day: string; origem: string; respostas: unknown }
 
 /** Junta as linhas do banco no resumo. `links`: botões extras de hoje; `temWhatsapp`: se há o botão do WhatsApp. */
-export function montarResumoBio(a: { visitas: LinhaClique[]; visualizacoes?: LinhaVisualizacao[]; botoes: LinhaBotao[]; links: { id: string; rotulo: string }[]; temWhatsapp: boolean }): ResumoBio {
-  const dias = new Map<string, { cliques: number; visualizacoes: number; toques: number }>()
-  const dia = (d: string) => dias.get(d) ?? dias.set(d, { cliques: 0, visualizacoes: 0, toques: 0 }).get(d)!
+export function montarResumoBio(a: { visitas: LinhaClique[]; visualizacoes?: LinhaVisualizacao[]; leads?: LinhaLead[]; botoes: LinhaBotao[]; links: { id: string; rotulo: string }[]; temWhatsapp: boolean }): ResumoBio {
+  const dias = new Map<string, { cliques: number; visualizacoes: number; toques: number; leads: number }>()
+  const dia = (d: string) => dias.get(d) ?? dias.set(d, { cliques: 0, visualizacoes: 0, toques: 0, leads: 0 }).get(d)!
   const origens = new Map<string, { cliques: number; visualizacoes: number }>()
   const origem = (o: string) => origens.get(o) ?? origens.set(o, { cliques: 0, visualizacoes: 0 }).get(o)!
   for (const v of a.visitas) {
@@ -83,6 +87,7 @@ export function montarResumoBio(a: { visitas: LinhaClique[]; visualizacoes?: Lin
     origem(v.origem).visualizacoes += v.views
     pessoas += v.visitantes
   }
+  for (const l of a.leads ?? []) dia(l.day).leads++
   const toquesPorBotao = new Map<string, { toques: number; rotulo: string | null }>()
   for (const b of a.botoes) {
     dia(b.day).toques += b.clicks
@@ -99,7 +104,8 @@ export function montarResumoBio(a: { visitas: LinhaClique[]; visualizacoes?: Lin
     visualizacoes: [...origens.values()].reduce((s, x) => s + x.visualizacoes, 0),
     pessoas,
     toques: [...toquesPorBotao.values()].reduce((s, x) => s + x.toques, 0),
-    leadsOrganicos: toquesPorBotao.get('whatsapp')?.toques ?? 0,
+    leadsOrganicos: (a.leads ?? []).length,
+    quiz: { iniciaram: toquesPorBotao.get('whatsapp')?.toques ?? 0, concluiram: (a.leads ?? []).length, respostas: resumirQuiz(a.leads ?? []) },
     porOrigem: [...origens].map(([o, v]) => ({ origem: o, ...v })).sort((x, y) => y.cliques - x.cliques),
     porDia: [...dias].map(([d, v]) => ({ dia: d, ...v })).sort((x, y) => x.dia.localeCompare(y.dia)),
     botoes: botoes.sort((x, y) => y.toques - x.toques),
@@ -126,7 +132,15 @@ export function analisarBio(r: ResumoBio): Analise {
     else if (abriu < 0.85) recomendacoes.push({ tom: 'atencao', texto: `${p1(abriu * 100)}% dos cliques abriram a página. Quem sai antes pode estar com internet lenta ou com o navegador do Instagram bloqueando.` })
     else destaques.push({ tom: 'bom', texto: `${p1(abriu * 100)}% dos cliques abriram a página.` })
   }
-  if (r.leadsOrganicos) destaques.push({ tom: 'bom', texto: `${p1(r.leadsOrganicos)} leads orgânicos: pessoas que tocaram no botão do WhatsApp.` })
+  if (r.leadsOrganicos) destaques.push({ tom: 'bom', texto: `${p1(r.leadsOrganicos)} leads orgânicos: pessoas que responderam ao quiz e abriram o WhatsApp.` })
+  if (r.quiz.iniciaram >= 10) {
+    const fim = r.quiz.concluiram / r.quiz.iniciaram
+    if (fim < 0.4) recomendacoes.push({ tom: 'ruim', texto: `Só ${p1(fim * 100)}% de quem tocou no WhatsApp terminou o quiz (${p1(r.quiz.concluiram)} de ${p1(r.quiz.iniciaram)}). Encurte as perguntas ou deixe as opções mais diretas.` })
+    else if (fim < 0.7) recomendacoes.push({ tom: 'atencao', texto: `${p1(fim * 100)}% de quem abriu o quiz chegou ao fim. Teste uma pergunta a menos.` })
+    else destaques.push({ tom: 'bom', texto: `${p1(fim * 100)}% de quem abriu o quiz terminou: o quiz não está afastando as pessoas.` })
+  }
+  const pergunta1 = r.quiz.respostas[0]
+  if (pergunta1 && pergunta1.opcoes[0]) destaques.push({ tom: 'neutro', texto: `Em "${pergunta1.pergunta}", a resposta mais comum é "${pergunta1.opcoes[0].opcao}" (${p1((pergunta1.opcoes[0].n / pergunta1.total) * 100)}%).` })
   const base = r.visualizacoes || r.cliques
   if (!r.toques) {
     destaques.push({ tom: 'ruim', texto: 'As pessoas abrem a página, mas ninguém toca em nenhum botão.' })
@@ -144,5 +158,26 @@ export function analisarBio(r: ResumoBio): Analise {
   if (r.porOrigem.length > 1 && r.cliques) destaques.push({ tom: 'neutro', texto: `${p1((r.porOrigem[0].cliques / r.cliques) * 100)}% dos cliques vêm de ${(ROTULO_ORIGEM[r.porOrigem[0].origem] ?? r.porOrigem[0].origem).toLowerCase()}.` })
   const pico = [...r.porDia].sort((x, y) => y.cliques - x.cliques)[0]
   if (pico && r.cliques >= 10) destaques.push({ tom: 'neutro', texto: `Maior movimento em ${pico.dia.slice(8, 10)}/${pico.dia.slice(5, 7)}, com ${p1(pico.cliques)} cliques.` })
+  return { destaques, recomendacoes }
+}
+
+/** Insights do quiz: quantos terminam, onde perde gente e o que as pessoas respondem. */
+export function analisarQuiz(r: ResumoBio): Analise {
+  const destaques: Item[] = []
+  const recomendacoes: Item[] = []
+  const { iniciaram, concluiram, respostas } = r.quiz
+  if (!iniciaram && !concluiram) {
+    destaques.push({ tom: 'neutro', texto: 'Ninguém abriu o quiz neste período.' })
+    recomendacoes.push({ tom: 'atencao', texto: 'O quiz abre quando a pessoa toca em "Chamar no WhatsApp" na página da bio. Divulgue o link para gerar toques.' })
+    return { destaques, recomendacoes }
+  }
+  destaques.push({ tom: concluiram ? 'bom' : 'ruim', texto: `${p1(concluiram)} leads orgânicos de ${p1(iniciaram)} pessoas que abriram o quiz${iniciaram ? ` (${p1((concluiram / Math.max(iniciaram, concluiram)) * 100)}% terminaram)` : ''}.` })
+  if (iniciaram >= 10) {
+    const fim = concluiram / iniciaram
+    if (fim < 0.4) recomendacoes.push({ tom: 'ruim', texto: 'Menos de 40% terminam o quiz: encurte as perguntas, use opções curtas e diretas, ou deixe só duas perguntas.' })
+    else if (fim < 0.7) recomendacoes.push({ tom: 'atencao', texto: 'Dá para melhorar a conclusão: teste uma pergunta a menos ou opções mais simples.' })
+  }
+  for (const q of respostas.slice(0, 3)) if (q.opcoes[0]) destaques.push({ tom: 'neutro', texto: `"${q.pergunta}": a resposta mais comum é "${q.opcoes[0].opcao}" (${p1((q.opcoes[0].n / q.total) * 100)}%).` })
+  if (!respostas.length) recomendacoes.push({ tom: 'atencao', texto: 'Ainda não há respostas registradas para mostrar o perfil de quem chega.' })
   return { destaques, recomendacoes }
 }

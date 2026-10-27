@@ -5,7 +5,8 @@ import { useState, useTransition } from 'react'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
-import { adicionarLinkBioAcao, configurarLinkBioAcao, iniciarUploadLogoBioAcao, removerLinkBioAcao, salvarLogoBioAcao, salvarResultadoMesAcao } from './acoes'
+import { MAXIMO_PERGUNTAS, QUIZ_PADRAO, type Pergunta } from '@/dominio/bio-quiz'
+import { adicionarLinkBioAcao, configurarLinkBioAcao, iniciarUploadLogoBioAcao, removerLinkBioAcao, salvarLogoBioAcao, salvarQuizBioAcao, salvarResultadoMesAcao } from './acoes'
 
 const moeda = (n: number | null) => (n === null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
@@ -142,6 +143,33 @@ export function LinkBio({ clienteId, url, urls, mensagem, whatsapp, logo, links,
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Perguntas do quiz do WhatsApp da página da bio: a pessoa responde antes de o WhatsApp abrir e só então conta um lead orgânico. */
+export function QuizBio({ clienteId, perguntas }: { clienteId: string; perguntas: Pergunta[] }) {
+  const [quiz, setQuiz] = useState(() => Array.from({ length: MAXIMO_PERGUNTAS }, (_, i) => ({ pergunta: perguntas[i]?.pergunta ?? '', opcoes: (perguntas[i]?.opcoes ?? []).join('\n') })))
+  const [pendente, iniciar] = useTransition()
+  return (
+    <div className="space-y-3">
+      <p className="text-legenda text-texto-3">
+        A pessoa responde a essas perguntas antes de o WhatsApp abrir; só aí conta um lead orgânico (uma vez por pessoa por dia), e as respostas vão na mensagem. Até {MAXIMO_PERGUNTAS} perguntas, de 2 a 4 opções cada, uma por linha.
+        {perguntas.length === 0 && ' Enquanto estiver vazio, a página usa o quiz padrão: ' + QUIZ_PADRAO.map((q) => `"${q.pergunta}"`).join(' e ') + '.'}
+      </p>
+      {quiz.map((q, i) => (
+        <div key={i} className="grid gap-2 sm:grid-cols-2">
+          <label className="block space-y-1">
+            <span className={rotulo}>Pergunta {i + 1}</span>
+            <input className={campo} maxLength={80} placeholder={i === 0 ? 'Qual serviço você procura?' : ''} value={q.pergunta} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, pergunta: e.target.value } : x)))} />
+          </label>
+          <label className="block space-y-1">
+            <span className={rotulo}>Opções (uma por linha)</span>
+            <textarea className={campo} rows={3} placeholder={i === 0 ? 'Opção A\nOpção B\nOpção C' : undefined} value={q.opcoes} onChange={(e) => setQuiz(quiz.map((x, j) => (j === i ? { ...x, opcoes: e.target.value } : x)))} />
+          </label>
+        </div>
+      ))}
+      <button type="button" disabled={pendente} className={botaoPrimario} onClick={() => iniciar(async () => { avisar(await salvarQuizBioAcao(clienteId, quiz), true) })}>Salvar quiz</button>
     </div>
   )
 }

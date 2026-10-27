@@ -25,6 +25,7 @@ import {
   Wallet,
   TrendingUp,
   MapPin,
+  Radar,
   Shapes,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -33,7 +34,6 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, useTra
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
-import { IconeWhatsapp } from '@/componentes/IconeWhatsapp'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
@@ -61,8 +61,8 @@ function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'anuncios', href: '/anuncios', rotulo: 'Anúncios', curto: 'Anúncios', Icone: Megaphone },
     { id: 'insights', href: '/insights', rotulo: 'Insights', curto: 'Insights', Icone: ChartNoAxesCombined },
     { id: 'gmn', href: '/gmn', rotulo: 'Google Meu Negócio', curto: 'GMN', Icone: MapPin },
+    { id: 'biolytics', href: '/biolytics', rotulo: 'Biolytics', curto: 'Biolytics', Icone: Radar },
     { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Perform.', Icone: TrendingUp },
-    { id: 'atendimento', href: '/atendimento', rotulo: 'Atendimento', curto: 'Atend.', Icone: IconeWhatsapp },
     { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
     { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
     { id: 'time', href: '/time', rotulo: 'Time', curto: 'Time', Icone: UsersRound },
@@ -88,7 +88,7 @@ const estaEm = (caminho: string, href: string) => caminho === href || caminho.st
  * grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto no fim.
  */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
-  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'atendimento', 'agendamentos', 'blog'] },
+  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'agendamentos', 'blog'] },
   { id: 'gestao', rotulo: 'Gestão', curto: 'Gestão', Icone: LayoutDashboard, itens: ['painel', 'clientes', 'projetos', 'time', 'reunioes', 'financeiro'] },
   { id: 'ferramentas', rotulo: 'Ferramentas', curto: 'Ferram.', Icone: Shapes, itens: ['documentos', 'quadros', 'funis', 'formularios'] },
 ]

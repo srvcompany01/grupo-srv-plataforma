@@ -1,5 +1,6 @@
-import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, Link2, MapPin, Megaphone, Search, Send, Target, type LucideIcon } from 'lucide-react'
+import { BadgeDollarSign, CalendarRange, Camera, Download, LayoutDashboard, MapPin, Megaphone, Search, Send, Target, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
@@ -13,7 +14,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { botaoSecundario } from '@/lib/ui'
 import { listarClientes } from '@/servicos/clientes-plataforma'
-import { Aviso, BioCliente, BioTodos, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
+import { Aviso, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
 import { EvolucaoCliente, LancamentosCliente, PanoramaMensal, ResultadoDoMes, SeletorMes } from './mensal'
 
 export const maxDuration = 120
@@ -25,7 +26,6 @@ const ABAS: [Aba, string, LucideIcon, boolean][] = [
   ['google', 'Google Ads', Search, false],
   ['organico', 'Orgânico', Camera, false],
   ['gmn', 'Google Meu Negócio', MapPin, false],
-  ['bio', 'Link da bio', Link2, false],
   ['lancamentos', 'Lançamentos', BadgeDollarSign, true],
 ]
 
@@ -45,11 +45,13 @@ export default async function Performance({ searchParams }: PageProps<'/performa
   const clientes = (await listarClientes(sb)).filter((c) => !c.interno && c.status !== 'encerrado')
   const escolhido = clientes.find((c) => c.id === texto(sp.cliente)) ?? null
   const pedida = texto(sp.aba)
+  // O link da bio e o quiz agora vivem no Biolytics.
+  if (pedida === 'bio') redirect(`/biolytics?aba=bio${texto(sp.cliente) ? `&cliente=${texto(sp.cliente)}` : ''}`)
   const abasVisiveis = ABAS.filter(([, , , soCliente]) => escolhido || !soCliente)
   const aba: Aba = abasVisiveis.some(([a]) => a === pedida) ? (pedida as Aba) : 'resumo'
 
   // Meta Ads, Google Ads, Orgânico, GMN e Link da bio usam o período livre; Evolução e Lançamentos, o mês; o Resumo usa os dois.
-  const doPeriodo = aba === 'meta' || aba === 'google' || aba === 'organico' || aba === 'gmn' || aba === 'bio' || (aba === 'resumo' && !!escolhido)
+  const doPeriodo = aba === 'meta' || aba === 'google' || aba === 'organico' || aba === 'gmn' || (aba === 'resumo' && !!escolhido)
   const q = consultaPeriodo(periodo)
   const base = `/performance?aba=${aba}${escolhido ? `&cliente=${escolhido.id}` : ''}${aba === 'resumo' || aba === 'evolucao' || aba === 'lancamentos' ? `&mes=${mes}` : ''}`
   const link = (a: Aba) => `/performance?aba=${a}${escolhido ? `&cliente=${escolhido.id}` : ''}${q ? `&${q}` : ''}&mes=${mes}`
@@ -104,12 +106,12 @@ export default async function Performance({ searchParams }: PageProps<'/performa
           ) : <PanoramaMensal clientes={clientes} mes={mes} hoje={hoje} acoes={seletorMes} />
         )
           : aba === 'evolucao' ? (escolhido ? <EvolucaoCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para ver a evolução mês a mês.</Aviso>)
-          : aba === 'lancamentos' ? (escolhido ? <LancamentosCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para lançar o faturamento e configurar a página da bio.</Aviso>)
+          : aba === 'lancamentos' ? (escolhido ? <LancamentosCliente cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} /> : <Aviso>Escolha um cliente para lançar o faturamento.</Aviso>)
           : aba === 'meta' ? (escolhido ? <MetaCliente c={escolhido} periodo={periodo} /> : <MetaTodos clientes={clientes} periodo={periodo} />)
           : aba === 'google' ? (escolhido ? <GoogleCliente c={escolhido} periodo={periodo} /> : <GoogleTodos clientes={clientes} periodo={periodo} />)
           : aba === 'organico' ? (escolhido ? <OrganicoCliente c={escolhido} periodo={periodo} /> : <OrganicoTodos clientes={clientes} periodo={periodo} />)
           : aba === 'gmn' ? (escolhido ? <GmnCliente c={escolhido} periodo={periodo} /> : <GmnTodos clientes={clientes} />)
-          : escolhido ? <BioCliente c={escolhido} periodo={periodo} /> : <BioTodos clientes={clientes} periodo={periodo} />}
+          : null}
       </Suspense>
     </div>
   )

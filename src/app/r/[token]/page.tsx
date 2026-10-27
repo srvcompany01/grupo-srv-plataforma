@@ -291,7 +291,7 @@ export default async function Relatorio({ params, searchParams }: PageProps<'/r/
               <Cartao icone={MousePointerClick} cor="#1baf7a" rotulo="Cliques no link da bio" valor={num(r.bio.cliques ?? r.bio.visitas ?? 0)} extra="vezes que tocaram no link do perfil" />
               {r.bio.visualizacoes != null && <Cartao icone={Eye} cor="#2a78d6" rotulo="Visualizações da página" valor={num(r.bio.visualizacoes)} extra={r.bio.pessoas ? `${num(r.bio.pessoas)} pessoas distintas por dia` : 'a página chegou a abrir'} />}
               <Cartao icone={Target} cor="#6250d6" rotulo="Toques nos botões" valor={num(r.bio.toques)} extra={r.bio.visualizacoes ? `${num(r.bio.toques / r.bio.visualizacoes)} por visualização` : undefined} />
-              {r.bio.leadsOrganicos != null && <Cartao icone={Users} cor="#eb6834" rotulo="Leads orgânicos" valor={num(r.bio.leadsOrganicos)} extra="toques no botão do WhatsApp" />}
+              {r.bio.leadsOrganicos != null && <Cartao icone={Users} cor="#eb6834" rotulo="Leads orgânicos" valor={num(r.bio.leadsOrganicos)} extra="concluíram o quiz do WhatsApp" />}
             </div>
             {r.bio.botoes.length > 0 && (
               <ul className="space-y-2 rounded-xl border border-borda bg-white p-3">

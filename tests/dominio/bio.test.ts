@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analisarBio, caminhoInternoDaBio, ehRobo, hostEhDaBio, lerLinkBio, montarResumoBio, origemDaBio, urlDaBio } from '@/dominio/bio'
+import { analisarBio, analisarQuiz, caminhoInternoDaBio, ehRobo, hostEhDaBio, lerLinkBio, montarResumoBio, origemDaBio, urlDaBio } from '@/dominio/bio'
 
 describe('página da bio', () => {
   it('robôs e pré-visualizações não contam; navegador de celular conta', () => {
@@ -49,18 +49,21 @@ describe('relatório da bio', () => {
       { botao: 'velho', rotulo: 'Catálogo antigo', day: '2026-10-21', clicks: 4 },
     ],
     links: [{ id: 'maps', rotulo: 'Localização' }, { id: 'site', rotulo: 'Nosso site' }],
+    leads: [{ day: '2026-10-20', origem: 'bio', respostas: [{ p: 'Como podemos ajudar?', o: 'Orçamento' }] }, { day: '2026-10-21', origem: 'story', respostas: [{ p: 'Como podemos ajudar?', o: 'Orçamento' }] }],
     temWhatsapp: true,
   })
 
   it('separa cliques (quem tocou no link) de visualizações (a página abriu) e conta pessoas distintas', () => {
     expect(resumo).toMatchObject({ cliques: 100, visualizacoes: 85, pessoas: 70, toques: 64 })
     expect(resumo.porOrigem).toEqual([{ origem: 'bio', cliques: 70, visualizacoes: 60 }, { origem: 'story', cliques: 30, visualizacoes: 25 }])
-    expect(resumo.porDia).toEqual([{ dia: '2026-10-20', cliques: 40, visualizacoes: 36, toques: 30 }, { dia: '2026-10-21', cliques: 60, visualizacoes: 49, toques: 34 }])
+    expect(resumo.porDia).toEqual([{ dia: '2026-10-20', cliques: 40, visualizacoes: 36, toques: 30, leads: 1 }, { dia: '2026-10-21', cliques: 60, visualizacoes: 49, toques: 34, leads: 1 }])
   })
 
-  it('lead orgânico = toque no botão do WhatsApp (cada toque é um lead); outros botões não contam', () => {
-    expect(resumo.leadsOrganicos).toBe(50)
-    expect(montarResumoBio({ visitas: [], botoes: [{ botao: 'maps', rotulo: 'Maps', day: '2026-10-20', clicks: 9 }], links: [{ id: 'maps', rotulo: 'Maps' }], temWhatsapp: true }).leadsOrganicos).toBe(0)
+  it('lead orgânico = quiz concluído (não o toque no botão); respostas contadas por pergunta', () => {
+    expect(resumo.leadsOrganicos).toBe(2)
+    expect(resumo.quiz).toMatchObject({ iniciaram: 50, concluiram: 2 })
+    expect(resumo.quiz.respostas).toEqual([{ pergunta: 'Como podemos ajudar?', total: 2, opcoes: [{ opcao: 'Orçamento', n: 2 }] }])
+    expect(montarResumoBio({ visitas: [], botoes: [{ botao: 'whatsapp', rotulo: 'WhatsApp', day: '2026-10-20', clicks: 9 }], links: [], temWhatsapp: true }).leadsOrganicos).toBe(0)
   })
 
   it('botões: todos aparecem, inclusive sem toque e já removidos', () => {
@@ -72,10 +75,19 @@ describe('relatório da bio', () => {
     const dest = a.destaques.map((d) => d.texto).join(' ')
     expect(dest).toMatch(/100 cliques no link da bio, 85 visualizações da página \(70 pessoas distintas por dia\) e 64 toques/)
     expect(dest).toMatch(/85% dos cliques abriram a página/)
-    expect(dest).toMatch(/50 leads orgânicos/)
+    expect(dest).toMatch(/2 leads orgânicos: pessoas que responderam ao quiz/)
+    expect(a.recomendacoes.map((d) => d.texto).join(' ')).toMatch(/Só 4% de quem tocou no WhatsApp terminou o quiz/)
     expect(dest).toMatch(/O botão WhatsApp concentra 78,1% dos toques \(50 de 64\)/)
     expect(dest).toMatch(/70% dos cliques vêm de link da bio/)
     expect(a.recomendacoes.map((d) => d.texto).join(' ')).toMatch(/Sem nenhum toque no período: Nosso site/)
+  })
+
+  it('insights do quiz: conclusão, resposta mais comum e quiz sem uso', () => {
+    const a = analisarQuiz(resumo)
+    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/2 leads orgânicos de 50 pessoas que abriram o quiz/)
+    expect(a.destaques.map((d) => d.texto).join(' ')).toMatch(/"Como podemos ajudar\?": a resposta mais comum é "Orçamento" \(100%\)/)
+    expect(a.recomendacoes[0].tom).toBe('ruim')
+    expect(analisarQuiz(montarResumoBio({ visitas: [], botoes: [], links: [], temWhatsapp: true })).destaques[0].texto).toMatch(/Ninguém abriu o quiz/)
   })
 
   it('muita gente clica e a página não abre: recomenda ver a velocidade e o endereço', () => {
@@ -92,7 +104,8 @@ describe('relatório da bio', () => {
     expect(sem.recomendacoes[0].tom).toBe('ruim')
   })
 
-  it('o caminho /<cliente>/v chega na rota da visualização', () => {
+  it('o caminho /<cliente>/v e /<cliente>/quiz chegam nas rotas internas', () => {
     expect(caminhoInternoDaBio('/aurum-belem/v')).toBe('/l/aurum-belem/v')
+    expect(caminhoInternoDaBio('/aurum-belem/quiz')).toBe('/l/aurum-belem/quiz')
   })
 })

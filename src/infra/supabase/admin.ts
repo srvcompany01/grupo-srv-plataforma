@@ -11,8 +11,7 @@ import type { Database } from './tipos'
  * - Google Agenda (servicos/google-agenda.ts): vínculo OAuth (refresh token) e sincronização dos compromissos com o Google de cada pessoa;
  * - publicação de posts na Meta (servicos/publicacao-meta.ts, rotina /api/cron/publicar) e a resposta do cliente no portal
  *   (aprovar/pedir ajuste), sempre depois de conferir que o post é do cliente logado;
- * - endpoint público de leads das landing pages (app/api/leads): grava em landing_leads e envia o formulário de leads;
- * - webhook da Evolution API (app/api/whatsapp/eventos) e do Kommo (app/api/kommo/webhook): gravam o evento só depois de conferir o segredo.
+ * - endpoint público de leads das landing pages (app/api/leads): grava em landing_leads e envia o formulário de leads.
  */
 export function criarClienteAdmin() {
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY

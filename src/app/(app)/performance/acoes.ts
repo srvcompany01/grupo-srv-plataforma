@@ -20,6 +20,12 @@ const numero = (v: string) => {
   return Number.isFinite(n) && n >= 0 ? n : undefined
 }
 
+/** Página da bio e quiz aparecem na Performance (resumo) e no Biolytics. */
+const revalidarBio = () => {
+  revalidatePath('/performance')
+  revalidatePath('/biolytics')
+}
+
 export async function salvarResultadoMesAcao(clienteId: string, mes: string, r: { faturamento: string; vendas: string; notas: string }): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(clienteId) || !MES.test(mes)) return { erro: 'Dados inválidos.' }
@@ -29,7 +35,7 @@ export async function salvarResultadoMesAcao(clienteId: string, mes: string, r: 
   if (faturamento === null) return { erro: 'Informe o faturamento do mês: é o único campo obrigatório (o número de vendas é opcional).' }
   if (vendas === undefined || (vendas !== null && !Number.isInteger(vendas))) return { erro: 'Número de vendas inválido.' }
   const res = await tentar(async () => perf.salvarResultadoMes(await criarClienteServidor(), clienteId, mes, { faturamento, vendas, notas: String(r.notas ?? '') }), 'Resultado do mês salvo.')
-  revalidatePath('/performance')
+  revalidarBio()
   return res
 }
 
@@ -40,7 +46,7 @@ export async function configurarLinkBioAcao(clienteId: string, mensagem: string)
   const c = await buscarCliente(sb, clienteId)
   if (!c) return { erro: 'Cliente não encontrado.' }
   const res = await tentar(() => perf.configurarLinkBio(sb, { id: c.id, nome: c.nome }, String(mensagem ?? '')), 'Link da bio pronto.')
-  revalidatePath('/performance')
+  revalidarBio()
   return res
 }
 
@@ -66,20 +72,29 @@ export async function salvarLogoBioAcao(clienteId: string, chave: string | null)
   if (!(await exigirGestaoBio(clienteId))) return { erro: 'Sem permissão.' }
   if (chave !== null && !chaveDeCapaValida(chave, clienteId)) return { erro: 'Imagem inválida.' }
   const res = await tentar(async () => bio.definirLogoBio(await criarClienteServidor(), clienteId, chave), chave ? 'Logo atualizada.' : 'Logo removida.')
-  revalidatePath('/performance')
+  revalidarBio()
   return res
 }
 
 export async function adicionarLinkBioAcao(clienteId: string, rotulo: string, url: string): Promise<Resultado> {
   if (!(await exigirGestaoBio(clienteId))) return { erro: 'Sem permissão.' }
   const res = await tentar(async () => bio.adicionarLinkBio(await criarClienteServidor(), clienteId, String(rotulo ?? ''), String(url ?? '')), 'Botão adicionado.')
-  revalidatePath('/performance')
+  revalidarBio()
   return res
 }
 
 export async function removerLinkBioAcao(clienteId: string, id: string): Promise<Resultado> {
   if (!(await exigirGestaoBio(clienteId)) || !UUID.test(id)) return { erro: 'Sem permissão.' }
   const res = await tentar(async () => bio.removerLinkBio(await criarClienteServidor(), id), 'Botão removido.')
-  revalidatePath('/performance')
+  revalidarBio()
+  return res
+}
+
+/** Perguntas do quiz do WhatsApp da página da bio (até 3). Lista vazia volta ao quiz padrão. */
+export async function salvarQuizBioAcao(clienteId: string, perguntas: { pergunta: string; opcoes: string }[]): Promise<Resultado> {
+  if (!(await exigirGestaoBio(clienteId)) || !Array.isArray(perguntas)) return { erro: 'Sem permissão.' }
+  const limpas = perguntas.slice(0, 10).map((q) => ({ pergunta: String(q?.pergunta ?? ''), opcoes: String(q?.opcoes ?? '') }))
+  const res = await tentar(async () => bio.salvarPerguntasBio(await criarClienteServidor(), clienteId, limpas), 'Quiz salvo.')
+  revalidarBio()
   return res
 }

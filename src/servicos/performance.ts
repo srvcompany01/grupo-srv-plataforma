@@ -47,7 +47,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
     c.googleAdsId && googleConectado ? googlePorMes(c.googleAdsId, de, ate) : null,
     c.metaPaginaId ? cliquesNoPerfilPorMes(c.metaPaginaId, intervalos) : null,
     sb.from('bio_clicks').select('day, clicks').eq('client_id', c.id).gte('day', de).lte('day', ate),
-    sb.from('bio_botao_clicks').select('day, clicks').eq('client_id', c.id).eq('botao', 'whatsapp').gte('day', de).lte('day', ate),
+    sb.from('bio_leads').select('day').eq('client_id', c.id).gte('day', de).lte('day', ate).limit(20000),
     sb.from('client_monthly_results').select('month, revenue, sales, notes').eq('client_id', c.id).gte('month', de).lte('month', ate),
   ])
   const erros: string[] = []
@@ -68,7 +68,7 @@ export async function historicoDoCliente(sb: Supabase, c: Cliente, meses: string
     return r
   }
   const cliquesMes = somaPorMes(cliques.data, (l) => l.clicks)
-  const confirmadosMes = somaPorMes(confirmados.data, (l) => l.clicks)
+  const confirmadosMes = somaPorMes(confirmados.data, () => 1)
   const resultadoMes = new Map((resultados.data ?? []).map((r) => [String(r.month).slice(0, 7), r]))
   return {
     erros,

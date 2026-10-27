@@ -41,7 +41,7 @@ export type RelatorioCompartilhado = {
   /** O que a aba Performance mostra: resultado do mês do fim do período (mês inteiro) e os últimos 12 meses, com o faturamento e as vendas lançados. */
   resultados?: { mes: string; emAndamento: boolean; atual: MesRelatorio; meses: MesRelatorio[] } | null
   /** Página da bio do cliente: visitas e toques em cada botão no período (só quando houve visita). */
-  bio?: { /** Cliques no link da bio. */ cliques?: number; /** Legado (versão 4): igual a cliques. */ visitas?: number; visualizacoes?: number; pessoas?: number; toques: number; /** Toques no botão do WhatsApp (cada um é um lead orgânico). */ leadsOrganicos?: number; botoes: { rotulo: string; toques: number }[] } | null
+  bio?: { /** Cliques no link da bio. */ cliques?: number; /** Legado (versão 4): igual a cliques. */ visitas?: number; visualizacoes?: number; pessoas?: number; toques: number; /** Quiz concluído na página da bio (cada pessoa conta uma vez por dia): lead orgânico. */ leadsOrganicos?: number; botoes: { rotulo: string; toques: number }[] } | null
   /** Só para a equipe (a página pública não mostra). */
   avisosInternos?: string[]
   /** Cada campanha que gastou no período, por plataforma (versão 2+). */
@@ -89,7 +89,7 @@ export type MesRelatorio = {
   leadsSite: number
   conversoesGoogle: number
   leadsPagos: number
-  /** Toques no botão do WhatsApp da página da bio. */
+  /** Quiz concluído na página da bio (lead orgânico). */
   leadsOrganicos: number
   leads: number
   cliquesPerfilInstagram: number | null
@@ -239,7 +239,7 @@ export function textoWhatsapp(r: RelatorioCompartilhado, url: string): string {
     if (r.bio) {
       const cliques = r.bio.cliques ?? r.bio.visitas ?? 0
       linhas.push(`• ${num(cliques)} cliques no link da bio${r.bio.visualizacoes != null ? `, ${num(r.bio.visualizacoes)} visualizações da página` : ''} e ${num(r.bio.toques)} toques nos botões${r.bio.toques ? ` (mais tocado: ${r.bio.botoes[0].rotulo})` : ''}`)
-      if (r.bio.leadsOrganicos) linhas.push(`• ${num(r.bio.leadsOrganicos)} leads orgânicos pelo WhatsApp do link da bio`)
+      if (r.bio.leadsOrganicos) linhas.push(`• ${num(r.bio.leadsOrganicos)} leads orgânicos (quiz do link da bio concluído)`)
     }
     else if (r.instagram.cliquesLinkBio) linhas.push(`• ${num(r.instagram.cliquesLinkBio)} cliques no link da bio`)
     linhas.push('')

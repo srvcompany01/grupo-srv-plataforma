@@ -2,8 +2,10 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
-import { ehRobo, origemDaBio, slugValido } from '@/dominio/bio'
+import { ehRobo, hostEhDaBio, origemDaBio, slugValido } from '@/dominio/bio'
+import { perguntasDaPagina } from '@/dominio/bio-quiz'
 import { urlLeitura } from '@/infra/r2'
+import { QuizWhatsapp } from './QuizWhatsapp'
 import { Visualizacao } from './Visualizacao'
 import { criarClientePublico } from '@/infra/supabase/publico'
 
@@ -13,11 +15,13 @@ const FAVICON_VAZIO = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000
 
 const ler = cache(async (slug: string) => {
   if (!slugValido(slug)) return null
-  const { data } = await criarClientePublico().rpc('bio_pagina', { p_slug: slug })
+  const sb = criarClientePublico()
+  const [{ data }, { data: quiz }] = await Promise.all([sb.rpc('bio_pagina', { p_slug: slug }), sb.rpc('bio_quiz_pagina', { p_slug: slug })])
   const d = data?.[0]
   if (!d) return null
   const logo = d.logo ? await urlLeitura(d.logo).catch(() => null) : null
-  return { ...d, logo, links: (d.links ?? []) as { id: string; rotulo: string }[] }
+  // O número do WhatsApp fica no servidor: só sai depois do quiz (rota /quiz).
+  return { nome: d.nome, logo, temWhatsapp: !!d.whatsapp, links: (d.links ?? []) as { id: string; rotulo: string }[], perguntas: perguntasDaPagina(quiz) }
 })
 
 export async function generateMetadata({ params }: PageProps<'/l/[slug]'>): Promise<Metadata> {
@@ -35,8 +39,9 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
   const humano = !ehRobo((await headers()).get('user-agent'))
   // O clique conta ao pedir a página; a visualização, quando ela abre no aparelho (Visualizacao).
   if (humano) await criarClientePublico().rpc('bio_visita', { p_slug: slug, p_origem: origem })
-  const base = `/l/${slug}/ir`
-  const botoes = [...(p.whatsapp ? [{ id: 'whatsapp', rotulo: 'Chamar no WhatsApp' }] : []), ...p.links]
+  // No domínio dedicado o endereço público é /<cliente>; no do aplicativo, /l/<cliente>.
+  const base = hostEhDaBio((await headers()).get('host'), process.env.BIO_DOMINIO) ? `/${slug}/ir` : `/l/${slug}/ir`
+  const botoes = [...(p.temWhatsapp ? [{ id: 'whatsapp', rotulo: 'Chamar no WhatsApp' }] : []), ...p.links]
   return (
     <main className="flex min-h-dvh flex-col items-center bg-white px-5 py-14 text-black">
       {humano && <Visualizacao origem={origem} />}
@@ -51,7 +56,9 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
           <h1 className="text-xl font-semibold tracking-tight">{p.nome}</h1>
         </div>
         <nav className="flex w-full flex-col gap-3">
-          {botoes.map((b, i) => (
+          {botoes.map((b, i) => b.id === 'whatsapp' ? (
+            <QuizWhatsapp key={b.id} rotulo={b.rotulo} perguntas={p.perguntas} origem={origem} destaque={i === 0} />
+          ) : (
             <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
               {b.rotulo}
             </a>

@@ -1,5 +1,6 @@
 import 'server-only'
 import { lerLinkBio, MAXIMO_LINKS_BIO, montarResumoBio, type ResumoBio } from '@/dominio/bio'
+import { lerPerguntas, type Pergunta } from '@/dominio/bio-quiz'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { dados } from './resultado'
 
@@ -39,16 +40,32 @@ export async function resumoDaBio(sb: Supabase, clienteId: string, de: string, a
 /** O mesmo resumo para vários clientes de uma vez (4 consultas, qualquer quantidade de clientes). */
 export async function resumoDaBioDeVarios(sb: Supabase, clientes: { id: string; temWhatsapp: boolean }[], de: string, ate: string): Promise<Map<string, ResumoBio>> {
   const ids = clientes.map((c) => c.id)
-  const [v, w, b, l] = await Promise.all([
+  const [v, w, b, l, q] = await Promise.all([
     sb.from('bio_clicks').select('client_id, day, origem, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
     sb.from('bio_visualizacoes').select('client_id, day, origem, views, visitantes').in('client_id', ids).gte('day', de).lte('day', ate),
     sb.from('bio_botao_clicks').select('client_id, botao, rotulo, day, clicks').in('client_id', ids).gte('day', de).lte('day', ate),
     sb.from('bio_links').select('client_id, id, rotulo, position').in('client_id', ids).order('position'),
+    sb.from('bio_leads').select('client_id, day, origem, respostas').in('client_id', ids).gte('day', de).lte('day', ate).limit(5000),
   ])
   const por = <T extends { client_id: string }>(xs: T[] | null) => (xs ?? []).reduce((m, x) => m.set(x.client_id, [...(m.get(x.client_id) ?? []), x]), new Map<string, T[]>())
   const visitas = por(v.data)
   const visualizacoes = por(w.data)
   const botoes = por(b.data)
   const links = por(l.data)
-  return new Map(clientes.map((c) => [c.id, montarResumoBio({ visitas: visitas.get(c.id) ?? [], visualizacoes: visualizacoes.get(c.id) ?? [], botoes: botoes.get(c.id) ?? [], links: links.get(c.id) ?? [], temWhatsapp: c.temWhatsapp })]))
+  const leads = por(q.data)
+  return new Map(clientes.map((c) => [c.id, montarResumoBio({ visitas: visitas.get(c.id) ?? [], visualizacoes: visualizacoes.get(c.id) ?? [], botoes: botoes.get(c.id) ?? [], links: links.get(c.id) ?? [], leads: leads.get(c.id) ?? [], temWhatsapp: c.temWhatsapp })]))
+}
+
+/** Perguntas do quiz de um cliente (vazio = a página usa o quiz padrão). */
+export async function perguntasDoCliente(sb: Supabase, clienteId: string): Promise<Pergunta[]> {
+  const { data } = await sb.from('bio_perguntas').select('pergunta, opcoes').eq('client_id', clienteId).order('position').order('created_at')
+  return data ?? []
+}
+
+/** Troca todas as perguntas do cliente pelas informadas (lista vazia volta ao quiz padrão). */
+export async function salvarPerguntasBio(sb: Supabase, clienteId: string, brutas: { pergunta: string; opcoes: string }[]): Promise<void> {
+  const perguntas = lerPerguntas(brutas)
+  if ('erro' in perguntas) throw { code: 'P0001', message: perguntas.erro }
+  dados(await sb.from('bio_perguntas').delete().eq('client_id', clienteId).select('id'))
+  if (perguntas.length) dados(await sb.from('bio_perguntas').insert(perguntas.map((q, i) => ({ client_id: clienteId, position: i, pergunta: q.pergunta, opcoes: q.opcoes }))).select('id'))
 }
