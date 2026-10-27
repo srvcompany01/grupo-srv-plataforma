@@ -89,3 +89,35 @@ export function achatarConversa<T extends { role: 'user' | 'assistant'; content:
   const anteriores = mensagens.slice(0, -1).map((m) => `${m.role === 'user' ? 'Pessoa' : 'Assistente'}: ${m.content}`).join('\n')
   return [{ role: 'user', content: `Conversa até aqui:\n${anteriores}\n\nPergunta atual: ${mensagens.at(-1)!.content}` }]
 }
+
+/**
+ * Uma pergunta que devolve JSON, no provedor configurado (IA_*): sem ferramentas nem conversa. `ler` valida a resposta;
+ * se não servir, tenta o próximo modelo.
+ */
+export async function gerarJsonProvedor<T>(config: Config, prompt: string, ler: (resposta: string) => T | null): Promise<T> {
+  let ultimo = ''
+  for (const modelo of config.modelos) {
+    let resposta: Response
+    try {
+      resposta = await fetch(`${config.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.chave}` },
+        body: JSON.stringify({ model: modelo, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' }, temperature: 0.2, ...(config.desligarPensar ? { thinking: { type: 'disabled' } } : {}) }),
+        signal: AbortSignal.timeout(60_000),
+      })
+    } catch {
+      ultimo = 'demorou demais'
+      continue
+    }
+    if (resposta.status === 401 || resposta.status === 403) throw new Error('A chave da IA (IA_API_KEY) foi recusada. Confira se está correta.')
+    if (!resposta.ok) {
+      ultimo = `${resposta.status}: ${(await resposta.text().catch(() => '')).slice(0, 200)}`
+      if ([404, 429, 500, 503].includes(resposta.status)) continue
+      break
+    }
+    const lido = ler(comoTexto(((await resposta.json()) as Corpo).choices?.[0]?.message?.content) ?? '')
+    if (lido) return lido
+    ultimo = 'resposta fora do formato'
+  }
+  throw new Error(`A IA não respondeu (${ultimo}).`)
+}

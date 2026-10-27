@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { duracao, metricasDeAtendimento, segundosUteis, type MensagemAtendimento } from '@/dominio/atendimento'
 import { mascararTexto } from '@/dominio/privacidade'
+import { analisarQualidade, lerAnaliseDaIA, montarTranscricao, resumirQualidade, type LinhaAnalise } from '@/dominio/qualidade-atendimento'
 
 const t0 = Date.parse('2026-10-26T12:00:00Z')
 const m = (conversa: string, papel: MensagemAtendimento['papel'], seg: number): MensagemAtendimento => ({ conversa, papel, em: t0 + seg * 1000 })
@@ -73,5 +74,29 @@ describe('horário de atendimento', () => {
   it('a primeira resposta usa o expediente: cliente às 23h, resposta às 8h30 = 30 min', () => {
     const msgs = [{ conversa: 'a', papel: 'cliente' as const, em: em('2026-10-27T02:00:00Z') }, { conversa: 'a', papel: 'atendente' as const, em: em('2026-10-27T11:30:00Z') }]
     expect(metricasDeAtendimento(msgs, em('2026-10-27T12:00:00Z'), 3600, h).primeiraResposta.mediana).toBe(1800)
+  })
+})
+
+describe('qualidade do atendimento (IA)', () => {
+  it('lê a resposta da IA, com ou sem cerca de código, limitando a nota e os textos', () => {
+    const r = lerAnaliseDaIA('```json\n{"nota": 130, "resultado": "venda", "resumo": " Comprou ", "motivo_perda": "", "objecoes": ["Preço", " "], "pontos_fortes": ["rápido"], "melhorias": []}\n```')
+    expect(r).toEqual({ nota: 100, resultado: 'venda', resumo: 'Comprou', motivoPerda: '', objecoes: ['Preço'], pontosFortes: ['rápido'], melhorias: [] })
+    expect(lerAnaliseDaIA('não é json')).toBeNull()
+    expect(lerAnaliseDaIA('{"nota": "x"}')).toBeNull()
+    expect(lerAnaliseDaIA('{"nota": 50, "resultado": "talvez"}')?.resultado).toBe('em_andamento')
+  })
+  it('monta a conversa legível e corta o meio das muito longas', () => {
+    const t = montarTranscricao([{ papel: 'cliente', texto: 'Oi\n tudo bem?', em: Date.parse('2026-10-26T12:00:00Z') }, { papel: 'atendente', texto: 'Olá!', em: Date.parse('2026-10-26T12:01:00Z') }])
+    expect(t).toBe('[10-26 09:00] Cliente: Oi tudo bem?\n[10-26 09:01] Atendente: Olá!')
+    expect(montarTranscricao([{ papel: 'cliente', texto: 'a'.repeat(30_000), em: 0 }])).toContain('trecho do meio omitido')
+  })
+  it('totais: nota média, objeção contada uma vez por conversa e motivo de perda só das perdidas', () => {
+    const l = (o: Partial<LinhaAnalise>): LinhaAnalise => ({ talkId: 1, conversaEm: '', mensagens: 5, nota: 80, resultado: 'venda', resumo: '', motivoPerda: '', objecoes: [], pontosFortes: [], melhorias: [], ...o })
+    const r = resumirQualidade([l({ nota: 90, objecoes: ['Preço', 'preço'] }), l({ nota: 50, resultado: 'perdido', motivoPerda: 'preço alto', objecoes: ['preço'], melhorias: ['responder mais rápido'] }), l({ nota: 40, resultado: 'sem_resposta', motivoPerda: 'ignorar' })])
+    expect(r.notaMedia).toBe(60)
+    expect(r.objecoes).toEqual([{ texto: 'preço', conversas: 2 }])
+    expect(r.motivosDePerda).toEqual([{ texto: 'preço alto', conversas: 1 }])
+    expect(r.porResultado).toMatchObject({ venda: 1, perdido: 1, sem_resposta: 1 })
+    expect(analisarQualidade(r).recomendacoes.length).toBeGreaterThan(0)
   })
 })

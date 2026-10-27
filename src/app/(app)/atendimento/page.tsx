@@ -12,6 +12,10 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { horarioDoCliente } from '@/servicos/atendimento'
 import { HorarioAtendimento } from './HorarioAtendimento'
+import { Qualidade } from './Qualidade'
+
+// Analisar conversas com a IA leva alguns segundos por conversa.
+export const maxDuration = 120
 import { Aviso, AtendimentoCliente } from '../performance/canais'
 
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
@@ -42,6 +46,7 @@ export default async function Atendimento({ searchParams }: PageProps<'/atendime
       {escolhido ? (
         <>
           <AtendimentoCliente c={escolhido} periodo={periodo} />
+          <Qualidade clienteId={escolhido.id} periodo={periodo} />
           <Modulo icone={Clock} titulo="Horário de atendimento" descricao="O tempo de resposta e os avisos de conversa sem resposta contam só dentro deste expediente">
             <HorarioAtendimento key={escolhido.id} clienteId={escolhido.id} horario={await horarioDoCliente(sb, escolhido.id)} podeEditar={eu.papel === 'admin' || eu.papel === 'gestor'} />
           </Modulo>

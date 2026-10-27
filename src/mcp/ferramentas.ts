@@ -213,7 +213,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Arquivos (ciclo de renovação): todo dia a plataforma apaga os arquivos vencidos e marca o registro como arquivado: mídias de post publicado 90 dias depois da publicação (não publicado: 180 dias sem versão nova), anexos de tarefas e do chat em 12 meses, criativos já enviados à Meta em 90 dias e gravações de reunião logo depois da ata. Blog e capas de cliente nunca saem. Mídia arquivada não pode ser publicada nem usada em anúncio: peça para subir de novo.',
         'Posts e métricas: a aba Posts mostra os posts em lista, Kanban e calendário, com as métricas do Instagram de cada publicado (atualizadas a cada 5 minutos). posts_publicados lista os publicados com métricas e nota; insight_post traz as métricas, a comparação com a mediana do perfil (nota bom, mediano ou ruim) e a última análise; analisar_post faz a IA assistir o vídeo/imagem e explicar o que deu certo, o que não deu e o que replicar.',
         'GMN (Google Meu Negócio, aba GMN): pelos dados PÚBLICOS do Google (Places API), sem depender da API do Business Profile. Primeiro ligue o lugar do cliente no Google (gmn_buscar_lugares + definir_lugar_google_cliente). gmn_cliente traz o perfil, a nota de saúde de 0 a 100 (Fraco/Razoável/Bom por item), as avaliações em destaque, a evolução e o link de avaliação. gmn_geogrid roda a palavra-chave numa grade ao redor do endereço e guarda a posição em cada ponto (próxima da do Maps, não idêntica); gmn_varreduras lê as varreduras com os concorrentes do top 3; gmn_acompanhar liga o geogrid automático toda segunda, com aviso se a posição piorar. Prospecção: gmn_buscar_lugares (segmento + cidade) e gmn_analisar_lugar (pré-análise e texto de abordagem).',
-        'Performance e Relatórios são uma área só (a aba Performance; /relatorios apenas redireciona para ela). Sem cliente: o resumo de todos os clientes no mês (investimento da Meta, do Google e total, leads, CPL, faturamento, ROAS) e a comparação por canal. Com um cliente, as abas: Resumo (panorama_cliente + resultado do mês), Evolução (12 meses; performance_cliente), Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), Orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente), a área Atendimento, com ícone do WhatsApp na barra lateral (atendimento_cliente: conversas do WhatsApp via Kommo, tempo da primeira resposta de uma pessoa, conversas sem resposta, vendas, receita e origem por etiqueta; o texto das conversas é guardado mascarado por 90 dias), Link da bio (link_bio_cliente: cliques no link, visualizações da página, toques em cada botão e leads orgânicos) e Lançamentos (faturamento obrigatório e vendas opcionais com registrar_resultado_mes; logo, botões e mensagem da página da bio). Há botão para enviar o relatório ao cliente (gerar_relatorio_cliente: link, WhatsApp e PDF) e para baixar a planilha .xlsx do período. Lead orgânico = cada toque no botão do WhatsApp (atendimento) da página da bio.',
+        'Performance e Relatórios são uma área só (a aba Performance; /relatorios apenas redireciona para ela). Sem cliente: o resumo de todos os clientes no mês (investimento da Meta, do Google e total, leads, CPL, faturamento, ROAS) e a comparação por canal. Com um cliente, as abas: Resumo (panorama_cliente + resultado do mês), Evolução (12 meses; performance_cliente), Meta Ads (anuncios_meta_cliente), Google Ads (campanhas_google_ads_cliente), Orgânico (insights_instagram_cliente), Google Meu Negócio (gmn_cliente), a área Atendimento, com ícone do WhatsApp na barra lateral (atendimento_cliente: conversas do WhatsApp via Kommo, tempo da primeira resposta de uma pessoa, conversas sem resposta, vendas, receita e origem por etiqueta; o texto das conversas é guardado mascarado por 90 dias; qualidade_atendimento_cliente e analisar_atendimento_cliente trazem e rodam a auditoria da IA: nota, objeções, motivos de perda e o que melhorar), Link da bio (link_bio_cliente: cliques no link, visualizações da página, toques em cada botão e leads orgânicos) e Lançamentos (faturamento obrigatório e vendas opcionais com registrar_resultado_mes; logo, botões e mensagem da página da bio). Há botão para enviar o relatório ao cliente (gerar_relatorio_cliente: link, WhatsApp e PDF) e para baixar a planilha .xlsx do período. Lead orgânico = cada toque no botão do WhatsApp (atendimento) da página da bio.',
         'Relatório para o cliente: gerar_relatorio_cliente cria um link público com os números do período e o texto do WhatsApp, com Meta Ads e Google Ads separados (investido, leads e custo por lead de cada um, em dados.anuncios.meta e dados.anuncios.google); na página do cliente há o mesmo botão e a lista dos gerados. No dia 1 a plataforma gera o do mês anterior de cada cliente ativo e avisa a equipe no sino para enviar.',
         'Comentários das redes: na aba Insights, os comentários do Instagram e do Facebook dos clientes (posts e anúncios) chegam a cada 15 minutos, classificados pelo tom; negativos e agressivos geram aviso no sino para admin e gestor. Use listar_comentarios_redes, responder_comentario_rede e ocultar_comentario_rede (não há exclusão por aqui).',
         'Insights (orgânico): a aba Insights mostra o Instagram de todos os clientes (panorama) ou de um cliente (posts, melhor formato, alcance por dia, recomendações); TikTok, YouTube, Facebook e LinkedIn estão como em breve e o Google Meu Negócio aguarda a liberação do Google. Use insights_instagram_cliente. A página do cliente tem o relatório em três partes (pago, orgânico e os dois juntos), o mesmo de relatorio_cliente_pago_e_organico.',
@@ -706,6 +706,34 @@ export const FERRAMENTAS: Ferramenta[] = [
       const p = periodoDaIA(a)
       const { atendimentoDoCliente } = await import('@/servicos/atendimento')
       return { cliente: cliente.nome, ...(await atendimentoDoCliente(sb, cliente.id, p.de, p.ate)) }
+    },
+  }),
+
+  definir({
+    nome: 'qualidade_atendimento_cliente',
+    descricao: 'Auditoria de qualidade do atendimento por WhatsApp do cliente, feita pela IA sobre as conversas do Kommo (texto já mascarado): nota média de 0 a 100, resultado (venda, perdido, em andamento, sem resposta), objeções mais comuns, motivos de perda, o que melhorar, insights e a lista das conversas analisadas com resumo. Só traz conversas já analisadas; use analisar_atendimento_cliente para analisar as recentes. Período pela data da conversa.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), dias: z.union([z.literal(7), z.literal(30)]).optional().describe('Últimos 7 ou 30 dias até ontem; padrão 7'), de: data('Início de um período escolhido (com ate; substitui dias)').optional(), ate: data('Fim do período escolhido').optional() },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const p = periodoDaIA(a)
+      const { qualidadeDoCliente } = await import('@/servicos/atendimento-ia')
+      const { analisarQualidade } = await import('@/dominio/qualidade-atendimento')
+      const q = await qualidadeDoCliente(sb, cliente.id, p.de, p.ate)
+      return { cliente: cliente.nome, periodo: p, ...q.resumo, analise: analisarQualidade(q.resumo), conversas: q.conversas.slice(0, 40) }
+    },
+  }),
+
+  definir({
+    nome: 'analisar_atendimento_cliente',
+    descricao: 'Faz a IA da plataforma ler até 8 conversas de WhatsApp recentes do cliente que ainda não foram analisadas (paradas há 30 min, com pelo menos 3 mensagens, dos últimos 7 dias) e guardar nota, resultado, objeções, pontos fortes e melhorias. A rotina diária também faz isso sozinha. Chame de novo se restarem pendentes.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => {
+      const cliente = await buscarCliente(sb, a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      return (await import('@/servicos/atendimento-ia')).analisarConversas(cliente.id)
     },
   }),
 

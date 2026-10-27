@@ -1,5 +1,8 @@
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import { avisarSemResposta } from '@/servicos/atendimento'
+import { analisarConversas, iaDoAtendimentoConfigurada } from '@/servicos/atendimento-ia'
+
+export const maxDuration = 300
 
 /**
  * Vercel Cron (vercel.json), todo dia às 4h de Belém: apaga o texto das conversas com mais de 90 dias
@@ -15,5 +18,14 @@ export async function GET(req: Request) {
   const { data: funis } = await admin.from('kommo_funis').select('client_id')
   let avisos = 0
   for (const c of new Set((funis ?? []).map((f) => f.client_id))) avisos += await avisarSemResposta(c).catch(() => 0)
-  return Response.json({ mensagensApagadas: data, avisos })
+  // Auditoria da IA nas conversas paradas (até 30 por rotina, no total, para caber no tempo e na cota gratuita).
+  let analisadas = 0
+  if (iaDoAtendimentoConfigurada()) {
+    for (const c of new Set((funis ?? []).map((f) => f.client_id))) {
+      if (analisadas >= 30) break
+      const r = await analisarConversas(c, 30 - analisadas).catch(() => ({ analisadas: 0 }))
+      analisadas += r.analisadas
+    }
+  }
+  return Response.json({ mensagensApagadas: data, avisos, analisadas })
 }

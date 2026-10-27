@@ -53,6 +53,12 @@ export type Database = {
         Update: { id?: number; client_id?: string; pipeline_id?: number; status_id?: number | null; valor?: number; etiquetas?: string[]; responsavel_id?: number | null; criado_em?: string | null; ganho_em?: string | null; perdido_em?: string | null; excluido_em?: string | null; atualizado_em?: string }
         Relationships: []
       }
+      wa_analises: {
+        Row: { talk_id: number; client_id: string; conversa_em: string; analisada_em: string; mensagens: number; nota: number; resultado: string; resumo: string; motivo_perda: string; objecoes: string[]; pontos_fortes: string[]; melhorias: string[] }
+        Insert: { talk_id: number; client_id: string; conversa_em: string; analisada_em?: string; mensagens: number; nota: number; resultado: string; resumo?: string; motivo_perda?: string; objecoes?: string[]; pontos_fortes?: string[]; melhorias?: string[] }
+        Update: { talk_id?: number; client_id?: string; conversa_em?: string; analisada_em?: string; mensagens?: number; nota?: number; resultado?: string; resumo?: string; motivo_perda?: string; objecoes?: string[]; pontos_fortes?: string[]; melhorias?: string[] }
+        Relationships: []
+      }
       wa_alertas: {
         Row: { talk_id: number; mensagem_em: string; client_id: string; avisado_em: string }
         Insert: { talk_id: number; mensagem_em: string; client_id: string; avisado_em?: string }
