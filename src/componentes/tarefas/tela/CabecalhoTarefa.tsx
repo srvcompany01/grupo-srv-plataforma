@@ -11,12 +11,14 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { rotuloMes } from '@/dominio/formatar'
 import { botaoFantasma, campo } from '@/lib/ui'
+import type { StatusLista } from '@/dominio/tarefas'
 import type { TarefaCompleta } from '@/servicos/tarefas'
+import { Ic } from '@/componentes/app/Ic'
 import { avisar } from '../avisar'
 import type { ListaOpcao } from './TelaTarefa'
 import { NomeCliente } from '@/componentes/NomeCliente'
 
-export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { tarefa: TarefaCompleta; listas: ListaOpcao[]; podeGerir: boolean; emJanela: boolean }) {
+export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela }: { tarefa: TarefaCompleta; listas: ListaOpcao[]; status: StatusLista[]; podeGerir: boolean; emJanela: boolean }) {
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
@@ -95,6 +97,32 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
           </Link>
         )
       )}
+
+      <div className="flex items-center" style={{ gap: 0 }}>
+        {(() => {
+          const atual = status.find((x) => x.id === t.statusId)
+          const proximo = status[status.findIndex((x) => x.id === t.statusId) + 1]
+          const cor = atual?.cor ?? '#8b8b94'
+          const mudar = (statusId: string) => iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, { statusId })))
+          return (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger disabled={pendente} style={{ height: 26, display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px 0 8px', border: 0, borderRadius: proximo ? '4px 0 0 4px' : 4, background: cor, color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '.03em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  {atual?.nome ?? 'Status'}<Ic n="expand_more" s={14} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {status.map((x) => <DropdownMenuItem key={x.id} onSelect={() => x.id !== t.statusId && mudar(x.id)}><span style={{ width: 8, height: 8, borderRadius: '50%', background: x.cor }} />{x.nome}</DropdownMenuItem>)}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {proximo && (
+                <button type="button" disabled={pendente} onClick={() => mudar(proximo.id)} title={`Avançar para ${proximo.nome}`} aria-label={`Avançar para ${proximo.nome}`} style={{ height: 26, width: 26, marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderLeft: '1px solid rgba(255,255,255,.35)', borderRadius: '0 4px 4px 0', background: cor, color: '#fff', cursor: 'pointer' }}><Ic n="chevron_right" s={15} /></button>
+              )}
+            </>
+          )
+        })()}
+        <span className="flex-1" />
+        <span className="text-[12px] text-texto-3">SRV-{t.id.slice(0, 4).toUpperCase()}</span>
+      </div>
 
       <input
         value={titulo}

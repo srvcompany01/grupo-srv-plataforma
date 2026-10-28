@@ -1,7 +1,8 @@
 'use client'
 
+import { Ic } from '@/componentes/app/Ic'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
+import { Archive, ArrowLeftToLine, ArrowRightToLine, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
@@ -410,21 +411,23 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       <div className="overflow-x-auto pb-2">
         <div className="space-y-1.5" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
-        <section key={g.id} className="bg-white">
+        <section key={g.id} className="bg-[var(--bg)]" style={{ marginTop: indice === 0 ? 0 : 10 }}>
           {!g.semCabecalho && (
-            <div className="flex items-center">
-              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1.5 text-left">
-                <ChevronRight className={`h-3.5 w-3.5 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+            <div className="flex h-8 items-center">
+              <button onClick={() => alternar(g.id)} className="flex min-w-0 items-center gap-1.5 text-left">
+                <span className="b-icon" style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
                 <EtiquetaGrupo nome={g.nome} cor={g.cor} icone={g.icone} contagem={g.tarefas.length} />
               </button>
+              <span className="flex-1" />
               {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
               {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
             </div>
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-7 items-center border-b border-borda bg-[var(--bg)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
-                <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
+              <div className="grid h-7 items-center border-b border-borda bg-[var(--bg)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+                <span className="flex justify-center"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="ck" /></span><span /><span />
+                <CabecalhoColuna colunaId="nome" className="pl-0.5" {...propsRedimensionamento}>Nome</CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)
                   if (definicao) {

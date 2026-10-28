@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Check, ChevronRight, X, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
+import { Calendar, Check, X, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -10,7 +10,6 @@ import { botaoFantasma, campo } from '@/lib/ui'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
 import { SeletorResponsaveis } from '../SeletorResponsaveis'
-import { SeletorStatus } from '../SeletorStatus'
 import { SeletorTagCliente } from '../SeletorTagCliente'
 import type { Opcao } from './TelaTarefa'
 
@@ -84,28 +83,6 @@ export function GradePropriedades({
             podeGerir={podeGerir}
           />
         </Linha>
-        <Linha icone={CircleDot} titulo="Status">
-          <span className="flex items-center gap-1">
-            <SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={status} comNome />
-            {proximo && (
-              <button disabled={pendente} onClick={() => salvar({ statusId: proximo.id })} aria-label={`Avançar para ${proximo.nome}`} title={`Avançar para ${proximo.nome}`} className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-            {concluido && atual?.categoria !== 'done' && (
-              <button
-                disabled={pendente}
-                onClick={() => salvar({ statusId: concluido.id })}
-                aria-label={`Marcar como ${concluido.nome}`}
-                title={`Marcar como ${concluido.nome}`}
-                className="rounded p-1 text-texto-3 hover:bg-hover hover:text-sucesso"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-            )}
-          </span>
-        </Linha>
-
         <Linha icone={Calendar} titulo="Vencimento">
           <span className="flex items-center gap-1.5">
             <input

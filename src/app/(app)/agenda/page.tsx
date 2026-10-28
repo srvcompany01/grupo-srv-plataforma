@@ -167,14 +167,14 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b border-borda bg-fundo/60">
           <span />
           {dias.map((dia, i) => (
-            <Link key={dia} href={url({ visao: 'dia', data: dia })} className="border-l border-borda px-1 py-1 text-center hover:bg-hover">
-              <span className="block text-[11px] font-semibold uppercase text-texto-3">{SEMANA[i]}</span>
-              <span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[18px] font-semibold tabular-nums ${dia === hoje ? 'bg-[#d80d12] text-white' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
+            <Link key={dia} href={url({ visao: 'dia', data: dia })} className="flex items-center justify-center gap-1.5 border-l border-[var(--border-soft)] hover:bg-hover" style={{ height: 48 }}>
+              <span className="text-[11px] uppercase text-texto-3">{SEMANA[i]}</span>
+              <span className={`flex h-6 min-w-6 items-center justify-center rounded-xl px-1.5 text-[13px] font-semibold tabular-nums ${dia === hoje ? 'bg-[#d80d12] text-white' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
             </Link>
           ))}
         </div>
         <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b border-borda">
-          <span className="py-1 pr-1 text-right text-micro text-texto-3">dia todo</span>
+          <span className="py-1.5 pr-1.5 text-right text-[10px] text-texto-3">Tarefas</span>
           {dias.map((dia) => (
             <ul key={dia} className="min-h-6 space-y-0.5 border-l border-borda p-0.5">
               {doDia(todas, dia).filter((o) => o.diaInteiro).map((o) => (
@@ -266,13 +266,13 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
     <div className="min-h-full bg-white">
       <header className="sticky top-0 z-20 flex min-h-10 flex-wrap items-center justify-between gap-3 border-b border-borda-fraca bg-white px-3 py-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="sr-only"><CalendarDays className="h-4 w-4" /> Agenda</h1>
+          <h1 className="flex items-center gap-2 text-destaque font-semibold"><CalendarDays className="h-4 w-4 text-texto-2" /> Agenda</h1>
           <nav className="flex items-center gap-1" aria-label="Período">
             <Link href={url({ data: passo(-1) })} aria-label="Anterior" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></Link>
             <Link href={url({ data: hoje })} className="rounded-lg border border-borda px-2 py-0.5 text-rotulo font-semibold text-texto-2 hover:bg-hover">Hoje</Link>
             <Link href={url({ data: passo(1) })} aria-label="Próximo" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
           </nav>
-          <span className="text-destaque font-semibold capitalize text-texto">{titulo}</span>
+          <span className="text-[13px] capitalize text-texto-2">{titulo}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <nav className="flex gap-0.5 rounded-full bg-[var(--bg-active)] p-0.5" aria-label="Visão">

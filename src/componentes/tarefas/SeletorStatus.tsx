@@ -26,10 +26,11 @@ export function SeletorStatus({
       <DropdownMenuTrigger
         disabled={pendente || opcoes.length === 0}
         aria-label={`Status: ${atual?.nome ?? ''}`}
-        className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-rotulo font-medium hover:bg-hover"
+        title={atual?.nome}
+        className={comNome ? 'inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded px-2 text-[12px] font-medium' : 'flex h-[14px] w-[14px] items-center justify-center rounded-full p-0'}
+        style={comNome ? { background: `color-mix(in srgb, ${atual?.cor ?? '#8b8b94'} 16%, transparent)` } : { border: `2px solid ${atual?.cor ?? '#8b8b94'}`, background: atual?.categoria === 'done' ? (atual?.cor ?? '#8b8b94') : 'transparent' }}
       >
-        <IconeStatus info={iconeDoStatus(opcoes, statusId)} cor={atual?.cor ?? '#87909e'} />
-        {comNome && <span>{atual?.nome ?? '—'}</span>}
+        {comNome && <><span style={{ width: 6, height: 6, borderRadius: '50%', background: atual?.cor ?? '#8b8b94' }} /><span>{atual?.nome ?? '—'}</span></>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {opcoes.map((s) => (

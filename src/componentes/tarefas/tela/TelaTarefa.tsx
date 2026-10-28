@@ -70,7 +70,7 @@ export function TelaTarefa(p: PropsTela) {
       </Tabs>
       <div className="grid min-h-0 flex-1 @4xl:grid-cols-[1fr_400px]">
         <div className={`min-h-0 space-y-6 overflow-y-auto p-4 @2xl:px-6 ${aba === 'detalhes' ? '' : 'hidden @4xl:block'}`}>
-          <CabecalhoTarefa tarefa={t} listas={p.listas} podeGerir={p.podeGerir} emJanela={p.emJanela} />
+          <CabecalhoTarefa tarefa={t} listas={p.listas} status={p.status} podeGerir={p.podeGerir} emJanela={p.emJanela} />
           <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} tagsCliente={p.tagsCliente} podeGerir={p.podeGerir} hoje={p.hoje}>
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
           </GradePropriedades>

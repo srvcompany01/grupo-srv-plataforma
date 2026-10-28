@@ -539,3 +539,12 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 .b-pri:hover { background: var(--primary-hover); }
 .b-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border: 1px solid var(--border); background: var(--bg-subtle); border-radius: 13px; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; white-space: nowrap; }
 .b-pill:hover { background: var(--bg-hover); }
+
+/* Caixa de seleção do redesign: 14px, raio 3, marcada = cor de ação. */
+input.ck { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; margin: 0; flex: none; border: 1px solid var(--border-strong); border-radius: 3px; background: transparent; cursor: pointer; position: relative; }
+input.ck:checked { background: var(--primary); border-color: var(--primary); }
+input.ck:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid var(--on-primary); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+/* Células editáveis da Lista: contorno interno ao passar o mouse (como no protótipo). */
+[data-linha] > [data-celula]:not([data-celula='nome']) { height: 28px; margin: 0 2px; border-radius: 4px; display: flex; align-items: center; }
+[data-linha] > [data-celula]:not([data-celula='nome']):hover { box-shadow: inset 0 0 0 1px var(--border-strong); }

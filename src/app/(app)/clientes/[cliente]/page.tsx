@@ -86,6 +86,11 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   const posts = raizes.filter((t) => tiposDeLista.get(t.listaId) === 'conteudo').sort((a, b) => (b.prazo ?? '').localeCompare(a.prazo ?? ''))
   const arquivos = aba === 'arquivos' ? (await listarDocumentos(sb).catch(() => [])).filter((d) => d.clienteId === id && !d.arquivadoEm) : []
   const nomeStatus = (t: { listaId: string; statusId: string }) => statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.nome ?? ''
+  const semanasDoMes = [1, 2, 3, 4].map((n) => {
+    const doDia = (t: { prazo: string | null }) => Math.min(4, Math.ceil(Number((t.prazo ?? '').slice(8, 10)) / 7))
+    const sem = doMes.filter((t) => doDia(t) === n)
+    return { l: `S${n}`, plan: sem.length, feitas: sem.filter((t) => t.concluidaEm || categoria(t) === 'done').length }
+  })
   const indicadores = [
     { rotulo: 'Posts no mês', valor: doMes.length, vermelho: false },
     { rotulo: 'Aprovados ou publicados', valor: doMes.filter((t) => t.concluidaEm || categoria(t) === 'done').length, vermelho: false },
@@ -157,6 +162,35 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
       </header>
               <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)]">
                 <div className="min-w-0 space-y-4">
+                  <section className="overflow-hidden rounded-lg border border-borda">
+                    <div className="flex h-10 items-center gap-2 border-b border-borda px-3"><span className="flex-1 text-[13px] font-semibold">Entregas do mês</span><Link href={`/clientes/${id}?aba=tarefas`} className="text-[12px] text-texto-2 hover:text-texto">Abrir na lista</Link></div>
+                    {doMes.length === 0 && <p className="px-3 py-4 text-[13px] text-texto-3">Nenhuma entrega com vencimento neste mês.</p>}
+                    {doMes.slice(0, 8).map((t) => (
+                      <Link key={t.id} href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-2 border-b border-[var(--border-soft)] px-3 text-[13px] last:border-b-0 hover:bg-hover">
+                        <span style={{ width: 12, height: 12, flex: 'none', borderRadius: '50%', border: `2px solid ${statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94'}`, background: categoria(t) === 'done' ? (statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94') : 'transparent' }} />
+                        <span className="min-w-0 flex-1 truncate">{t.titulo}</span>
+                        <span className="h-5 shrink-0 rounded px-2 text-[12px] leading-5" style={{ background: `color-mix(in srgb, ${statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94'} 16%, transparent)` }}>{nomeStatus(t)}</span>
+                        <span className={`w-14 shrink-0 text-right text-[12px] ${t.prazo && t.prazo < hoje && !t.concluidaEm ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
+                      </Link>
+                    ))}
+                  </section>
+                  <section className="overflow-hidden rounded-lg border border-borda">
+                    <div className="flex h-10 items-center gap-2 border-b border-borda px-3">
+                      <span className="flex-1 text-[13px] font-semibold">Entregas por semana</span>
+                      <span className="flex gap-2.5 text-[11px] text-texto-2"><span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--bg-active)', border: '1px solid var(--border-strong)' }} />Planejado</span><span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--text)' }} />Entregue</span></span>
+                    </div>
+                    <div className="flex items-end justify-around px-4 pb-2 pt-3" style={{ height: 140 }}>
+                      {semanasDoMes.map((w) => (
+                        <div key={w.l} className="flex flex-col items-center gap-1.5">
+                          <div className="flex items-end gap-1" style={{ height: 90 }}>
+                            <span style={{ width: 18, height: Math.min(90, w.plan * 20), borderRadius: '3px 3px 0 0', background: 'var(--bg-active)', border: '1px solid var(--border-strong)', borderBottom: 0 }} />
+                            <span style={{ width: 18, height: Math.min(90, w.feitas * 20), borderRadius: '3px 3px 0 0', background: 'var(--text)' }} />
+                          </div>
+                          <span className="text-[11px] text-texto-3">{w.l} · {w.feitas}/{w.plan}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                   <Modulo icone={LayoutGrid} titulo="Dados do cliente" descricao="Campos do cliente; os marcados aparecem no cartão da galeria">
                     <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
                   </Modulo>

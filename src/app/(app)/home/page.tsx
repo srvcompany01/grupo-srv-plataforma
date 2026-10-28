@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronRight, PartyPopper, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { Ic } from '@/componentes/app/Ic'
 import { NomeCliente } from '@/componentes/NomeCliente'
 import { dataLocal, gradeDoMes, horaLocal, ocorrencias, somarDias, type Ocorrencia } from '@/dominio/agenda'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
@@ -98,7 +99,7 @@ export default async function Home() {
   return (
     <div className="home-ui min-h-full">
       <header className={cab}>
-        <h1 className="text-destaque font-semibold">Home</h1>
+        <h1 className="flex items-center gap-2 text-destaque font-semibold"><Ic n="home" s={16} style={{ color: 'var(--text-2)' }} /> Home</h1>
         <span className="text-rotulo capitalize text-texto-3">{formatar(hoje, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
       </header>
       <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 pb-12 pt-4 max-md:px-3">
