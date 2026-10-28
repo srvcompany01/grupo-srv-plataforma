@@ -105,8 +105,9 @@ const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLuc
   { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
 ]
 
-const botaoFaixa = 'relative flex w-full flex-col items-center gap-0.5 rounded-lg px-0.5 py-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white'
-const ativoFaixa = 'bg-white text-[#d80d12] hover:bg-white hover:text-[#d80d12]'
+const botaoFaixa = 'group relative flex h-[50px] w-full flex-col items-center gap-[3px] rounded-lg py-[3px] text-[var(--rail-text)] transition-colors hover:text-white [&>span:first-child]:hover:bg-[var(--rail-hover)]'
+const ativoFaixa = 'text-white [&>span:first-child]:bg-[#d80d12] [&>span:first-child]:hover:bg-[#d80d12]'
+const ladrilho = 'flex h-7 w-[34px] items-center justify-center rounded-lg transition-colors'
 
 /**
  * Faixa estreita de ícones (desktop, 64px, escura): atalhos soltos no topo, grupos que abrem um menu ao lado e, no pé,
@@ -139,20 +140,20 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
   }, [aberto])
   const itemFaixa = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => id === 'espacos' ? (
     <button key={id} type="button" title={rotulo} onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} className={botaoFaixa}>
-      <Icone className="h-5 w-5" />
-      <span className="w-full truncate text-center text-micro leading-3 font-semibold">{curto}</span>
+      <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
+      <span className="w-full truncate text-center text-micro leading-3 font-medium">{curto}</span>
     </button>
   ) : (
     <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botaoFaixa} ${ativoEm(href) ? ativoFaixa : ''}`}>
-      <Icone className="h-5 w-5" />
-      <span className="w-full truncate text-center text-micro leading-3 font-semibold">{curto}</span>
+      <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
+      <span className="w-full truncate text-center text-micro leading-3 font-medium">{curto}</span>
       {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-[#d80d12] px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
   const ordenar = (lista: Atalho[], classe: string) => <ListaOrdenavel className={classe} cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={lista.map((a) => ({ id: a.id, no: itemFaixa(a) }))} />
   const config = porId.get('config')
   return (
-    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-10 z-30 hidden h-[calc(100dvh-2.5rem)] w-16 shrink-0 flex-col justify-between px-1 py-1.5 md:flex">
+    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-[72px] z-30 hidden h-[calc(100dvh-80px)] w-16 shrink-0 flex-col justify-between rounded-[10px] px-1 py-1.5 md:flex">
       <div className="min-h-0 space-y-0.5">
         {ordenar(soltosTopo, 'space-y-0.5')}
         <div className="mx-2 my-1.5 border-t border-white/15" />
@@ -165,20 +166,21 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
           return (
             <div key={g.id} className="relative">
               <button type="button" onClick={() => setAberto(aberto === g.id ? null : g.id)} aria-expanded={aberto === g.id} aria-haspopup="menu" title={g.rotulo} className={`${botaoFaixa} ${ativoNoGrupo || aberto === g.id ? ativoFaixa : ''}`}>
-                <Icone className="h-5 w-5" />
-                <span className="w-full truncate text-center text-micro leading-3 font-semibold">{atual?.curto ?? g.curto}</span>
+                <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
+                <span className="w-full truncate text-center text-micro leading-3 font-medium">{atual?.curto ?? g.curto}</span>
                 <span className="absolute right-1.5 top-1.5 h-1 w-1 rounded-full bg-current opacity-60" aria-hidden />
               </button>
               {aberto === g.id && (
-                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-56 rounded-xl border border-borda bg-white p-1.5 shadow-flutuante">
+                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-80 rounded-lg border border-borda bg-white p-1 shadow-flutuante">
                   <p className="px-2 pb-1 pt-0.5 text-micro font-semibold uppercase tracking-rotulo text-texto-3">{g.rotulo}</p>
                   <ListaOrdenavel
+                    className="grid grid-cols-2 gap-0.5"
                     cookie={COOKIE_ORDEM_INICIO}
                     ordemInicial={ordemInicio}
                     itens={itens.map(({ id, href, rotulo, Icone: I }) => ({
                       id,
                       no: (
-                        <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-rotulo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-fundo font-semibold text-texto' : 'text-texto-2'}`}>
+                        <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex h-8 items-center gap-2 rounded px-2 text-corpo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-[var(--bg-active)] font-semibold text-texto' : 'text-texto-2'}`}>
                           <I className="h-4 w-4 shrink-0" />
                           {rotulo}
                         </Link>
@@ -196,8 +198,8 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
       <div className="space-y-0.5 border-t border-white/15 pt-1.5">
         {papel === 'admin' && (
           <Link href="/config/usuarios" title="Convidar pessoas" className={botaoFaixa}>
-            <UserPlus className="h-5 w-5" />
-            <span className="w-full truncate text-center text-micro leading-3 font-semibold">Convidar</span>
+            <span className={ladrilho}><UserPlus className="h-[18px] w-[18px]" /></span>
+            <span className="w-full truncate text-center text-micro leading-3 font-medium">Convidar</span>
           </Link>
         )}
         <AlternarTema inicial={tema} className={botaoFaixa} />
@@ -539,7 +541,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-10 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-[72px] z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -547,10 +549,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-[calc(100dvh-2.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-80px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda md:flex ${
           recolhida
-            ? `fixed bottom-0 left-16 top-10 z-40 shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
-            : 'sticky top-10 z-20 shrink-0'
+            ? `fixed bottom-2 left-[72px] top-[72px] z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            : 'sticky top-[72px] z-20 shrink-0'
         }`}
       >
         <PainelEspacos

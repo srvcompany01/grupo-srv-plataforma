@@ -397,11 +397,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       )}
       {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
-        <div className="sticky top-16 z-20 flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-marca-clara bg-white/95 px-3 py-2 shadow-lg shadow-black/5 backdrop-blur">
-          <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
+        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-lg bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
+          <span className="text-corpo font-semibold">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
-          <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-perigo-fundo px-3 text-rotulo font-semibold text-perigo-forte transition hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
-          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 transition hover:bg-hover hover:text-texto"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
+          <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-corpo font-semibold !text-[#ff8084] transition hover:bg-white/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
+          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-corpo font-medium transition hover:bg-white/10"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
       {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} colunasPadrao={colunasPadrao} aoAlternarColuna={alternarColuna} />}

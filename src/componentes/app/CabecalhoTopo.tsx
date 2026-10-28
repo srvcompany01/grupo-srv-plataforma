@@ -4,7 +4,6 @@ import { CalendarDays, ChevronDown, FileText, ListChecks, LogOut, Menu, Mic, Plu
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
-import { LogoGrupo } from '@/componentes/Marca'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
@@ -30,7 +29,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
   const abrirAjuda = useCallback(() => setAjuda(true), [])
 
   return (
-    <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center gap-2 border-b border-borda bg-white px-2 md:px-3">
+    <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center gap-2 bg-[var(--bg-frame)] px-2 md:px-3">
       <Sheet>
         <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover md:hidden">
           <Menu className="h-5 w-5" aria-hidden="true" />
@@ -42,8 +41,9 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
       </Sheet>
 
       <DropdownMenu>
-        <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="flex h-7 shrink-0 items-center gap-1 rounded-md bg-ink/5 px-2 hover:bg-ink/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca">
-          <LogoGrupo altura="h-4" />
+        <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-corpo font-semibold text-texto hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca">
+          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#d80d12] text-[11px] font-extrabold text-white">S</span>
+          <span className="hidden sm:inline">Grupo SRV</span>
           <ChevronDown className="h-3.5 w-3.5 text-texto-3" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -61,23 +61,24 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         type="button"
         onClick={abrirPaleta}
         aria-label="Pesquisar (⌘K)"
-        className="controle mx-auto hidden h-7 w-full max-w-[360px] items-center gap-1 rounded-full border border-borda bg-white px-2 text-destaque font-medium text-texto-3 transition-colors hover:bg-hover sm:flex"
+        className="controle mx-auto hidden h-7 w-full max-w-[360px] items-center gap-1 rounded-full border border-borda bg-white px-2.5 text-corpo font-normal text-texto-3 transition-colors hover:bg-hover sm:flex"
       >
         <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="flex-1 text-left">Pesquisar</span>
-        <kbd className="text-rotulo font-medium text-texto-3/80">⌘ K</kbd>
+        <span className="flex-1 text-left">Buscar tarefas, clientes, documentos…</span>
+        <kbd className="rounded border border-borda px-1 text-legenda font-medium text-texto-3">⌘K</kbd>
       </button>
 
       <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
         <button type="button" onClick={abrirPaleta} aria-label="Pesquisar" className={`${botaoIcone} sm:hidden`}><Search className="h-4 w-4" /></button>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Criar" title="Criar" className={botaoIcone}><Plus className="h-4 w-4" /></DropdownMenuTrigger>
+          <DropdownMenuTrigger aria-label="Criar" title="Criar" className="flex h-7 items-center gap-1 rounded-md bg-petroleo pl-1.5 pr-2.5 text-corpo font-semibold text-claro transition-colors hover:bg-petroleo-700"><Plus className="h-4 w-4" /><span className="hidden sm:inline">Criar</span></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Criar</DropdownMenuLabel>
             <DropdownMenuItem asChild><Link href="/inicio">Tarefa (em Minhas tarefas)</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/documentos">Documento</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/quadros">Quadro</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/agendamentos">Post agendado</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/reunioes">Reunião</Link></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Link href="/inicio" aria-label="Minhas tarefas" title="Minhas tarefas (I)" className={botaoIcone}><ListChecks className="h-4 w-4" /></Link>

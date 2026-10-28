@@ -11,7 +11,7 @@ export function EtiquetaGrupo({ nome, cor, icone, contagem }: { nome: string; co
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
       <span
-        className="inline-flex h-[18px] min-w-0 items-center gap-1 rounded-[5px] px-1.5 text-[10px] font-semibold uppercase leading-none tracking-[0.05em]"
+        className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded px-2 text-[11px] font-semibold uppercase leading-none tracking-[0.03em]"
         style={claro ? { background: `${cor}29`, color: texto } : { background: cor, color: texto }}
       >
         {icone && <IconeStatus info={icone} cor={claro ? cor : texto} fundo={claro ? '#ffffff' : cor} className="h-3 w-3" />}

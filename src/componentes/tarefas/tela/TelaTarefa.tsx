@@ -61,15 +61,15 @@ export function TelaTarefa(p: PropsTela) {
   }
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-white">
-      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0 border-b border-borda px-3 pt-2 lg:hidden">
+    <div className="@container flex h-full min-h-0 w-full flex-col bg-white">
+      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0 border-b border-borda px-3 pt-2 @4xl:hidden">
         <TabsList>
           <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
           <TabsTrigger value="atividade">Atividade</TabsTrigger>
         </TabsList>
       </Tabs>
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[1fr_400px]">
-        <div className={`min-h-0 space-y-6 overflow-y-auto p-5 md:px-8 ${aba === 'detalhes' ? '' : 'hidden lg:block'}`}>
+      <div className="grid min-h-0 flex-1 @4xl:grid-cols-[1fr_400px]">
+        <div className={`min-h-0 space-y-6 overflow-y-auto p-4 @2xl:px-6 ${aba === 'detalhes' ? '' : 'hidden @4xl:block'}`}>
           <CabecalhoTarefa tarefa={t} listas={p.listas} podeGerir={p.podeGerir} emJanela={p.emJanela} />
           <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} tagsCliente={p.tagsCliente} podeGerir={p.podeGerir} hoje={p.hoje}>
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
@@ -83,7 +83,7 @@ export function TelaTarefa(p: PropsTela) {
           <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
-        <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden lg:flex'}`}>
+        <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden @4xl:flex'}`}>
           <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<CaixaComentario tarefaId={t.id} pessoas={p.pessoas} />} />
         </aside>
       </div>

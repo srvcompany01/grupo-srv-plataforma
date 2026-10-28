@@ -74,6 +74,7 @@
   --color-texto-3: var(--c-texto-3);
   --color-borda: var(--c-borda);
   --color-borda-forte: var(--c-borda-forte);
+  --color-borda-fraca: var(--border-soft, var(--c-borda));
   --color-fundo: var(--tema-fundo);
   --color-hover: color-mix(in oklab, var(--tema-fundo), var(--c-texto) 4%);
   --color-trilho: var(--c-trilho);
@@ -203,16 +204,16 @@ body {
 
 /* Área logada, tema claro (principal): preto na ação, vermelho SRV no destaque, neutros frios. O escuro vem logo abaixo. */
 body:has(.app-ui) {
-  --tema-acao: #111111;
+  --tema-acao: #111113;
   --tema-acento: #d80d12;
   --tema-fundo: #f7f7f8;
   --tema-superficie: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Helvetica, Arial, sans-serif;
-  --c-texto: #111111;
-  --c-texto-2: #404040;
-  --c-texto-3: #6f6f6f;
-  --c-borda: #ececec;
-  --c-borda-forte: #d9d9d9;
+  --c-texto: #18181b;
+  --c-texto-2: #52525b;
+  --c-texto-3: #83838c;
+  --c-borda: #e4e4e7;
+  --c-borda-forte: #d1d1d6;
   --c-perigo-forte: #bc0117;
   --c-perigo-borda: #f1b4ba;
   --c-perigo-fundo: #fdeced;
@@ -231,13 +232,13 @@ body:has(.app-ui) {
   --c-shadow-cartao: none;
   --c-shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
   --c-ink: #111111;
-  --lat-bg: #f9f9f9;
+  --lat-bg: #f7f7f8;
   --lat-fg: #111111;
   --lat-2: rgba(17, 17, 17, 0.72);
   --lat-3: rgba(17, 17, 17, 0.55);
-  --lat-hover: rgba(0, 0, 0, 0.04);
-  --lat-ativo: rgba(216, 13, 18, 0.09);
-  --lat-borda: #ececec;
+  --lat-hover: #f0f0f2;
+  --lat-ativo: #e8e8eb;
+  --lat-borda: #e4e4e7;
   --foreground: #111111;
   --card-foreground: #111111;
   --popover-foreground: #111111;
@@ -249,23 +250,35 @@ body:has(.app-ui) {
   --accent: #f4f4f5;
   --accent-foreground: #111111;
   --destructive: #bc0117;
-  --border: #ececec;
+  --border: #e4e4e7;
   --input: #dcdcdc;
-  --linha-lista: #f0f0f0;
+  --linha-lista: #efeff1;
   color-scheme: light;
+  /* Sistema de design do redesign (tokens.css do handoff). Componentes novos leem estes nomes. */
+  --bg: #ffffff; --bg-frame: #efeff1; --bg-subtle: #f7f7f8; --bg-hover: #f0f0f2; --bg-active: #e8e8eb; --bg-elev: #ffffff;
+  --border-soft: #efeff1; --border-strong: #d1d1d6;
+  --text: #18181b; --text-2: #52525b; --text-3: #83838c;
+  --on-primary: #ffffff; --primary-hover: #2a2a2e;
+  --rail: #111113; --rail-hover: #202024; --rail-text: #a1a1aa;
+  --red: #d80d12; --red-soft: #fdeceb; --client: #1d6fe0; --client-soft: #eaf2fd; --sel: #edf4fe;
+  --focus: #1d6fe0; --focus-ring: rgba(29,111,224,.22);
+  --ok: #15803d; --ok-soft: #e7f5eb; --warn: #a16207; --warn-soft: #fdf4e1;
+  --shadow-pop: 0 8px 24px rgba(17,17,19,.10), 0 1px 3px rgba(17,17,19,.06);
+  --shadow-panel: -6px 0 20px rgba(17,17,19,.06); --skel: #ececef;
+  --faixa-bg: #111113;
 }
 
 /* Área logada, tema escuro (botão sol/lua): ação em vermelho SRV com texto branco, superfícies em camadas (#0E0E10 / #18181B / #232327). */
 body:has(.app-ui[data-tema='escuro']) {
   --tema-acao: #d80d12;
   --tema-acento: #ff5a5f;
-  --tema-fundo: #0e0e10;
-  --tema-superficie: #18181b;
-  --c-texto: #f4f4f5;
-  --c-texto-2: #c9c9ce;
-  --c-texto-3: #9b9ba3;
-  --c-borda: rgba(255, 255, 255, 0.11);
-  --c-borda-forte: rgba(255, 255, 255, 0.24);
+  --tema-fundo: #111113;
+  --tema-superficie: #161618;
+  --c-texto: #ededef;
+  --c-texto-2: #a8a8b0;
+  --c-texto-3: #7a7a83;
+  --c-borda: #2a2a2e;
+  --c-borda-forte: #3b3b41;
   --c-perigo-forte: #ff8084;
   --c-perigo-borda: rgba(229, 72, 77, 0.45);
   --c-perigo-fundo: rgba(229, 72, 77, 0.15);
@@ -284,13 +297,13 @@ body:has(.app-ui[data-tema='escuro']) {
   --c-shadow-cartao: none;
   --c-shadow-flutuante: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
   --c-ink: #ffffff;
-  --lat-bg: #131315;
+  --lat-bg: #111113;
   --lat-fg: #f4f4f5;
   --lat-2: rgba(244, 244, 245, 0.76);
   --lat-3: rgba(244, 244, 245, 0.56);
-  --lat-hover: rgba(255, 255, 255, 0.07);
-  --lat-ativo: rgba(255, 90, 95, 0.18);
-  --lat-borda: rgba(255, 255, 255, 0.1);
+  --lat-hover: #202023;
+  --lat-ativo: #28282c;
+  --lat-borda: #2a2a2e;
   --foreground: #f4f4f5;
   --card-foreground: #f4f4f5;
   --popover-foreground: #f4f4f5;
@@ -302,10 +315,21 @@ body:has(.app-ui[data-tema='escuro']) {
   --accent: #232327;
   --accent-foreground: #f4f4f5;
   --destructive: #ff5a5f;
-  --border: rgba(255, 255, 255, 0.11);
+  --border: #2a2a2e;
   --input: rgba(255, 255, 255, 0.22);
   --linha-lista: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
+  --bg: #161618; --bg-frame: #0c0c0e; --bg-subtle: #111113; --bg-hover: #202023; --bg-active: #28282c; --bg-elev: #1c1c1f;
+  --border-soft: #212124; --border-strong: #3b3b41;
+  --text: #ededef; --text-2: #a8a8b0; --text-3: #7a7a83;
+  --on-primary: #ffffff; --primary-hover: #b30b0f;
+  --rail: #0a0a0b; --rail-hover: #1b1b1e; --rail-text: #8e8e96;
+  --red: #ff5a5e; --red-soft: #3a1517; --client: #4d8ff0; --client-soft: #14233a; --sel: #15233a;
+  --focus: #4d8ff0; --focus-ring: rgba(77,143,240,.3);
+  --ok: #4ade80; --ok-soft: #12291a; --warn: #fbbf24; --warn-soft: #2d2310;
+  --shadow-pop: 0 10px 28px rgba(0,0,0,.55), 0 0 0 1px #2a2a2e;
+  --shadow-panel: -8px 0 24px rgba(0,0,0,.4); --skel: #232326;
+  --faixa-bg: #0a0a0b;
 }
 
 /* Escala do design (medidas do ClickUp): tamanhos em múltiplos de 4, raios e elevações 1–5. Usados pelos componentes novos. */
@@ -318,7 +342,6 @@ body:has(.app-ui[data-tema='escuro']) {
   --cu-elevation-4: 0 10px 15px -3px rgba(0, 0, 0, 0.106), 0 4px 6px -4px rgba(0, 0, 0, 0.106);
   --cu-elevation-5: 0 20px 25px -5px rgba(0, 0, 0, 0.106), 0 8px 10px -6px rgba(0, 0, 0, 0.106);
   --cu-ring: 0 0 1px 0 rgba(0, 0, 0, 0.267);
-  --faixa-bg: linear-gradient(180deg, #1d1d20 0%, #0b0b0c 100%);
 }
 
 @layer base {
