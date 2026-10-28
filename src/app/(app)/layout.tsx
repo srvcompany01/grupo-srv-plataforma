@@ -31,13 +31,16 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
     <div className="app-ui flex min-h-dvh bg-[var(--bg-frame)]" data-tema={painel.tema}>
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
       <style>{cssTema(tema)}</style>
+      {/* Fonte dos ícones do redesign (Material Symbols Rounded). */}
+      {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,300..500,0..1,0&display=block" />
       <div className="flex min-w-0 flex-1 flex-col">
         <CabecalhoTopo painel={painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} alertas={alertas} />
         <Suspense fallback={null}><AtalhosFixados /></Suspense>
         <div className="flex min-h-0 flex-1 gap-2 pb-2 md:px-2">
           <FaixaAtalhos papel={eu.papel} nome={eu.nome} chatNaoLidas={chatNaoLidas} ordemInicio={painel.ordemInicio} tema={painel.tema} />
           <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />
-          <main className="min-w-0 flex-1 bg-white md:rounded-[10px] md:border md:border-borda">{children}</main>
+          <main className="min-w-0 flex-1 bg-white md:overflow-clip md:rounded-[10px] md:border md:border-borda">{children}</main>
         </div>
       </div>
       {painelTarefa}

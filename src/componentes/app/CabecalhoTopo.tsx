@@ -1,10 +1,9 @@
 'use client'
 
-import { CalendarDays, Sparkles, ChevronDown, FileText, ListChecks, LogOut, Menu, Mic, Plus, Search, Settings, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
 import type { AlertaSistema } from '@/servicos/alertas-sistema'
@@ -12,6 +11,7 @@ import { AlertasSistema } from './AlertasSistema'
 import { AtalhosDialog } from './AtalhosDialog'
 import { MenuPerfil } from './MenuPerfil'
 import { AtalhosGlobais } from './AtalhosGlobais'
+import { Ic } from './Ic'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
 import { EVENTO_ABRIR_IA } from './PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
@@ -20,7 +20,6 @@ import { SinoAvisos } from './SinoAvisos'
 
 type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string; alertas: AlertaSistema[] }
 
-const botaoIcone = 'flex h-6 w-6 items-center justify-center rounded-md text-texto-3 transition-colors hover:bg-ink/10 hover:text-texto'
 
 /**
  * Barra do topo, fixa, de 40px: logo da empresa, busca central que abre a paleta ⌘K, atalhos (Minhas tarefas, Agenda) e avisos.
@@ -32,68 +31,68 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
   const abrirPaleta = useCallback(() => setPaleta(true), [])
   const abrirAjuda = useCallback(() => setAjuda(true), [])
 
+  const tb = { width: 28, height: 28, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: 'var(--text-2)', cursor: 'pointer' } as const
   return (
-    <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center gap-2 bg-[var(--bg-frame)] px-2 md:px-3">
-      <Sheet>
-        <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover md:hidden">
-          <Menu className="h-5 w-5" aria-hidden="true" />
-        </SheetTrigger>
-        <SheetContent side="left" className="w-[300px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
-          <SheetTitle className="sr-only">Menu</SheetTitle>
-          <PainelEspacos {...painel} comAtalhos />
-        </SheetContent>
-      </Sheet>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-corpo font-semibold text-texto hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#d80d12] text-[11px] font-extrabold text-white">S</span>
-          <span className="hidden sm:inline">Grupo SRV</span>
-          <ChevronDown className="h-3.5 w-3.5 text-texto-3" aria-hidden="true" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Grupo SRV</DropdownMenuLabel>
-          <DropdownMenuItem asChild><Link href="/home">Ir para a Home</Link></DropdownMenuItem>
-          {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config"><Settings className="h-4 w-4" /> Configurações</Link></DropdownMenuItem>}
-          {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config/usuarios"><UsersRound className="h-4 w-4" /> Gerenciar membros</Link></DropdownMenuItem>}
-          <DropdownMenuSeparator />
-          <form action={sair}><button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-corpo text-texto-2 outline-none hover:bg-hover hover:text-texto focus-visible:bg-hover"><LogOut className="h-4 w-4" aria-hidden="true" /> Sair</button></form>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={`${botaoIcone} hidden sm:flex`}><CalendarDays className="h-4 w-4" /></Link>
-      <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
-
-      <button
-        type="button"
-        onClick={abrirPaleta}
-        aria-label="Pesquisar (⌘K)"
-        className="controle mx-auto hidden h-7 w-full max-w-[360px] items-center gap-1 rounded-full border border-borda bg-white px-2.5 text-corpo font-normal text-texto-3 transition-colors hover:bg-hover sm:flex"
-      >
-        <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="flex-1 text-left">Buscar tarefas, clientes, documentos…</span>
-        <kbd className="rounded border border-borda px-1 text-legenda font-medium text-texto-3">⌘K</kbd>
-      </button>
-
-      <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
-        {papelPodeUsarIA(painel.papel) && (
-          <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} title="Assistente IA (⌘J)" className="mr-1 hidden h-7 items-center gap-1.5 rounded-md border border-borda bg-white px-2.5 text-corpo font-medium text-texto-2 hover:bg-hover xl:flex"><Sparkles className="h-3.5 w-3.5" /> Assistente IA</button>
-        )}
-        <button type="button" onClick={abrirPaleta} aria-label="Pesquisar" className={`${botaoIcone} sm:hidden`}><Search className="h-4 w-4" /></button>
+    <header className="sticky top-0 z-30" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: 'var(--bg-frame)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1 1 0', minWidth: 0 }}>
+        <Sheet>
+          <SheetTrigger aria-label="Abrir menu" className="md:hidden" style={{ ...tb, width: 36, height: 36, color: 'var(--text)' }}><Ic n="menu" s={20} /></SheetTrigger>
+          <SheetContent side="left" className="w-[300px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
+            <SheetTitle className="sr-only">Menu</SheetTitle>
+            <PainelEspacos {...painel} comAtalhos />
+          </SheetContent>
+        </Sheet>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Criar" title="Criar" className="flex h-7 items-center gap-1 rounded-md bg-petroleo pl-1.5 pr-2.5 text-corpo font-semibold text-claro transition-colors hover:bg-petroleo-700"><Plus className="h-4 w-4" /><span className="hidden sm:inline">Criar</span></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>Criar</DropdownMenuLabel>
-            <DropdownMenuItem asChild><Link href="/inicio">Tarefa (em Minhas tarefas)</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/documentos">Documento</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/quadros">Quadro</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/agendamentos">Post agendado</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/reunioes">Reunião</Link></DropdownMenuItem>
+          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="hover-bg" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px 0 4px', border: 0, background: 'transparent', borderRadius: 6, cursor: 'pointer', minWidth: 0 }}>
+            <span style={{ width: 20, height: 20, flex: 'none', borderRadius: 4, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
+            <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>Grupo SRV</span>
+            <Ic n="expand_more" s={14} style={{ color: 'var(--text-3)' }} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-60">
+            <div className="flex items-center gap-2.5 px-2 py-2">
+              <span style={{ width: 28, height: 28, borderRadius: 6, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>S</span>
+              <span className="min-w-0"><span className="block text-corpo font-semibold">Grupo SRV</span><span className="block text-rotulo text-texto-3">Belém</span></span>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild><Link href="/home"><Ic n="home" s={16} /> Home</Link></DropdownMenuItem>
+            {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config"><Ic n="settings" s={16} /> Configurações</Link></DropdownMenuItem>}
+            {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config/usuarios"><Ic n="group" s={16} /> Gerenciar membros</Link></DropdownMenuItem>}
+            <DropdownMenuSeparator />
+            <form action={sair}><button className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-corpo outline-none hover:bg-hover" style={{ color: 'var(--red)' }}><Ic n="logout" s={16} /> Sair</button></form>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/inicio" aria-label="Minhas tarefas" title="Minhas tarefas (I)" className={botaoIcone}><ListChecks className="h-4 w-4" /></Link>
-        <Link href="/reunioes" aria-label="Reuniões" title="Reuniões" className={botaoIcone}><Mic className="h-4 w-4" /></Link>
-        <Link href="/documentos" aria-label="Documentos" title="Documentos (D)" className={botaoIcone}><FileText className="h-4 w-4" /></Link>
+        <Link href="/agenda" title="Agenda" aria-label="Agenda" className="hidden sm:flex hover-bg" style={tb}><Ic n="calendar_month" s={17} /></Link>
+        <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
+      </div>
+
+      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden sm:flex" style={{ flex: '0 1 360px', minWidth: 160, height: 28, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'center', gap: 8, padding: '0 5px 0 10px', color: 'var(--text-3)', cursor: 'text' }}>
+        <Ic n="search" s={16} />
+        <span style={{ flex: 1, textAlign: 'left', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Buscar tarefas, clientes, documentos…</span>
+        <span style={{ fontSize: 11, lineHeight: 1, padding: '3px 5px', border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-2)' }}>⌘K</span>
+      </button>
+
+      <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, minWidth: 0 }}>
+        <button type="button" onClick={abrirPaleta} aria-label="Buscar" className="sm:hidden" style={{ ...tb, width: 36, height: 36 }}><Ic n="search" s={19} /></button>
+        {papelPodeUsarIA(painel.papel) && (
+          <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} title="Assistente IA (⌘J)" className="hidden xl:flex hover-bg" style={{ height: 28, flex: 'none', whiteSpace: 'nowrap', alignItems: 'center', gap: 6, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text)', fontSize: 13, cursor: 'pointer', marginRight: 4 }}>
+            Assistente IA<Ic n="auto_awesome" s={15} style={{ color: '#d80d12' }} />
+          </button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger aria-label="Criar" title="Criar" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px 0 6px', border: 0, borderRadius: 6, background: 'var(--primary)', color: 'var(--on-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginRight: 4 }}><Ic n="add" s={16} />Criar</DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild><Link href="/inicio"><Ic n="task_alt" s={16} /> Tarefa <span className="ml-auto text-rotulo text-texto-3">T</span></Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/agendamentos"><Ic n="photo_library" s={16} /> Post <span className="ml-auto text-rotulo text-texto-3">P</span></Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/documentos"><Ic n="description" s={16} /> Documento</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/reunioes"><Ic n="videocam" s={16} /> Reunião</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/quadros"><Ic n="draw" s={16} /> Quadro</Link></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Link href="/inicio" title="Minhas tarefas" aria-label="Minhas tarefas" className="hidden md:flex hover-bg" style={tb}><Ic n="task_alt" s={17} /></Link>
+        <Link href="/reunioes" title="Reuniões" aria-label="Reuniões" className="hidden md:flex hover-bg" style={tb}><Ic n="videocam" s={17} /></Link>
+        <Link href="/documentos" title="Documentos" aria-label="Documentos" className="hidden md:flex hover-bg" style={tb}><Ic n="description" s={17} /></Link>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
-        <MenuPerfil nome={painel.nome} papel={painel.papel} className="ml-1 flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-marca" />
+        <MenuPerfil nome={painel.nome} papel={painel.papel} className="hover-bg" estilo={{ ...tb, padding: 0 }} />
       </div>
 
       <AtalhosGlobais aoAbrirPaleta={abrirPaleta} aoAbrirAjuda={abrirAjuda} />

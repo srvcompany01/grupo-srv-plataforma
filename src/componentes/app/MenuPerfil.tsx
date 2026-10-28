@@ -2,16 +2,15 @@
 
 import { Keyboard, LogOut } from 'lucide-react'
 import { sair } from '@/app/(auth)/login/acoes'
-import { Avatar } from '@/componentes/Avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { EVENTO_ABRIR_ATALHOS } from './AtalhosGlobais'
 
 /** Perfil de quem está logado: avatar (e nome, quando cabe) que abre o menu com o cargo e o botão Sair. */
-export function MenuPerfil({ nome, papel, lado = 'right', comNome = false, className = '' }: { nome: string; papel: string; lado?: 'right' | 'top'; comNome?: boolean; className?: string }) {
+export function MenuPerfil({ nome, papel, lado = 'right', comNome = false, className = '', estilo }: { nome: string; papel: string; lado?: 'right' | 'top'; comNome?: boolean; className?: string; estilo?: React.CSSProperties }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label={`Conta de ${nome}`} className={className}>
-        <Avatar nome={nome || '?'} tamanho="h-7 w-7 text-legenda" />
+      <DropdownMenuTrigger aria-label={`Conta de ${nome}`} className={className} style={estilo}>
+        <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(nome || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
         {comNome && (
           <span className="min-w-0 flex-1 text-left">
             <span className="block truncate text-rotulo font-semibold text-lat-fg">{nome}</span>

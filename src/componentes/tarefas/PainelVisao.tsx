@@ -1,6 +1,7 @@
 'use client'
 
-import { Check, EyeOff, Link2, SlidersHorizontal, UserCheck } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { Check, EyeOff, Link2, UserCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { IconeVisao } from './IconesVisao'
@@ -24,9 +25,10 @@ export function ModoEu({ caminho, filtros, euId }: { caminho: string; filtros: F
       onClick={alternar}
       aria-pressed={ligado}
       title="Mostrar só as minhas tarefas"
-      className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-rotulo font-medium transition-colors ${ligado ? 'border-petroleo bg-petroleo text-claro' : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}
+      className="b-ghost"
+      style={ligado ? { background: 'var(--red-soft)', color: 'var(--red)' } : undefined}
     >
-      <UserCheck className="h-3.5 w-3.5" /> Modo eu
+      <Ic n="person" s={16} /> Modo eu
     </button>
   )
 }
@@ -48,8 +50,8 @@ export function PainelVisao({ caminho, filtros, euId, camposAgrupaveis }: { cami
   }
   return (
     <Sheet>
-      <SheetTrigger className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-borda bg-white text-texto-2 transition-colors hover:bg-hover" aria-label="Personalizar visualização" title="Personalizar visualização">
-        <SlidersHorizontal className="h-4 w-4" />
+      <SheetTrigger className="b-icon" aria-label="Personalizar visualização" title="Personalizar visualização">
+        <Ic n="tune" s={16} />
       </SheetTrigger>
       <SheetContent side="right" className="w-80 gap-0 p-0 sm:max-w-xs">
         <SheetHeader className="border-b border-borda px-4 py-3">

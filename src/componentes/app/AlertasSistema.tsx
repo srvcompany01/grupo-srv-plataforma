@@ -1,6 +1,6 @@
 'use client'
 
-import { TriangleAlert } from 'lucide-react'
+import { Ic } from './Ic'
 import Link from 'next/link'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import type { AlertaSistema } from '@/servicos/alertas-sistema'
@@ -9,9 +9,9 @@ import type { AlertaSistema } from '@/servicos/alertas-sistema'
 export function AlertasSistema({ alertas }: { alertas: AlertaSistema[] }) {
   return (
     <Popover>
-      <PopoverTrigger aria-label={alertas.length ? `${alertas.length} alertas do sistema` : 'Alertas do sistema'} title="Alertas do sistema" className="relative flex h-7 w-7 items-center justify-center rounded-md text-[#e08a00] transition-colors hover:bg-hover">
-        <TriangleAlert className="h-4 w-4" />
-        {alertas.length > 0 && <span className="absolute right-1 top-1 h-[7px] w-[7px] rounded-full bg-[#d80d12] ring-2 ring-[var(--bg-frame)]" />}
+      <PopoverTrigger aria-label={alertas.length ? `${alertas.length} alertas do sistema` : 'Alertas do sistema'} title="Alertas do sistema" className="hover-bg" style={{ position: 'relative', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: '#e08a00', cursor: 'pointer' }}>
+        <Ic n="warning" s={17} />
+        {alertas.length > 0 && <span style={{ position: 'absolute', top: 5, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#d80d12', boxShadow: '0 0 0 2px var(--bg-frame)' }} />}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[340px] p-0">
         <p className="flex h-10 items-center border-b border-borda-fraca px-3 text-corpo font-semibold">Alertas do sistema</p>

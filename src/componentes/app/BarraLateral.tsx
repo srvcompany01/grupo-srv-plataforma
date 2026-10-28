@@ -16,10 +16,8 @@ import {
   MessagesSquare,
   Mic,
   Newspaper,
-  PanelLeftClose,
   House,
   PenTool,
-  Pin,
   Settings,
   Users,
   UsersRound,
@@ -28,22 +26,16 @@ import {
   MapPin,
   Radar,
   Grip,
-  UserPlus,
-  ChevronRight,
-  Search,
-  SlidersHorizontal,
-  Star,
   Rocket,
-  Plus,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import { AlternarTema } from './AlternarTema'
+import { Ic } from './Ic'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
@@ -99,38 +91,37 @@ const estaEm = (caminho: string, href: string) => caminho === href || caminho.st
  * Módulo novo entra no grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto abaixo dos grupos.
  */
 const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
-/** Fica no painel "Início" (e no topo), não na faixa. */
-const NO_PAINEL_INICIO = ['tarefas', 'agendamentos', 'reunioes']
 /** Todo o resto abre pelo botão "Mais", como no ClickUp. */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
   { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
 ]
 
-const botaoFaixa = 'group relative flex h-[50px] w-full flex-col items-center gap-[3px] rounded-lg py-[3px] text-[var(--rail-text)] transition-colors hover:text-white [&>span:first-child]:hover:bg-[var(--rail-hover)]'
-const ativoFaixa = 'text-white [&>span:first-child]:bg-[#d80d12] [&>span:first-child]:hover:bg-[#d80d12]'
-const ladrilho = 'flex h-7 w-[34px] items-center justify-center rounded-lg transition-colors'
+/** Nome do ícone (Material Symbols Rounded) de cada módulo, como no protótipo do redesign. */
+export const ICONE_MS: Record<string, string> = {
+  home: 'home', espacos: 'grid_view', chat: 'chat_bubble', agenda: 'event_note', time: 'groups', documentos: 'description', painel: 'monitoring', quadros: 'draw', formularios: 'assignment',
+  tarefas: 'task_alt', agendamentos: 'event_available', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
+  gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', funis: 'filter_alt', config: 'settings',
+}
+
+const botaoRail = { flex: 'none', border: 0, background: 'transparent', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: 6 } as const
 
 /**
- * Faixa estreita de ícones (desktop, 64px, escura): atalhos soltos no topo, grupos que abrem um menu ao lado e, no pé,
- * tema claro/escuro, Configurações e o perfil. Os atalhos se reorganizam arrastando (a ordem fica em cookie).
+ * Faixa de ícones (desktop, 64px, escura, cartão flutuante): botão de recolher o painel, os módulos (ladrilho 34×28 + rótulo de 10px; o ativo
+ * ganha ladrilho vermelho), "Mais" (popover de 2 colunas) e, no pé, Convidar, tema e Configurações. Os módulos se reorganizam arrastando.
  */
 export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }: Pick<PropsPainel, 'papel' | 'nome' | 'chatNaoLidas' | 'ordemInicio' | 'tema'>) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
-  // O menu vale só para a página em que foi aberto: navegar já fecha, sem efeito.
-  const [abertoEm, setAbertoEm] = useState<{ id: string; caminho: string } | null>(null)
-  const aberto = abertoEm?.caminho === caminho ? abertoEm.id : null
-  const setAberto = (id: string | null) => setAbertoEm(id ? { id, caminho } : null)
+  const [abertoEm, setAbertoEm] = useState<string | null>(null)
+  const aberto = abertoEm === caminho ? 'mais' : null
   const faixa = useRef<HTMLElement>(null)
-  // "/config" não acende em "/config/formularios" (que tem o seu próprio atalho).
+  const [recolhido, setRecolhido] = useState(false)
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
   const porId = new Map(atalhos.map((a) => [a.id, a]))
-  const agrupados = new Set(GRUPOS_FAIXA.flatMap((g) => g.itens))
-  // "Espaços" não é página: abre e fecha o painel dos espaços.
   porId.set('espacos', { id: 'espacos', href: '#espacos', rotulo: 'Espaços', curto: 'Espaços', Icone: Rocket })
   const soltosTopo = NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-  const soltosFim = atalhos.filter((a) => !NO_TOPO.includes(a.id) && !NO_PAINEL_INICIO.includes(a.id) && !agrupados.has(a.id) && a.id !== 'config')
-  // Fecha ao clicar fora ou com Esc.
+  const agrupados = GRUPOS_FAIXA.flatMap((g) => g.itens).map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
+  const emEspacos = /^\/(espacos|listas|pastas)(\/|$)/.test(caminho)
   useEffect(() => {
     if (!aberto) return
     const fora = (e: MouseEvent) => { if (!faixa.current?.contains(e.target as Node)) setAbertoEm(null) }
@@ -139,73 +130,65 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
   }, [aberto])
-  const itemFaixa = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => id === 'espacos' ? (
-    <button key={id} type="button" title={rotulo} onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} className={botaoFaixa}>
-      <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
-      <span className="w-full truncate text-center text-micro leading-3 font-medium">{curto}</span>
-    </button>
-  ) : (
-    <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botaoFaixa} ${ativoEm(href) ? ativoFaixa : ''}`}>
-      <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
-      <span className="w-full truncate text-center text-micro leading-3 font-medium">{curto}</span>
-      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-[#d80d12] px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
-    </Link>
-  )
-  const ordenar = (lista: Atalho[], classe: string) => <ListaOrdenavel className={classe} cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={lista.map((a) => ({ id: a.id, no: itemFaixa(a) }))} />
+  useEffect(() => {
+    const ouvir = () => setRecolhido((r) => !r)
+    window.addEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
+    return () => window.removeEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
+  }, [])
+
+  const item = ({ id, href, rotulo, curto, contador }: Atalho) => {
+    const ativo = id === 'espacos' ? emEspacos : ativoEm(href)
+    const estilo = { position: 'relative', width: 56, height: 50, flex: 'none', border: 0, borderRadius: 8, background: 'transparent', color: ativo ? '#fff' : 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer', textDecoration: 'none' } as const
+    const conteudo = (
+      <>
+        <span className="rail-tile" style={{ position: 'relative', width: 34, height: 28, borderRadius: 8, background: ativo ? '#d80d12' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 120ms' }}>
+          <Ic n={ICONE_MS[id] ?? 'apps'} s={18} />
+          {!!contador && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--rail)' }}>{contador > 99 ? '99+' : contador}</span>}
+        </span>
+        <span style={{ fontSize: 10, lineHeight: 1, fontWeight: 500, whiteSpace: 'nowrap' }}>{curto}</span>
+      </>
+    )
+    return id === 'espacos' ? (
+      <button key={id} type="button" title={rotulo} onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} className="rail-item" style={estilo}>{conteudo}</button>
+    ) : (
+      <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativo ? 'page' : undefined} className="rail-item" style={estilo}>{conteudo}</Link>
+    )
+  }
   const config = porId.get('config')
+
   return (
-    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-[72px] z-30 hidden h-[calc(100dvh-80px)] w-16 shrink-0 flex-col justify-between rounded-[10px] px-1 py-1.5 md:flex">
-      <div className="min-h-0 space-y-0.5">
-        {ordenar(soltosTopo, 'space-y-0.5')}
-        <div className="mx-2 my-1.5 border-t border-white/15" />
-        {GRUPOS_FAIXA.map((g) => {
-          const itens = g.itens.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-          if (!itens.length) return null
-          const ativoNoGrupo = itens.some((a) => ativoEm(a.href))
-          const atual = itens.find((a) => ativoEm(a.href))
-          const Icone = atual?.Icone ?? g.Icone
-          return (
-            <div key={g.id} className="relative">
-              <button type="button" onClick={() => setAberto(aberto === g.id ? null : g.id)} aria-expanded={aberto === g.id} aria-haspopup="menu" title={g.rotulo} className={`${botaoFaixa} ${ativoNoGrupo || aberto === g.id ? ativoFaixa : ''}`}>
-                <span className={ladrilho}><Icone className="h-[18px] w-[18px]" /></span>
-                <span className="w-full truncate text-center text-micro leading-3 font-medium">{atual?.curto ?? g.curto}</span>
-                <span className="absolute right-1.5 top-1.5 h-1 w-1 rounded-full bg-current opacity-60" aria-hidden />
-              </button>
-              {aberto === g.id && (
-                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-80 rounded-lg border border-borda bg-white p-1 shadow-flutuante">
-                  <p className="px-2 pb-1 pt-0.5 text-micro font-semibold uppercase tracking-rotulo text-texto-3">{g.rotulo}</p>
-                  <ListaOrdenavel
-                    className="grid grid-cols-2 gap-0.5"
-                    cookie={COOKIE_ORDEM_INICIO}
-                    ordemInicial={ordemInicio}
-                    itens={itens.map(({ id, href, rotulo, Icone: I }) => ({
-                      id,
-                      no: (
-                        <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex h-8 items-center gap-2 rounded px-2 text-corpo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-[var(--bg-active)] font-semibold text-texto' : 'text-texto-2'}`}>
-                          <I className="h-4 w-4 shrink-0" />
-                          {rotulo}
-                        </Link>
-                      ),
-                    }))}
-                  />
-                </div>
-              )}
-            </div>
-          )
-        })}
-        {soltosFim.length > 0 && <div className="mx-2 my-1.5 border-t border-white/15" />}
-        {soltosFim.map(itemFaixa)}
-      </div>
-      <div className="space-y-0.5 border-t border-white/15 pt-1.5">
-        {papel === 'admin' && (
-          <Link href="/config/usuarios" title="Convidar pessoas" className={botaoFaixa}>
-            <span className={ladrilho}><UserPlus className="h-[18px] w-[18px]" /></span>
-            <span className="w-full truncate text-center text-micro leading-3 font-medium">Convidar</span>
-          </Link>
+    <nav ref={faixa} aria-label="Módulos" className="rail-nav sticky top-[72px] z-30 hidden h-[calc(100dvh-80px)] md:flex" style={{ width: 64, flex: 'none', background: 'var(--rail)', color: 'var(--rail-text)', borderRadius: 10, flexDirection: 'column', alignItems: 'center', padding: '6px 0 8px', gap: 4, overflowY: 'auto', scrollbarWidth: 'none' }}>
+      <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} title={recolhido ? 'Mostrar barra lateral' : 'Recolher barra lateral'} className="rail-btn" style={{ ...botaoRail, width: 40, height: 32 }}><Ic n={recolhido ? 'left_panel_open' : 'left_panel_close'} s={18} /></button>
+      <div style={{ width: 28, height: 1, flex: 'none', background: 'rgba(255,255,255,.1)', margin: '2px 0 4px' }} />
+      <ListaOrdenavel className="flex flex-col items-center" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
+      <div style={{ position: 'relative' }}>
+        <button type="button" onClick={() => setAbertoEm(aberto ? null : caminho)} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 56, height: 46, flexDirection: 'column', gap: 3 }}>
+          <Ic n="more_horiz" s={18} />
+          <span style={{ fontSize: 10, lineHeight: 1, fontWeight: 500 }}>Mais</span>
+        </button>
+        {aberto && (
+          <div role="menu" aria-label="Mais módulos" style={{ position: 'fixed', left: 80, bottom: 90, zIndex: 41, width: 320, padding: 4, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)', color: 'var(--text)' }}>
+            <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Mais módulos</p>
+            <ListaOrdenavel
+              className="grid grid-cols-2 gap-0.5"
+              cookie={COOKIE_ORDEM_INICIO}
+              ordemInicial={ordemInicio}
+              itens={agrupados.map(({ id, href, rotulo }) => ({
+                id,
+                no: (
+                  <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className="menu-item" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', borderRadius: 4, fontSize: 13, background: ativoEm(href) ? 'var(--bg-active)' : 'transparent', fontWeight: ativoEm(href) ? 600 : 400, color: 'var(--text)', textDecoration: 'none' }}>
+                    <Ic n={ICONE_MS[id] ?? 'apps'} s={16} style={{ color: 'var(--text-2)' }} />{rotulo}
+                  </Link>
+                ),
+              }))}
+            />
+          </div>
         )}
-        <AlternarTema inicial={tema} className={botaoFaixa} />
-        {config && itemFaixa(config)}
       </div>
+      <div style={{ flex: 1, minHeight: 8 }} />
+      {papel === 'admin' && <Link href="/config/usuarios" title="Convidar" className="rail-btn" style={{ ...botaoRail, width: 40, height: 36 }}><Ic n="person_add" s={18} /></Link>}
+      <AlternarTema inicial={tema} className="rail-btn" estilo={{ ...botaoRail, width: 40, height: 36 }} />
+      {config && <Link href={config.href} title="Configurações" className="rail-btn" style={{ ...botaoRail, width: 40, height: 36, color: ativoEm(config.href) ? '#fff' : 'inherit' }}><Ic n="settings" s={18} /></Link>}
     </nav>
   )
 }
@@ -213,9 +196,10 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
 /** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
 const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (id: string) => void; admin: boolean }>({ fechado: () => false, alternar: () => {}, admin: false })
 
-const item =
-  'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
-const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
+const item = 'flex h-7 items-center gap-2 rounded px-2 text-[13px] text-texto transition-colors hover:bg-[var(--bg-hover)]'
+const ativo = 'bg-[var(--bg-active)] font-semibold hover:bg-[var(--bg-active)]'
+const linhaArvore = 'group flex h-7 items-center gap-1.5 rounded pr-1 text-[13px] text-texto transition-colors hover:bg-[var(--bg-hover)]'
+const rotuloSecao = 'text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3'
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
@@ -262,28 +246,32 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       podeEditar={podeGerir}
       podeExcluir={podeGerir && (!lista.slug || admin)}
       fixa={!!lista.slug}
-      className={`${item} group ${caminho === href ? ativo : ''}`}
-      style={{ paddingLeft: 8 + nivel * 14 }}
+      className={`${linhaArvore} ${caminho === href ? 'bg-[var(--bg-active)] font-semibold' : ''}`}
+      style={{ paddingLeft: 6 + nivel * 14 }}
     >
-      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center" style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-3.5 w-3.5" /></span>
+      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span className="flex w-4 shrink-0 justify-center"><span style={{ width: 7, height: 7, borderRadius: 2, background: lista.cor }} /></span>
         <span className="min-w-0 flex-1 truncate">{lista.nome}</span>
+        {detalhe && <span className="text-rotulo text-texto-3">{detalhe}</span>}
       </Link>
       {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
     </LinhaNavegacao>
   )
 }
 
-/** Pasta vira um subtítulo em negrito dentro do cartão do espaço, com as listas logo abaixo (sem recolher). */
 function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pasta: NoPasta; nivel: number; contexto: Opcao | null; pastas: NoPasta[]; podeGerir: boolean; podeArrastar: boolean }) {
+  const { fechado, alternar } = useContext(Recolhidos)
+  const aberta = !fechado(pasta.id)
   return (
-    <div className="mt-2">
-      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className="group flex h-7 items-center gap-2 rounded-md px-2 text-legenda font-semibold text-lat-fg hover:bg-lat-hover" style={{ paddingLeft: 8 + nivel * 14 }}>
+    <div>
+      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} className={linhaArvore} style={{ paddingLeft: 6 + nivel * 14 }}>
+        <button type="button" aria-label={aberta ? 'Recolher pasta' : 'Expandir pasta'} onClick={() => alternar(pasta.id)} className="flex w-4 shrink-0 text-texto-3"><Ic n={aberta ? 'expand_more' : 'chevron_right'} s={16} /></button>
+        <Ic n="folder" s={16} className="text-texto-2" />
         <span className="min-w-0 flex-1 truncate">{pasta.nome}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
         {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
       </LinhaNavegacao>
-      {pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+      {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
     </div>
   )
 }
@@ -291,11 +279,11 @@ function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pa
 /** Espaço na raiz vira um cartão com o nome em maiúsculas e as listas dentro; espaço dentro de espaço vira subtítulo. */
 function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { espaco: NoEspaco; nivel: number; podeGerir: boolean; podeEditarEspaco: boolean; podeArrastar: boolean }) {
   const caminho = usePathname()
+  const { fechado, alternar } = useContext(Recolhidos)
   const href = `/espacos/${espaco.id}`
-  const cartao = nivel === 0
-
-  const corpo = (
-    <>
+  const aberto = !fechado(espaco.id)
+  return (
+    <div>
       <LinhaNavegacao
         tipo="space"
         id={espaco.id}
@@ -304,28 +292,24 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         podeEditar={podeEditarEspaco}
         podeExcluir={podeEditarEspaco}
         fixa={!!espaco.slug}
-        className={`${item} group ${cartao ? 'h-7 font-semibold uppercase text-lat-fg' : 'mt-2 font-semibold text-lat-fg'} ${caminho === href ? ativo : ''}`}
-        style={{ paddingLeft: 8 + nivel * 14 }}
+        className={`${linhaArvore} ${caminho === href ? 'bg-[var(--bg-active)]' : ''}`}
+        style={{ paddingLeft: 6 + nivel * 14 }}
       >
-        {cartao && (
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-claro" style={{ background: espaco.cor }}>
-            <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
-          </span>
-        )}
-        <Link href={href} draggable={false} className="min-w-0 flex-1 truncate">
-          {espaco.nome}
-        </Link>
+        <button type="button" aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'} onClick={() => alternar(espaco.id)} className="flex w-4 shrink-0 text-texto-3"><Ic n={aberto ? 'expand_more' : 'chevron_right'} s={16} /></button>
+        <span style={{ width: 18, height: 18, flex: 'none', borderRadius: 4, background: espaco.cor, color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{espaco.nome.slice(0, 1).toUpperCase()}</span>
+        <Link href={href} draggable={false} className="min-w-0 flex-1 truncate font-medium">{espaco.nome}</Link>
         {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
       </LinhaNavegacao>
-      <div className={cartao ? 'mt-1' : ''}>
-        {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-        {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
-        {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
-      </div>
-    </>
+      {aberto && (
+        <div>
+          {espaco.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+          {espaco.pastas.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={nivel + 1} contexto={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
+          {espaco.filhos.map((filho) => <Espaco key={filho.id} espaco={filho} nivel={nivel + 1} podeGerir={podeGerir} podeEditarEspaco={podeEditarEspaco} podeArrastar={podeArrastar} />)}
+        </div>
+      )}
+    </div>
   )
-  return cartao ? <section className="py-0.5">{corpo}</section> : <div>{corpo}</div>
 }
 
 /** Segunda barra: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos, o tema e o perfil. */
@@ -333,6 +317,7 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
+  const [favAberto, setFavAberto] = useState(true)
   const recolhimento = useMemo(
     () => ({
       admin: papel === 'admin',
@@ -386,115 +371,90 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
     })
   }
 
-  const link = (href: string, rotulo: string, Icone: IconeLucide, contador = 0) => (
+  const link = (href: string, rotulo: string, icone: string, contador = 0) => (
     <Link href={href} draggable={false} className={`${item} ${estaEm(caminho, href) ? ativo : ''}`}>
-      <Icone className="h-3.5 w-3.5 text-lat-2" />
-      <span className="truncate">{rotulo}</span>
-      {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-claro">{contador > 99 ? '99+' : contador}</span>}
+      <Ic n={icone} s={16} className="text-texto-2" />
+      <span className="flex-1 truncate">{rotulo}</span>
+      {contador > 0 && <span className="text-rotulo text-texto-3">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
 
   return (
     <Recolhidos.Provider value={recolhimento}>
     <DestinosMover.Provider value={destinos}>
-    <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
-      <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
-        {!comAtalhos && (
-          <>
-            <div className="flex h-7 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-corpo font-semibold text-lat-fg">Início</h2>
-              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" className="inline-flex h-[26px] items-center gap-1 rounded-md border border-lat-borda px-2 text-rotulo font-medium text-lat-fg hover:bg-lat-hover"><Plus className="h-3.5 w-3.5" /> Criar</button>} />}
-              {acaoTopo}
-            </div>
-            <nav className="space-y-0.5">
-              {['home', 'tarefas', 'agenda', ...NO_PAINEL_INICIO.filter((id) => id !== 'tarefas')].filter((id, i, l) => l.indexOf(id) === i).map((id) => atalhos.find((a) => a.id === id)).filter((a): a is Atalho => !!a).map((a) => <div key={a.id}>{link(a.href, a.rotulo, a.Icone, a.contador)}</div>)}
-            </nav>
-            <div className="mx-2 my-3 border-t border-lat-borda" />
-          </>
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col" style={{ background: 'var(--bg-subtle)', color: 'var(--text)' }}>
+      <div className="flex shrink-0 items-center" style={{ height: 40, gap: 2, padding: '0 6px 0 14px', borderBottom: '1px solid var(--border-soft)' }}>
+        <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>Início</span>
+        {papel === 'admin' && (
+          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', marginRight: 2 }}>
+            <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" title="Criar" className="hover-bg" style={{ width: 26, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: '5px 0 0 5px', color: 'var(--text)', cursor: 'pointer' }}><Ic n="add" s={16} /></button>} />
+            <Link href="/config/espacos" title="Opções de criação" className="hover-bg" style={{ width: 18, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid var(--border)', borderRadius: '0 5px 5px 0', color: 'var(--text-2)' }}><Ic n="expand_more" s={14} /></Link>
+          </div>
         )}
+        {acaoTopo}
+      </div>
+      <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${movendo ? 'pointer-events-none opacity-70' : ''}`} style={{ padding: '6px 6px 12px', gap: 1 }}>
+        {!comAtalhos && ['home', 'tarefas', 'agenda', 'agendamentos', 'reunioes'].map((id) => atalhos.find((a) => a.id === id)).filter((a): a is Atalho => !!a).map((a) => <div key={a.id}>{link(a.href, a.rotulo, ICONE_MS[a.id] ?? 'apps', a.contador)}</div>)}
         {comAtalhos && (
-          <>
-            <div className="flex h-7 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Início</h2>
-            </div>
-            <ListaOrdenavel
-              className="space-y-0.5"
-              cookie={COOKIE_ORDEM_INICIO}
-              ordemInicial={ordemInicio}
-              itens={atalhos.map((a) => ({ id: a.id, no: link(a.href, a.rotulo, a.Icone, a.contador) }))}
-            />
-            <div className="mx-2 my-3 border-t border-lat-borda" />
-          </>
+          <ListaOrdenavel
+            className="flex flex-col"
+            cookie={COOKIE_ORDEM_INICIO}
+            ordemInicial={ordemInicio}
+            itens={atalhos.map((a) => ({ id: a.id, no: link(a.href, a.rotulo, ICONE_MS[a.id] ?? 'apps', a.contador) }))}
+          />
         )}
 
+        <button type="button" onClick={() => setFavAberto((v) => !v)} className={`${rotuloSecao} flex h-7 shrink-0 items-center gap-1 rounded px-1 text-left hover:text-texto-2`} style={{ marginTop: 10 }}>
+          <Ic n={favAberto ? 'expand_more' : 'chevron_right'} s={14} />Favoritos
+        </button>
+        {favAberto && favoritas.map((f) => <div key={f.id}>{link(`/listas/${f.id}`, f.nome, 'list_alt')}</div>)}
+        {favAberto && favoritas.length === 0 && <p className="px-2 text-rotulo text-texto-3">Clique na estrela de uma lista para fixá-la aqui.</p>}
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
-            <div className="flex h-7 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Espaços</h2>
-              <button type="button" aria-label="Pesquisar espaços e listas" title="Pesquisar (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))} className={botaoTopo}><Search className="h-3.5 w-3.5" /></button>
-              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
+            <div className="flex shrink-0 items-center" style={{ height: 28, gap: 2, paddingLeft: 8, marginTop: 10 }}>
+              <span className={rotuloSecao} style={{ flex: 1 }}>Espaços</span>
+              <button type="button" aria-label="Buscar espaços" title="Buscar espaços (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))} className="hover-bg" style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="search" s={15} /></button>
+              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" title="Novo espaço" className="hover-bg" style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="add" s={15} /></button>} />}
             </div>
-
-            {favoritas.length > 0 && (
-              <div className="mb-2">
-                <p className="flex h-7 items-center px-2 text-legenda font-semibold tracking-rotulo text-lat-3">Favoritos</p>
-                {favoritas.map((f) => <div key={f.id}>{link(`/listas/${f.id}`, f.nome, Star)}</div>)}
-              </div>
-            )}
-            <nav className="space-y-1.5">
-              {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
+            <nav className="flex flex-col" style={{ gap: 1 }}>
+              {arvore.length === 0 && <p className="px-2 py-2 text-rotulo text-texto-3">Nenhum espaço disponível.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
-
             {(navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
-              <div className="mt-3 border-t border-lat-borda pt-2">
-                <div className="flex h-7 items-center px-2">
-                  <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Itens soltos</h2>
-                  {papel === 'admin' && <CriarEstruturaDialog espaco={null} pastas={navegacao.pastasRaiz} />}
-                </div>
-                <nav className="space-y-0.5">
-                  {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                  {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
-                </nav>
-              </div>
+              <nav className="mt-2 flex flex-col" style={{ gap: 1 }}>
+                {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
+                {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
+              </nav>
             )}
             <ZonaRaiz visivel={arrastando} />
           </SortableContext>
         </DndContext>
+        {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" className="hover-bg flex h-7 w-full shrink-0 items-center gap-2 rounded px-2 text-left text-[13px] text-texto-3"><Ic n="add" s={16} />Novo espaço</button>} />}
 
-        {!comAtalhos && canais.length > 0 && (
-          <div className="mt-3 border-t border-lat-borda pt-2">
-            <div className="flex h-7 items-center px-2">
-              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Canais</h2>
-              <Link href="/chat" aria-label="Abrir o chat" title="Abrir o chat" className={botaoTopo}><Plus className="h-3.5 w-3.5" /></Link>
-            </div>
-            <nav className="space-y-0.5">
-              {canais.map((c) => (
-                <Link key={c.id} href={`/chat/${c.nome}`} className={`${item} ${caminho === `/chat/${c.nome}` ? ativo : ''}`}>
-                  <span className="w-4 text-center text-lat-3">{c.privado ? '🔒' : '#'}</span>
-                  <span className={`min-w-0 flex-1 truncate ${c.naoLidas ? 'font-semibold text-lat-fg' : ''}`}>{c.nome}</span>
-                  {c.naoLidas > 0 && <span className="rounded-full bg-[#d80d12] px-1.5 text-micro font-bold text-white">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
-
+        <div className={`${rotuloSecao} flex h-7 shrink-0 items-center px-2`} style={{ marginTop: 10 }}>Canais</div>
+        {canais.map((c) => (
+          <Link key={c.id} href={`/chat/${c.nome}`} className={`${item} ${caminho === `/chat/${c.nome}` ? ativo : ''}`}>
+            <Ic n={c.privado ? 'lock' : 'tag'} s={16} className="text-texto-2" />
+            <span className="min-w-0 flex-1 truncate">{c.nome}</span>
+            {c.naoLidas > 0 && <span className="text-rotulo text-texto-3">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
+          </Link>
+        ))}
+        <Link href="/chat" className="hover-bg flex h-7 shrink-0 items-center gap-2 rounded px-2 text-[13px] text-texto-3"><Ic n="add" s={16} />Adicionar canal</Link>
       </div>
 
-      <div className="shrink-0 space-y-1 border-t border-lat-borda p-2">
+      <div className="flex shrink-0 flex-col" style={{ borderTop: '1px solid var(--border)', padding: 6, gap: 2 }}>
         <IndicadorCronometro cronometro={cronometro} />
         {!comAtalhos && (
           <>
-            <Link href="/chat" className={`${item} justify-between`}><span className="flex items-center gap-2"><MessagesSquare className="h-3.5 w-3.5 text-lat-2" /> Mensagens diretas</span><ChevronRight className="h-3 w-3 text-lat-3" /></Link>
-            <Link href="/config/personalizacao" className={`${item} border border-lat-borda`}><SlidersHorizontal className="h-3.5 w-3.5 text-lat-2" /> Personalizar a barra lateral</Link>
+            <Link href="/chat" className={item}><Ic n="forum" s={16} className="text-texto-2" /><span className="flex-1">Mensagens diretas</span>{chatNaoLidas > 0 && <span style={{ minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{chatNaoLidas > 99 ? '99+' : chatNaoLidas}</span>}</Link>
+            <Link href="/config/personalizacao" className={`${item} text-texto-2`}><Ic n="tune" s={16} />Personalizar a barra lateral</Link>
           </>
         )}
         {comAtalhos && (
           <div className="flex items-center gap-1">
-            <MenuPerfil nome={nome} papel={papel} lado="top" comNome className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-lat-hover focus-visible:ring-2 focus-visible:ring-marca" />
-            <AlternarTema inicial={tema} className="rounded-md p-2 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg" />
+            <MenuPerfil nome={nome} papel={papel} lado="top" comNome className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-lat-hover" />
+            <AlternarTema inicial={tema} className="hover-bg" estilo={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: 'var(--text-2)', cursor: 'pointer' }} />
           </div>
         )}
       </div>
@@ -504,7 +464,6 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
   )
 }
 
-const botaoTopo = 'rounded-md p-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca'
 
 function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
@@ -591,12 +550,12 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
           {...props}
           acaoTopo={
             recolhida ? (
-              <button type="button" onClick={() => trocarModo('fixa')} aria-label="Fixar barra lateral" title="Fixar barra lateral" className={botaoTopo}>
-                <Pin className="h-4 w-4" aria-hidden="true" />
+              <button type="button" onClick={() => trocarModo('fixa')} aria-label="Fixar barra lateral" title="Fixar barra lateral" className="hover-bg" style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-2)', cursor: 'pointer' }}>
+                <Ic n="push_pin" s={16} />
               </button>
             ) : (
-              <button type="button" onClick={() => trocarModo('recolhida')} aria-label="Recolher barra lateral" title="Recolher barra lateral" className={botaoTopo}>
-                <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+              <button type="button" onClick={() => trocarModo('recolhida')} aria-label="Recolher barra lateral" title="Recolher barra lateral" className="hover-bg" style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-2)', cursor: 'pointer' }}>
+                <Ic n="left_panel_close" s={16} />
               </button>
             )
           }

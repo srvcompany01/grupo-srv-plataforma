@@ -1,6 +1,5 @@
 'use client'
 
-import { Clapperboard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { definirListaConteudoAcao } from '@/app/(app)/conteudo/acoes'
@@ -22,8 +21,11 @@ export function ListaConteudoToggle({ listaId, ligado }: { listaId: string; liga
     iniciar(async () => { if (avisar(await definirListaConteudoAcao(listaId, !ligado), true)) router.refresh() })
   }
   return (
-    <button type="button" onClick={alternar} disabled={pendente} aria-pressed={ligado} title={ligado ? 'As subtarefas desta lista são posts (clique para desligar)' : 'Fazer as subtarefas desta lista virarem posts'} className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-rotulo font-medium transition ${ligado ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda text-texto-2 hover:bg-hover'}`}>
-      <Clapperboard className="h-3.5 w-3.5" /> {ligado ? 'Subtarefas são posts' : 'Lista de conteúdo'}
-    </button>
+    <label className="flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap text-[13px] text-texto-2">
+      <button type="button" role="switch" aria-checked={ligado} onClick={alternar} disabled={pendente} title={ligado ? 'As subtarefas desta lista são posts (clique para desligar)' : 'Fazer as subtarefas desta lista virarem posts'} style={{ width: 28, height: 16, flex: 'none', borderRadius: 8, background: ligado ? 'var(--primary)' : 'var(--border-strong)', border: 0, position: 'relative', padding: 0, cursor: 'pointer', transition: 'background 150ms' }}>
+        <span style={{ position: 'absolute', top: 2, left: ligado ? 14 : 2, width: 12, height: 12, borderRadius: '50%', background: 'var(--bg)', transition: 'left 150ms' }} />
+      </button>
+      Subtarefas são posts
+    </label>
   )
 }

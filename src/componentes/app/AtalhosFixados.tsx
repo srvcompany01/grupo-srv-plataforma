@@ -1,20 +1,20 @@
 'use client'
 
-import { Plus, X } from 'lucide-react'
+import { Ic } from './Ic'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useMemo, useSyncExternalStore } from 'react'
 
-type Fixado = { nome: string; href: string }
+type Fixado = { nome: string; href: string; icone?: string }
 
 const CHAVE = 'srv:atalhos-fixados'
 const PADRAO: Fixado[] = [
-  { nome: 'Minhas tarefas', href: '/inicio' },
-  { nome: 'Agenda', href: '/agenda' },
-  { nome: 'Clientes', href: '/clientes' },
-  { nome: 'Projetos', href: '/projetos' },
-  { nome: 'Financeiro', href: '/financeiro' },
-  { nome: 'Reuniões', href: '/reunioes' },
+  { nome: 'Minhas tarefas', href: '/inicio', icone: 'task_alt' },
+  { nome: 'Agenda', href: '/agenda', icone: 'calendar_month' },
+  { nome: 'Clientes', href: '/clientes', icone: 'storefront' },
+  { nome: 'Projetos', href: '/projetos', icone: 'work' },
+  { nome: 'Financeiro', href: '/financeiro', icone: 'payments' },
+  { nome: 'Reuniões', href: '/reunioes', icone: 'videocam' },
 ]
 
 const EVENTO = 'srv:atalhos-fixados'
@@ -50,14 +50,16 @@ export function AtalhosFixados() {
     if (nome) gravar([...itens, { nome, href: atual }])
   }
   return (
-    <nav aria-label="Atalhos fixados" className="sticky top-10 z-30 hidden h-8 shrink-0 items-center gap-0.5 overflow-x-auto bg-[var(--bg-frame)] px-3 [scrollbar-width:none] md:flex">
+    <nav aria-label="Atalhos fixados" className="sticky top-10 z-30 hidden md:flex" style={{ height: 32, flex: 'none', alignItems: 'center', gap: 2, padding: '0 10px 4px', overflowX: 'auto', scrollbarWidth: 'none', color: 'var(--text-2)', background: 'var(--bg-frame)' }}>
       {itens.map((i) => (
-        <span key={i.href} className="group/f relative flex shrink-0 items-center">
-          <Link href={i.href} className={`flex h-[26px] items-center rounded px-2 text-corpo transition-colors hover:bg-hover ${i.href === atual ? 'font-semibold text-texto' : 'text-texto-2'}`}>{i.nome}</Link>
-          <button type="button" aria-label={`Remover atalho ${i.nome}`} onClick={() => gravar(itens.filter((x) => x.href !== i.href))} className="absolute -right-0.5 -top-0.5 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--bg-active)] text-texto-3 group-hover/f:flex hover:text-texto"><X className="h-2.5 w-2.5" /></button>
+        <span key={i.href} className="group/f" style={{ position: 'relative', display: 'flex', flex: 'none' }}>
+          <Link href={i.href} className="hover-bg" style={{ height: 26, display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', borderRadius: 6, color: i.href === atual ? 'var(--text)' : 'inherit', fontSize: 13, whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: i.href === atual ? 600 : 400 }}>
+            <Ic n={i.icone ?? 'bookmark'} s={15} style={{ color: 'var(--text-3)' }} />{i.nome}
+          </Link>
+          <button type="button" aria-label={`Remover atalho ${i.nome}`} onClick={() => gravar(itens.filter((x) => x.href !== i.href))} className="hidden group-hover/f:flex" style={{ position: 'absolute', right: -2, top: -2, width: 14, height: 14, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 0, background: 'var(--bg-active)', color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="close" s={10} /></button>
         </span>
       ))}
-      <button type="button" onClick={fixar} aria-label="Fixar esta tela" title="Fixar esta tela" className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded text-texto-3 hover:bg-hover hover:text-texto"><Plus className="h-3.5 w-3.5" /></button>
+      <button type="button" onClick={fixar} aria-label="Fixar visualização" title="Fixar visualização" className="hover-bg" style={{ width: 26, height: 26, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderRadius: 6, background: 'transparent', color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="add" s={15} /></button>
     </nav>
   )
 }

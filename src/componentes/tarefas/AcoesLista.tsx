@@ -1,6 +1,7 @@
 'use client'
 
-import { Check, ChevronDown, FileSpreadsheet, LayoutTemplate, Link2, Plus, Share2, Trash2 } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { Check, FileSpreadsheet, LayoutTemplate, Link2, Plus, Share2, Trash2 } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { criarDoModeloAcao, criarTarefaAcao, excluirModeloAcao, importarTarefasAcao, salvarModeloAcao } from '@/app/(app)/tarefas/acoes'
@@ -60,8 +61,8 @@ export function CriarTarefaTopo({ listaId, euId, status, modelos = [] }: { lista
     <div className="inline-flex items-center">
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <button className="inline-flex h-7 items-center gap-1.5 rounded-l-md bg-petroleo px-2.5 text-rotulo font-bold text-claro transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
-          <Plus className="h-4 w-4" /> Tarefa
+        <button className="b-pri" style={{ borderRadius: '6px 0 0 6px' }}>
+          <Ic n="add" s={16} />Tarefa
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 rounded-lg p-3">
@@ -98,7 +99,7 @@ export function CriarTarefaTopo({ listaId, euId, status, modelos = [] }: { lista
       </PopoverContent>
     </Popover>
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label="Mais opções para criar" className="inline-flex h-7 w-6 items-center justify-center rounded-r-md border-l border-white/25 bg-petroleo text-claro transition hover:bg-petroleo-700"><ChevronDown className="h-3.5 w-3.5" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger aria-label="Mais opções para criar" className="b-pri" style={{ width: 24, padding: 0, justifyContent: 'center', borderLeft: '1px solid rgba(127,127,127,.35)', borderRadius: '0 6px 6px 0' }}><Ic n="expand_more" s={16} /></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem onSelect={() => setAberto(true)}><Plus className="h-4 w-4" /> Tarefa</DropdownMenuItem>
         <DropdownMenuItem onSelect={() => setModeloAberto(true)}><LayoutTemplate className="h-4 w-4" /> A partir de modelo…</DropdownMenuItem>

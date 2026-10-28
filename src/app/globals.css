@@ -517,3 +517,25 @@ body:has(.app-ui) :is(button, input, select, textarea, h1, h2, h3, h4, .font-dis
 body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro,
 body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro button,
 body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #111113; }
+
+/* Faixa de ícones do redesign: hover do ladrilho e dos botões. */
+.rail-item:hover, .rail-btn:hover { color: #fff; }
+.rail-item:hover .rail-tile { background: var(--rail-hover); }
+.rail-item[aria-current='page']:hover .rail-tile { background: #d80d12; }
+.rail-btn:hover { background: var(--rail-hover); }
+.menu-item:hover { background: var(--bg-hover) !important; }
+.hover-bg:hover { background: var(--bg-hover) !important; color: var(--text); }
+
+/* Botões do redesign (medidas do protótipo): 28px, raio 6, 13px. */
+.b-out, .b-ghost, .b-icon, .b-pri { display: inline-flex; align-items: center; flex: none; white-space: nowrap; font-size: 13px; cursor: pointer; transition: background 120ms, color 120ms, border-color 120ms; height: 28px; border-radius: 6px; }
+.b-out { gap: 6px; padding: 0 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.b-out:hover { background: var(--bg-hover); }
+.b-ghost { gap: 6px; padding: 0 8px; border: 0; background: transparent; color: var(--text-2); }
+.b-ghost:hover { background: var(--bg-hover); color: var(--text); }
+.b-ghost.on { background: var(--bg-active); color: var(--text); }
+.b-icon { width: 28px; justify-content: center; border: 0; background: transparent; color: var(--text-2); }
+.b-icon:hover { background: var(--bg-hover); color: var(--text); }
+.b-pri { gap: 4px; padding: 0 10px 0 6px; border: 0; background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.b-pri:hover { background: var(--primary-hover); }
+.b-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border: 1px solid var(--border); background: var(--bg-subtle); border-radius: 13px; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; white-space: nowrap; }
+.b-pill:hover { background: var(--bg-hover); }

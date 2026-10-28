@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronDown, CircleDot, Filter, Flag, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { ChevronDown, CircleDot, Flag, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import {
@@ -115,16 +116,16 @@ export function BarraFiltros({
     !!filtros.busca
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-1">
       {comAgrupamento && (
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Agrupar por: ${rotuloAgrupamento}`}
             title="Agrupar por"
-            className="inline-flex h-6 items-center gap-1 rounded-full border border-sucesso/30 bg-sucesso/15 px-2.5 text-legenda font-semibold text-sucesso-forte transition-colors hover:bg-sucesso/25 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-sucesso/30"
+            className="b-pill"
           >
+            <Ic n="layers" s={15} style={{ color: 'var(--text-2)' }} />
             {rotuloAgrupamento}
-            <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
             <DropdownMenuRadioGroup value={filtros.agrupamento} onValueChange={(v) => aplicar({ agrupamento: v })}>
@@ -141,8 +142,8 @@ export function BarraFiltros({
         </DropdownMenu>
       )}
       <Popover>
-        <PopoverTrigger className={`${botao} ml-auto ${nFiltros ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
-          <Filter className="h-3.5 w-3.5" /> Filtro{nFiltros > 0 && ` · ${nFiltros}`}
+        <PopoverTrigger className={`b-ghost ml-auto ${nFiltros ? 'on' : ''}`}>
+          <Ic n="filter_list" s={16} /> Filtro{nFiltros > 0 && <span style={{ minWidth: 16, height: 16, padding: '0 4px', borderRadius: 4, background: 'var(--primary)', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{nFiltros}</span>}
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-[22rem] flex-wrap gap-2 p-3">
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Responsável" chave="responsaveis" opcoes={equipe} Icone={Users} tom="azul" />
@@ -182,16 +183,16 @@ export function BarraFiltros({
           e.preventDefault()
           aplicar({ busca: String(new FormData(e.currentTarget).get('busca') ?? '').trim() })
         }}
-        className="relative min-w-44 flex-1 sm:max-w-56"
+        className="relative hidden w-44 shrink-0 lg:block"
       >
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-texto-3" />
+        <Ic n="search" s={15} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', pointerEvents: 'none' }} />
         <input
           key={filtros.busca}
           name="busca"
           defaultValue={filtros.busca}
           aria-label="Pesquisar tarefas"
-          placeholder="Pesquisar tarefas…" autoComplete="off"
-          className="h-7 w-full rounded-md border border-borda bg-white pl-8 pr-8 text-rotulo outline-none transition focus-visible:border-petroleo focus-visible:ring-3 focus-visible:ring-petroleo/15"
+          placeholder="Buscar na lista" autoComplete="off"
+          className="h-7 w-full rounded-md border border-borda bg-white pl-7 pr-7 text-[13px] outline-none transition focus-visible:border-[var(--focus)] focus-visible:ring-3 focus-visible:ring-[var(--focus-ring)]"
         />
         {filtros.busca && <button type="button" aria-label="Limpar pesquisa" onClick={() => aplicar({ busca: '' })} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-texto-3 hover:bg-hover"><X className="h-3 w-3" /></button>}
       </form>

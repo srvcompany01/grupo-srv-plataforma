@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronRight, CornerDownRight, Flag } from 'lucide-react'
+import { ChevronRight, CornerDownRight } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
 import Link from 'next/link'
 import { useState } from 'react'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
@@ -15,7 +16,7 @@ import { SeletorStatus } from './SeletorStatus'
 import { SeletorTagCliente, type TagCliente } from './SeletorTagCliente'
 import { NomeCliente } from '@/componentes/NomeCliente'
 
-const COR_PRIORIDADE = { urgente: 'text-perigo', alta: 'text-aviso', normal: 'text-texto-3', baixa: 'text-marca' } as const
+const COR_PRIORIDADE = { urgente: '#d80d12', alta: '#e08a00', normal: '#1d6fe0', baixa: '#8b8b94' } as const
 
 export type Contexto = {
   equipe: Pessoa[]
@@ -70,13 +71,13 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   // Cada célula leva `data-celula` (a lista descobre por ele onde o mouse está) e ganha destaque quando está na faixa.
   const noFaixa = (colunaId: string) => !!ctx.faixa?.linhas.has(tarefa.id) && ctx.faixa.colunas.has(colunaId)
   const marca = (colunaId: string) => ({ 'data-celula': colunaId })
-  const realce = (colunaId: string) => (noFaixa(colunaId) ? ' bg-marca-fundo ring-1 ring-inset ring-marca/30' : '')
+  const realce = (colunaId: string) => (noFaixa(colunaId) ? ' bg-[var(--sel)] ring-1 ring-inset ring-[var(--focus)]/30' : '')
   const celula = (colunaId: string) => {
     if (colunaId.startsWith('campo:')) {
       const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
       if (!definicao) return null
       return (
-        <div key={colunaId} {...marca(colunaId)} className={`min-w-0 border-l border-borda/50 py-1${realce(colunaId)}`}>
+        <div key={colunaId} {...marca(colunaId)} className={`min-w-0 py-1${realce(colunaId)}`}>
           <CelulaCampoPersonalizado tarefaId={tarefa.id} definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }} equipe={ctx.equipe} />
         </div>
       )
@@ -88,8 +89,8 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
         return (
-          <span key={colunaId} {...marca(colunaId)} className={`px-2${realce(colunaId)}`} title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
-            {tarefa.prioridade !== 'normal' && <Flag className={`h-3.5 w-3.5 ${COR_PRIORIDADE[tarefa.prioridade]}`} />}
+          <span key={colunaId} {...marca(colunaId)} className={`flex items-center gap-1.5 px-2 text-[13px]${realce(colunaId)}`} title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
+            <Ic n="flag" s={15} fill style={{ color: COR_PRIORIDADE[tarefa.prioridade] }} />{ROTULO_PRIORIDADE[tarefa.prioridade]}
           </span>
         )
       case 'status':
@@ -112,7 +113,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} className={`group grid min-h-8 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div data-linha={tarefa.id} className={`group grid min-h-8 items-center border-t border-[var(--border-soft)] text-corpo transition-colors ${selecionada ? 'bg-[var(--sel)]' : 'hover:bg-[var(--bg-hover)]'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div {...marca('nome')} className={`flex min-w-0 items-center gap-2 px-3${realce('nome')}`} style={{ paddingLeft: 12 + nivel * 20 }}>
           <input
             type="checkbox"
@@ -120,7 +121,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             data-tarefa-id={tarefa.id}
             onChange={(evento) => ctx.alternarSelecao?.(tarefa.id, evento.target.checked, (evento.nativeEvent as MouseEvent).shiftKey === true)}
             aria-label={`Selecionar ${tarefa.titulo}`}
-            className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-marca"
+            className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-[var(--primary)]"
           />
           <button
             aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
@@ -131,7 +132,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           </button>
           {!colunas.includes('status') && <SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} />}
           <div className="min-w-0 flex-1">
-            <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="block truncate font-medium hover:text-marca">
+            <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="block truncate hover:underline">
               {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
               {tarefa.filhos.length > 0 && <span className="ml-1.5 text-legenda text-texto-3">{tarefa.filhos.length}</span>}
             </Link>
@@ -171,7 +172,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         <button
           type="button"
           onClick={() => setCriandoSubtarefa(true)}
-          className="flex min-h-8 w-full items-center gap-2 border-t border-borda/60 py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-hover/80 hover:text-marca"
+          className="flex min-h-8 w-full items-center gap-2 border-t border-[var(--border-soft)] py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto"
           style={{ paddingLeft: 52 + nivel * 20 }}
         >
           <CornerDownRight className="h-3.5 w-3.5" /> Adicionar subtarefa

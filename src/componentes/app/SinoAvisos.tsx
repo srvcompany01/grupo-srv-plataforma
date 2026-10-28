@@ -1,6 +1,5 @@
 'use client'
 
-import { Bell } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -10,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popove
 import { rotuloContagem, tempoRelativo } from '@/dominio/formatar'
 import { criarClienteNavegador } from '@/infra/supabase/navegador'
 import type { Aviso } from '@/servicos/avisos'
+import { Ic } from './Ic'
 
 export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLidos: number; euId: string }) {
   const router = useRouter()
@@ -56,9 +56,9 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="relative rounded-md p-1.5 text-lat-2 hover:bg-lat-hover hover:text-lat-fg">
-        <Bell className="h-4 w-4" />
-        {selo && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-perigo px-1 text-legenda font-semibold text-claro">{selo}</span>}
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="hover-bg" style={{ position: 'relative', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: 'var(--text-2)', cursor: 'pointer' }}>
+        <Ic n="notifications" s={17} />
+        {selo && <span style={{ position: 'absolute', top: 5, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#d80d12', boxShadow: '0 0 0 2px var(--bg-frame)' }} />}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 gap-0 p-0">
         <p className="border-b border-borda px-3 py-2 text-corpo font-semibold">Avisos</p>

@@ -1,6 +1,7 @@
 'use client'
 
-import { Check, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { Check, Plus, Search, X } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { adicionarCampoExistente, criarCampoPersonalizado, removerCampoDaLista } from '@/app/(app)/acoes-campos'
 import { IconeVisual } from '@/componentes/IconeVisual'
@@ -99,7 +100,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      {abertoExterno === undefined && <DialogTrigger asChild><button className={botaoSecundario}><SlidersHorizontal className="h-4 w-4" /> Campos ({camposDaLista.length})</button></DialogTrigger>}
+      {abertoExterno === undefined && <DialogTrigger asChild><button className="b-ghost"><Ic n="view_column" s={16} />Campos</button></DialogTrigger>}
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader><DialogTitle>Campos personalizados</DialogTitle><DialogDescription>Crie dados tipados para tarefas. Números, moedas e datas ficam prontos para filtros, métricas e relatórios.</DialogDescription></DialogHeader>
         {selecionado ? (

@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { criarPostAcao } from '@/app/(app)/conteudo/acoes'
@@ -38,7 +38,7 @@ export function NovoPostDialog({ listaId, clientes, maes = [] }: { listaId: stri
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>
-        <button className={botaoPrimario}><Plus className="h-4 w-4" /> Novo post</button>
+        <button className="b-out"><Ic n="add_photo_alternate" s={16} />Novo post</button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

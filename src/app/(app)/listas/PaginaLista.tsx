@@ -1,10 +1,9 @@
-import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { IconeVisual } from '@/componentes/IconeVisual'
 import { ListaConteudoToggle } from '@/componentes/conteudo/ListaConteudoToggle'
 import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
 import { CriarTarefaTopo } from '@/componentes/tarefas/AcoesLista'
+import { Ic } from '@/componentes/app/Ic'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
@@ -23,7 +22,6 @@ import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { SalvarVisao } from '@/componentes/tarefas/SalvarVisao'
 import { agruparTarefas, TIPOS_AGRUPAVEIS } from '@/dominio/agrupamento'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
-import { rotuloMes } from '@/dominio/formatar'
 import { iconeDoStatus } from '@/dominio/status-icone'
 import { resolverVisao } from '@/dominio/visao-salva'
 import { montarArvore } from '@/dominio/tarefas'
@@ -106,54 +104,55 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
-    <div className="min-h-full bg-white">
-      <header className="border-b border-borda bg-white">
-        <div
-          className="flex min-h-10 flex-wrap items-center justify-between gap-3 px-4 py-1 md:px-5"
-        >
-          <div className="min-w-0">
-            <nav className="flex min-w-0 items-center gap-1.5 text-rotulo text-texto-2" aria-label="Localização da lista">
-              {lista.espaco.id ? (
-                <Link href={`/espacos/${lista.espaco.id}`} className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 hover:bg-white/80 hover:text-texto">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-claro" style={{ background: lista.espaco.cor }}><IconeVisual icone={lista.espaco.icone} emoji={lista.espaco.emoji} className="h-3 w-3" /></span>
-                  <span className="truncate">{lista.espaco.nome}</span>
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-marca text-claro"><IconeVisual icone="layers-3" className="h-3 w-3" /></span>Itens soltos</span>
-              )}
-              {lista.pasta && <><ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" /><span className="flex min-w-0 items-center gap-1.5"><span style={{ color: lista.pasta.cor }}><IconeVisual icone={lista.pasta.icone} emoji={lista.pasta.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.pasta.nome}</span></span></>}
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" />
-              <h1 className="flex min-w-0 items-center gap-1.5 font-bold text-texto"><span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.nome}</span></h1>
-              <EstrelaLista listaId={id} favorita={favorita} />
-              <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
-            </nav>
-            {lista.mes && (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-legenda">
-                <span className="rounded-full bg-aviso-fundo px-2 py-0.5 font-medium text-aviso-forte">{rotuloMes(lista.mes)}</span>
-              </div>
-            )}
+    <div className="flex min-h-full flex-col bg-[var(--bg)]">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-2 bg-[var(--bg)]" style={{ height: 40, padding: '0 10px 0 12px', borderBottom: '1px solid var(--border-soft)' }}>
+        <nav aria-label="Localização da lista" className="flex min-w-0 flex-1 items-center overflow-hidden" style={{ gap: 2, flexBasis: 160 }}>
+          {lista.espaco.id ? (
+            <Link href={`/espacos/${lista.espaco.id}`} className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
+              <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{lista.espaco.nome.slice(0, 1).toUpperCase()}</span>
+              {lista.espaco.nome}
+            </Link>
+          ) : (
+            <span className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px' }}>Itens soltos</span>
+          )}
+          {lista.pasta && <><span className="hidden text-[13px] text-texto-3 md:inline">/</span><span className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}><Ic n="folder" s={16} style={{ color: '#1d6fe0' }} />{lista.pasta.nome}</span></>}
+          <span className="hidden text-[13px] text-texto-3 md:inline">/</span>
+          <span style={{ width: 16, height: 16, flex: 'none', marginLeft: 6, borderRadius: '50%', background: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--bg)' }} /></span>
+          <h1 className="truncate" style={{ fontWeight: 600, fontSize: 14, padding: '0 4px 0 6px', whiteSpace: 'nowrap' }}>{lista.nome}</h1>
+          <EstrelaLista listaId={id} favorita={favorita} />
+          <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
+        </nav>
+        <div className="flex shrink-0 items-center gap-1">
+          <div className="mr-1 hidden xl:flex">
+            {membrosDoEspaco.slice(0, 2).map((m, i) => (
+              <span key={m.id} title={m.nome} style={{ width: 22, height: 22, marginLeft: i ? -6 : 0, borderRadius: '50%', background: i ? '#0d9488' : '#d80d12', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>{m.nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
+            ))}
+            {membrosDoEspaco.length > 2 && <span style={{ width: 22, height: 22, marginLeft: -6, borderRadius: '50%', background: 'var(--bg-active)', color: 'var(--text-2)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>+{membrosDoEspaco.length - 2}</span>}
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <CompartilharDialog nome={lista.nome} membros={membrosDoEspaco} />
+          <CompartilharDialog nome={lista.nome} membros={membrosDoEspaco} />
+          <div className="hidden items-center gap-1 xl:flex">
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
+            <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 6px' }} />
             {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
           </div>
         </div>
-        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />
-      </header>
+      </div>
+      <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
-      <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
-        <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
-        <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
-        <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
-        <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
-        <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
-        {tipo === 'conteudo' && <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} />}
-        <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} />
+      <div className="flex shrink-0 items-center gap-1" style={{ height: 44, padding: '0 10px 0 12px', color: 'var(--text-2)' }}>
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} />
+          <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
+          <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
+          <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
+          <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
+          {tipo === 'conteudo' && (<><div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px', flex: 'none' }} /><NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} /></>)}
+        </div>
+        <div className="ml-0.5 flex shrink-0"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
       </div>
       )}
-      <main className="p-4 md:p-5">
+      <main className="min-h-0 flex-1 p-0" style={{ borderTop: '1px solid var(--border-soft)' }}>
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
         {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}

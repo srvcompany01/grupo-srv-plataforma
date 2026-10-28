@@ -423,13 +423,13 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-7 items-center border-y border-borda/60 bg-white text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+              <div className="grid min-h-7 items-center border-b border-borda bg-[var(--bg)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
                 <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)
                   if (definicao) {
                     return (
-                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/50" {...propsRedimensionamento}>
+                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="" {...propsRedimensionamento}>
                         {menuDaColuna(colunaId, <>{definicao.icone !== 'nenhum' && <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span>}<span className="truncate" style={definicao.icone === 'nenhum' ? { color: definicao.cor } : undefined}>{definicao.nome}</span></>, definicao.nome)}
                       </CabecalhoColuna>
                     )
@@ -441,7 +441,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                   )
                 })}
                 {ctx.gerirCampos && (
-                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/50 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
                 )}
               </div>
               {g.tarefas.map((t) => (
