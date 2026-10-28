@@ -112,7 +112,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} className={`group grid min-h-10 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div data-linha={tarefa.id} className={`group grid min-h-8 items-center border-t border-borda/60 text-corpo transition-colors ${selecionada ? 'bg-marca-fundo/80' : 'hover:bg-hover/80'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div {...marca('nome')} className={`flex min-w-0 items-center gap-2 px-3${realce('nome')}`} style={{ paddingLeft: 12 + nivel * 20 }}>
           <input
             type="checkbox"

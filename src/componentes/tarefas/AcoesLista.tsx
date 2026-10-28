@@ -26,7 +26,7 @@ export function CompartilharLista({ nome }: { nome: string }) {
   }
 
   return (
-    <button type="button" onClick={compartilhar} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-rotulo font-medium text-texto-2 transition hover:bg-hover hover:text-texto">
+    <button type="button" onClick={compartilhar} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-rotulo font-medium text-texto-2 transition hover:bg-hover hover:text-texto">
       <Share2 className="h-3.5 w-3.5 text-marca" /> Compartilhar
     </button>
   )
@@ -42,7 +42,7 @@ export function CriarTarefaTopo({ listaId, euId, status }: { listaId: string; eu
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <button className="inline-flex h-9 items-center gap-2 rounded-lg bg-petroleo px-3.5 text-rotulo font-bold text-claro shadow-cartao transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
+        <button className="inline-flex h-7 items-center gap-1.5 rounded-md bg-petroleo px-2.5 text-rotulo font-bold text-claro shadow-cartao transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
           <Plus className="h-4 w-4" /> Tarefa <ChevronDown className="h-3 w-3 opacity-80" />
         </button>
       </PopoverTrigger>

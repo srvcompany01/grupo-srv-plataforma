@@ -303,7 +303,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
       </div>
     </>
   )
-  return cartao ? <section className="rounded-xl border border-lat-borda p-1.5">{corpo}</section> : <div>{corpo}</div>
+  return cartao ? <section className="py-0.5">{corpo}</section> : <div>{corpo}</div>
 }
 
 /** Segunda barra: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos, o tema e o perfil. */

@@ -26,7 +26,7 @@ const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   'sem-prazo': 'Sem vencimento',
 }
 
-const botao = 'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-rotulo font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/20'
+const botao = 'inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-rotulo font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/20'
 // Filtro ativo = chip cheio na cor de ação; inativo = contorno neutro. As chaves seguem só para compatibilidade com os chamadores.
 const ATIVO = 'border-petroleo bg-petroleo text-claro'
 const TOM = { violeta: ATIVO, azul: ATIVO, rosa: ATIVO, âmbar: ATIVO, verde: ATIVO } as const
@@ -182,7 +182,7 @@ export function BarraFiltros({
           defaultValue={filtros.busca}
           aria-label="Pesquisar tarefas"
           placeholder="Pesquisar tarefas…" autoComplete="off"
-          className="h-8 w-full rounded-full border border-borda bg-white pl-8 pr-8 text-rotulo outline-none transition focus-visible:border-petroleo focus-visible:ring-3 focus-visible:ring-petroleo/15"
+          className="h-7 w-full rounded-md border border-borda bg-white pl-8 pr-8 text-rotulo outline-none transition focus-visible:border-petroleo focus-visible:ring-3 focus-visible:ring-petroleo/15"
         />
         {filtros.busca && <button type="button" aria-label="Limpar pesquisa" onClick={() => aplicar({ busca: '' })} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-texto-3 hover:bg-hover"><X className="h-3 w-3" /></button>}
       </form>
