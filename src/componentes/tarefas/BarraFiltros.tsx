@@ -1,7 +1,8 @@
 'use client'
 
-import { ChevronDown, CircleDot, Flag, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
+import { ChevronDown, CircleDot, Filter, Flag, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
+import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -106,6 +107,7 @@ export function BarraFiltros({
     ? (camposAgrupaveis.find((campo) => `campo:${campo.id}` === filtros.agrupamento)?.nome ?? ROTULO_AGRUPAMENTO.status)
     : ROTULO_AGRUPAMENTO[filtros.agrupamento as keyof typeof ROTULO_AGRUPAMENTO]
 
+  const nFiltros = filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length + (filtros.prazo ? 1 : 0) + (filtros.mes ? 1 : 0)
   const algum =
     filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length > 0 ||
     !!filtros.prazo ||
@@ -138,6 +140,11 @@ export function BarraFiltros({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+      <Popover>
+        <PopoverTrigger className={`${botao} ${nFiltros ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
+          <Filter className="h-3.5 w-3.5" /> Filtro{nFiltros > 0 && ` · ${nFiltros}`}
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex w-[22rem] flex-wrap gap-2 p-3">
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Responsável" chave="responsaveis" opcoes={equipe} Icone={Users} tom="azul" />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Status" chave="status" opcoes={status} Icone={CircleDot} tom="violeta" />
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Prioridade" chave="prioridades" opcoes={PRIORIDADES.map((p) => ({ id: p, nome: ROTULO_PRIORIDADE[p] }))} Icone={Flag} tom="âmbar" />
@@ -168,6 +175,8 @@ export function BarraFiltros({
           className={`${botao} border-borda bg-white text-texto-2`}
         />
       )}
+        </PopoverContent>
+      </Popover>
       <form
         onSubmit={(e) => {
           e.preventDefault()

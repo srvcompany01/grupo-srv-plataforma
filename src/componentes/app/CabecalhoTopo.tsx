@@ -7,6 +7,7 @@ import { LogoGrupo } from '@/componentes/Marca'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
 import { AtalhosDialog } from './AtalhosDialog'
+import { MenuPerfil } from './MenuPerfil'
 import { AtalhosGlobais } from './AtalhosGlobais'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
 import { PaletaComandos } from './PaletaComandos'
@@ -38,7 +39,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         </SheetContent>
       </Sheet>
 
-      <Link href="/home" aria-label="Grupo SRV, ir para a Home" className="flex shrink-0 items-center rounded-md px-1.5 py-1 hover:bg-ink/10">
+      <Link href="/home" aria-label="Grupo SRV, ir para a Home" className="flex h-7 shrink-0 items-center rounded-md bg-ink/5 px-2 hover:bg-ink/10">
         <LogoGrupo altura="h-4" />
       </Link>
 
@@ -46,7 +47,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         type="button"
         onClick={abrirPaleta}
         aria-label="Pesquisar (⌘K)"
-        className="controle mx-auto hidden h-7 w-full max-w-sm items-center gap-1 rounded-full border border-borda bg-white px-2 text-destaque font-medium text-texto-3 transition-colors hover:bg-hover sm:flex"
+        className="controle mx-auto hidden h-7 w-full max-w-[360px] items-center gap-1 rounded-full border border-borda bg-white px-2 text-destaque font-medium text-texto-3 transition-colors hover:bg-hover sm:flex"
       >
         <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className="flex-1 text-left">Pesquisar</span>
@@ -58,6 +59,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         <Link href="/inicio" aria-label="Minhas tarefas" title="Minhas tarefas (I)" className={botaoIcone}><ListChecks className="h-4 w-4" /></Link>
         <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={botaoIcone}><CalendarDays className="h-4 w-4" /></Link>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
+        <MenuPerfil nome={painel.nome} papel={painel.papel} className="ml-1 flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-marca" />
       </div>
 
       <AtalhosGlobais aoAbrirPaleta={abrirPaleta} aoAbrirAjuda={abrirAjuda} />

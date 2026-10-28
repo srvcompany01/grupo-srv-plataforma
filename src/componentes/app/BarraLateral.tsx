@@ -27,7 +27,8 @@ import {
   TrendingUp,
   MapPin,
   Radar,
-  Shapes,
+  Grip,
+  Rocket,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -56,12 +57,12 @@ type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: 
 /** Atalhos dos módulos: na faixa de ícones (desktop) e no topo do menu (celular). `curto` = rótulo da faixa. */
 export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
   return [
-    { id: 'home', href: '/home', rotulo: 'Home', curto: 'Home', Icone: House },
+    { id: 'home', href: '/home', rotulo: 'Home', curto: 'Início', Icone: House },
     { id: 'tarefas', href: '/inicio', rotulo: 'Minhas tarefas', curto: 'Tarefas', Icone: CheckSquare },
     { id: 'chat', href: '/chat', rotulo: 'Chat', curto: 'Chat', Icone: MessagesSquare, contador: chatNaoLidas },
-    { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Agenda', Icone: CalendarDays },
+    { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Planejador', Icone: CalendarDays },
     { id: 'agendamentos', href: '/agendamentos', rotulo: 'Agendamentos', curto: 'Posts', Icone: CalendarClock },
-    { id: 'painel', href: '/painel-de-gestao', rotulo: 'Painel de Gestão', curto: 'Painel', Icone: LayoutDashboard },
+    { id: 'painel', href: '/painel-de-gestao', rotulo: 'Painel de Gestão', curto: 'Painéis', Icone: LayoutDashboard },
     { id: 'clientes', href: '/clientes', rotulo: 'Clientes', curto: 'Clientes', Icone: Users },
     { id: 'anuncios', href: '/anuncios', rotulo: 'Anúncios', curto: 'Anúncios', Icone: Megaphone },
     { id: 'insights', href: '/insights', rotulo: 'Insights', curto: 'Insights', Icone: ChartNoAxesCombined },
@@ -70,15 +71,15 @@ export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Perform.', Icone: TrendingUp },
     { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
     { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
-    { id: 'time', href: '/time', rotulo: 'Time', curto: 'Time', Icone: UsersRound },
+    { id: 'time', href: '/time', rotulo: 'Time', curto: 'Equipes', Icone: UsersRound },
     { id: 'blog', href: '/editor-blog', rotulo: 'Blog', curto: 'Blog', Icone: Newspaper },
-    { id: 'documentos', href: '/documentos', rotulo: 'Documentos', curto: 'Docs', Icone: FileText },
+    { id: 'documentos', href: '/documentos', rotulo: 'Documentos', curto: 'Docum.', Icone: FileText },
     { id: 'quadros', href: '/quadros', rotulo: 'Quadros', curto: 'Quadros', Icone: PenTool },
     { id: 'funis', href: '/funis', rotulo: 'Funis', curto: 'Funis', Icone: Filter },
     ...(papel === 'admin'
       ? [
           { id: 'financeiro', href: '/financeiro', rotulo: 'Financeiro', curto: 'Financeiro', Icone: Wallet },
-          { id: 'formularios', href: '/config/formularios', rotulo: 'Formulários', curto: 'Forms', Icone: ClipboardList },
+          { id: 'formularios', href: '/config/formularios', rotulo: 'Formulários', curto: 'Formulár.', Icone: ClipboardList },
           { id: 'config', href: '/config', rotulo: 'Configurações', curto: 'Config.', Icone: Settings },
         ]
       : []),
@@ -91,12 +92,13 @@ const estaEm = (caminho: string, href: string) => caminho === href || caminho.st
  * Atalhos da barra lateral: os de uso diário ficam soltos no topo; os grupos ficam recolhidos e abrem por uma setinha.
  * Módulo novo entra no grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto abaixo dos grupos.
  */
+const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
+/** Fica no painel "Início" (e no topo), não na faixa. */
+const NO_PAINEL_INICIO = ['tarefas', 'agendamentos', 'reunioes']
+/** Todo o resto abre pelo botão "Mais", como no ClickUp. */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
-  { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'agendamentos', 'blog'] },
-  { id: 'gestao', rotulo: 'Gestão', curto: 'Gestão', Icone: LayoutDashboard, itens: ['painel', 'clientes', 'projetos', 'time', 'reunioes', 'financeiro'] },
-  { id: 'ferramentas', rotulo: 'Ferramentas', curto: 'Ferram.', Icone: Shapes, itens: ['documentos', 'quadros', 'funis', 'formularios'] },
+  { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
 ]
-const SOLTOS_NO_TOPO = ['home', 'tarefas', 'chat', 'agenda']
 
 const botaoFaixa = 'relative flex w-full flex-col items-center gap-0.5 rounded-lg px-0.5 py-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white'
 const ativoFaixa = 'bg-white text-[#d80d12] hover:bg-white hover:text-[#d80d12]'
@@ -105,7 +107,7 @@ const ativoFaixa = 'bg-white text-[#d80d12] hover:bg-white hover:text-[#d80d12]'
  * Faixa estreita de ícones (desktop, 64px, escura): atalhos soltos no topo, grupos que abrem um menu ao lado e, no pé,
  * tema claro/escuro, Configurações e o perfil. Os atalhos se reorganizam arrastando (a ordem fica em cookie).
  */
-export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], tema }: Pick<PropsPainel, 'papel' | 'nome' | 'chatNaoLidas' | 'ordemInicio' | 'tema'>) {
+export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }: Pick<PropsPainel, 'papel' | 'nome' | 'chatNaoLidas' | 'ordemInicio' | 'tema'>) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   // O menu vale só para a página em que foi aberto: navegar já fecha, sem efeito.
@@ -117,8 +119,10 @@ export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], 
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
   const porId = new Map(atalhos.map((a) => [a.id, a]))
   const agrupados = new Set(GRUPOS_FAIXA.flatMap((g) => g.itens))
-  const soltosTopo = SOLTOS_NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-  const soltosFim = atalhos.filter((a) => !SOLTOS_NO_TOPO.includes(a.id) && !agrupados.has(a.id) && a.id !== 'config')
+  // "Espaços" não é página: abre e fecha o painel dos espaços.
+  porId.set('espacos', { id: 'espacos', href: '#espacos', rotulo: 'Espaços', curto: 'Espaços', Icone: Rocket })
+  const soltosTopo = NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
+  const soltosFim = atalhos.filter((a) => !NO_TOPO.includes(a.id) && !NO_PAINEL_INICIO.includes(a.id) && !agrupados.has(a.id) && a.id !== 'config')
   // Fecha ao clicar fora ou com Esc.
   useEffect(() => {
     if (!aberto) return
@@ -128,7 +132,12 @@ export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], 
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
   }, [aberto])
-  const itemFaixa = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => (
+  const itemFaixa = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => id === 'espacos' ? (
+    <button key={id} type="button" title={rotulo} onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} className={botaoFaixa}>
+      <Icone className="h-5 w-5" />
+      <span className="w-full truncate text-center text-micro leading-3 font-semibold">{curto}</span>
+    </button>
+  ) : (
     <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botaoFaixa} ${ativoEm(href) ? ativoFaixa : ''}`}>
       <Icone className="h-5 w-5" />
       <span className="w-full truncate text-center text-micro leading-3 font-semibold">{curto}</span>
@@ -182,7 +191,6 @@ export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], 
       <div className="space-y-0.5 border-t border-white/15 pt-1.5">
         <AlternarTema inicial={tema} className={botaoFaixa} />
         {config && itemFaixa(config)}
-        <MenuPerfil nome={nome} papel={papel} className="flex w-full items-center justify-center rounded-lg py-2 outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60" />
       </div>
     </nav>
   )
@@ -366,6 +374,17 @@ export function PainelEspacos({ navegacao, papel, nome, cronometro, fechados: fe
     <Recolhidos.Provider value={recolhimento}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
+        {!comAtalhos && (
+          <>
+            <div className="flex h-7 items-center px-2">
+              <h2 className="min-w-0 flex-1 text-corpo font-semibold text-lat-fg">Início</h2>
+            </div>
+            <nav className="space-y-0.5">
+              {['home', 'tarefas', 'agenda', ...NO_PAINEL_INICIO.filter((id) => id !== 'tarefas')].filter((id, i, l) => l.indexOf(id) === i).map((id) => atalhos.find((a) => a.id === id)).filter((a): a is Atalho => !!a).map((a) => <div key={a.id}>{link(a.href, a.rotulo, a.Icone, a.contador)}</div>)}
+            </nav>
+            <div className="mx-2 my-3 border-t border-lat-borda" />
+          </>
+        )}
         {comAtalhos && (
           <>
             <div className="flex h-7 items-center px-2">
