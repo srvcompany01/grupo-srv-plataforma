@@ -24,7 +24,7 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
   const painel = { navegacao, papel: eu.papel, cronometro, chatNaoLidas, fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value), ordemInicio: lerOrdem(jar.get(COOKIE_ORDEM_INICIO)?.value) }
   // Cabeçalho do topo e, abaixo dele, a faixa de atalhos, a barra dos espaços e o conteúdo.
   return (
-    <div className="flex min-h-dvh bg-fundo">
+    <div className="app-ui flex min-h-dvh bg-fundo">
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
       <style>{cssTema(tema)}</style>
       <div className="flex min-w-0 flex-1 flex-col">

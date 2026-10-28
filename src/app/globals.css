@@ -314,7 +314,7 @@ body {
  * e controles em pílula. Só muda a aparência; vale para tudo que estiver dentro da página.
  */
 .relatorio {
-  --rel-canvas: #f0f2f9;
+  --rel-canvas: #f4f4f5;
   --rel-escuro: #3e3d56;
   --rel-limao: #b9f56b;
   --rel-lavanda: #a99bd6;
@@ -323,13 +323,8 @@ body {
   --rel-sombra: 0 24px 44px -26px rgba(62, 61, 86, 0.28), 0 2px 6px rgba(62, 61, 86, 0.04);
   min-height: 100%;
   background: var(--rel-canvas);
-  font-family: var(--font-outfit), var(--font-sans);
   font-size: 14px;
 }
-.relatorio :is(.text-rotulo, .text-corpo, .text-legenda, .text-micro, .text-destaque) { font-family: inherit; }
-.relatorio .page-title { font-family: inherit; font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.relatorio .eyebrow { text-transform: none; letter-spacing: 0; font-size: 13px; }
-.relatorio :is(h2, h3) { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8125rem; }
 .relatorio h4 { font-weight: 600; letter-spacing: 0.03em; }
 .relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-bold,
 .relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-semibold,
@@ -347,7 +342,7 @@ body {
 .relatorio :is(.surface-card, .bg-white) :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
   border-color: transparent;
   border-radius: 1.25rem;
-  background: #f3f4fa;
+  background: #f4f4f5;
   box-shadow: none;
 }
 /* Quadrinhos de ícone (os que têm cor própria por estilo inline) viram quadrados arredondados. */
@@ -377,3 +372,10 @@ body {
 .relatorio :is(.controle, select, input:not([type='checkbox'], [type='radio'], [type='color'], [type='range'])):not(textarea) { border-radius: 9999px; }
 .relatorio [role='switch'][aria-checked='true'] { background: var(--rel-escuro); }
 .relatorio table thead :is(th, td) { font-size: 11px; font-weight: 500; color: var(--color-texto-3); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tipografia da plataforma inteira (área logada, incluindo menus e diálogos): Outfit, títulos em caixa-alta espaçada. */
+body:has(.app-ui) { font-family: var(--font-outfit), var(--font-sans); }
+body:has(.app-ui) :is(.text-rotulo, .text-corpo, .text-legenda, .text-micro, .text-destaque, button, input, select, textarea) { font-family: inherit; }
+body:has(.app-ui) .page-title { font-family: inherit; font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+body:has(.app-ui) .eyebrow { text-transform: none; letter-spacing: 0; font-size: 13px; font-family: inherit; }
+body:has(.app-ui) :is(h2, h3):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8125rem; }
