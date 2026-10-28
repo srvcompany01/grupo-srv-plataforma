@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Check, X, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
+import { Calendar, Check, ChevronRight, X, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -16,7 +16,7 @@ import type { Opcao } from './TelaTarefa'
 
 function Linha({ icone: Icone, titulo, children }: { icone: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
   return (
-    <div className="grid min-h-9 grid-cols-[130px_1fr] items-center gap-2 text-corpo">
+    <div className="grid min-h-[30px] grid-cols-[108px_1fr] items-center gap-2 text-corpo">
       <span className="flex items-center gap-2 text-texto-2">
         <Icone className="h-4 w-4 shrink-0 text-texto-3" />
         {titulo}
@@ -61,6 +61,7 @@ export function GradePropriedades({
   const salvar = (campos: Parameters<typeof atualizarTarefaAcao>[1]) => iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, campos)))
   const atual = status.find((s) => s.id === t.statusId)
   const concluido = status.find((s) => s.categoria === 'done')
+  const proximo = status[status.findIndex((s) => s.id === t.statusId) + 1]
   const vencida = !!t.prazo && !t.concluidaEm && t.prazo < hoje
   const horas = t.estimativaMin != null ? Math.floor(t.estimativaMin / 60) : ''
   const minutos = t.estimativaMin != null ? t.estimativaMin % 60 : ''
@@ -73,7 +74,7 @@ export function GradePropriedades({
   }
 
   return (
-    <div className="grid gap-x-8 gap-y-1 md:grid-cols-2">
+    <div className="grid gap-x-6 gap-y-1 @2xl:grid-cols-2">
       <div className="space-y-1">
         <Linha icone={Tag} titulo="Cliente">
           <SeletorTagCliente
@@ -86,6 +87,11 @@ export function GradePropriedades({
         <Linha icone={CircleDot} titulo="Status">
           <span className="flex items-center gap-1">
             <SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={status} comNome />
+            {proximo && (
+              <button disabled={pendente} onClick={() => salvar({ statusId: proximo.id })} aria-label={`Avançar para ${proximo.nome}`} title={`Avançar para ${proximo.nome}`} className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
             {concluido && atual?.categoria !== 'done' && (
               <button
                 disabled={pendente}

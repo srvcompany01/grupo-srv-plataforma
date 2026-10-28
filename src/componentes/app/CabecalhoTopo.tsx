@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, ChevronDown, FileText, ListChecks, LogOut, Menu, Mic, Plus, Search, Settings, UsersRound } from 'lucide-react'
+import { CalendarDays, Sparkles, ChevronDown, FileText, ListChecks, LogOut, Menu, Mic, Plus, Search, Settings, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
@@ -11,6 +11,8 @@ import { AtalhosDialog } from './AtalhosDialog'
 import { MenuPerfil } from './MenuPerfil'
 import { AtalhosGlobais } from './AtalhosGlobais'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
+import { EVENTO_ABRIR_IA } from './PainelIA'
+import { papelPodeUsarIA } from '@/ia/acesso'
 import { PaletaComandos } from './PaletaComandos'
 import { SinoAvisos } from './SinoAvisos'
 
@@ -69,6 +71,9 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
       </button>
 
       <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
+        {papelPodeUsarIA(painel.papel) && (
+          <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} title="Assistente IA (⌘J)" className="mr-1 hidden h-7 items-center gap-1.5 rounded-md border border-borda bg-white px-2.5 text-corpo font-medium text-texto-2 hover:bg-hover xl:flex"><Sparkles className="h-3.5 w-3.5" /> Assistente IA</button>
+        )}
         <button type="button" onClick={abrirPaleta} aria-label="Pesquisar" className={`${botaoIcone} sm:hidden`}><Search className="h-4 w-4" /></button>
         <DropdownMenu>
           <DropdownMenuTrigger aria-label="Criar" title="Criar" className="flex h-7 items-center gap-1 rounded-md bg-petroleo pl-1.5 pr-2.5 text-corpo font-semibold text-claro transition-colors hover:bg-petroleo-700"><Plus className="h-4 w-4" /><span className="hidden sm:inline">Criar</span></DropdownMenuTrigger>

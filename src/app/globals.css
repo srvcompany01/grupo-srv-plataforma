@@ -270,7 +270,7 @@ body:has(.app-ui) {
 
 /* Área logada, tema escuro (botão sol/lua): ação em vermelho SRV com texto branco, superfícies em camadas (#0E0E10 / #18181B / #232327). */
 body:has(.app-ui[data-tema='escuro']) {
-  --tema-acao: #d80d12;
+  --tema-acao: #f4f4f5;
   --tema-acento: #ff5a5f;
   --tema-fundo: #111113;
   --tema-superficie: #161618;
@@ -307,7 +307,7 @@ body:has(.app-ui[data-tema='escuro']) {
   --foreground: #f4f4f5;
   --card-foreground: #f4f4f5;
   --popover-foreground: #f4f4f5;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #111113;
   --secondary: #232327;
   --secondary-foreground: #f4f4f5;
   --muted: #232327;
@@ -322,7 +322,7 @@ body:has(.app-ui[data-tema='escuro']) {
   --bg: #161618; --bg-frame: #0c0c0e; --bg-subtle: #111113; --bg-hover: #202023; --bg-active: #28282c; --bg-elev: #1c1c1f;
   --border-soft: #212124; --border-strong: #3b3b41;
   --text: #ededef; --text-2: #a8a8b0; --text-3: #7a7a83;
-  --on-primary: #ffffff; --primary-hover: #b30b0f;
+  --on-primary: #111113; --primary-hover: #dcdce0;
   --rail: #0a0a0b; --rail-hover: #1b1b1e; --rail-text: #8e8e96;
   --red: #ff5a5e; --red-soft: #3a1517; --client: #4d8ff0; --client-soft: #14233a; --sel: #15233a;
   --focus: #4d8ff0; --focus-ring: rgba(77,143,240,.3);
@@ -512,3 +512,8 @@ body:has(.app-ui) nav svg { stroke-width: 1.6; }
 
 /* Tipografia da área logada: pilha de sistema também nos controles, títulos e portais (menus, diálogos). */
 body:has(.app-ui) :is(button, input, select, textarea, h1, h2, h3, h4, .font-display, .page-title, .eyebrow) { font-family: inherit; }
+
+/* Tema escuro: o botão de ação é claro (invertido), então o texto sobre ele fica escuro. */
+body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro,
+body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro button,
+body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #111113; }

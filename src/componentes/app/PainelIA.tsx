@@ -91,6 +91,8 @@ export function PainelIA() {
   )
 }
 
+export const EVENTO_ABRIR_IA = 'srv:abrir-ia'
+
 /** Emma, a assistente da plataforma: botão flutuante (ou Ctrl/Cmd+J). Consulta e, com confirmação, cria tarefas e documentos. */
 function PainelIAInterno() {
   const caminho = usePathname()
@@ -123,8 +125,10 @@ function PainelIAInterno() {
         })
       }
     }
+    const abrir = () => setAberto((a) => { if (!a) lerPreferencias(setPensar, setGrande); return true })
     document.addEventListener('keydown', atalho)
-    return () => document.removeEventListener('keydown', atalho)
+    window.addEventListener(EVENTO_ABRIR_IA, abrir)
+    return () => { document.removeEventListener('keydown', atalho); window.removeEventListener(EVENTO_ABRIR_IA, abrir) }
   }, [])
   // Chaves de propósito: o efeito não pode devolver nada (se o navegador devolver uma Promise, o React tenta chamá-la e a página cai).
   useEffect(() => {

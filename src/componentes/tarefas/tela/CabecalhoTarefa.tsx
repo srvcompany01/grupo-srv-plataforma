@@ -44,11 +44,12 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-rotulo text-texto-3">
-        <span className="inline-flex items-center gap-1 rounded-md bg-hover px-2 py-1 font-medium text-texto-2">
-          <CircleDot className="h-3.5 w-3.5" /> {ehSubtarefa ? 'Subtarefa' : 'Tarefa'}
-        </span>
+    <div className="space-y-2">
+      <div className="flex h-8 items-center gap-1.5 pr-8 text-[12px] text-texto-3">
+        <CircleDot className="h-3.5 w-3.5" />
+        <Link href={`/listas/${t.lista.id}`} className="max-w-[16rem] truncate hover:text-texto">{t.lista.nome}</Link>
+        <span>/</span>
+        <span className="font-medium text-texto-2">{ehSubtarefa ? 'Subtarefa' : 'Tarefa'}</span>
         <button onClick={copiarLink} aria-label="Copiar link da tarefa" title="Copiar link" className="rounded p-1.5 hover:bg-hover hover:text-texto">
           <Link2 className="h-4 w-4" />
         </button>
@@ -102,15 +103,12 @@ export function CabecalhoTarefa({ tarefa: t, listas, podeGerir, emJanela }: { ta
           if (titulo.trim() && titulo !== t.titulo) iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, { titulo })))
         }}
         aria-label="Título"
-        className="w-full rounded px-1 text-2xl font-semibold outline-none hover:bg-hover focus:bg-hover"
+        className="w-full rounded-md border border-transparent px-1.5 py-0.5 text-[18px] font-semibold leading-snug outline-none hover:border-borda focus:border-[var(--focus)] focus:ring-3 focus:ring-[var(--focus-ring)]"
       />
 
       <div className="text-rotulo text-texto-3">
-        <Link href={`/listas/${t.lista.id}`} className="hover:text-marca">
-          {t.lista.nome}
-        </Link>
-        {t.lista.clienteNome && <> · <NomeCliente nome={t.lista.clienteNome} arroba href={t.lista.clienteId ? `/clientes/${t.lista.clienteId}` : undefined} /></>}
-        {t.lista.mes && ` · ${rotuloMes(t.lista.mes)}`}
+        {t.lista.clienteNome && <><NomeCliente nome={t.lista.clienteNome} arroba href={t.lista.clienteId ? `/clientes/${t.lista.clienteId}` : undefined} /></>}
+        {t.lista.mes && `${t.lista.clienteNome ? ' · ' : ''}${rotuloMes(t.lista.mes)}`}
       </div>
 
       <Dialog open={movendo} onOpenChange={setMovendo}>

@@ -17,7 +17,7 @@ import { iniciais } from '@/dominio/clientes-galeria'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { montarArvore, type Categoria } from '@/dominio/tarefas'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
-import { ROTULO_STATUS_CLIENTE, buscarCliente, linkDoCliente } from '@/servicos/clientes-plataforma'
+import { ROTULO_STATUS_CLIENTE, buscarCliente, linkDoCliente, listarClientes } from '@/servicos/clientes-plataforma'
 import { statusDasListas } from '@/servicos/listas'
 import { listarTarefas } from '@/servicos/tarefas'
 import { listarEquipe } from '@/servicos/usuarios'
@@ -32,6 +32,13 @@ import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { relatoriosDoCliente } from '@/servicos/relatorio-compartilhado'
 import { SeletorCapa } from './SeletorCapa'
 import { SeletorLogo } from './SeletorLogo'
+
+const ABAS = [
+  { id: 'visao', rotulo: 'Visão geral' },
+  { id: 'tarefas', rotulo: 'Tarefas' },
+  { id: 'relatorio', rotulo: 'Relatório' },
+  { id: 'acessos', rotulo: 'Acessos' },
+] as const
 
 export default async function Cliente({ params, searchParams }: PageProps<'/clientes/[cliente]'>) {
   const { cliente: id } = await params
@@ -51,7 +58,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   // Visão por cliente: o trabalho dele em todos os departamentos, uma seção por departamento (lista).
   const hoje = dataDeHoje(new Date())
   const periodo = lerPeriodo(sp, hoje)
-  const seletor = <SeletorPeriodo base={`/clientes/${id}`} periodo={periodo} hoje={hoje} />
+  const pedida = Array.isArray(sp.aba) ? sp.aba[0] : sp.aba
+  const aba = ABAS.find((a) => a.id === pedida)?.id ?? 'visao'
+  const seletor = <SeletorPeriodo base={aba === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${aba}`} periodo={periodo} hoje={hoje} />
   const [tarefas, equipe] = await Promise.all([listarTarefas(sb, { todas: true }, { ...lerFiltros({}), clientes: [id] }, hoje), listarEquipe(sb)])
   const statusPorLista = await statusDasListas(sb, [...new Set(tarefas.map((t) => t.listaId))])
   const categoria = (t: { listaId: string; statusId: string }): Categoria => statusPorLista[t.listaId]?.find((s) => s.id === t.statusId)?.categoria ?? 'todo'
@@ -60,6 +69,20 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   const ctx = { equipe, hoje, statusPorLista, mostrarLista: false }
 
   const totalTarefas = arvore.length
+  const lista = (await listarClientes(sb).catch(() => [])).filter((c) => !c.interno)
+  const abertasPorCliente = new Map<string, number>()
+  if (lista.length) {
+    for (const t of await listarTarefas(sb, { todas: true }, lerFiltros({}), hoje).catch(() => [])) if (!t.paiId && !t.concluidaEm && t.clienteId) abertasPorCliente.set(t.clienteId, (abertasPorCliente.get(t.clienteId) ?? 0) + 1)
+  }
+  const raizes = tarefas.filter((t) => !t.paiId)
+  const doMes = raizes.filter((t) => t.prazo?.startsWith(hoje.slice(0, 7)))
+  const emAtraso = raizes.filter((t) => !t.concluidaEm && categoria(t) !== 'done' && t.prazo && t.prazo < hoje).length
+  const indicadores = [
+    { rotulo: 'Posts no mês', valor: doMes.length, vermelho: false },
+    { rotulo: 'Aprovados ou publicados', valor: doMes.filter((t) => t.concluidaEm || categoria(t) === 'done').length, vermelho: false },
+    { rotulo: 'Em atraso', valor: emAtraso, vermelho: emAtraso > 0 },
+    { rotulo: 'Tarefas abertas', valor: raizes.filter((t) => !t.concluidaEm && categoria(t) !== 'done').length, vermelho: false },
+  ]
 
   return (
     <div>
@@ -69,7 +92,32 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         <h2 className="truncate text-destaque font-bold text-[var(--client)]">{cliente.nome}</h2>
         <span className="rounded bg-[var(--bg-active)] px-1.5 text-legenda font-semibold text-texto-2">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
       </div>
-      <div className="space-y-4 p-3">
+      <div>
+      <div className="flex items-start">
+        <aside className="sticky top-10 hidden max-h-[calc(100dvh-122px)] w-[220px] shrink-0 overflow-y-auto border-r border-borda-fraca bg-[var(--bg-subtle)] p-2 lg:block" aria-label="Clientes">
+          {lista.map((c) => (
+            <Link key={c.id} href={`/clientes/${c.id}${aba === 'visao' ? '' : `?aba=${aba}`}`} className={`flex h-8 items-center justify-between gap-2 rounded px-2 text-corpo hover:bg-hover ${c.id === id ? 'bg-[var(--bg-active)]' : ''}`}>
+              <span className="truncate font-bold text-[var(--client)]">{c.nome}</span>
+              {abertasPorCliente.get(c.id) ? <span className="text-rotulo tabular-nums text-texto-3">{abertasPorCliente.get(c.id)}</span> : null}
+            </Link>
+          ))}
+        </aside>
+        <div className="min-w-0 flex-1 space-y-4 p-3">
+          <nav className="flex gap-1 border-b border-borda-fraca" aria-label="Seções do cliente">
+            {ABAS.map((a) => (
+              <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined} className={`h-9 border-b-2 px-2 text-corpo leading-9 ${aba === a.id ? 'border-texto font-semibold text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>{a.rotulo}</Link>
+            ))}
+          </nav>
+          {aba === 'visao' && (
+            <div className="max-w-[1100px] space-y-4">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                {indicadores.map((i) => (
+                  <div key={i.rotulo} className="rounded-lg border border-borda px-3 py-2.5">
+                    <p className="text-rotulo text-texto-2">{i.rotulo}</p>
+                    <p className={`text-xl font-semibold tabular-nums ${i.vermelho ? 'text-[var(--red)]' : ''}`}>{i.valor}</p>
+                  </div>
+                ))}
+              </div>
       <header className="overflow-hidden rounded-lg border border-borda bg-white">
         <div className="relative h-28 w-full md:h-36" style={{ background: cliente.cor }}>
           {capa?.url ? (
@@ -96,9 +144,19 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         </div>
         {podeGerir && <div className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>
-
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-4">
+              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)]">
+                <div className="min-w-0 space-y-4">
+                  <Modulo icone={LayoutGrid} titulo="Dados do cliente" descricao="Campos do cliente; os marcados aparecem no cartão da galeria">
+                    <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
+                  </Modulo>
+                </div>
+                <div className="space-y-4">
+                    <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
+                </div>
+              </div>
+            </div>
+          )}
+          {aba === 'tarefas' && <div className="space-y-4">
         <Modulo
           icone={ListChecks}
           titulo="Trabalho por departamento"
@@ -129,6 +187,8 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </div>
           )}
         </Modulo>
+          </div>}
+          {aba === 'relatorio' && <div className="space-y-4">
         {!cliente.interno && (cliente.metaPaginaId || cliente.metaContaId || cliente.googleAdsId) && (
           <Suspense fallback={<Modulo icone={BarChart3} titulo="Relatório do cliente" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Montando o relatório (pago, orgânico e os dois juntos)…</p></Modulo>}>
             <CarregarRelatorio cliente={cliente} periodo={periodo} seletor={seletor} />
@@ -161,13 +221,8 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             <GoogleNegocio clienteId={id} perfil={cliente.googlePerfil} perfilNome={cliente.googlePerfilNome} periodo={periodo} seletor={seletor} podeGerir={podeGerir} />
           </Suspense>
         )}
-        </div>
-
-        <div className="space-y-4">
-          <Modulo icone={LayoutGrid} titulo="Informações da galeria" descricao="Campos do cliente; os marcados aparecem no cartão da galeria">
-            <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
-          </Modulo>
-          <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
+          </div>}
+          {aba === 'acessos' && <div className="max-w-[720px] space-y-4">
           <Modulo icone={IdCard} titulo="Cadastro" descricao="Dados do cliente e as ligações com o Meta e o Google Ads">
             <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={podeGerir} embutido />
           </Modulo>
@@ -177,6 +232,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </Modulo>
           )}
           {admin && !cliente.interno && <ExcluirCliente clienteId={id} nome={cliente.nome} />}
+          </div>}
         </div>
       </div>
       </div>
