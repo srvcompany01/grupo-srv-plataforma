@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, ChevronRight, CircleCheck, PartyPopper, TriangleAlert } from 'lucide-react'
+import { ArrowRight, ChevronRight, PartyPopper, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { NomeCliente } from '@/componentes/NomeCliente'
@@ -22,7 +22,6 @@ const SEMANA = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 const DIAS_A_FRENTE = 14
 const formatar = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('pt-BR', { ...o, timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
 const rotuloDia = (dia: string, hoje: string) => (dia === hoje ? 'Hoje' : dia === somarDias(hoje, 1) ? 'Amanhã' : formatar(dia, { day: '2-digit', month: 'short' }))
-const cartao = 'rounded-[20px] border border-borda bg-white p-5 shadow-cartao'
 
 export default async function Home() {
   const eu = await exigirEquipe()
@@ -77,171 +76,170 @@ export default async function Home() {
     ...(pausados ? [{ texto: <><b>{pausados}</b> cliente{pausados > 1 ? 's' : ''} pausado{pausados > 1 ? 's' : ''}.</>, href: '/clientes' }] : []),
   ]
 
+  // Blocos de resumo e colunas extras do panorama.
+  const nomeStatus = (t: { listaId: string; statusId: string }) => statusPorLista[t.listaId]?.find((s) => s.id === t.statusId)?.nome ?? ''
+  const abertasTodas = todasTarefas.filter((t) => !t.paiId && !t.concluidaEm && categoria(t) !== 'done')
+  const aguardando = abertasTodas.filter((t) => /aprova/i.test(nomeStatus(t)) && !/aprovado/i.test(nomeStatus(t)))
+  const aprovacaoDe = (id: string) => aguardando.filter((t) => t.clienteId === id).length
+  const proximaEntrega = (id: string) => abertasTodas.filter((t) => t.clienteId === id && t.prazo && t.prazo >= hoje).map((t) => t.prazo as string).sort()[0]
+  const responsavelDe = (id: string) => {
+    const cont = new Map<string, { nome: string; n: number }>()
+    for (const t of abertasTodas.filter((x) => x.clienteId === id)) for (const r of t.responsaveis) cont.set(r.id, { nome: r.nome, n: (cont.get(r.id)?.n ?? 0) + 1 })
+    return [...cont.values()].sort((a, b) => b.n - a.n)[0]?.nome ?? '—'
+  }
+  const reunioesHoje = eventos.filter((e) => dataLocal(e.inicio) === hoje)
+  const blocos = [
+    { rotulo: 'Minhas tarefas abertas', valor: pendentes.length, meta: `${paraHoje} para hoje`, href: '/inicio', vermelho: false },
+    { rotulo: 'Em atraso', valor: atrasadas, meta: `${atrasadasDaOperacao} na operação`, href: '/inicio', vermelho: atrasadas > 0 },
+    { rotulo: 'Aguardando aprovação', valor: aguardando.length, meta: 'em todos os clientes', href: '/painel-de-gestao', vermelho: false },
+    { rotulo: 'Reuniões hoje', valor: reunioesHoje.length, meta: reunioesHoje[0] ? `próxima às ${horaLocal(reunioesHoje[0].inicio)}` : 'nenhuma agendada', href: '/reunioes', vermelho: false },
+  ]
+  const cab = 'sticky top-0 z-10 flex h-10 items-center justify-between border-b border-borda-fraca bg-white px-3'
+
   return (
-    <div className="home-ui min-h-full p-4 md:p-6">
-      <div className="grid w-full gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-12 xl:col-span-5"><BoasVindas nome={eu.nome} atrasadas={atrasadas} hoje={paraHoje} semana={semana} /></div>
+    <div className="home-ui min-h-full">
+      <header className={cab}>
+        <h1 className="text-destaque font-semibold">Home</h1>
+        <span className="text-rotulo capitalize text-texto-3">{formatar(hoje, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+      </header>
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 pb-12 pt-4 max-md:px-3">
+        <BoasVindas nome={eu.nome} atrasadas={atrasadas} hoje={paraHoje} semana={semana} />
 
-        <section className={`${cartao} lg:col-span-7 xl:col-span-4`}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="home-titulo">Minhas tarefas</h2>
-            <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-9 w-9 items-center justify-center rounded-full border border-borda text-texto-2 transition hover:bg-ink/5"><ArrowRight className="h-4 w-4" /></Link>
-          </div>
-          <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-acento)] p-5 text-claro">
-            <div>
-              <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--h-acento)]"><CircleCheck className="h-5 w-5" /></span>
-              <p className="text-3xl font-medium leading-none">{emDia}%</p>
-              <p className="mt-1 text-rotulo text-claro/75">em dia · {pendentes.length} pendente{pendentes.length === 1 ? '' : 's'}</p>
-            </div>
-            <Medidor pct={emDia} total={pendentes.length} />
-          </div>
-          {lista.length === 0 ? (
-            <p className="px-1 pt-4 text-corpo text-texto-3">Nada urgente por enquanto.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {lista.map((t) => {
-                const atrasada = !!t.prazo && t.prazo < hoje
-                return (
-                  <li key={t.id}>
-                    <Link href={`/tarefas/${t.id}`} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-2.5 transition hover:bg-ink/5">
-                      <span className="min-w-0">
-                        <span className="block truncate text-corpo font-medium text-texto">{t.titulo}</span>
-                        <NomeCliente nome={t.clienteNome} className="text-rotulo" />
-                      </span>
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-legenda font-medium ${atrasada ? 'bg-[var(--h-acento)] text-claro' : 'bg-ink/5 text-texto-3'}`}>
-                        {t.prazo === hoje ? 'Hoje' : t.prazo ? formatar(t.prazo, { day: '2-digit', month: 'short' }) : ''}
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className={`${cartao} lg:col-span-5 xl:col-span-3`}>
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--h-palido)] text-[var(--h-acento)]"><CalendarDays className="h-4 w-4" /></span>
-              <h2 className="home-titulo">Agenda</h2>
-            </div>
-            <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-9 w-9 items-center justify-center rounded-full border border-borda text-texto-2 transition hover:bg-ink/5"><ChevronRight className="h-4 w-4" /></Link>
-          </div>
-          {proximos.length === 0 ? (
-            <p className="text-corpo text-texto-3">Nenhum compromisso nos próximos {DIAS_A_FRENTE} dias.</p>
-          ) : (
-            <ol className="relative space-y-5 pl-8 before:absolute before:bottom-2 before:left-[0.4375rem] before:top-2 before:w-px before:bg-ink/20">
-              {proximos.map((e, i) => (
-                <li key={e.id} className="relative">
-                  <span className={`absolute -left-8 top-1 h-3.5 w-3.5 rounded-full border ${i === 0 ? 'border-[var(--h-acento)] bg-[var(--h-acento)]' : 'border-borda-forte bg-white'}`} />
-                  <p className="text-corpo font-medium text-texto">{rotuloDia(dataLocal(e.inicio), hoje)}</p>
-                  <p className="text-rotulo text-texto-3"><span className="tabular-nums">{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span> · {e.titulo}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-
-        <div className="lg:col-span-12 xl:col-span-8">
-          <Suspense fallback={<ResumoMesCarregando />}>
-            <ResumoMes clientes={ativos} mes={mes} hoje={hoje} />
-          </Suspense>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
+          {blocos.map((b) => (
+            <Link key={b.rotulo} href={b.href} className="rounded-lg border border-borda px-3 py-2.5 transition-colors hover:border-borda-forte">
+              <p className="text-rotulo text-texto-2">{b.rotulo}</p>
+              <p className={`text-xl font-semibold tabular-nums ${b.vermelho ? 'text-[var(--red)]' : ''}`}>{b.valor}</p>
+              <p className="text-rotulo text-texto-3">{b.meta}</p>
+            </Link>
+          ))}
         </div>
 
-        <section className={`${cartao} lg:col-span-12 xl:col-span-4`}>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-[14px] bg-[var(--h-escuro)] p-4 text-claro" aria-label="Calendário do mês">
-              <p className="mb-2 text-center text-rotulo font-medium capitalize">{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>
-              <div className="grid grid-cols-7 gap-y-0.5 text-center text-legenda">
-                {SEMANA.map((d, i) => <span key={i} className="text-claro/50">{d}</span>)}
+        {atencao.length > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {atencao.map((a, i) => (
+              <li key={i}><Link href={a.href} className="inline-flex h-7 items-center gap-1.5 rounded-md border border-borda px-2.5 text-rotulo text-texto-2 transition-colors hover:bg-hover"><TriangleAlert className="h-3.5 w-3.5 text-[var(--red)]" />{a.texto}</Link></li>
+            ))}
+          </ul>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-[1.7fr_minmax(300px,1fr)]">
+          <section className="min-w-0 rounded-lg border border-borda">
+            <div className="flex h-10 items-center justify-between px-3">
+              <h2 className="text-corpo font-semibold">Panorama dos clientes</h2>
+              <Link href="/clientes" className="inline-flex h-6 items-center rounded px-2 text-rotulo text-texto-2 hover:bg-hover">Ver Clientes</Link>
+            </div>
+            {clientesEmFoco.length === 0 ? (
+              <p className="px-3 pb-3 text-corpo text-texto-3">Sem tarefas de clientes para mostrar.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="min-w-[680px]">
+                  <div className="grid h-7 grid-cols-[minmax(140px,1.4fr)_minmax(90px,1fr)_64px_76px_80px_96px_minmax(100px,1fr)] items-center border-y border-borda-fraca bg-[var(--bg-subtle)] px-3 text-[11px] font-medium text-texto-3">
+                    <span>Cliente</span><span>Responsável</span><span>Abertas</span><span>Em atraso</span><span>Aprovação</span><span>Próx. entrega</span><span>Progresso do mês</span>
+                  </div>
+                  {clientesEmFoco.map((l) => {
+                    const c = clientes.find((x) => x.id === l.id)
+                    const pronto = l.total ? Math.round((l.concluidas / l.total) * 100) : 0
+                    const prox = proximaEntrega(l.id)
+                    return (
+                      <Link key={l.id} href={`/clientes/${l.id}`} className="grid h-9 grid-cols-[minmax(140px,1.4fr)_minmax(90px,1fr)_64px_76px_80px_96px_minmax(100px,1fr)] items-center border-b border-borda-fraca px-3 text-corpo transition-colors last:border-b-0 hover:bg-hover">
+                        <span className="min-w-0 truncate"><NomeCliente nome={l.nome} className="truncate" />{c && c.status !== 'ativo' && <span className="ml-1.5 text-legenda text-texto-3">{ROTULO_STATUS_CLIENTE[c.status]}</span>}</span>
+                        <span className="truncate text-texto-2">{responsavelDe(l.id)}</span>
+                        <span className="tabular-nums">{l.total - l.concluidas}</span>
+                        <span className={`tabular-nums ${l.atrasadas ? 'font-semibold text-[var(--red)]' : 'text-texto-3'}`}>{l.atrasadas}</span>
+                        <span className="tabular-nums text-texto-2">{aprovacaoDe(l.id)}</span>
+                        <span className="text-texto-2">{prox ? formatar(prox, { day: '2-digit', month: 'short' }) : '—'}</span>
+                        <span className="flex items-center gap-2" title={`${pronto}% concluído`}>
+                          <span className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--bg-active)]"><span className="block h-full rounded-full bg-texto" style={{ width: `${pronto}%` }} /></span>
+                          <span className="w-8 text-right text-rotulo tabular-nums text-texto-2">{pronto}%</span>
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="flex min-w-0 flex-col gap-4">
+            <section className="rounded-lg border border-borda">
+              <div className="flex h-10 items-center justify-between px-3">
+                <h2 className="text-corpo font-semibold">Agenda de hoje</h2>
+                <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-6 w-6 items-center justify-center rounded text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
+              </div>
+              {proximos.length === 0 ? (
+                <p className="px-3 pb-3 text-corpo text-texto-3">Nenhum compromisso nos próximos {DIAS_A_FRENTE} dias.</p>
+              ) : (
+                <ul>
+                  {proximos.map((e) => (
+                    <li key={e.id} className="flex items-baseline gap-3 border-t border-borda-fraca px-3 py-2">
+                      <span className="w-14 shrink-0 text-rotulo font-semibold tabular-nums">{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span>
+                      <span className="min-w-0"><span className="block truncate text-corpo">{e.titulo}</span><span className="text-rotulo text-texto-3">{rotuloDia(dataLocal(e.inicio), hoje)}</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="rounded-lg border border-borda">
+              <div className="flex h-10 items-center justify-between px-3">
+                <h2 className="text-corpo font-semibold">Minhas tarefas</h2>
+                <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-6 w-6 items-center justify-center rounded text-texto-2 hover:bg-hover"><ArrowRight className="h-4 w-4" /></Link>
+              </div>
+              {lista.length === 0 ? (
+                <p className="px-3 pb-3 text-corpo text-texto-3">Nada urgente por enquanto.</p>
+              ) : (
+                <ul>
+                  {lista.map((t) => {
+                    const atrasada = !!t.prazo && t.prazo < hoje
+                    return (
+                      <li key={t.id}>
+                        <Link href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-2 border-t border-borda-fraca px-3 transition-colors hover:bg-hover">
+                          <span className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[var(--border-strong)]" />
+                          <span className="min-w-0 flex-1 truncate text-corpo">{t.titulo}</span>
+                          <NomeCliente nome={t.clienteNome} className="shrink-0 text-rotulo" />
+                          <span className={`w-14 shrink-0 text-right text-rotulo ${atrasada ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo === hoje ? 'Hoje' : t.prazo ? formatar(t.prazo, { day: '2-digit', month: 'short' }) : ''}</span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
+          </div>
+        </div>
+
+        <Suspense fallback={<ResumoMesCarregando />}>
+          <ResumoMes clientes={ativos} mes={mes} hoje={hoje} />
+        </Suspense>
+
+        <section className="rounded-lg border border-borda p-3" aria-label="Calendário do mês">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,320px)_1fr]">
+            <div>
+              <p className="mb-1 text-center text-corpo font-semibold capitalize">{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>
+              <div className="grid grid-cols-7 gap-y-0.5 text-center text-rotulo">
+                {SEMANA.map((d, i) => <span key={i} className="text-texto-3">{d}</span>)}
                 {grade.map((dia) => {
                   const doMes = dia.startsWith(mes)
                   const feriado = feriados.get(dia)
                   return (
-                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[var(--h-acento)] font-semibold text-claro' : doMes ? (feriado ? 'font-semibold text-[#b38cff]' : '') : 'text-claro/25'}`}>
+                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[#d80d12] font-semibold text-white' : doMes ? (feriado ? 'font-semibold text-[var(--client)]' : '') : 'text-texto-3/50'}`}>
                       {Number(dia.slice(8))}
-                      {comEvento.has(dia) && <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-white" />}
+                      {comEvento.has(dia) && <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-texto-3" />}
                     </span>
                   )
                 })}
               </div>
             </div>
-            <div className="rounded-[14px] bg-white p-4 text-texto">
-              <p className="flex items-center justify-between text-rotulo text-texto-3">Próximo feriado <PartyPopper className="h-4 w-4" /></p>
-              <p className="mt-1 text-xl font-medium leading-tight">{proxFeriado?.nome ?? '—'}</p>
+            <div className="self-center">
+              <p className="flex items-center gap-1.5 text-rotulo text-texto-3"><PartyPopper className="h-3.5 w-3.5" /> Próximo feriado</p>
+              <p className="text-destaque font-semibold">{proxFeriado?.nome ?? '—'}</p>
               <p className="text-rotulo text-texto-3">{proxFeriado ? (diasAteFeriado === 0 ? 'É hoje' : `em ${diasAteFeriado} dia${diasAteFeriado > 1 ? 's' : ''} · ${formatar(proxFeriado.data, { day: '2-digit', month: 'short' })}`) : ''}</p>
-              <div className="mt-3 h-2.5 rounded-full bg-ink/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${Math.max(6, 100 - Math.min(90, diasAteFeriado) * (100 / 90))}%` }} /></div>
             </div>
           </div>
-        </section>
-
-        <section className={`${cartao} lg:col-span-7 xl:col-span-8`}>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="home-titulo">Panorama dos clientes</h2>
-              <p className="text-rotulo text-texto-3">{ativos.length} ativo{ativos.length === 1 ? '' : 's'}{pausados ? ` · ${pausados} pausado${pausados > 1 ? 's' : ''}` : ''} · tarefas por cliente</p>
-            </div>
-            <Link href="/clientes" className="rounded-full border border-borda px-3.5 py-1 text-rotulo text-texto-2 transition hover:bg-ink/5">Clientes</Link>
-          </div>
-          {clientesEmFoco.length === 0 ? (
-            <p className="text-corpo text-texto-3">Sem tarefas de clientes para mostrar.</p>
-          ) : (
-            <div className="space-y-2">
-              {clientesEmFoco.map((l) => {
-                const c = clientes.find((x) => x.id === l.id)
-                const pronto = l.total ? Math.round((l.concluidas / l.total) * 100) : 0
-                return (
-                  <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
-                    <NomeCliente nome={l.nome} href={`/clientes/${l.id}`} className="truncate" />
-                    <div className="order-last col-span-2 sm:order-none sm:col-span-1" title={`${pronto}% concluído`}>
-                      <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${pronto}%` }} /></div>
-                    </div>
-                    <p className="flex items-center gap-2 text-legenda tabular-nums text-texto-3">
-                      <span>{l.total} tarefas</span>
-                      <span>{l.emAndamento} em andamento</span>
-                      <span className={`rounded-full px-2 py-0.5 font-medium ${l.atrasadas ? 'bg-[var(--h-acento)] text-claro' : 'bg-ink/5'}`}>{l.atrasadas} atrasada{l.atrasadas === 1 ? '' : 's'}</span>
-                      {c && c.status !== 'ativo' && <span className="rounded-full bg-ink/10 px-2 py-0.5">{ROTULO_STATUS_CLIENTE[c.status]}</span>}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className={`${cartao} lg:col-span-5 xl:col-span-4`}>
-          <h2 className="home-titulo mb-4 flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-[var(--h-acento)]" /> Pontos de atenção</h2>
-          {atencao.length === 0 ? (
-            <p className="text-corpo text-texto-3">Tudo em ordem por aqui.</p>
-          ) : (
-            <ul className="space-y-2">
-              {atencao.map((a, i) => (
-                <li key={i}>
-                  <Link href={a.href} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 text-corpo text-texto-2 transition hover:bg-ink/5">
-                    <span>{a.texto}</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-texto-3" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
       </div>
     </div>
   )
 }
 
-/** Semicírculo: parte cheia em preto, o resto hachurado. */
-function Medidor({ pct, total }: { pct: number; total: number }) {
-  const arco = 'M 24 104 A 76 76 0 0 1 176 104'
-  return (
-    <svg viewBox="0 0 200 116" className="h-auto w-40 shrink-0" role="img" aria-label={`${pct}% das tarefas em dia`}>
-      <defs>
-        <pattern id="hachura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.4)" strokeWidth="1.5" /></pattern>
-      </defs>
-      <path d={arco} fill="none" stroke="url(#hachura)" strokeWidth="26" strokeLinecap="round" />
-      <path d={arco} pathLength={100} fill="none" stroke="#fff" strokeWidth="26" strokeLinecap="round" strokeDasharray={`${Math.max(0, pct - 1)} 100`} />
-      <text x="100" y="108" textAnchor="middle" fontSize="26" fontWeight="500" fill="#fff">{total}</text>
-    </svg>
-  )
-}

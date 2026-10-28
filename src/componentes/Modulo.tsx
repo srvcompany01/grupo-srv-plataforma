@@ -6,11 +6,11 @@ import type { ComponentType, ReactNode } from 'react'
  */
 export function Modulo({ icone: Icone, titulo, descricao, acoes, perigo, children }: { icone?: ComponentType<{ className?: string }>; titulo: string; descricao?: ReactNode; acoes?: ReactNode; perigo?: boolean; children: ReactNode }) {
   return (
-    <section className={`min-w-0 overflow-hidden rounded-xl border bg-white ${perigo ? 'border-perigo-borda' : 'border-borda'}`} aria-label={titulo}>
-      <header className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 ${perigo ? 'border-perigo-borda bg-perigo-fundo/30' : 'border-borda'}`}>
+    <section className={`min-w-0 overflow-hidden rounded-lg border bg-white ${perigo ? 'border-perigo-borda' : 'border-borda'}`} aria-label={titulo}>
+      <header className={`flex flex-wrap items-center min-h-10 justify-between gap-3 border-b px-3 py-1.5 ${perigo ? 'border-perigo-borda bg-perigo-fundo/30' : 'border-borda-fraca'}`}>
         <div className="flex min-w-0 items-center gap-2.5">
           {Icone && (
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${perigo ? 'bg-perigo-fundo text-perigo' : 'bg-fundo text-texto-2'}`}>
+            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${perigo ? 'bg-perigo-fundo text-perigo' : 'bg-[var(--bg-active)] text-texto-2'}`}>
               <Icone className="h-4 w-4" />
             </span>
           )}
@@ -21,7 +21,7 @@ export function Modulo({ icone: Icone, titulo, descricao, acoes, perigo, childre
         </div>
         {acoes}
       </header>
-      <div className="p-4">{children}</div>
+      <div className="p-3">{children}</div>
     </section>
   )
 }

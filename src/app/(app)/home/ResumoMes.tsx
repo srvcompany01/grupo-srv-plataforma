@@ -43,17 +43,17 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
     { rotulo: 'ROAS', valor: ind.roas === null ? '—' : `${ind.roas.toFixed(1).replace('.', ',')}x`, delta: <span className="text-legenda text-texto-3">faturamento ÷ investido</span>, icone: TrendingUp },
   ]
   return (
-    <section className="h-full rounded-[20px] border border-borda bg-white p-5 shadow-cartao">
+    <section className="h-full rounded-lg border border-borda bg-white p-3">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="home-titulo">Resultado de {rotuloMesLongo(mes)}</h2>
-        <Link href={`/performance?mes=${mes}`} className="rounded-full border border-borda px-3.5 py-1 text-rotulo text-texto-2 transition hover:bg-ink/5">Performance</Link>
+        <h2 className="text-corpo font-semibold">Resultado de {rotuloMesLongo(mes)}</h2>
+        <Link href={`/performance?mes=${mes}`} className="rounded px-2 py-1 text-rotulo text-texto-2 transition hover:bg-hover">Performance</Link>
       </div>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((t) => {
           const Icone = t.icone
           return (
-            <div key={t.rotulo} className={`rounded-[14px] p-4 ${t.destaque ? 'bg-[var(--h-acento)] text-claro [&_*]:!text-inherit' : 'bg-[var(--h-superficie)] text-texto'}`}>
-              <span className={`mb-3 flex h-9 w-9 items-center justify-center rounded-full ${t.destaque ? 'bg-white text-[var(--h-acento)]' : 'bg-[var(--h-palido)] text-[var(--h-acento)]'}`}><Icone className="h-4 w-4" /></span>
+            <div key={t.rotulo} className={`rounded-lg border border-borda p-3 ${t.destaque ? 'border-texto bg-texto text-[var(--bg)] [&_*]:!text-inherit' : 'text-texto'}`}>
+              <span className={`mb-2 flex h-7 w-7 items-center justify-center rounded-md ${t.destaque ? 'bg-white/20' : 'bg-[var(--bg-active)] text-texto-2'}`}><Icone className="h-4 w-4" /></span>
               <p className="text-rotulo opacity-60">{t.rotulo}</p>
               <p className="text-[1.75rem] font-medium leading-tight tabular-nums">{t.valor}</p>
               <div className="mt-1">{t.delta}</div>
@@ -62,7 +62,7 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
         })}
       </div>
       {semLancar.length > 0 && (
-        <p className="mt-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-2.5 text-rotulo text-texto-2">
+        <p className="mt-3 rounded-lg bg-[var(--bg-subtle)] px-3 py-2 text-rotulo text-texto-2">
           <span className="font-medium text-[#ff7a7e]">Faturamento sem lançar:</span>{' '}
           {semLancar.map((c, i) => <span key={c.id}>{i > 0 && ', '}<NomeCliente nome={c.nome} href={`/performance?cliente=${c.id}&mes=${mes}`} /></span>)}
         </p>
@@ -72,5 +72,5 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
 }
 
 export function ResumoMesCarregando() {
-  return <div className="h-full min-h-56 animate-pulse rounded-[20px] bg-[var(--h-superficie)]" aria-label="Carregando o resultado do mês" />
+  return <div className="h-full min-h-56 animate-pulse rounded-lg bg-[var(--skel)]" aria-label="Carregando o resultado do mês" />
 }

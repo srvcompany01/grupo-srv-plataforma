@@ -67,7 +67,7 @@ function Arrastavel({ id, children }: { id: string; children: (a: { arrastando: 
 
 function Dia({ iso, className, children }: { iso: string; className: string; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: iso })
-  return <div ref={setNodeRef} className={`${className} ${isOver ? 'bg-marca/10' : ''}`}>{children}</div>
+  return <div ref={setNodeRef} className={`${className} ${isOver ? 'bg-[var(--sel)]' : ''}`}>{children}</div>
 }
 
 export function VisaoCalendario({
@@ -131,17 +131,17 @@ export function VisaoCalendario({
   const [ano, mes] = anoMes.split('-').map(Number)
 
   return (
-    <section className="area-lista overflow-hidden border border-borda bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda bg-white px-4 py-3">
+    <section className="area-lista overflow-hidden bg-white">
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-3 border-b border-borda-fraca bg-white px-3 py-1">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-aviso text-claro shadow-sm"><CalendarDays className="h-4 w-4" /></span>
+          <CalendarDays className="h-4 w-4 text-texto-3" />
           <div>
-            <h2 className="text-sm font-bold capitalize text-texto">{formatadorMes.format(new Date(Date.UTC(ano, mes - 1, 1)))}</h2>
+            <h2 className="text-destaque font-semibold capitalize text-texto">{formatadorMes.format(new Date(Date.UTC(ano, mes - 1, 1)))}</h2>
             <p className="text-legenda text-texto-3">{tarefas.length} {niveis === 'subtarefas' ? 'subtarefas' : niveis === 'maes' ? 'tarefas-mãe' : 'itens'} nesta visualização</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="O que mostrar no calendário" className="controle flex items-center gap-0.5 rounded-lg border border-borda bg-white p-0.5 shadow-sm">
+        <div role="group" aria-label="O que mostrar no calendário" className="controle flex items-center gap-0.5 rounded-md border border-borda bg-white p-0.5">
           {NIVEIS.map((n) => (
             <Link
               key={n.valor}
@@ -176,7 +176,7 @@ export function VisaoCalendario({
             </PopoverContent>
           </Popover>
         )}
-        <div className="controle flex items-center gap-1 rounded-lg border border-borda bg-white p-1 shadow-sm">
+        <div className="controle flex items-center gap-1 rounded-md border border-borda bg-white p-0.5">
           <button type="button" aria-label="Mês anterior" onClick={() => setAnoMes(moverMes(anoMes, -1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></button>
           <button type="button" onClick={() => setAnoMes(hoje.slice(0, 7))} className="rounded-md px-2.5 py-1 text-legenda font-semibold text-texto-2 hover:bg-hover">Hoje</button>
           <button type="button" aria-label="Próximo mês" onClick={() => setAnoMes(moverMes(anoMes, 1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></button>
@@ -193,7 +193,7 @@ export function VisaoCalendario({
       <DndContext sensors={sensores} onDragEnd={soltar}>
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
-          <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-borda bg-fundo/70">
+          <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-borda bg-[var(--bg-subtle)]">
             <div className="px-1 py-2 text-center text-legenda font-medium text-texto-3" title="Semana do ano">Sem</div>
             {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-medium text-texto-3">{dia}</div>)}
           </div>
@@ -207,8 +207,8 @@ export function VisaoCalendario({
                     <span className="rounded-md bg-white px-1 py-0.5 text-legenda font-bold text-texto-2 ring-1 ring-borda">S{numeroDaSemana(dia.iso)}</span>
                   </div>
                 )}
-                <Dia key={dia.iso} iso={dia.iso} className={`min-h-28 border-b border-r border-borda p-1.5 ${dia.atual ? 'bg-white' : 'bg-fundo/45'}`}>
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-marca text-claro' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
+                <Dia key={dia.iso} iso={dia.iso} className={`min-h-[104px] border-b border-r border-borda-fraca p-1 ${dia.atual ? 'bg-white' : 'bg-[var(--bg-subtle)]'}`}>
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-[#d80d12] text-white' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
                   <div className="mt-1 space-y-1">
                     {(diasAbertos.has(dia.iso) ? itens : itens.slice(0, 4)).map((tarefa) => {
                       const sub = ehSubtarefa(tarefa)
@@ -231,8 +231,8 @@ export function VisaoCalendario({
                           href={`/tarefas/${tarefa.id}`}
                           scroll={false}
                           title={sub ? `${tarefa.titulo} · subtarefa de ${tituloPai.get(tarefa.paiId ?? '') ?? 'tarefa-mãe'}` : `${tarefa.titulo} · tarefa-mãe (entrega)`}
-                          className={`flex flex-col gap-1 rounded-md border-l-[3px] px-1.5 py-1 text-legenda transition hover:text-marca ${
-                            sub ? 'bg-white font-normal ring-1 ring-borda hover:bg-hover' : 'bg-fundo font-semibold hover:bg-hover'
+                          className={`flex min-h-[22px] flex-col gap-1 rounded border border-borda border-l-[3px] bg-[var(--bg)] px-1.5 py-0.5 text-[12px] transition hover:bg-hover ${
+                            sub ? 'font-normal' : 'font-semibold'
                           } ${tarefa.concluidaEm ? 'text-texto-3 line-through' : 'text-texto'}`}
                           style={{ borderLeftColor: coresStatus[tarefa.statusId] ?? '#87909e' }}
                         >

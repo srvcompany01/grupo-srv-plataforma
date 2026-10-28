@@ -368,15 +368,15 @@ body:has(.app-ui[data-tema='escuro']) {
 
 @layer components {
   .page-shell {
-    @apply w-full space-y-5 px-4 py-5 md:px-6 md:py-6;
+    @apply w-full space-y-4 px-3 py-3;
   }
 
   /* Título da página: grande e em negrito, como "Developers". */
   .page-title {
     @apply text-texto;
     font-family: var(--font-inter), sans-serif;
-    font-size: 1.875rem;
-    font-weight: 700;
+    font-size: 1.125rem;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
@@ -388,7 +388,7 @@ body:has(.app-ui[data-tema='escuro']) {
   }
 
   .surface-card {
-    @apply rounded-xl border border-borda bg-white shadow-cartao;
+    @apply rounded-lg border border-borda bg-white shadow-cartao;
   }
 
   .focus-control {

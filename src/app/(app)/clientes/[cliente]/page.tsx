@@ -62,9 +62,16 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   const totalTarefas = arvore.length
 
   return (
-    <div className="page-shell">
-      <header className="overflow-hidden rounded-xl border border-borda bg-white">
-        <div className="relative h-40 w-full md:h-52" style={{ background: cliente.cor }}>
+    <div>
+      <div className="sticky top-0 z-10 flex h-10 items-center gap-2 border-b border-borda-fraca bg-white px-3 text-corpo">
+        <Link href="/clientes" className="text-texto-2 hover:text-texto">Clientes</Link>
+        <span className="text-texto-3">/</span>
+        <h2 className="truncate text-destaque font-bold text-[var(--client)]">{cliente.nome}</h2>
+        <span className="rounded bg-[var(--bg-active)] px-1.5 text-legenda font-semibold text-texto-2">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
+      </div>
+      <div className="space-y-4 p-3">
+      <header className="overflow-hidden rounded-lg border border-borda bg-white">
+        <div className="relative h-28 w-full md:h-36" style={{ background: cliente.cor }}>
           {capa?.url ? (
             // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
             <img src={capa.url} alt="" width={1600} height={400} className="h-full w-full object-cover" />
@@ -72,27 +79,26 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-rotulo text-claro/90">{iniciais(cliente.nome)}</span>
           )}
           <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          <Link href="/clientes" className="absolute left-3 top-3 rounded-full bg-black/40 px-3 py-1 text-rotulo font-medium text-claro backdrop-blur hover:bg-black/55">← Clientes</Link>
-          <div className="absolute bottom-3 left-4 right-4 flex flex-wrap items-end justify-between gap-2">
+                    <div className="absolute bottom-3 left-4 right-4 flex flex-wrap items-end justify-between gap-2">
             <div className="flex min-w-0 items-end gap-3">
               {capa?.logo && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl border-2 border-claro bg-white object-cover shadow-lg" />
+                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-14 w-14 shrink-0 rounded-lg border-2 border-claro bg-white object-cover" />
               )}
               <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold text-claro drop-shadow md:text-3xl">{cliente.nome}</h1>
+              <h1 className="truncate text-xl font-bold text-claro drop-shadow md:text-2xl">{cliente.nome}</h1>
               {cliente.razaoSocial && <p className="truncate text-rotulo text-claro/85">{cliente.razaoSocial}</p>}
               </div>
             </div>
-            <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-legenda font-semibold text-texto">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
+            
           </div>
           {capa?.credito && <span className="absolute right-2 top-3 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-claro/90">{capa.credito}</span>}
         </div>
         {podeGerir && <div className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-5">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4">
         <Modulo
           icone={ListChecks}
           titulo="Trabalho por departamento"
@@ -157,7 +163,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <Modulo icone={LayoutGrid} titulo="Informações da galeria" descricao="Campos do cliente; os marcados aparecem no cartão da galeria">
             <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
           </Modulo>
@@ -172,6 +178,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           )}
           {admin && !cliente.interno && <ExcluirCliente clienteId={id} nome={cliente.nome} />}
         </div>
+      </div>
       </div>
     </div>
   )

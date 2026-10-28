@@ -22,7 +22,7 @@ export function TextoMensagem({ texto, titulos, euId }: { texto: string; titulos
     <p className="whitespace-pre-wrap break-words text-corpo text-texto">
       {segmentarTexto(texto).map((s, i) =>
         s.tipo === 'mencao' ? (
-          <span key={i} className={`rounded px-0.5 font-semibold text-[#1d6fe0] ${s.id === euId ? 'bg-[#1d6fe0]/12' : ''}`}>@{s.nome}</span>
+          <span key={i} className={`rounded-[3px] bg-[var(--client-soft)] px-[3px] font-semibold text-[var(--client)]`}>@{s.nome}</span>
         ) : (
           trechosDoTexto(s.valor).map((t, j) =>
             t.tipo === 'texto' ? (
@@ -63,7 +63,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
   }
 
   return (
-    <div className={`group relative flex gap-2.5 rounded-md px-3 hover:bg-hover/50 ${continuacao ? 'py-0.5' : 'mt-2 pt-1.5 pb-0.5'}`}>
+    <div className={`group relative flex gap-2.5 rounded-md px-3 hover:bg-hover ${continuacao ? 'py-0.5' : 'mt-2 pt-1.5 pb-0.5'}`}>
       <div className="w-8 shrink-0">
         {continuacao ? (
           <span className="invisible block pt-1 text-right text-micro tabular-nums text-texto-3 group-hover:visible">{hora.format(new Date(m.criadoEm))}</span>
@@ -96,7 +96,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
         {hrefFio && m.respostas.total > 0 && (
           <Link href={hrefFio} scroll={false} className="mt-1 inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-rotulo hover:bg-white">
             <span className="flex -space-x-1.5">{m.respostas.autores.slice(0, 3).map((a) => <Avatar key={a.nome} nome={a.nome || '?'} tamanho="h-5 w-5 text-[9px] ring-2 ring-claro" />)}</span>
-            <span className="font-semibold text-[#7c3aed]">{m.respostas.total} {m.respostas.total === 1 ? 'resposta' : 'respostas'}</span>
+            <span className="font-semibold text-[var(--client)]">{m.respostas.total} {m.respostas.total === 1 ? 'resposta' : 'respostas'}</span>
             {m.respostas.ultima && <span className="text-legenda text-texto-3">última {quando.format(new Date(m.respostas.ultima))}</span>}
           </Link>
         )}

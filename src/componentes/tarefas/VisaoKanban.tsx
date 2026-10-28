@@ -99,7 +99,7 @@ export function VisaoKanban({
 
   return (
     <DndContext id="kanban-tarefas" sensors={sensores} collisionDetection={closestCorners} onDragStart={inicio} onDragEnd={fim} onDragCancel={() => setArrastando(null)}>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-2 overflow-x-auto pb-4">
         {colunas.map((c) => (
           <ColunaKanban key={c.id} coluna={c} tarefas={itens[c.id] ?? []} ctx={ctx} subtarefas={subtarefas} />
         ))}
@@ -112,8 +112,8 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-72 shrink-0 flex-col rounded-2xl bg-fundo/60 p-2.5 transition ${isOver ? 'ring-2 ring-petroleo/25' : ''}`} style={{ background: `color-mix(in oklab, ${coluna.cor} 7%, var(--color-fundo))` }}>
-      <header className="mb-2.5 flex items-center gap-2 px-1">
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-[272px] shrink-0 flex-col rounded-lg bg-[var(--bg-subtle)] p-2 transition ${isOver ? 'bg-[var(--sel)]' : ''}`}>
+      <header className="mb-1 flex h-8 items-center gap-2 px-1">
         <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>
       <SortableContext items={tarefas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -138,10 +138,10 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2.5 rounded-xl border border-borda bg-white p-3 text-corpo shadow-cartao transition hover:-translate-y-px hover:border-borda-forte hover:shadow-flutuante focus-within:border-petroleo">
+    <div className="space-y-2 rounded-lg border border-borda bg-[var(--bg)] p-2.5 text-corpo transition hover:border-borda-forte focus-within:border-[var(--focus)]">
       <div className="flex flex-wrap items-center gap-1.5">
         <SeloPrioridade prioridade={tarefa.prioridade} />
-        {ctx.mostrarLista && <span className="max-w-full truncate rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
+        {ctx.mostrarLista && <span className="max-w-full truncate rounded bg-[var(--bg-active)] px-1.5 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
       </div>
       <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium leading-snug outline-none hover:text-marca focus-visible:underline">
         {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
@@ -149,7 +149,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
       {tarefa.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {tarefa.tags.map((t) => (
-            <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>
+            <span key={t.id} className="rounded px-1.5 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}

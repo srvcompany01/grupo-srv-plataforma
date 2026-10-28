@@ -30,7 +30,7 @@ const AVISO_GOOGLE: Record<string, string> = {
 const ICONE = { privado: Lock, equipe: Users, selecionados: UserCheck }
 const SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const VISOES: { valor: Visao; rotulo: string }[] = [{ valor: 'dia', rotulo: 'Dia' }, { valor: 'semana', rotulo: 'Semana' }, { valor: 'mes', rotulo: 'Mês' }]
-const HORA_PX = 48
+const HORA_PX = 44
 const HORAS = Array.from({ length: 24 }, (_, h) => h)
 const COR_PADRAO = '#18181b'
 const COR_GOOGLE = '#64748b'
@@ -119,9 +119,9 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Dia: lista ----------
   const visaoDia = () => {
     const lista = doDia(todas, data)
-    if (!lista.length) return <p className="rounded-xl border border-dashed border-borda py-12 text-center text-corpo text-texto-3">Nenhum compromisso neste dia.</p>
+    if (!lista.length) return <p className="rounded-lg border border-dashed border-borda py-12 text-center text-corpo text-texto-3">Nenhum compromisso neste dia.</p>
     return (
-      <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda">
+      <ul className="divide-y divide-borda overflow-hidden rounded-lg border border-borda">
         {lista.map((o) => {
           const c = o.compromisso
           const categoria = c?.categoriaId ? categoriaPorId.get(c.categoriaId) : undefined
@@ -162,14 +162,14 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Semana: grade de horas ----------
   const minutosAgora = (agora.getTime() - instante(hoje).getTime()) / 60_000
   const visaoSemana = () => (
-    <div className="overflow-x-auto rounded-xl border border-borda">
+    <div className="overflow-x-auto rounded-lg border border-borda">
       <div className="min-w-[760px]">
         <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b border-borda bg-fundo/60">
           <span />
           {dias.map((dia, i) => (
-            <Link key={dia} href={url({ visao: 'dia', data: dia })} className="border-l border-borda px-1 py-1.5 text-center hover:bg-hover">
-              <span className="block text-micro font-semibold uppercase text-texto-3">{SEMANA[i]}</span>
-              <span className={`mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-rotulo font-bold ${dia === hoje ? 'bg-petroleo text-claro' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
+            <Link key={dia} href={url({ visao: 'dia', data: dia })} className="border-l border-borda px-1 py-1 text-center hover:bg-hover">
+              <span className="block text-[11px] font-semibold uppercase text-texto-3">{SEMANA[i]}</span>
+              <span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[18px] font-semibold tabular-nums ${dia === hoje ? 'bg-[#d80d12] text-white' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
             </Link>
           ))}
         </div>
@@ -199,12 +199,13 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                     height: altura - 2,
                     left: `calc(${(b.coluna / b.colunas) * 100}% + 2px)`,
                     width: `calc(${100 / b.colunas}% - 4px)`,
-                    background: `${cor}26`,
+                    background: `color-mix(in srgb, ${cor} 16%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${cor} 45%, transparent)`,
                     borderLeftColor: cor,
                   }
                   return (
                     <div key={b.ocorrencia.id}>
-                      {abrir(b.ocorrencia, 'absolute overflow-hidden rounded-md border-l-[3px] px-1 py-0.5 text-left hover:brightness-95', estilo, (
+                      {abrir(b.ocorrencia, 'absolute overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left hover:brightness-95', estilo, (
                         <>
                           <span className="block truncate text-micro font-semibold text-texto">{b.ocorrencia.titulo}</span>
                           {altura >= 34 && <span className="block truncate text-micro tabular-nums text-texto-2">{horario(b.ocorrencia)}</span>}
@@ -228,7 +229,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
 
   // ---------- Mês ----------
   const visaoMes = () => (
-    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-borda bg-borda">
+    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-borda bg-borda">
       {SEMANA.map((d) => <div key={d} className="bg-fundo px-1 py-1 text-center text-micro font-semibold text-texto-3">{d}</div>)}
       {dias.map((dia) => {
         const lista = doDia(todas, dia)
@@ -263,20 +264,20 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
 
   return (
     <div className="min-h-full bg-white">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-borda px-4 py-3 md:px-5">
+      <header className="sticky top-0 z-20 flex min-h-10 flex-wrap items-center justify-between gap-3 border-b border-borda-fraca bg-white px-3 py-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="flex items-center gap-2 text-destaque font-bold text-texto"><CalendarDays className="h-4 w-4" /> Agenda</h1>
+          <h1 className="sr-only"><CalendarDays className="h-4 w-4" /> Agenda</h1>
           <nav className="flex items-center gap-1" aria-label="Período">
             <Link href={url({ data: passo(-1) })} aria-label="Anterior" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></Link>
             <Link href={url({ data: hoje })} className="rounded-lg border border-borda px-2 py-0.5 text-rotulo font-semibold text-texto-2 hover:bg-hover">Hoje</Link>
             <Link href={url({ data: passo(1) })} aria-label="Próximo" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
           </nav>
-          <span className="text-rotulo font-semibold capitalize text-texto">{titulo}</span>
+          <span className="text-destaque font-semibold capitalize text-texto">{titulo}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Visão">
+          <nav className="flex gap-0.5 rounded-full bg-[var(--bg-active)] p-0.5" aria-label="Visão">
             {VISOES.map((v) => (
-              <Link key={v.valor} href={url({ visao: v.valor })} className={`rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === v.valor ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}>{v.rotulo}</Link>
+              <Link key={v.valor} href={url({ visao: v.valor })} className={`rounded-full px-3 py-0.5 text-rotulo font-semibold ${visao === v.valor ? 'bg-[var(--bg)] text-texto' : 'text-texto-2 hover:text-texto'}`}>{v.rotulo}</Link>
             ))}
           </nav>
           {googleConfigurado() && <BotaoGoogle email={google ? google.email : null} />}
@@ -284,7 +285,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         </div>
       </header>
 
-      <div className="grid gap-4 p-4 md:p-5 lg:grid-cols-[13rem_1fr]">
+      <div className="grid gap-3 p-3 lg:grid-cols-[13rem_1fr]">
         <aside className="order-2 space-y-4 lg:order-1">
           <PainelEtiquetas
             tipo="categoria"
