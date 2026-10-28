@@ -32,7 +32,7 @@ const SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const VISOES: { valor: Visao; rotulo: string }[] = [{ valor: 'dia', rotulo: 'Dia' }, { valor: 'semana', rotulo: 'Semana' }, { valor: 'mes', rotulo: 'Mês' }]
 const HORA_PX = 48
 const HORAS = Array.from({ length: 24 }, (_, h) => h)
-const COR_PADRAO = '#073f3b'
+const COR_PADRAO = '#18181b'
 const COR_GOOGLE = '#64748b'
 const horario = (o: Ocorrencia) => (o.diaInteiro ? 'Dia todo' : `${horaLocal(o.inicio)}–${horaLocal(o.fim)}`)
 

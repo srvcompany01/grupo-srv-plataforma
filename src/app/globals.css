@@ -4,11 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Sistema visual SRV: produtividade densa, superfícies planas e acentos contidos. */
+/* Sistema visual SRV: neutros frios com hairlines (inbox shadcn), chips pastel e fundo arejado (Conceptzilla), tabelas densas com acento índigo (AutomatePro). */
 @theme inline {
-  /* Duas famílias: Inter na interface; Cormorant Garamond só em títulos de página, números de KPI e destaques editoriais (classe font-display). */
+  /* Uma família só (Inter, como no shadcn/Linear); font-display segue a mesma, só com mais peso nos números grandes. */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-sans);
 
   /* Identidade editorial: bordô como acento, petróleo para ação principal e navegação, marfim como base. */
@@ -20,10 +20,10 @@
   --color-petroleo: var(--tema-acao);
   --color-petroleo-700: color-mix(in oklab, var(--tema-acao) 84%, white);
   --color-petroleo-100: color-mix(in oklab, var(--tema-acao) 14%, white);
-  --color-terracota: #b75b4b;
-  --color-areia: #f2e3c8;
-  --color-azul: #3e78b8;
-  --color-azul-fundo: #ddeaf8;
+  --color-terracota: #d9534f;
+  --color-areia: #f4f4f6;
+  --color-azul: #2a6df4;
+  --color-azul-fundo: #e7efff;
   /* Superfície marfim no lugar do branco puro (bg-white/text-white seguem o token). */
   --color-white: var(--tema-superficie);
   --color-lat-bg: var(--lat-bg);
@@ -33,8 +33,8 @@
   --color-lat-hover: var(--lat-hover);
   --color-lat-ativo: var(--lat-ativo);
   --color-lat-borda: var(--lat-borda);
-  --color-sinal: #c64343;
-  --color-carbon: #261b19;
+  --color-sinal: #e5484d;
+  --color-carbon: #18181b;
 
   /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
   --text-micro: 10px;
@@ -47,33 +47,33 @@
   /* Espaçamento entre letras: um só padrão para rótulos em caixa-alta. */
   --tracking-rotulo: 0.06em;
 
-  --color-perigo: #c64343;
-  --color-perigo-forte: #a92727;
-  --color-perigo-borda: #edb4b0;
-  --color-perigo-fundo: #f9dedc;
-  --color-sucesso: #22865d;
-  --color-sucesso-forte: #216d4d;
-  --color-sucesso-fundo: #dcefe3;
-  --color-aviso: #d79528;
-  --color-aviso-forte: #8c6417;
-  --color-aviso-fundo: #fbe9b9;
+  --color-perigo: #e5484d;
+  --color-perigo-forte: #c23035;
+  --color-perigo-borda: #f6c9ca;
+  --color-perigo-fundo: #fdecec;
+  --color-sucesso: #1f9d6b;
+  --color-sucesso-forte: #167a52;
+  --color-sucesso-fundo: #e6f6ee;
+  --color-aviso: #e5960b;
+  --color-aviso-forte: #9a6406;
+  --color-aviso-fundo: #fdf3dc;
 
   /* Sombras: cartão (repouso) e flutuante (menus, painéis, hover de card). */
-  --shadow-cartao: 0 2px 10px rgba(38, 27, 25, 0.05);
-  --shadow-flutuante: 0 12px 30px rgba(38, 27, 25, 0.12);
+  --shadow-cartao: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-flutuante: 0 16px 40px -12px rgba(16, 24, 40, 0.18), 0 0 0 1px rgba(16, 24, 40, 0.05);
 
-  --color-texto: #261b19;
-  /* Contraste sobre o marfim: texto-2 ~6,9:1, texto-3 ~4,8:1 (mínimo AA 4,5:1). */
-  --color-texto-2: #5e5450;
-  --color-texto-3: #746a65;
-  --color-borda: #eee7df;
-  --color-borda-forte: #e0d5c9;
+  --color-texto: #18181b;
+  /* Contraste sobre o branco: texto-2 ~7,7:1, texto-3 ~4,8:1 (mínimo AA 4,5:1). */
+  --color-texto-2: #52525b;
+  --color-texto-3: #6b6b76;
+  --color-borda: #ebebf0;
+  --color-borda-forte: #dcdce4;
   --color-fundo: var(--tema-fundo);
-  --color-hover: color-mix(in oklab, var(--tema-fundo), #261b19 3%);
-  --color-trilho: #261b19;
+  --color-hover: color-mix(in oklab, var(--tema-fundo), #18181b 3.5%);
+  --color-trilho: #18181b;
 
   --color-st-rascunho: #87909e;
-  --color-st-aguardando: #7b68ee;
+  --color-st-aguardando: #5b5bd6;
   --color-st-ajuste: #f76808;
   --color-st-aprovado: #0f9d58;
   --font-heading: var(--font-sans);
@@ -111,7 +111,7 @@
   /* Raios: 8 (controles), 12 (cartões), 16 (painéis); pílula só em chips e selos. */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 8px;
+  --radius-lg: 10px;
   --radius-xl: 12px;
   --radius-2xl: 16px;
   --radius-3xl: calc(var(--radius) * 2.2);
@@ -126,35 +126,35 @@ body {
 
 :root {
   /* Tema padrão (Editorial). O layout da área interna sobrescreve com o tema salvo pelo admin. */
-  --tema-acao: #073f3b;
-  --tema-acento: #70262d;
-  --tema-fundo: #f7f3ed;
-  --tema-superficie: #fffcf8;
-  /* Barra lateral (camada de espaços): marfim derivado do fundo. */
-  --lat-bg: color-mix(in oklab, var(--tema-fundo), var(--tema-superficie) 45%);
-  --lat-fg: #261b19;
-  --lat-2: rgba(38, 27, 25, 0.74);
-  --lat-3: rgba(38, 27, 25, 0.58);
-  --lat-hover: rgba(38, 27, 25, 0.05);
-  --lat-ativo: color-mix(in oklab, var(--tema-acento) 10%, white);
-  --lat-borda: #ece4dc;
+  --tema-acao: #18181b;
+  --tema-acento: #5b5bd6;
+  --tema-fundo: #f6f7f9;
+  --tema-superficie: #ffffff;
+  /* Barra lateral: cinza-azulado claro, item ativo em cinza mais fundo (como no AutomatePro). */
+  --lat-bg: color-mix(in oklab, var(--tema-fundo), var(--tema-superficie) 30%);
+  --lat-fg: #18181b;
+  --lat-2: rgba(24, 24, 27, 0.74);
+  --lat-3: rgba(24, 24, 27, 0.56);
+  --lat-hover: rgba(24, 24, 27, 0.045);
+  --lat-ativo: color-mix(in oklab, var(--tema-acento) 11%, white);
+  --lat-borda: #ebebf0;
   --background: var(--tema-superficie);
-  --foreground: #261b19;
+  --foreground: #18181b;
   --card: var(--tema-superficie);
-  --card-foreground: #261b19;
+  --card-foreground: #18181b;
   --popover: var(--tema-superficie);
-  --popover-foreground: #261b19;
+  --popover-foreground: #18181b;
   --primary: var(--tema-acao);
-  --primary-foreground: #fffdf9;
-  --secondary: #f2ece5;
-  --secondary-foreground: #261b19;
-  --muted: #f2ece5;
-  --muted-foreground: #746a65;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f5;
+  --secondary-foreground: #18181b;
+  --muted: #f1f1f5;
+  --muted-foreground: #6b6b76;
   --accent: color-mix(in oklab, var(--tema-acento) 10%, white);
-  --accent-foreground: #261b19;
+  --accent-foreground: #18181b;
   --destructive: #c64343;
-  --border: #e7ded5;
-  --input: #e7ded5;
+  --border: #e4e4ea;
+  --input: #e4e4ea;
   --ring: var(--tema-acao);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -189,8 +189,8 @@ body {
     letter-spacing: -0.01em;
   }
   ::selection {
-    background: #f7dddc;
-    color: #261b19;
+    background: #dcdcf7;
+    color: #18181b;
   }
 }
 
@@ -213,7 +213,7 @@ body {
   }
 
   .surface-card {
-    @apply rounded-xl border border-borda bg-white;
+    @apply rounded-xl border border-borda bg-white shadow-cartao;
   }
 
   .focus-control {
@@ -231,7 +231,7 @@ body {
     inset: -2px;
     border-radius: inherit;
     content: '';
-    background: conic-gradient(from 90deg, #70262d 0%, #073f3b 50%, #70262d 100%);
+    background: conic-gradient(from 90deg, #5b5bd6 0%, #18181b 50%, #5b5bd6 100%);
     animation: srv-orbit 3.6s linear infinite;
   }
 }
@@ -276,19 +276,12 @@ body {
 .documento p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #9aa1ac; float: left; height: 0; pointer-events: none; }
 
 /*
- * Visual limpo: some quase toda linha de estrutura (divisórias de um lado só e contorno de cartões/painéis).
- * As linhas, bem clarinhas, ficam só na área das listas de tarefas (e na grade do calendário): classe `area-lista`.
- * Campos de formulário e botões mantêm o contorno suave (precisam parecer clicáveis). Cartões ganham uma sombra leve no lugar do contorno.
+ * Hairlines visíveis e leves (como no inbox do shadcn e no AutomatePro): contornos e divisórias em --color-borda;
+ * cartões com borda fina + sombra mínima de repouso. Nas listas de tarefas a linha é um pouco mais clara.
  */
-:root { --linha-lista: #f0eae3; }
+:root { --linha-lista: #f0f0f4; }
 
-:is(.border-t, .border-b, .border-l, .border-r, .border-x, .border-y):not(.border),
-:is(.border-borda, .border-borda-forte, .border-lat-borda):is(.border):not(input, select, textarea, button, summary, [role='button'], .controle, :hover, :focus-within),
-[class*='divide-'] > * {
-  border-color: transparent;
-}
-.ring-1:is(.ring-borda):not(input, select, textarea, button, summary, .controle) { --tw-ring-color: transparent; }
-.border.border-borda.bg-white:not(input, select, textarea, button, summary, [role='button'], .controle, [class*='shadow']) { box-shadow: 0 1px 3px rgba(38, 27, 25, 0.06); }
+.border.border-borda.bg-white:not(input, select, textarea, button, summary, [role='button'], .controle, [class*='shadow']) { box-shadow: var(--shadow-cartao); }
 
 .area-lista :is(.border-t, .border-b, .border-l, .border-r, .border-x, .border-y):not(.border),
 .area-lista [class*='divide-'] > * {

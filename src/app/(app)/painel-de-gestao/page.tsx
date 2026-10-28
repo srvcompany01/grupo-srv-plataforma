@@ -25,7 +25,7 @@ function Metrica({ icone: Icone, rotulo, valor, detalhe, tom }: { icone: typeof 
       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${tom}`}><Icone className="h-6 w-6" aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <p className="text-rotulo font-semibold text-texto-2">{rotulo}</p>
-        <p className="font-display text-[44px] font-semibold leading-none text-texto">{valor}</p>
+        <p className="font-display text-[40px] font-bold tracking-tight leading-none text-texto">{valor}</p>
       </div>
       {detalhe && <p className="shrink-0 text-right text-rotulo text-texto-3">{detalhe}</p>}
     </div>
