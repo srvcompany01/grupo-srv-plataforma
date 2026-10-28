@@ -136,16 +136,15 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
     return () => window.removeEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
   }, [])
 
-  const item = ({ id, href, rotulo, curto, contador }: Atalho) => {
+  const item = ({ id, href, rotulo, contador }: Atalho) => {
     const ativo = id === 'espacos' ? emEspacos : ativoEm(href)
-    const estilo = { position: 'relative', width: 56, height: 50, flex: 'none', border: 0, borderRadius: 8, background: 'transparent', color: ativo ? '#fff' : 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer', textDecoration: 'none' } as const
+    const estilo = { position: 'relative', width: 56, height: 44, flex: 'none', border: 0, borderRadius: 10, background: 'transparent', color: ativo ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textDecoration: 'none' } as const
     const conteudo = (
       <>
-        <span className="rail-tile" style={{ position: 'relative', width: 34, height: 28, borderRadius: 8, background: ativo ? '#d80d12' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 120ms' }}>
-          <Ic n={ICONE_MS[id] ?? 'apps'} s={18} />
+        <span className="rail-tile" data-ativo={ativo || undefined} style={{ position: 'relative', width: 44, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 120ms, box-shadow 120ms' }}>
+          <Ic n={ICONE_MS[id] ?? 'apps'} s={22} />
           {!!contador && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--rail)' }}>{contador > 99 ? '99+' : contador}</span>}
         </span>
-        <span style={{ fontSize: 10, lineHeight: 1, fontWeight: 500, whiteSpace: 'nowrap' }}>{curto}</span>
       </>
     )
     return id === 'espacos' ? (
@@ -162,9 +161,8 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
       <div style={{ width: 28, height: 1, flex: 'none', background: 'rgba(255,255,255,.1)', margin: '2px 0 4px' }} />
       <ListaOrdenavel className="flex flex-col items-center" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
       <div style={{ position: 'relative' }}>
-        <button type="button" onClick={() => setAbertoEm(aberto ? null : caminho)} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 56, height: 46, flexDirection: 'column', gap: 3 }}>
-          <Ic n="more_horiz" s={18} />
-          <span style={{ fontSize: 10, lineHeight: 1, fontWeight: 500 }}>Mais</span>
+        <button type="button" onClick={() => setAbertoEm(aberto ? null : caminho)} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 44, height: 36 }}>
+          <Ic n="more_horiz" s={22} />
         </button>
         {aberto && (
           <div role="menu" aria-label="Mais módulos" style={{ position: 'fixed', left: 80, bottom: 90, zIndex: 41, width: 320, padding: 4, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)', color: 'var(--text)' }}>
