@@ -49,12 +49,22 @@ export function AlternadorVisao({
     </Link>
     )
   }
+  // O Canal é o chat da própria lista (a rota cria o canal na primeira vez). Uma barrinha separa o Canal dos tipos de visualização.
+  const listaId = caminho.startsWith('/listas/') ? caminho.split('/')[2] : null
+  const abaEstilo = { height: 36, display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px', borderBottom: '2px solid transparent', fontSize: 13, whiteSpace: 'nowrap', color: 'inherit' } as const
   return (
-    <nav className={abas ? 'flex min-w-0 items-center gap-2 overflow-x-auto border-b border-borda-fraca px-3 [scrollbar-width:none]' : 'controle flex w-fit gap-1 rounded-full border border-borda bg-white p-1'}>
+    <nav role="tablist" className={abas ? 'flex min-w-0 items-stretch overflow-x-auto [scrollbar-width:none]' : 'controle flex w-fit gap-1 rounded-md border border-borda bg-white p-1'} style={abas ? { height: 36, gap: 4, padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--text-2)' } : undefined}>
+      {abas && listaId && (
+        <>
+          <Link href={`/listas/${listaId}/canal`} className="hover:text-[var(--text)]" style={abaEstilo}><IconeVisao visao="canal" />Canal</Link>
+          <div aria-hidden="true" style={{ width: 1, height: 16, background: 'var(--border)', margin: '10px 4px', flex: 'none' }} />
+        </>
+      )}
       {visoes.map(aba)}
+      {abas && <div aria-hidden="true" style={{ width: 1, height: 16, background: 'var(--border)', margin: '10px 4px', flex: 'none' }} />}
       {abas && (
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded px-2 text-corpo font-medium text-texto-3 transition hover:bg-hover hover:text-texto">
+          <DropdownMenuTrigger className="inline-flex items-center gap-1 self-center whitespace-nowrap text-texto-3 hover:bg-hover hover:text-texto" style={{ height: 28, padding: '0 8px', borderRadius: 4, fontSize: 13 }}>
             <Plus className="h-4 w-4" /> Visualização
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">

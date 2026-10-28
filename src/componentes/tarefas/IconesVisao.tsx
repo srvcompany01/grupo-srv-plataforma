@@ -1,71 +1,41 @@
+import { Ic } from '@/componentes/app/Ic'
 import type { VisaoTarefas } from '@/dominio/filtros'
 
-/** Cor de cada tipo de visualização: lista amarela, quadro azul, calendário laranja, tabela teal, galeria roxa, linha do tempo vermelha, painel verde. */
-export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', tabela: '#12a594', galeria: '#6049e7', cronograma: '#e5484d', carga: '#0091ff', atividade: '#e93d82', painel: '#22865d', documentos: '#7c5cd6' }
+/** Cor de cada tipo de visualização (protótipo do redesign). */
+export const COR_VISAO: Record<VisaoTarefas | 'canal', string> = {
+  canal: '#6d3fe0',
+  lista: '#52525b',
+  calendario: '#e0620d',
+  kanban: '#7c3aed',
+  tabela: '#0d9488',
+  galeria: '#db2777',
+  cronograma: '#b45309',
+  carga: '#16a34a',
+  atividade: '#71717a',
+  painel: '#d80d12',
+  documentos: '#1d6fe0',
+}
 
-/** Ícones preenchidos (não só linhas). O desenho é branco sobre um quadrado arredondado colorido. */
-export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTarefas; className?: string }) {
-  const cor = COR_VISAO[visao]
+/** Glifo Material Symbols de cada visualização. */
+export const GLIFO_VISAO: Record<VisaoTarefas | 'canal', string> = {
+  canal: 'tag',
+  lista: 'format_list_bulleted',
+  calendario: 'calendar_month',
+  kanban: 'view_kanban',
+  tabela: 'table_chart',
+  galeria: 'photo_library',
+  cronograma: 'timeline',
+  carga: 'stacked_bar_chart',
+  atividade: 'history',
+  painel: 'dashboard',
+  documentos: 'article',
+}
+
+/** Quadradinho colorido 16×16 (raio 4) com o glifo branco preenchido de 12px. */
+export function IconeVisao({ visao, className }: { visao: VisaoTarefas | 'canal'; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-      <rect x="2" y="2" width="20" height="20" rx="5" fill={cor} />
-      {visao === 'lista' && <path d="M7 8.5h10M7 12h10M7 15.5h6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" />}
-      {visao === 'kanban' && (
-        <g fill="#fff">
-          <rect x="6" y="6.5" width="3.4" height="11" rx="1.2" />
-          <rect x="10.3" y="6.5" width="3.4" height="7.5" rx="1.2" />
-          <rect x="14.6" y="6.5" width="3.4" height="9.5" rx="1.2" />
-        </g>
-      )}
-      {visao === 'documentos' && (
-        <g fill="#fff">
-          <path d="M7.5 5h6l3.5 3.5V17a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-          <path d="M9 12.5h6M9 15.5h4" stroke={cor} strokeWidth="1.4" strokeLinecap="round" fill="none" />
-        </g>
-      )}
-      {visao === 'painel' && (
-        <g fill="#fff">
-          <rect x="6" y="12" width="3" height="6" rx="1" />
-          <rect x="10.5" y="7" width="3" height="11" rx="1" />
-          <rect x="15" y="9.5" width="3" height="8.5" rx="1" />
-        </g>
-      )}
-      {visao === 'tabela' && (
-        <g fill="#fff">
-          <rect x="5.5" y="6" width="13" height="3" rx="1" />
-          <rect x="5.5" y="10.5" width="13" height="2.6" rx="1" />
-          <rect x="5.5" y="14.6" width="13" height="2.6" rx="1" />
-        </g>
-      )}
-      {visao === 'galeria' && (
-        <g fill="#fff">
-          <rect x="5.5" y="5.5" width="5.5" height="5.5" rx="1.4" />
-          <rect x="13" y="5.5" width="5.5" height="5.5" rx="1.4" />
-          <rect x="5.5" y="13" width="5.5" height="5.5" rx="1.4" />
-          <rect x="13" y="13" width="5.5" height="5.5" rx="1.4" />
-        </g>
-      )}
-      {visao === 'cronograma' && (
-        <g fill="#fff">
-          <rect x="5.5" y="6" width="8" height="3" rx="1.4" />
-          <rect x="9.5" y="10.5" width="9" height="3" rx="1.4" />
-          <rect x="6.5" y="15" width="7" height="3" rx="1.4" />
-        </g>
-      )}
-      {visao === 'carga' && (
-        <g fill="#fff">
-          <circle cx="12" cy="8.5" r="2.6" />
-          <path d="M6.5 18c0-3 2.5-5 5.5-5s5.5 2 5.5 5Z" />
-        </g>
-      )}
-      {visao === 'atividade' && <path d="M5.5 12.5h3l2-5.5 3 10 2-4.5h3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
-      {visao === 'calendario' && (
-        <g fill="#fff">
-          <rect x="6" y="5" width="2.2" height="3.4" rx="1" />
-          <rect x="15.8" y="5" width="2.2" height="3.4" rx="1" />
-          <rect x="6" y="9.5" width="12" height="8.5" rx="2" />
-        </g>
-      )}
-    </svg>
+    <span className={className} style={{ width: 16, height: 16, flex: 'none', borderRadius: 4, background: COR_VISAO[visao], color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Ic n={GLIFO_VISAO[visao]} s={12} fill w={500} />
+    </span>
   )
 }

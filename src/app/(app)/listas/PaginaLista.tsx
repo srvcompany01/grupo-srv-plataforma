@@ -109,7 +109,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
         <nav aria-label="Localização da lista" className="flex min-w-0 flex-1 items-center overflow-hidden" style={{ gap: 2, flexBasis: 160 }}>
           {lista.espaco.id ? (
             <Link href={`/espacos/${lista.espaco.id}`} className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
-              <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{lista.espaco.nome.slice(0, 1).toUpperCase()}</span>
+              <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="check_circle" s={12} fill w={500} /></span>
               {lista.espaco.nome}
             </Link>
           ) : (
