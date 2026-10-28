@@ -6,6 +6,7 @@ import { ehCampoDeTexto, rotaDoAtalho } from '@/dominio/paleta'
 
 export const EVENTO_ALTERNAR_BARRA = 'srv:alternar-barra'
 export const EVENTO_ABRIR_ATALHOS = 'srv:abrir-atalhos'
+export const EVENTO_ABRIR_PALETA = 'srv:abrir-paleta'
 
 /** Teclado global: ⌘/Ctrl+K paleta, ⌘/Ctrl+\ barra de espaços, "?" lista de atalhos e H/I/A/C/D para navegar (só fora de campos de texto). */
 export function AtalhosGlobais({ aoAbrirPaleta, aoAbrirAjuda }: { aoAbrirPaleta: () => void; aoAbrirAjuda: () => void }) {
@@ -36,9 +37,11 @@ export function AtalhosGlobais({ aoAbrirPaleta, aoAbrirAjuda }: { aoAbrirPaleta:
       }
     }
     const abrirAjuda = () => aoAbrirAjuda()
+    const abrirPaleta = () => aoAbrirPaleta()
+    window.addEventListener(EVENTO_ABRIR_PALETA, abrirPaleta)
     window.addEventListener('keydown', aoTeclar)
     window.addEventListener(EVENTO_ABRIR_ATALHOS, abrirAjuda)
-    return () => { window.removeEventListener('keydown', aoTeclar); window.removeEventListener(EVENTO_ABRIR_ATALHOS, abrirAjuda) }
+    return () => { window.removeEventListener(EVENTO_ABRIR_PALETA, abrirPaleta); window.removeEventListener('keydown', aoTeclar); window.removeEventListener(EVENTO_ABRIR_ATALHOS, abrirAjuda) }
   }, [aoAbrirPaleta, aoAbrirAjuda, router])
   return null
 }

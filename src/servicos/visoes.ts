@@ -37,3 +37,17 @@ export async function removerFiltroSalvo(sb: Supabase, id: string): Promise<void
   const { error } = await sb.from('saved_filters').delete().eq('id', id)
   if (error) throw error
 }
+
+/** Listas que a pessoa marcou com a estrela (a RLS só mostra as próprias). */
+export async function listasFavoritas(sb: Supabase): Promise<{ id: string; nome: string }[]> {
+  const { data, error } = await sb.from('list_favorites').select('list_id, lists!inner(id, name, archived_at)').is('lists.archived_at', null).order('created_at')
+  if (error) throw error
+  return data.flatMap((f) => (f.lists ? [{ id: f.lists.id, nome: f.lists.name }] : []))
+}
+
+export async function definirFavorita(sb: Supabase, usuarioId: string, listaId: string, favorita: boolean): Promise<void> {
+  const { error } = favorita
+    ? await sb.from('list_favorites').upsert({ user_id: usuarioId, list_id: listaId }, { onConflict: 'user_id,list_id' })
+    : await sb.from('list_favorites').delete().eq('list_id', listaId).eq('user_id', usuarioId)
+  if (error) throw error
+}

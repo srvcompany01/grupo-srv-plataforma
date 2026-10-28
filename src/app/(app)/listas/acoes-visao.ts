@@ -5,7 +5,8 @@ import { normalizarVisao } from '@/dominio/visao-salva'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
-import { removerFiltroSalvo, removerVisao, salvarFiltro, salvarVisao } from '@/servicos/visoes'
+import { revalidatePath } from 'next/cache'
+import { definirFavorita, removerFiltroSalvo, removerVisao, salvarFiltro, salvarVisao } from '@/servicos/visoes'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -42,4 +43,14 @@ export async function removerFiltroSalvoAcao(id: string): Promise<Resultado> {
   if (!UUID.test(id)) return { erro: 'Filtro inválido.' }
   const sb = await criarClienteServidor()
   return tentar(() => removerFiltroSalvo(sb, id), 'Filtro removido.')
+}
+
+/** Estrela da lista: marca ou desmarca como favorita da pessoa. */
+export async function favoritarListaAcao(listaId: string, favorita: boolean): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (!UUID.test(listaId)) return { erro: 'Lista inválida.' }
+  const sb = await criarClienteServidor()
+  const resultado = await tentar(() => definirFavorita(sb, eu.id, listaId, favorita), favorita ? 'Lista adicionada aos favoritos.' : 'Lista removida dos favoritos.')
+  revalidatePath('/', 'layout')
+  return resultado
 }

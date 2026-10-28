@@ -28,6 +28,11 @@ import {
   MapPin,
   Radar,
   Grip,
+  UserPlus,
+  ChevronRight,
+  Search,
+  SlidersHorizontal,
+  Star,
   Rocket,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -39,7 +44,7 @@ import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
-import { EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
+import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
 import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
@@ -49,7 +54,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral, type ModoTema } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
+export type PropsPainel = { navegacao: Navegacao; /** Listas com a estrela da pessoa (seção Favoritos). */ favoritas?: { id: string; nome: string }[]; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
 type IconeLucide = ComponentType<{ className?: string }>
 
 type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
@@ -189,6 +194,12 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
         {soltosFim.map(itemFaixa)}
       </div>
       <div className="space-y-0.5 border-t border-white/15 pt-1.5">
+        {papel === 'admin' && (
+          <Link href="/config/usuarios" title="Convidar pessoas" className={botaoFaixa}>
+            <UserPlus className="h-5 w-5" />
+            <span className="w-full truncate text-center text-micro leading-3 font-semibold">Convidar</span>
+          </Link>
+        )}
         <AlternarTema inicial={tema} className={botaoFaixa} />
         {config && itemFaixa(config)}
       </div>
@@ -315,7 +326,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 }
 
 /** Segunda barra: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos, o tema e o perfil. */
-export function PainelEspacos({ navegacao, papel, nome, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, tema, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
+export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, tema, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
@@ -405,10 +416,17 @@ export function PainelEspacos({ navegacao, papel, nome, cronometro, fechados: fe
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
             <div className="flex h-7 items-center px-2">
               <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Espaços</h2>
+              <button type="button" aria-label="Pesquisar espaços e listas" title="Pesquisar (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))} className={botaoTopo}><Search className="h-3.5 w-3.5" /></button>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
               {acaoTopo}
             </div>
 
+            {favoritas.length > 0 && (
+              <div className="mb-2">
+                <p className="flex h-7 items-center px-2 text-legenda font-semibold tracking-rotulo text-lat-3">Favoritos</p>
+                {favoritas.map((f) => <div key={f.id}>{link(`/listas/${f.id}`, f.nome, Star)}</div>)}
+              </div>
+            )}
             <nav className="space-y-1.5">
               {arvore.length === 0 && <p className="px-2 py-2 text-legenda leading-5 text-lat-3">Nenhum espaço disponível.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
@@ -434,6 +452,12 @@ export function PainelEspacos({ navegacao, papel, nome, cronometro, fechados: fe
 
       <div className="shrink-0 space-y-1 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
+        {!comAtalhos && (
+          <>
+            <Link href="/chat" className={`${item} justify-between`}><span className="flex items-center gap-2"><MessagesSquare className="h-3.5 w-3.5 text-lat-2" /> Mensagens diretas</span><ChevronRight className="h-3 w-3 text-lat-3" /></Link>
+            <Link href="/config/personalizacao" className={`${item} border border-lat-borda`}><SlidersHorizontal className="h-3.5 w-3.5 text-lat-2" /> Personalizar a barra lateral</Link>
+          </>
+        )}
         {comAtalhos && (
           <div className="flex items-center gap-1">
             <MenuPerfil nome={nome} papel={papel} lado="top" comNome className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-lat-hover focus-visible:ring-2 focus-visible:ring-marca" />

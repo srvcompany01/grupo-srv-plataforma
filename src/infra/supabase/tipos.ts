@@ -1390,6 +1390,20 @@ export type Database = {
         Update: { archived_at?: string | null; created_at?: string; created_by?: string | null; data?: Json; id?: string; kind?: string; title?: string; updated_at?: string }
         Relationships: []
       }
+      list_favorites: {
+        Row: { created_at: string; list_id: string; user_id: string }
+        Insert: { created_at?: string; list_id: string; user_id?: string }
+        Update: { created_at?: string; list_id?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "list_favorites_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_filters: {
         Row: { created_at: string; id: string; list_id: string; name: string; params: string; user_id: string }
         Insert: { created_at?: string; id?: string; list_id: string; name: string; params: string; user_id?: string }

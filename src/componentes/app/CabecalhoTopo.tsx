@@ -1,9 +1,11 @@
 'use client'
 
-import { CalendarDays, ListChecks, Menu, Search } from 'lucide-react'
+import { CalendarDays, ChevronDown, FileText, ListChecks, LogOut, Menu, Mic, Plus, Search, Settings, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
+import { sair } from '@/app/(auth)/login/acoes'
 import { LogoGrupo } from '@/componentes/Marca'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
 import { AtalhosDialog } from './AtalhosDialog'
@@ -39,9 +41,21 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         </SheetContent>
       </Sheet>
 
-      <Link href="/home" aria-label="Grupo SRV, ir para a Home" className="flex h-7 shrink-0 items-center rounded-md bg-ink/5 px-2 hover:bg-ink/10">
-        <LogoGrupo altura="h-4" />
-      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="flex h-7 shrink-0 items-center gap-1 rounded-md bg-ink/5 px-2 hover:bg-ink/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca">
+          <LogoGrupo altura="h-4" />
+          <ChevronDown className="h-3.5 w-3.5 text-texto-3" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel>Grupo SRV</DropdownMenuLabel>
+          <DropdownMenuItem asChild><Link href="/home">Ir para a Home</Link></DropdownMenuItem>
+          {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config"><Settings className="h-4 w-4" /> Configurações</Link></DropdownMenuItem>}
+          {painel.papel === 'admin' && <DropdownMenuItem asChild><Link href="/config/usuarios"><UsersRound className="h-4 w-4" /> Gerenciar membros</Link></DropdownMenuItem>}
+          <DropdownMenuSeparator />
+          <form action={sair}><button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-corpo text-texto-2 outline-none hover:bg-hover hover:text-texto focus-visible:bg-hover"><LogOut className="h-4 w-4" aria-hidden="true" /> Sair</button></form>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={`${botaoIcone} hidden sm:flex`}><CalendarDays className="h-4 w-4" /></Link>
 
       <button
         type="button"
@@ -56,8 +70,19 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
 
       <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
         <button type="button" onClick={abrirPaleta} aria-label="Pesquisar" className={`${botaoIcone} sm:hidden`}><Search className="h-4 w-4" /></button>
+        <DropdownMenu>
+          <DropdownMenuTrigger aria-label="Criar" title="Criar" className={botaoIcone}><Plus className="h-4 w-4" /></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuLabel>Criar</DropdownMenuLabel>
+            <DropdownMenuItem asChild><Link href="/inicio">Tarefa (em Minhas tarefas)</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/documentos">Documento</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/quadros">Quadro</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/agendamentos">Post agendado</Link></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Link href="/inicio" aria-label="Minhas tarefas" title="Minhas tarefas (I)" className={botaoIcone}><ListChecks className="h-4 w-4" /></Link>
-        <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={botaoIcone}><CalendarDays className="h-4 w-4" /></Link>
+        <Link href="/reunioes" aria-label="Reuniões" title="Reuniões" className={botaoIcone}><Mic className="h-4 w-4" /></Link>
+        <Link href="/documentos" aria-label="Documentos" title="Documentos (D)" className={botaoIcone}><FileText className="h-4 w-4" /></Link>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
         <MenuPerfil nome={painel.nome} papel={painel.papel} className="ml-1 flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-marca" />
       </div>

@@ -141,7 +141,7 @@ export function BarraFiltros({
         </DropdownMenu>
       )}
       <Popover>
-        <PopoverTrigger className={`${botao} ${nFiltros ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
+        <PopoverTrigger className={`${botao} ml-auto ${nFiltros ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
           <Filter className="h-3.5 w-3.5" /> Filtro{nFiltros > 0 && ` · ${nFiltros}`}
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-[22rem] flex-wrap gap-2 p-3">
@@ -182,7 +182,7 @@ export function BarraFiltros({
           e.preventDefault()
           aplicar({ busca: String(new FormData(e.currentTarget).get('busca') ?? '').trim() })
         }}
-        className="relative ml-auto min-w-44 flex-1 sm:max-w-64"
+        className="relative min-w-44 flex-1 sm:max-w-56"
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-texto-3" />
         <input

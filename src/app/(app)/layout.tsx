@@ -14,14 +14,15 @@ import { contarNaoLidos, listarAvisos } from '@/servicos/avisos'
 import { totalNaoLidas } from '@/servicos/chat'
 import { temaAtual } from '@/servicos/tema'
 import { cronometroAtivo } from '@/servicos/tempo'
+import { listasFavoritas } from '@/servicos/visoes'
 
 // Casca da área interna. Não protege as páginas (cada página chama exigirEquipe); só monta a navegação.
 export default async function LayoutApp({ children, painel: painelTarefa }: { children: React.ReactNode; painel: React.ReactNode }) {
   const eu = await exigirEquipe()
   const jar = await cookies()
   const sb = await criarClienteServidor()
-  const [navegacao, cronometro, avisos, naoLidos, tema, chatNaoLidas] = await Promise.all([listarArvore(sb), cronometroAtivo(sb, eu.id), listarAvisos(sb), contarNaoLidos(sb), temaAtual(sb), totalNaoLidas(sb)])
-  const painel = { navegacao, papel: eu.papel, nome: eu.nome, cronometro, chatNaoLidas, tema: lerModoTema(jar.get(COOKIE_TEMA)?.value), fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value), ordemInicio: lerOrdem(jar.get(COOKIE_ORDEM_INICIO)?.value) }
+  const [navegacao, cronometro, avisos, naoLidos, tema, chatNaoLidas, favoritas] = await Promise.all([listarArvore(sb), cronometroAtivo(sb, eu.id), listarAvisos(sb), contarNaoLidos(sb), temaAtual(sb), totalNaoLidas(sb), listasFavoritas(sb).catch(() => [])])
+  const painel = { navegacao, favoritas, papel: eu.papel, nome: eu.nome, cronometro, chatNaoLidas, tema: lerModoTema(jar.get(COOKIE_TEMA)?.value), fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value), ordemInicio: lerOrdem(jar.get(COOKIE_ORDEM_INICIO)?.value) }
   // Cabeçalho do topo e, abaixo dele, a faixa de atalhos (1ª barra), a barra dos espaços (2ª barra) e o conteúdo.
   return (
     <div className="app-ui flex min-h-dvh bg-fundo" data-tema={painel.tema}>

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { ListaConteudoToggle } from '@/componentes/conteudo/ListaConteudoToggle'
 import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
-import { CompartilharLista, CriarTarefaTopo } from '@/componentes/tarefas/AcoesLista'
+import { CriarTarefaTopo } from '@/componentes/tarefas/AcoesLista'
 import { AlternadorVisao } from '@/componentes/tarefas/AlternadorVisao'
 import { BarraFiltros } from '@/componentes/tarefas/BarraFiltros'
 import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
@@ -31,6 +31,9 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags, tipoDaLista } from '@/servicos/listas'
 import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
+import { CompartilharDialog, EstrelaLista, MenuLista } from '@/componentes/tarefas/CabecalhoListaAcoes'
+import { listasFavoritas } from '@/servicos/visoes'
+import { listarEspacosComMembros } from '@/servicos/espacos'
 import { listarAtividadeDaLista, listarTarefas } from '@/servicos/tarefas'
 import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
@@ -89,6 +92,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const [documentosDaLista, todosDocumentos] = filtros.visao === 'documentos'
     ? await Promise.all([listarDocumentosDaLista(sb, id), listarDocumentos(sb)]).catch(() => [[], []] as [Awaited<ReturnType<typeof listarDocumentosDaLista>>, Awaited<ReturnType<typeof listarDocumentos>>])
     : [[], []]
+  const favorita = (await listasFavoritas(sb).catch(() => [])).some((f) => f.id === id) // sem a migration, a estrela abre apagada
+  const membrosDoEspaco = lista.espaco.id ? ((await listarEspacosComMembros(sb).catch(() => [])).find((e) => e.id === lista.espaco.id)?.membros ?? []) : []
   const atividade = filtros.visao === 'atividade' ? await listarAtividadeDaLista(sb, id).catch(() => []) : []
   const nomesAtividade = {
     status: Object.fromEntries(lista.status.map((x) => [x.id, x.nome])),
@@ -117,6 +122,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
               {lista.pasta && <><ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" /><span className="flex min-w-0 items-center gap-1.5"><span style={{ color: lista.pasta.cor }}><IconeVisual icone={lista.pasta.icone} emoji={lista.pasta.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.pasta.nome}</span></span></>}
               <ChevronRight className="h-3.5 w-3.5 shrink-0 text-texto-3" />
               <h1 className="flex min-w-0 items-center gap-1.5 font-bold text-texto"><span style={{ color: lista.cor }}><IconeVisual icone={lista.icone} emoji={lista.emoji} className="h-4 w-4" /></span><span className="truncate">{lista.nome}</span></h1>
+              <EstrelaLista listaId={id} favorita={favorita} />
+              <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
             </nav>
             {lista.mes && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1 text-legenda">
@@ -125,7 +132,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
             )}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <CompartilharLista nome={lista.nome} />
+            <CompartilharDialog nome={lista.nome} membros={membrosDoEspaco} />
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
             {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
