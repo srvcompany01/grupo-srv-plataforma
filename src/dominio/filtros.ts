@@ -3,7 +3,7 @@ import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
-export const VISOES = ['lista', 'kanban', 'calendario', 'painel', 'documentos'] as const
+export const VISOES = ['lista', 'kanban', 'calendario', 'tabela', 'galeria', 'cronograma', 'painel', 'documentos'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
 /** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
 export const NIVEIS_CALENDARIO = ['ambas', 'maes', 'subtarefas'] as const
@@ -25,6 +25,8 @@ export type Filtros = {
   niveis: NivelCalendario
   /** Campos personalizados mostrados nos itens do calendário (ids). */
   campos: string[]
+  /** Esconde as tarefas concluídas (qualquer visualização). */
+  semConcluidas: boolean
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -54,6 +56,7 @@ export function lerFiltros(sp: Params): Filtros {
     agrupamento: lerAgrupamento(valor(sp, 'grupo')),
     niveis: de(NIVEIS_CALENDARIO, valor(sp, 'niveis')) ? (valor(sp, 'niveis') as NivelCalendario) : 'ambas',
     campos: lista(sp, 'cal').filter((id) => UUID.test(id)),
+    semConcluidas: valor(sp, 'semconcl') === '1',
   }
 }
 
@@ -72,6 +75,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   if (f.agrupamento !== 'status') sp.set('grupo', f.agrupamento)
   if (f.niveis !== 'ambas') sp.set('niveis', f.niveis)
   por('cal', f.campos)
+  if (f.semConcluidas) sp.set('semconcl', '1')
   return sp
 }
 

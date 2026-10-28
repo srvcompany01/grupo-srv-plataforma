@@ -11,7 +11,11 @@ import { EditorStatus } from '@/componentes/tarefas/EditorStatus'
 import { GerenciarCampos } from '@/componentes/tarefas/GerenciarCampos'
 import { VisaoDocumentos } from '@/componentes/documentos/VisaoDocumentos'
 import { PainelDoEscopo } from '@/componentes/projetos/PainelDoEscopo'
+import { ModoEu, PainelVisao } from '@/componentes/tarefas/PainelVisao'
 import { VisaoCalendario } from '@/componentes/tarefas/VisaoCalendario'
+import { VisaoGaleria } from '@/componentes/tarefas/VisaoGaleria'
+import { VisaoLinhaDoTempo } from '@/componentes/tarefas/VisaoLinhaDoTempo'
+import { VisaoTabela } from '@/componentes/tarefas/VisaoTabela'
 import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { SalvarVisao } from '@/componentes/tarefas/SalvarVisao'
@@ -53,7 +57,9 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
     listarCamposDoContexto(sb, lista.espaco.id),
     listarClientes(sb),
   ])
-  const tarefas = await carregarValoresPersonalizados(sb, tarefasBrutas, camposDaLista)
+  const todasAsTarefas = await carregarValoresPersonalizados(sb, tarefasBrutas, camposDaLista)
+  // "Ocultar tarefas concluídas" (painel Personalizar visualização) vale para todas as visualizações.
+  const tarefas = filtros.semConcluidas ? todasAsTarefas.filter((t) => !t.concluidaEm) : todasAsTarefas
   // Lista de conteúdo: as tarefas-mãe onde os posts nascem como subtarefas.
   const maes = tipo === 'conteudo' ? (await tarefasMaeDeConteudo(sb).catch(() => [])).filter((m) => m.listaId === id) : []
   const arvore = montarArvore(tarefas)
@@ -114,11 +120,13 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
             {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
           </div>
         </div>
-        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'painel', 'documentos']} abas />
+        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'painel', 'documentos']} abas />
       </header>
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
+        <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
+        <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
         {tipo === 'conteudo' && <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} />}
         <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
@@ -127,6 +135,9 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
       <main className="p-4 md:p-5">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
+        {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}
+        {filtros.visao === 'galeria' && <VisaoGaleria grupos={grupos} ctx={ctx} />}
+        {filtros.visao === 'cronograma' && <VisaoLinhaDoTempo tarefas={arvore} ctx={ctx} />}
         {filtros.visao === 'painel' && <PainelDoEscopo escopo={{ listaId: id, cor: lista.cor }} caminho={caminho} sp={spEfetivo} euId={eu.id} rotulo={rotuloPainel} />}
         {filtros.visao === 'documentos' && (
           <VisaoDocumentos

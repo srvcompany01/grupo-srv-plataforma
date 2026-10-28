@@ -24,11 +24,12 @@ describe('filtros', () => {
       agrupamento: 'status',
       niveis: 'ambas',
       campos: [],
+      semConcluidas: false,
     })
   })
 
   it('ida e volta pela URL', () => {
-    const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', busca: 'roteiro', visao: 'calendario', grupo: 'mes', niveis: 'maes' })
+    const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', busca: 'roteiro', visao: 'calendario', grupo: 'mes', niveis: 'maes', semconcl: '1' })
     const sp = Object.fromEntries(escreverFiltros(f))
     expect(lerFiltros(sp)).toEqual(f)
   })
@@ -50,5 +51,16 @@ describe('filtros', () => {
   it('hoje no fuso de Belém', () => {
     expect(dataDeHoje(new Date('2026-10-07T02:30:00Z'))).toBe('2026-10-06')
     expect(dataDeHoje(new Date('2026-10-07T03:30:00Z'))).toBe('2026-10-07')
+  })
+})
+
+describe('visões novas e ocultar concluídas', () => {
+  it('reconhece tabela, galeria e linha do tempo e guarda semConcluidas na URL', () => {
+    for (const v of ['tabela', 'galeria', 'cronograma'] as const) expect(lerFiltros({ visao: v }).visao).toBe(v)
+    expect(lerFiltros({ visao: 'qualquer' }).visao).toBe('lista')
+    const f = lerFiltros({ semconcl: '1' })
+    expect(f.semConcluidas).toBe(true)
+    expect(escreverFiltros(f).get('semconcl')).toBe('1')
+    expect(escreverFiltros(lerFiltros({})).has('semconcl')).toBe(false)
   })
 })

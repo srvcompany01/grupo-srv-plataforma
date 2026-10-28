@@ -1,7 +1,7 @@
 import type { VisaoTarefas } from '@/dominio/filtros'
 
-/** Cor de cada tipo de visualização: lista amarela, quadro azul, calendário laranja, painel verde. */
-export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', painel: '#22865d', documentos: '#7c5cd6' }
+/** Cor de cada tipo de visualização: lista amarela, quadro azul, calendário laranja, tabela teal, galeria roxa, linha do tempo vermelha, painel verde. */
+export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', tabela: '#12a594', galeria: '#6049e7', cronograma: '#e5484d', painel: '#22865d', documentos: '#7c5cd6' }
 
 /** Ícones preenchidos (não só linhas). O desenho é branco sobre um quadrado arredondado colorido. */
 export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTarefas; className?: string }) {
@@ -28,6 +28,28 @@ export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTaref
           <rect x="6" y="12" width="3" height="6" rx="1" />
           <rect x="10.5" y="7" width="3" height="11" rx="1" />
           <rect x="15" y="9.5" width="3" height="8.5" rx="1" />
+        </g>
+      )}
+      {visao === 'tabela' && (
+        <g fill="#fff">
+          <rect x="5.5" y="6" width="13" height="3" rx="1" />
+          <rect x="5.5" y="10.5" width="13" height="2.6" rx="1" />
+          <rect x="5.5" y="14.6" width="13" height="2.6" rx="1" />
+        </g>
+      )}
+      {visao === 'galeria' && (
+        <g fill="#fff">
+          <rect x="5.5" y="5.5" width="5.5" height="5.5" rx="1.4" />
+          <rect x="13" y="5.5" width="5.5" height="5.5" rx="1.4" />
+          <rect x="5.5" y="13" width="5.5" height="5.5" rx="1.4" />
+          <rect x="13" y="13" width="5.5" height="5.5" rx="1.4" />
+        </g>
+      )}
+      {visao === 'cronograma' && (
+        <g fill="#fff">
+          <rect x="5.5" y="6" width="8" height="3" rx="1.4" />
+          <rect x="9.5" y="10.5" width="9" height="3" rx="1.4" />
+          <rect x="6.5" y="15" width="7" height="3" rx="1.4" />
         </g>
       )}
       {visao === 'calendario' && (
