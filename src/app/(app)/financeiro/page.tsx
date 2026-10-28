@@ -46,7 +46,7 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
   const href = (m: string, a = aba) => `/financeiro?mes=${m}${a === 'todos' ? '' : `&aba=${a}`}`
 
   return (
-    <div className="min-h-full bg-white">
+    <div className="relatorio min-h-full">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-borda px-4 py-3 md:px-5">
         <h1 className="flex items-center gap-2 text-destaque font-bold text-texto"><Wallet className="h-4 w-4" /> Financeiro</h1>
         <div className="flex items-center gap-2">

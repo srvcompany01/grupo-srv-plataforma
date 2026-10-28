@@ -53,7 +53,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
   const linkAba = (a: string, f?: string) => `/insights?${[a !== 'geral' ? `aba=${a}` : '', escolhido ? `cliente=${escolhido.id}` : '', f && f !== 'todos' ? `filtro=${f}` : ''].filter(Boolean).join('&')}`.replace(/\?$/, '')
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Orgânico</p>

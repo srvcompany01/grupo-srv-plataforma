@@ -36,7 +36,7 @@ export default async function Gmn({ searchParams }: PageProps<'/gmn'>) {
   const abas: [string, string, typeof Radar][] = [...(escolhido ? ([['perfil', 'Perfil e saúde', BarChart3], ['geogrid', 'Geogrid de ranking', Radar]] as [string, string, typeof Radar][]) : ([['panorama', 'Todos os clientes', Users]] as [string, string, typeof Radar][])), ['prospeccao', 'Prospecção', Target]]
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Google Meu Negócio</p>

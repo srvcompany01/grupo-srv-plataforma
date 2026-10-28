@@ -306,3 +306,39 @@ body {
 .artigo-blog th, .artigo-blog td { border-bottom: 1px solid #e6e6e2; padding: 0.5em 0.6em; text-align: left; }
 .artigo-blog code { background: #f0f0ec; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
 .artigo-blog hr { border: 0; border-top: 1px solid #e6e6e2; margin: 2em 0; }
+
+/*
+ * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): fundo cinza suave, cartões brancos bem
+ * arredondados e sem contorno, títulos grandes e leves, números grandes finos, controles em pílula (referência Twisty).
+ * Só muda a aparência; vale para tudo que estiver dentro da página.
+ */
+.relatorio {
+  --rel-canvas: #eceef2;
+  --rel-sombra: 0 14px 34px -18px rgba(30, 41, 59, 0.22), 0 1px 2px rgba(30, 41, 59, 0.05);
+  min-height: 100%;
+  background: var(--rel-canvas);
+}
+.relatorio .page-title { font-size: 1.875rem; line-height: 1.15; font-weight: 300; letter-spacing: -0.02em; }
+.relatorio .eyebrow { text-transform: none; letter-spacing: 0; }
+.relatorio h2 { font-weight: 500; letter-spacing: -0.01em; }
+.relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-bold,
+.relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-semibold,
+.relatorio .font-display { font-weight: 300; letter-spacing: -0.02em; }
+/* Cartões de primeiro nível: brancos, grandes raios, sombra suave no lugar do contorno. */
+.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
+  border-color: transparent;
+  border-radius: 1.5rem;
+  background: #fff;
+  box-shadow: var(--rel-sombra);
+}
+/* Blocos dentro de cartões: cinza claro, sem contorno (como os chips cinza da referência). */
+.relatorio .border.border-borda:not(.bg-white, input, select, textarea, button, summary, [role='button'], .controle),
+.relatorio :is(.surface-card, .bg-white) :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
+  border-color: transparent;
+  border-radius: 1rem;
+  background: #f4f5f8;
+  box-shadow: none;
+}
+/* Controles (filtros, seletores, botões secundários) em pílula. */
+.relatorio :is(.controle, select, input:not([type='checkbox'], [type='radio'], [type='color'], [type='range'])):not(textarea) { border-radius: 9999px; }
+.relatorio table thead :is(th, td) { font-size: 11px; font-weight: 500; color: var(--color-texto-3); }

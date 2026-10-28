@@ -71,7 +71,7 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const propostas = await propostasPendentes(sb, escolhido?.id)
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Tráfego pago</p>

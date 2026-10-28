@@ -85,7 +85,7 @@ function Casca({ children, periodo, hoje, q, clientes, escolhido, aba, base, aba
   abas?: Aba[]
 }) {
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Captação e medição por cliente</p>

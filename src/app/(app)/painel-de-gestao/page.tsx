@@ -53,7 +53,7 @@ export default async function PainelDeGestao({ searchParams }: PageProps<'/paine
   const dataExtenso = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Belem', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <header>
         <p className="text-rotulo text-texto-3">Visão geral</p>
         <h1 className="page-title mt-1">Painel de Gestão</h1>

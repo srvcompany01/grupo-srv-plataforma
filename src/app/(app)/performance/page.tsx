@@ -62,7 +62,7 @@ export default async function Performance({ searchParams }: PageProps<'/performa
   const periodoXlsx = `de=${periodo.de}&ate=${periodo.ate}`
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Resultados e análise por canal</p>

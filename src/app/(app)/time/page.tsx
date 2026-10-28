@@ -36,7 +36,7 @@ export default async function Time({ searchParams }: PageProps<'/time'>) {
 
   if (!quadro) {
     return (
-      <div className="page-shell">
+      <div className="page-shell relatorio">
         <h1 className="page-title">Time</h1>
         <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">Falta rodar a migração do Time (20261022000049_time_e_collab.sql) no Supabase.</p>
       </div>
@@ -58,7 +58,7 @@ export default async function Time({ searchParams }: PageProps<'/time'>) {
   const maiorDia = Math.max(1, ...atividade.map((a) => a.minutos))
 
   return (
-    <div className="page-shell">
+    <div className="page-shell relatorio">
       <AtualizarSozinho />
       <div>
         <p className="eyebrow">Equipe</p>
