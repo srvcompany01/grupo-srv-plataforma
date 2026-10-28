@@ -11,7 +11,7 @@ it('todas as predefinições passam na validação', () => {
 })
 
 it('normaliza HEX e rejeita valores inválidos', () => {
-  expect(validarTema({ ...TEMA_PADRAO, acao: 'D93900' })).toEqual({ tema: TEMA_PADRAO })
+  expect(validarTema({ ...TEMA_PADRAO, acao: '111111' })).toEqual({ tema: TEMA_PADRAO })
   const r = validarTema({ ...TEMA_PADRAO, fundo: 'red;}body{display:none' })
   expect('erros' in r && r.erros[0]).toMatch(/Fundo/)
 })
@@ -19,17 +19,16 @@ it('normaliza HEX e rejeita valores inválidos', () => {
 it('bloqueia combinações ilegíveis', () => {
   const claro = validarTema({ ...TEMA_PADRAO, acao: '#a7f3d0' })
   expect('erros' in claro && claro.erros.join()).toMatch(/botões/)
-  const escuro = validarTema({ ...TEMA_PADRAO, fundo: '#cccccc' })
+  const escuro = validarTema({ ...TEMA_PADRAO, fundo: '#333333' })
   expect('erros' in escuro && escuro.erros.join()).toMatch(/fundo/)
 })
 
 it('cai no padrão quando o valor salvo é inválido', () => {
   expect(lerTema(null)).toEqual(TEMA_PADRAO)
   expect(lerTema({ acao: 'x' })).toEqual(TEMA_PADRAO)
-  expect(cssTema(TEMA_PADRAO)).toBe('body:has(.app-ui){--tema-acao:#d93900;--tema-acento:#ff4500;--tema-fundo:#0e1113;--tema-superficie:#181c1f}')
+  expect(cssTema(TEMA_PADRAO)).toBe('body:has(.app-ui){--tema-acao:#111111;--tema-acento:#3b5bdb;--tema-fundo:#ffffff;--tema-superficie:#ffffff}')
 })
 
-it('temas claros antigos caem no padrão escuro (não passam na validação)', () => {
-  expect(lerTema({ acao: '#073f3b', acento: '#70262d', fundo: '#f7f3ed', superficie: '#fffcf8' })).toEqual(TEMA_PADRAO)
-  expect(lerTema({ acao: '#18181b', acento: '#5b5bd6', fundo: '#f6f7f9', superficie: '#ffffff' })).toEqual(TEMA_PADRAO)
+it('temas escuros salvos antes caem no padrão claro (não passam na validação)', () => {
+  expect(lerTema({ acao: '#d93900', acento: '#ff4500', fundo: '#0e1113', superficie: '#181c1f' })).toEqual(TEMA_PADRAO)
 })

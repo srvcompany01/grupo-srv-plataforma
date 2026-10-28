@@ -2,7 +2,7 @@
  * Gráfico por dia em SVG (sem biblioteca): barras para uma série, linhas para até 3 séries da MESMA unidade
  * (nunca dois eixos). Passar o mouse mostra o valor do dia. Cores: cores da marca ClickUp (roxo, azul, laranja).
  */
-export const CORES_SERIE = ['#6647f0', '#0091ff', '#f76808'] as const
+export const CORES_SERIE = ['#3b5bdb', '#e8590c', '#12a594'] as const
 
 /** Cor da série; dentro das páginas de relatório o CSS troca por tons pastel (--g-s0..2). */
 const cor = (i: number) => `var(--g-s${i}, ${CORES_SERIE[i]})`
@@ -12,7 +12,7 @@ const diaCurto = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
 export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha', rotulo = diaCurto }: { titulo: string; dias: string[]; series: { nome: string; valores: number[] }[]; formato: (n: number) => string; tipo?: 'linha' | 'barras'; /** Rótulo do eixo (padrão dd/mm; para meses, passe outro). */ rotulo?: (d: string) => string }) {
   const L = 640
   const A = 160
-  const M = { cima: 8, baixo: 22, esq: 44, dir: 8 }
+  const M = { cima: 8, baixo: 22, esq: 8, dir: 48 }
   const maior = Math.max(1, ...series.flatMap((s) => s.valores))
   const w = L - M.esq - M.dir
   const h = A - M.cima - M.baixo
@@ -32,19 +32,26 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha', r
       <svg viewBox={`0 0 ${L} ${A}`} className="h-auto max-h-56 w-full" role="img" aria-label={titulo}>
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
-            <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="var(--g-grade, #e5e4e0)" strokeWidth={1} />
-            <text x={M.esq - 6} y={y(maior * f) + 3} textAnchor="end" fontSize={10} fill="var(--g-texto, #76756f)">{formato(maior * f)}</text>
+            <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="var(--g-grade, #e0e0e0)" strokeWidth={1} strokeDasharray="4 4" />
+            <text x={L - M.dir + 8} y={y(maior * f) + 3} textAnchor="start" fontSize={10} fill="var(--g-texto, #737373)">{formato(maior * f)}</text>
           </g>
         ))}
         {dias.map((d, i) => i % passo === 0 && <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="var(--g-texto, #76756f)">{rotulo(d)}</text>)}
         {tipo === 'barras'
           ? series[0]?.valores.map((v, i) => (
-              <rect key={dias[i]} x={x(i) - larguraBarra / 2} y={y(v)} width={larguraBarra} height={Math.max(0, M.cima + h - y(v))} rx={larguraBarra / 2} fill={cor(0)}>
+              <rect key={dias[i]} x={x(i) - larguraBarra / 2} y={y(v)} width={larguraBarra} height={Math.max(0, M.cima + h - y(v))} rx={Math.min(4, larguraBarra / 2)} fill={cor(0)}>
                 <title>{`${rotulo(dias[i])}: ${formato(v)}`}</title>
               </rect>
             ))
           : series.map((s, k) => (
               <g key={s.nome}>
+                <defs>
+                  <linearGradient id={`area-${k}`} x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor={cor(k)} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={cor(k)} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                {s.valores.length > 1 && <polygon points={`${x(0)},${M.cima + h} ${s.valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')} ${x(s.valores.length - 1)},${M.cima + h}`} fill={`url(#area-${k})`} />}
                 <polyline points={s.valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke={cor(k)} strokeWidth={2} strokeLinejoin="round" />
                 {s.valores.map((v, i) => (
                   <circle key={dias[i]} cx={x(i)} cy={y(v)} r={dias.length > 45 ? 6 : 8} fill="transparent">

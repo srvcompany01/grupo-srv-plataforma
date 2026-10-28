@@ -4,11 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Sistema visual baseado no design.md do Reddit: casca escura em camadas, botões em pílula laranja, cartões de conversa arredondados, rótulos pesados. */
+/* Sistema visual: branco e preto minimalistas, cartões com borda fina e sem sombra, barra lateral clara com item ativo em cinza, filtros em chips com borda e gráficos de área azul (referência ElevenLabs). */
 @theme inline {
-  /* Reddit Sans em toda a interface (títulos em peso 700-800), como no design.md do Reddit. */
-  --font-sans: var(--font-reddit), Arial, ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-reddit), Arial, ui-sans-serif, system-ui, sans-serif;
+  /* Inter em toda a interface: títulos em peso 600-700, texto em 400-500 (estilo ElevenLabs). */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Identidade editorial: bordô como acento, petróleo para ação principal e navegação, marfim como base. */
@@ -116,10 +116,10 @@
   --color-background: var(--background);
   /* Raios: 8 (controles), 12 (cartões), 16 (painéis); pílula só em chips e selos. */
   --radius-sm: 6px;
-  --radius-md: 8px;
+  --radius-md: 10px;
   --radius-lg: 12px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
@@ -201,57 +201,57 @@ body {
   --c-ink: #202020;
 }
 
-/* Área logada: casca escura em camadas (canvas, superfície, superfície alternativa), texto azul-acinzentado e laranja Reddit. */
+/* Área logada: branco e preto com cinzas neutros e um azul de apoio (links, foco, gráficos). */
 body:has(.app-ui) {
-  --tema-acao: #d93900;
-  --tema-acento: #ff4500;
-  --tema-fundo: #0e1113;
-  --tema-superficie: #181c1f;
-  --c-texto: #eef1f3;
-  --c-texto-2: #b7cad4;
-  --c-texto-3: #8ba2ad;
-  --c-borda: rgba(255, 255, 255, 0.15);
-  --c-borda-forte: rgba(255, 255, 255, 0.4);
-  --c-perigo-forte: #ff7a7e;
-  --c-perigo-borda: rgba(229, 72, 77, 0.45);
-  --c-perigo-fundo: rgba(229, 72, 77, 0.16);
-  --c-sucesso-forte: #52d28c;
-  --c-sucesso-fundo: rgba(48, 164, 108, 0.16);
-  --c-aviso-forte: #ffd666;
-  --c-aviso-fundo: rgba(255, 197, 61, 0.14);
-  --c-azul: #648efc;
-  --c-azul-fundo: rgba(100, 142, 252, 0.16);
-  --c-areia: #21272a;
-  --c-pale-purple: rgba(100, 142, 252, 0.14);
-  --c-pale-pink: rgba(211, 22, 139, 0.16);
-  --c-pale-orange: rgba(255, 69, 0, 0.16);
-  --c-trilho: #eef1f3;
-  --c-carbon: #eef1f3;
+  --tema-acao: #111111;
+  --tema-acento: #3b5bdb;
+  --tema-fundo: #ffffff;
+  --tema-superficie: #ffffff;
+  --c-texto: #111111;
+  --c-texto-2: #404040;
+  --c-texto-3: #6f6f6f;
+  --c-borda: #ececec;
+  --c-borda-forte: #d9d9d9;
+  --c-perigo-forte: #bc0117;
+  --c-perigo-borda: #f1b4ba;
+  --c-perigo-fundo: #fdeced;
+  --c-sucesso-forte: #0a7d1f;
+  --c-sucesso-fundo: #e6f6e9;
+  --c-aviso-forte: #7a5a00;
+  --c-aviso-fundo: #fff3cf;
+  --c-azul: #3b5bdb;
+  --c-azul-fundo: #e8edfd;
+  --c-areia: #f4f4f5;
+  --c-pale-purple: #eef0fd;
+  --c-pale-pink: #fdeef7;
+  --c-pale-orange: #fff0e8;
+  --c-trilho: #111111;
+  --c-carbon: #111111;
   --c-shadow-cartao: none;
-  --c-shadow-flutuante: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.12);
-  --c-ink: #ffffff;
-  --lat-bg: #0e1113;
-  --lat-fg: #eef1f3;
-  --lat-2: rgba(238, 241, 243, 0.78);
-  --lat-3: rgba(183, 202, 212, 0.7);
-  --lat-hover: rgba(255, 255, 255, 0.07);
-  --lat-ativo: rgba(255, 69, 0, 0.18);
-  --lat-borda: rgba(255, 255, 255, 0.15);
-  --foreground: #eef1f3;
-  --card-foreground: #eef1f3;
-  --popover-foreground: #eef1f3;
+  --c-shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --c-ink: #111111;
+  --lat-bg: #fcfcfc;
+  --lat-fg: #111111;
+  --lat-2: rgba(17, 17, 17, 0.72);
+  --lat-3: rgba(17, 17, 17, 0.55);
+  --lat-hover: rgba(0, 0, 0, 0.04);
+  --lat-ativo: rgba(0, 0, 0, 0.06);
+  --lat-borda: #ececec;
+  --foreground: #111111;
+  --card-foreground: #111111;
+  --popover-foreground: #111111;
   --primary-foreground: #ffffff;
-  --secondary: #21272a;
-  --secondary-foreground: #eef1f3;
-  --muted: #21272a;
-  --muted-foreground: #8ba2ad;
-  --accent: #21272a;
-  --accent-foreground: #eef1f3;
-  --destructive: #ff5a5f;
-  --border: rgba(255, 255, 255, 0.15);
-  --input: rgba(255, 255, 255, 0.25);
-  --linha-lista: rgba(255, 255, 255, 0.1);
-  color-scheme: dark;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #111111;
+  --muted: #f4f4f5;
+  --muted-foreground: #6f6f6f;
+  --accent: #f4f4f5;
+  --accent-foreground: #111111;
+  --destructive: #bc0117;
+  --border: #ececec;
+  --input: #dcdcdc;
+  --linha-lista: #f0f0f0;
+  color-scheme: light;
 }
 
 @layer base {
@@ -271,8 +271,8 @@ body:has(.app-ui) {
     letter-spacing: -0.02em;
   }
   ::selection {
-    background: rgba(255, 69, 0, 0.35);
-    color: #ffffff;
+    background: #d6e0ff;
+    color: #111111;
   }
 }
 
@@ -281,19 +281,20 @@ body:has(.app-ui) {
     @apply w-full space-y-5 px-4 py-5 md:px-6 md:py-6;
   }
 
-  /* Título da página: Reddit Sans pesado, sem tracking negativo. */
+  /* Título da página: grande e em negrito, como "Developers". */
   .page-title {
     @apply text-texto;
-    font-family: var(--font-reddit), Arial, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-family: var(--font-inter), sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
     line-height: 1.2;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
   }
 
   .eyebrow {
-    @apply text-legenda leading-5 font-semibold text-texto-3;
-    font-family: var(--font-reddit), Arial, sans-serif;
+    @apply text-rotulo leading-5 font-medium text-texto-3;
+    font-family: var(--font-inter), sans-serif;
+    font-weight: 500;
   }
 
   .surface-card {
@@ -392,24 +393,29 @@ body:has(.app-ui) {
 .artigo-blog hr { border: 0; border-top: 1px solid #e6e6e2; margin: 2em 0; }
 
 /*
- * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): mesma casca escura em camadas do resto da
- * plataforma; os cartões ficam na superfície (#181C1F) sobre o canvas (#0E1113), com borda fina e cantos de 20px.
+ * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): cartões brancos com borda fina e sem sombra,
+ * rótulo cinza acima de um número grande, e chips de filtro com borda (controle com rótulo + valor).
  */
 .relatorio { min-height: 100%; background: var(--color-fundo); }
-.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) { border-radius: 20px; }
-.relatorio .numero { border-radius: 20px; padding: 0.75rem 0.875rem; }
-.relatorio .numero p.font-bold { font-size: 1.375rem; font-weight: 800; line-height: 1.2; }
-.relatorio table thead :is(th, td) { font-size: 11px; font-weight: 700; color: var(--color-texto-3); }
+.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) { border-radius: 16px; box-shadow: none; }
+.relatorio .numero { border-radius: 14px; padding: 0.75rem 0.875rem; }
+.relatorio .numero p.font-bold { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
+.relatorio table thead :is(th, td) { font-size: 12px; font-weight: 500; color: var(--color-texto-3); }
 
-/* Títulos da área logada: Reddit Sans em peso alto, sem espaçamento negativo. */
-body:has(.app-ui) :is(h1, h2, h3, h4):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 700; letter-spacing: 0; }
-body:has(.app-ui) .font-display { font-weight: 800; letter-spacing: 0; }
+/* Controles (filtros, seletores, botões secundários): chips com borda fina e cantos de 10px. */
+body:has(.app-ui) .controle { border-radius: 10px; border-color: var(--color-borda); background: var(--color-white); }
+body:has(.app-ui) .controle:hover { background: var(--color-hover); }
 
-/* Home: cartões de conversa (superfície escura, borda fina, 20px), um painel de destaque laranja e botões em pílula. */
+/* Títulos e ícones da área logada: peso 600-700, ícones de traço fino (estilo ElevenLabs). */
+body:has(.app-ui) :is(h1, h2, h3, h4):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 600; letter-spacing: -0.015em; }
+body:has(.app-ui) .font-display { font-weight: 700; letter-spacing: -0.02em; }
+body:has(.app-ui) nav svg { stroke-width: 1.6; }
+
+/* Home: cartões brancos com borda fina, painel preto de boas-vindas e destaque em preto. */
 .home-ui {
-  --h-escuro: #21272a;
-  --h-acento: #ff4500;
-  --h-palido: rgba(255, 69, 0, 0.16);
-  --h-superficie: #0e1113;
+  --h-escuro: #111111;
+  --h-acento: #111111;
+  --h-palido: #f4f4f5;
+  --h-superficie: #f7f7f8;
   background: var(--color-fundo);
 }

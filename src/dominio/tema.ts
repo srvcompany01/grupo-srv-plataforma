@@ -22,16 +22,16 @@ export const ROTULO_COR_TEMA: Record<keyof Tema, { nome: string; dica: string }>
   superficie: { nome: 'Superfície', dica: 'Cartões, menus e campos' },
 }
 
-export const TEMA_PADRAO: Tema = { acao: '#d93900', acento: '#ff4500', fundo: '#0e1113', superficie: '#181c1f' }
+export const TEMA_PADRAO: Tema = { acao: '#111111', acento: '#3b5bdb', fundo: '#ffffff', superficie: '#ffffff' }
 
 export const PREDEFINICOES: { nome: string; tema: Tema }[] = [
-  { nome: 'Reddit', tema: TEMA_PADRAO },
-  { nome: 'Azul', tema: { acao: '#115bca', acento: '#648efc', fundo: '#0e1113', superficie: '#181c1f' } },
-  { nome: 'Floresta', tema: { acao: '#0f7a5c', acento: '#00e2b7', fundo: '#0f1a1c', superficie: '#16262a' } },
-  { nome: 'Ameixa', tema: { acao: '#b3126f', acento: '#ff5cb8', fundo: '#120d11', superficie: '#1d1519' } },
+  { nome: 'ElevenLabs', tema: TEMA_PADRAO },
+  { nome: 'Reddit', tema: { acao: '#d93900', acento: '#d93900', fundo: '#f6f9fb', superficie: '#ffffff' } },
+  { nome: 'Floresta', tema: { acao: '#0f7a5c', acento: '#0f7a5c', fundo: '#f4f8f6', superficie: '#ffffff' } },
+  { nome: 'Grafite', tema: { acao: '#27272a', acento: '#d93900', fundo: '#f5f5f4', superficie: '#ffffff' } },
 ]
 
-const TEXTO = '#eef1f3'
+const TEXTO = '#111111'
 const TEXTO_CLARO = '#ffffff'
 
 function luminancia(hex: string): number {
@@ -50,7 +50,7 @@ export function contraste(a: string, b: string): number {
 
 /**
  * Normaliza as cores e confere a legibilidade mínima (WCAG AA 4,5:1) dos pares que a interface usa:
- * texto claro sobre fundo e superfície escuros, texto branco sobre a cor de ação e o acento visível sobre a superfície.
+ * texto escuro sobre fundo e superfície, e texto branco sobre a cor de ação e de acento.
  */
 export function validarTema(entrada: Record<string, unknown>): { tema: Tema } | { erros: string[] } {
   const tema = {} as Tema
@@ -61,13 +61,13 @@ export function validarTema(entrada: Record<string, unknown>): { tema: Tema } | 
     else tema[chave] = hex
   }
   if (erros.length) return { erros }
-  const pares: [string, string, string, number?][] = [
-    [tema.fundo, TEXTO, 'O texto claro fica ilegível sobre o fundo. Escolha um fundo mais escuro.'],
-    [tema.superficie, TEXTO, 'O texto claro fica ilegível sobre a superfície. Escolha uma superfície mais escura.'],
+  const pares: [string, string, string][] = [
+    [tema.fundo, TEXTO, 'O texto fica ilegível sobre o fundo. Escolha um fundo mais claro.'],
+    [tema.superficie, TEXTO, 'O texto fica ilegível sobre a superfície. Escolha uma superfície mais clara.'],
     [tema.acao, TEXTO_CLARO, 'O texto dos botões fica ilegível sobre a cor de ação. Escolha uma cor mais escura.'],
-    [tema.acento, tema.superficie, 'O acento some sobre a superfície. Escolha um acento mais claro ou uma superfície mais escura.', 3],
+    [tema.acento, TEXTO_CLARO, 'O texto claro fica ilegível sobre o acento. Escolha um acento mais escuro.'],
   ]
-  for (const [cor, texto, mensagem, minimo = 4.5] of pares) if (contraste(cor, texto) < minimo) erros.push(mensagem)
+  for (const [cor, texto, mensagem] of pares) if (contraste(cor, texto) < 4.5) erros.push(mensagem)
   return erros.length ? { erros } : { tema }
 }
 
