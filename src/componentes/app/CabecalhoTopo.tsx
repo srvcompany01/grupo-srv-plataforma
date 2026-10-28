@@ -43,10 +43,10 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
           </SheetContent>
         </Sheet>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px 0 4px', border: 0, background: 'var(--bg-hover)', borderRadius: 16, cursor: 'pointer', minWidth: 0 }}>
-            <span style={{ width: 24, height: 24, flex: 'none', borderRadius: 7, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
-            <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>Grupo SRV</span>
-            <Ic n="expand_more" s={18} w={300} style={{ color: 'var(--text-3)' }} />
+          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 12, padding: '0 10px 0 6px', borderRadius: 8, cursor: 'pointer', minWidth: 0 }}>
+            <span style={{ width: 20, height: 20, flex: 'none', borderRadius: 5, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
+            <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>Grupo SRV</span>
+            <Ic n="expand_more" s={16} w={300} style={{ color: 'var(--text-2)' }} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
             <div className="flex items-center gap-2.5 px-2 py-2">
@@ -65,7 +65,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
         <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
       </div>
 
-      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden sm:flex" style={{ flex: '0 1 360px', minWidth: 160, height: 28, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'center', gap: 8, padding: '0 5px 0 10px', color: 'var(--text-3)', cursor: 'text' }}>
+      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden sm:flex" style={{ flex: '0 1 360px', minWidth: 160, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'center', gap: 8, padding: '0 5px 0 10px', color: 'var(--text-3)', cursor: 'text' }}>
         <Ic n="search" s={16} />
         <span style={{ flex: 1, textAlign: 'left', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Buscar tarefas, clientes, documentos…</span>
         <span style={{ fontSize: 11, lineHeight: 1, padding: '3px 5px', border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-2)' }}>⌘K</span>

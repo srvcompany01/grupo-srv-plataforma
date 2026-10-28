@@ -25,6 +25,7 @@ export function SeletorStatus({
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={pendente || opcoes.length === 0}
+        data-redondo={comNome ? undefined : true}
         aria-label={`Status: ${atual?.nome ?? ''}`}
         title={atual?.nome}
         className={comNome ? 'inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded px-2 text-[12px] font-medium' : 'flex h-[14px] w-[14px] items-center justify-center rounded-full p-0'}
