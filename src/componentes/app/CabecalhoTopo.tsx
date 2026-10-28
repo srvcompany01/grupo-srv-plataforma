@@ -43,10 +43,10 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
           </SheetContent>
         </Sheet>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="hover-bg" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px 0 4px', border: 0, background: 'transparent', borderRadius: 6, cursor: 'pointer', minWidth: 0 }}>
-            <span style={{ width: 20, height: 20, flex: 'none', borderRadius: 4, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
-            <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>Grupo SRV</span>
-            <Ic n="expand_more" s={14} style={{ color: 'var(--text-3)' }} />
+          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px 0 4px', border: 0, background: 'var(--bg-hover)', borderRadius: 16, cursor: 'pointer', minWidth: 0 }}>
+            <span style={{ width: 24, height: 24, flex: 'none', borderRadius: 7, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
+            <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>Grupo SRV</span>
+            <Ic n="expand_more" s={18} w={300} style={{ color: 'var(--text-3)' }} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
             <div className="flex items-center gap-2.5 px-2 py-2">
@@ -61,7 +61,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
             <form action={sair}><button className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-corpo outline-none hover:bg-hover" style={{ color: 'var(--red)' }}><Ic n="logout" s={16} /> Sair</button></form>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/agenda" title="Agenda" aria-label="Agenda" className="hidden sm:flex hover-bg" style={tb}><Ic n="calendar_month" s={17} /></Link>
+        <Link href="/agenda" title="Agenda" aria-label="Agenda" className="hidden sm:flex hover-bg" style={tb}><Ic n="calendar_today" s={19} w={300} /></Link>
         <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
       </div>
 

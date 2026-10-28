@@ -549,3 +549,4 @@ input.ck:checked::after { content: ''; position: absolute; left: 4px; top: 1px; 
 /* Células editáveis da Lista: contorno interno ao passar o mouse (como no protótipo). */
 [data-linha] > [data-celula]:not([data-celula='nome']) { height: 28px; margin: 0 2px; border-radius: 4px; display: flex; align-items: center; }
 [data-linha] > [data-celula]:not([data-celula='nome']):hover { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.empresa-pill:hover { background: var(--bg-active) !important; }
