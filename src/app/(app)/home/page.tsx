@@ -22,7 +22,7 @@ const SEMANA = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 const DIAS_A_FRENTE = 14
 const formatar = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('pt-BR', { ...o, timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
 const rotuloDia = (dia: string, hoje: string) => (dia === hoje ? 'Hoje' : dia === somarDias(hoje, 1) ? 'Amanhã' : formatar(dia, { day: '2-digit', month: 'short' }))
-const cartao = 'rounded-[2rem] bg-[var(--h-claro)] p-5'
+const cartao = 'rounded-[20px] border border-borda bg-white p-5 shadow-cartao'
 
 export default async function Home() {
   const eu = await exigirEquipe()
@@ -87,9 +87,9 @@ export default async function Home() {
             <h2 className="home-titulo">Minhas tarefas</h2>
             <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-9 w-9 items-center justify-center rounded-full border border-black/15 text-black/70 transition hover:bg-black/5"><ArrowRight className="h-4 w-4" /></Link>
           </div>
-          <div className="flex items-center justify-between gap-3 rounded-[1.5rem] bg-[var(--h-vermelho)] p-5 text-white">
+          <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-acento)] p-5 text-white">
             <div>
-              <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--h-vermelho)]"><CircleCheck className="h-5 w-5" /></span>
+              <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--h-acento)]"><CircleCheck className="h-5 w-5" /></span>
               <p className="text-3xl font-medium leading-none">{emDia}%</p>
               <p className="mt-1 text-rotulo text-white/75">em dia · {pendentes.length} pendente{pendentes.length === 1 ? '' : 's'}</p>
             </div>
@@ -103,12 +103,12 @@ export default async function Home() {
                 const atrasada = !!t.prazo && t.prazo < hoje
                 return (
                   <li key={t.id}>
-                    <Link href={`/tarefas/${t.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-2.5 transition hover:bg-black/5">
+                    <Link href={`/tarefas/${t.id}`} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-2.5 transition hover:bg-black/5">
                       <span className="min-w-0">
                         <span className="block truncate text-corpo font-medium text-black">{t.titulo}</span>
                         <NomeCliente nome={t.clienteNome} className="text-rotulo" />
                       </span>
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-legenda font-medium ${atrasada ? 'bg-[var(--h-vermelho)] text-white' : 'bg-black/5 text-black/60'}`}>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-legenda font-medium ${atrasada ? 'bg-[var(--h-acento)] text-white' : 'bg-black/5 text-black/60'}`}>
                         {t.prazo === hoje ? 'Hoje' : t.prazo ? formatar(t.prazo, { day: '2-digit', month: 'short' }) : ''}
                       </span>
                     </Link>
@@ -119,10 +119,10 @@ export default async function Home() {
           )}
         </section>
 
-        <section className={`${cartao} bg-white ring-1 ring-black/10 lg:col-span-5 xl:col-span-3`}>
+        <section className={`${cartao} lg:col-span-5 xl:col-span-3`}>
           <div className="mb-5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white"><CalendarDays className="h-4 w-4" /></span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--h-palido)] text-[var(--h-acento)]"><CalendarDays className="h-4 w-4" /></span>
               <h2 className="home-titulo">Agenda</h2>
             </div>
             <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-9 w-9 items-center justify-center rounded-full border border-black/15 text-black/70 transition hover:bg-black/5"><ChevronRight className="h-4 w-4" /></Link>
@@ -133,7 +133,7 @@ export default async function Home() {
             <ol className="relative space-y-5 pl-8 before:absolute before:bottom-2 before:left-[0.4375rem] before:top-2 before:w-px before:bg-black/20">
               {proximos.map((e, i) => (
                 <li key={e.id} className="relative">
-                  <span className={`absolute -left-8 top-1 h-3.5 w-3.5 rounded-full border ${i === 0 ? 'border-[var(--h-vermelho)] bg-[var(--h-vermelho)]' : 'border-black/30 bg-white'}`} />
+                  <span className={`absolute -left-8 top-1 h-3.5 w-3.5 rounded-full border ${i === 0 ? 'border-[var(--h-acento)] bg-[var(--h-acento)]' : 'border-black/30 bg-white'}`} />
                   <p className="text-corpo font-medium text-black">{rotuloDia(dataLocal(e.inicio), hoje)}</p>
                   <p className="text-rotulo text-black/50"><span className="tabular-nums">{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span> · {e.titulo}</p>
                 </li>
@@ -150,7 +150,7 @@ export default async function Home() {
 
         <section className={`${cartao} lg:col-span-12 xl:col-span-4`}>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-[1.5rem] bg-black p-4 text-white" aria-label="Calendário do mês">
+            <div className="rounded-[14px] bg-[var(--h-escuro)] p-4 text-white" aria-label="Calendário do mês">
               <p className="mb-2 text-center text-rotulo font-medium capitalize">{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>
               <div className="grid grid-cols-7 gap-y-0.5 text-center text-legenda">
                 {SEMANA.map((d, i) => <span key={i} className="text-white/50">{d}</span>)}
@@ -158,7 +158,7 @@ export default async function Home() {
                   const doMes = dia.startsWith(mes)
                   const feriado = feriados.get(dia)
                   return (
-                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[var(--h-vermelho)] font-semibold text-white' : doMes ? (feriado ? 'font-semibold text-[#ff6b6f]' : '') : 'text-white/25'}`}>
+                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[var(--h-acento)] font-semibold text-white' : doMes ? (feriado ? 'font-semibold text-[#b38cff]' : '') : 'text-white/25'}`}>
                       {Number(dia.slice(8))}
                       {comEvento.has(dia) && <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-white" />}
                     </span>
@@ -166,16 +166,16 @@ export default async function Home() {
                 })}
               </div>
             </div>
-            <div className="rounded-[1.5rem] bg-white p-4 text-black">
+            <div className="rounded-[14px] bg-white p-4 text-black">
               <p className="flex items-center justify-between text-rotulo text-black/50">Próximo feriado <PartyPopper className="h-4 w-4" /></p>
               <p className="mt-1 text-xl font-medium leading-tight">{proxFeriado?.nome ?? '—'}</p>
               <p className="text-rotulo text-black/50">{proxFeriado ? (diasAteFeriado === 0 ? 'É hoje' : `em ${diasAteFeriado} dia${diasAteFeriado > 1 ? 's' : ''} · ${formatar(proxFeriado.data, { day: '2-digit', month: 'short' })}`) : ''}</p>
-              <div className="mt-3 h-2.5 rounded-full bg-black/10"><div className="h-full rounded-full bg-[var(--h-vermelho)]" style={{ width: `${Math.max(6, 100 - Math.min(90, diasAteFeriado) * (100 / 90))}%` }} /></div>
+              <div className="mt-3 h-2.5 rounded-full bg-black/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${Math.max(6, 100 - Math.min(90, diasAteFeriado) * (100 / 90))}%` }} /></div>
             </div>
           </div>
         </section>
 
-        <section className={`${cartao} bg-white ring-1 ring-black/10 lg:col-span-7 xl:col-span-8`}>
+        <section className={`${cartao} lg:col-span-7 xl:col-span-8`}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="home-titulo">Panorama dos clientes</h2>
@@ -191,7 +191,7 @@ export default async function Home() {
                 const c = clientes.find((x) => x.id === l.id)
                 const pronto = l.total ? Math.round((l.concluidas / l.total) * 100) : 0
                 return (
-                  <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 rounded-2xl bg-[var(--h-claro)] px-4 py-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
+                  <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
                     <NomeCliente nome={l.nome} href={`/clientes/${l.id}`} className="truncate" />
                     <div className="order-last col-span-2 sm:order-none sm:col-span-1" title={`${pronto}% concluído`}>
                       <div className="h-2 overflow-hidden rounded-full bg-black/10"><div className="h-full rounded-full bg-black" style={{ width: `${pronto}%` }} /></div>
@@ -199,7 +199,7 @@ export default async function Home() {
                     <p className="flex items-center gap-2 text-legenda tabular-nums text-black/60">
                       <span>{l.total} tarefas</span>
                       <span>{l.emAndamento} em andamento</span>
-                      <span className={`rounded-full px-2 py-0.5 font-medium ${l.atrasadas ? 'bg-[var(--h-vermelho)] text-white' : 'bg-black/5'}`}>{l.atrasadas} atrasada{l.atrasadas === 1 ? '' : 's'}</span>
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${l.atrasadas ? 'bg-[var(--h-acento)] text-white' : 'bg-black/5'}`}>{l.atrasadas} atrasada{l.atrasadas === 1 ? '' : 's'}</span>
                       {c && c.status !== 'ativo' && <span className="rounded-full bg-black/10 px-2 py-0.5">{ROTULO_STATUS_CLIENTE[c.status]}</span>}
                     </p>
                   </div>
@@ -210,14 +210,14 @@ export default async function Home() {
         </section>
 
         <section className={`${cartao} lg:col-span-5 xl:col-span-4`}>
-          <h2 className="home-titulo mb-4 flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-[var(--h-vermelho)]" /> Pontos de atenção</h2>
+          <h2 className="home-titulo mb-4 flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-[var(--h-acento)]" /> Pontos de atenção</h2>
           {atencao.length === 0 ? (
             <p className="text-corpo text-black/50">Tudo em ordem por aqui.</p>
           ) : (
             <ul className="space-y-2">
               {atencao.map((a, i) => (
                 <li key={i}>
-                  <Link href={a.href} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-corpo text-black/80 transition hover:bg-black/5">
+                  <Link href={a.href} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 text-corpo text-black/80 transition hover:bg-black/5">
                     <span>{a.texto}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-black/40" />
                   </Link>
@@ -237,10 +237,10 @@ function Medidor({ pct, total }: { pct: number; total: number }) {
   return (
     <svg viewBox="0 0 200 116" className="h-auto w-40 shrink-0" role="img" aria-label={`${pct}% das tarefas em dia`}>
       <defs>
-        <pattern id="hachura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.55)" strokeWidth="1.5" /></pattern>
+        <pattern id="hachura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.4)" strokeWidth="1.5" /></pattern>
       </defs>
       <path d={arco} fill="none" stroke="url(#hachura)" strokeWidth="26" strokeLinecap="round" />
-      <path d={arco} pathLength={100} fill="none" stroke="#111" strokeWidth="26" strokeLinecap="round" strokeDasharray={`${Math.max(0, pct - 1)} 100`} />
+      <path d={arco} pathLength={100} fill="none" stroke="#fff" strokeWidth="26" strokeLinecap="round" strokeDasharray={`${Math.max(0, pct - 1)} 100`} />
       <text x="100" y="108" textAnchor="middle" fontSize="26" fontWeight="500" fill="#fff">{total}</text>
     </svg>
   )

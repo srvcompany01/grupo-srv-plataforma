@@ -22,12 +22,15 @@ export const ROTULO_COR_TEMA: Record<keyof Tema, { nome: string; dica: string }>
   superficie: { nome: 'Superfície', dica: 'Cartões, menus e campos' },
 }
 
-export const TEMA_PADRAO: Tema = { acao: '#18181b', acento: '#5b5bd6', fundo: '#f6f7f9', superficie: '#ffffff' }
-/** Tema antigo (Editorial). Quem nunca o trocou migra sozinho para o novo padrão. */
+export const TEMA_PADRAO: Tema = { acao: '#202020', acento: '#7612fa', fundo: '#f8f9fa', superficie: '#ffffff' }
+/** Tema anterior (neutro com índigo). */
+const TEMA_NOVA: Tema = { acao: '#18181b', acento: '#5b5bd6', fundo: '#f6f7f9', superficie: '#ffffff' }
+/** Tema antigo (Editorial). Quem nunca trocou o tema (Editorial ou o neutro anterior) migra sozinho para o padrão atual. */
 const TEMA_EDITORIAL: Tema = { acao: '#073f3b', acento: '#70262d', fundo: '#f7f3ed', superficie: '#fffcf8' }
 
 export const PREDEFINICOES: { nome: string; tema: Tema }[] = [
-  { nome: 'Nova', tema: TEMA_PADRAO },
+  { nome: 'ClickUp', tema: TEMA_PADRAO },
+  { nome: 'Neutro índigo', tema: TEMA_NOVA },
   { nome: 'Editorial', tema: TEMA_EDITORIAL },
   { nome: 'SRV clássico', tema: { acao: '#111111', acento: '#d11a22', fundo: '#f8f9fa', superficie: '#ffffff' } },
   { nome: 'Grafite', tema: { acao: '#27272a', acento: '#a5503f', fundo: '#f5f5f4', superficie: '#ffffff' } },
@@ -35,7 +38,7 @@ export const PREDEFINICOES: { nome: string; tema: Tema }[] = [
   { nome: 'Oceano', tema: { acao: '#1d3f6e', acento: '#356aa5', fundo: '#f3f5f8', superficie: '#ffffff' } },
 ]
 
-const TEXTO = '#18181b'
+const TEXTO = '#202020'
 const TEXTO_CLARO = '#ffffff'
 
 function luminancia(hex: string): number {
@@ -80,7 +83,8 @@ export function lerTema(valor: unknown): Tema {
   if (!valor || typeof valor !== 'object') return TEMA_PADRAO
   const r = validarTema(valor as Record<string, unknown>)
   if (!('tema' in r)) return TEMA_PADRAO
-  return (Object.keys(TEMA_EDITORIAL) as (keyof Tema)[]).every((k) => r.tema[k] === TEMA_EDITORIAL[k]) ? TEMA_PADRAO : r.tema
+  const igual = (o: Tema) => (Object.keys(o) as (keyof Tema)[]).every((k) => r.tema[k] === o[k])
+  return igual(TEMA_EDITORIAL) || igual(TEMA_NOVA) ? TEMA_PADRAO : r.tema
 }
 
 /** Variáveis CSS do tema. Só recebe cores já validadas (#rrggbb), então não há como injetar CSS. */

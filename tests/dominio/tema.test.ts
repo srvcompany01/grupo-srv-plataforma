@@ -11,7 +11,7 @@ it('todas as predefinições passam na validação', () => {
 })
 
 it('normaliza HEX e rejeita valores inválidos', () => {
-  expect(validarTema({ ...TEMA_PADRAO, acao: '18181B' })).toEqual({ tema: TEMA_PADRAO })
+  expect(validarTema({ ...TEMA_PADRAO, acao: '202020' })).toEqual({ tema: TEMA_PADRAO })
   const r = validarTema({ ...TEMA_PADRAO, fundo: 'red;}body{display:none' })
   expect('erros' in r && r.erros[0]).toMatch(/Fundo/)
 })
@@ -26,9 +26,10 @@ it('bloqueia combinações ilegíveis', () => {
 it('cai no padrão quando o valor salvo é inválido', () => {
   expect(lerTema(null)).toEqual(TEMA_PADRAO)
   expect(lerTema({ acao: 'x' })).toEqual(TEMA_PADRAO)
-  expect(cssTema(TEMA_PADRAO)).toBe(':root{--tema-acao:#18181b;--tema-acento:#5b5bd6;--tema-fundo:#f6f7f9;--tema-superficie:#ffffff}')
+  expect(cssTema(TEMA_PADRAO)).toBe(':root{--tema-acao:#202020;--tema-acento:#7612fa;--tema-fundo:#f8f9fa;--tema-superficie:#ffffff}')
 })
 
-it('o tema Editorial antigo migra para o novo padrão', () => {
+it('os temas antigos (Editorial e neutro índigo) migram para o padrão atual', () => {
   expect(lerTema({ acao: '#073f3b', acento: '#70262d', fundo: '#f7f3ed', superficie: '#fffcf8' })).toEqual(TEMA_PADRAO)
+  expect(lerTema({ acao: '#18181b', acento: '#5b5bd6', fundo: '#f6f7f9', superficie: '#ffffff' })).toEqual(TEMA_PADRAO)
 })

@@ -4,12 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Sistema visual SRV: neutros frios com hairlines (inbox shadcn), chips pastel e fundo arejado (Conceptzilla), tabelas densas com acento índigo (AutomatePro). */
+/* Sistema visual baseado no design.md do ClickUp: botões pretos, acento roxo, cartões brancos arredondados com borda fina, tipografia compacta. */
 @theme inline {
-  /* Uma família só (Inter, como no shadcn/Linear); font-display segue a mesma, só com mais peso nos números grandes. */
+  /* Plus Jakarta Sans nos títulos e números grandes, Inter no texto e Sometype Mono nos rótulos (identidade ClickUp). */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-sans);
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-sometype), ui-monospace, monospace;
 
   /* Identidade editorial: bordô como acento, petróleo para ação principal e navegação, marfim como base. */
   /* Ação e acento vêm do tema (Configurações → Personalização); as variações saem por color-mix. */
@@ -20,10 +20,10 @@
   --color-petroleo: var(--tema-acao);
   --color-petroleo-700: color-mix(in oklab, var(--tema-acao) 84%, white);
   --color-petroleo-100: color-mix(in oklab, var(--tema-acao) 14%, white);
-  --color-terracota: #d9534f;
-  --color-areia: #f4f4f6;
-  --color-azul: #2a6df4;
-  --color-azul-fundo: #e7efff;
+  --color-terracota: #f76808;
+  --color-areia: #f1f1f9;
+  --color-azul: #0091ff;
+  --color-azul-fundo: #e5f3ff;
   /* Superfície marfim no lugar do branco puro (bg-white/text-white seguem o token). */
   --color-white: var(--tema-superficie);
   --color-lat-bg: var(--lat-bg);
@@ -34,7 +34,7 @@
   --color-lat-ativo: var(--lat-ativo);
   --color-lat-borda: var(--lat-borda);
   --color-sinal: #e5484d;
-  --color-carbon: #18181b;
+  --color-carbon: #202020;
 
   /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
   --text-micro: 10px;
@@ -51,29 +51,32 @@
   --color-perigo-forte: #c23035;
   --color-perigo-borda: #f6c9ca;
   --color-perigo-fundo: #fdecec;
-  --color-sucesso: #1f9d6b;
-  --color-sucesso-forte: #167a52;
-  --color-sucesso-fundo: #e6f6ee;
-  --color-aviso: #e5960b;
-  --color-aviso-forte: #9a6406;
-  --color-aviso-fundo: #fdf3dc;
+  --color-sucesso: #30a46c;
+  --color-sucesso-forte: #1f7a4f;
+  --color-sucesso-fundo: #e4f5ec;
+  --color-aviso: #ffc53d;
+  --color-aviso-forte: #8a6200;
+  --color-aviso-fundo: #fff4d1;
+  --color-pale-purple: #efedfd;
+  --color-pale-pink: #fff1fe;
+  --color-pale-orange: #ffece5;
 
   /* Sombras: cartão (repouso) e flutuante (menus, painéis, hover de card). */
-  --shadow-cartao: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
-  --shadow-flutuante: 0 16px 40px -12px rgba(16, 24, 40, 0.18), 0 0 0 1px rgba(16, 24, 40, 0.05);
+  --shadow-cartao: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-flutuante: 0 10px 25px rgba(18, 43, 165, 0.1), 0 0 1px rgba(0, 0, 0, 0.27);
 
-  --color-texto: #18181b;
-  /* Contraste sobre o branco: texto-2 ~7,7:1, texto-3 ~4,8:1 (mínimo AA 4,5:1). */
-  --color-texto-2: #52525b;
-  --color-texto-3: #6b6b76;
-  --color-borda: #ebebf0;
-  --color-borda-forte: #dcdce4;
+  --color-texto: #202020;
+  /* Contraste sobre o branco: texto-2 ~8:1, texto-3 (muted do ClickUp) ~5,9:1 (mínimo AA 4,5:1). */
+  --color-texto-2: #444448;
+  --color-texto-3: #646464;
+  --color-borda: #e1e1e6;
+  --color-borda-forte: #cfcfcf;
   --color-fundo: var(--tema-fundo);
-  --color-hover: color-mix(in oklab, var(--tema-fundo), #18181b 3.5%);
-  --color-trilho: #18181b;
+  --color-hover: color-mix(in oklab, var(--tema-fundo), #202020 3.5%);
+  --color-trilho: #202020;
 
   --color-st-rascunho: #87909e;
-  --color-st-aguardando: #5b5bd6;
+  --color-st-aguardando: #7612fa;
   --color-st-ajuste: #f76808;
   --color-st-aprovado: #0f9d58;
   --font-heading: var(--font-sans);
@@ -111,9 +114,9 @@
   /* Raios: 8 (controles), 12 (cartões), 16 (painéis); pílula só em chips e selos. */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
@@ -126,35 +129,35 @@ body {
 
 :root {
   /* Tema padrão (Editorial). O layout da área interna sobrescreve com o tema salvo pelo admin. */
-  --tema-acao: #18181b;
-  --tema-acento: #5b5bd6;
-  --tema-fundo: #f6f7f9;
+  --tema-acao: #202020;
+  --tema-acento: #7612fa;
+  --tema-fundo: #f8f9fa;
   --tema-superficie: #ffffff;
-  /* Barra lateral: cinza-azulado claro, item ativo em cinza mais fundo (como no AutomatePro). */
+  /* Barra lateral: superfície cinza-clara do ClickUp, item ativo em lavanda pálida. */
   --lat-bg: color-mix(in oklab, var(--tema-fundo), var(--tema-superficie) 30%);
-  --lat-fg: #18181b;
-  --lat-2: rgba(24, 24, 27, 0.74);
-  --lat-3: rgba(24, 24, 27, 0.56);
-  --lat-hover: rgba(24, 24, 27, 0.045);
-  --lat-ativo: color-mix(in oklab, var(--tema-acento) 11%, white);
-  --lat-borda: #ebebf0;
+  --lat-fg: #202020;
+  --lat-2: rgba(32, 32, 32, 0.76);
+  --lat-3: rgba(32, 32, 32, 0.6);
+  --lat-hover: rgba(32, 32, 32, 0.05);
+  --lat-ativo: color-mix(in oklab, var(--tema-acento) 9%, white);
+  --lat-borda: #e1e1e6;
   --background: var(--tema-superficie);
-  --foreground: #18181b;
+  --foreground: #202020;
   --card: var(--tema-superficie);
-  --card-foreground: #18181b;
+  --card-foreground: #202020;
   --popover: var(--tema-superficie);
-  --popover-foreground: #18181b;
+  --popover-foreground: #202020;
   --primary: var(--tema-acao);
   --primary-foreground: #ffffff;
-  --secondary: #f1f1f5;
-  --secondary-foreground: #18181b;
-  --muted: #f1f1f5;
-  --muted-foreground: #6b6b76;
+  --secondary: #f1f1f9;
+  --secondary-foreground: #202020;
+  --muted: #f1f1f9;
+  --muted-foreground: #646464;
   --accent: color-mix(in oklab, var(--tema-acento) 10%, white);
-  --accent-foreground: #18181b;
+  --accent-foreground: #202020;
   --destructive: #c64343;
-  --border: #e4e4ea;
-  --input: #e4e4ea;
+  --border: #e1e1e6;
+  --input: #cfcfcf;
   --ring: var(--tema-acao);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -186,11 +189,11 @@ body {
     @apply font-sans;
   }
   h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
   ::selection {
-    background: #dcdcf7;
-    color: #18181b;
+    background: #e3d4fe;
+    color: #202020;
   }
 }
 
@@ -201,15 +204,17 @@ body {
 
   /* Título da página: compacto, como o cabeçalho das telas do ClickUp. */
   .page-title {
-    @apply font-semibold text-texto;
-    font-family: var(--font-sans);
-    font-size: 1.125rem;
-    line-height: 1.4;
+    @apply text-texto;
+    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
   }
 
   .eyebrow {
     @apply text-legenda leading-5 font-medium text-texto-3;
-    font-family: var(--font-sans);
+    font-family: var(--font-sometype), ui-monospace, monospace;
   }
 
   .surface-card {
@@ -231,7 +236,7 @@ body {
     inset: -2px;
     border-radius: inherit;
     content: '';
-    background: conic-gradient(from 90deg, #5b5bd6 0%, #18181b 50%, #5b5bd6 100%);
+    background: conic-gradient(from 90deg, #6647f0 0%, #0091ff 33%, #ff02f0 66%, #f76808 100%);
     animation: srv-orbit 3.6s linear infinite;
   }
 }
@@ -279,7 +284,7 @@ body {
  * Hairlines visíveis e leves (como no inbox do shadcn e no AutomatePro): contornos e divisórias em --color-borda;
  * cartões com borda fina + sombra mínima de repouso. Nas listas de tarefas a linha é um pouco mais clara.
  */
-:root { --linha-lista: #f0f0f4; }
+:root { --linha-lista: #ececf0; }
 
 .border.border-borda.bg-white:not(input, select, textarea, button, summary, [role='button'], .controle, [class*='shadow']) { box-shadow: var(--shadow-cartao); }
 
@@ -308,83 +313,30 @@ body {
 .artigo-blog hr { border: 0; border-top: 1px solid #e6e6e2; margin: 2em 0; }
 
 /*
- * Páginas de relatório e métricas (classe `relatorio` junto de page-shell). Referência "Projects Time / Time Tracker":
- * fundo azul-claro, cartões brancos de cantos bem grandes, gráficos em cartão escuro com barras pastel (lavanda, pêssego,
- * ciano), um destaque verde-limão, títulos em caixa-alta numa fonte geométrica (Outfit), ícones em quadrados arredondados
- * e controles em pílula. Só muda a aparência; vale para tudo que estiver dentro da página.
+ * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): mesma linguagem do resto da plataforma, só que
+ * com a superfície cinza-clara do ClickUp por trás, para os cartões brancos (borda fina e sombra mínima) se destacarem.
  */
-.relatorio {
-  --rel-canvas: #f4f4f5;
-  --rel-escuro: #3e3d56;
-  --rel-limao: #b9f56b;
-  --rel-lavanda: #a99bd6;
-  --rel-pessego: #f3d6b3;
-  --rel-ciano: #a6e3e3;
-  --rel-sombra: 0 24px 44px -26px rgba(62, 61, 86, 0.28), 0 2px 6px rgba(62, 61, 86, 0.04);
-  min-height: 100%;
-  background: var(--rel-canvas);
-  font-size: 14px;
-}
-.relatorio h4 { font-weight: 600; letter-spacing: 0.03em; }
-.relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-bold,
-.relatorio :is(.text-xl, .text-2xl, .text-3xl, .text-4xl).font-semibold,
-.relatorio .font-display { font-weight: 400; letter-spacing: 0; }
-.relatorio .tabular-nums { font-variant-numeric: tabular-nums; }
-/* Cartões de primeiro nível: brancos, cantos de 2rem, sombra suave no lugar do contorno. */
+.relatorio { min-height: 100%; background: var(--color-fundo); }
 .relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
-  border-color: transparent;
-  border-radius: 2rem;
-  background: #fff;
-  box-shadow: var(--rel-sombra);
+  border-radius: 20px;
+  box-shadow: var(--shadow-cartao);
 }
-/* Blocos dentro de cartões: cinza-azulado claro, sem contorno. */
-.relatorio .border.border-borda:not(.bg-white, input, select, textarea, button, summary, [role='button'], .controle),
-.relatorio :is(.surface-card, .bg-white) :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
-  border-color: transparent;
-  border-radius: 1.25rem;
-  background: #f4f4f5;
-  box-shadow: none;
-}
-/* Quadrinhos de ícone (os que têm cor própria por estilo inline) viram quadrados arredondados. */
-.relatorio :is(.numero-icone, span.flex.h-5.w-5, span.flex.h-6.w-6, span.flex.h-7.w-7)[style*='background'] { border-radius: 0.6rem; }
-/* Números do topo: o primeiro é o destaque verde-limão; os demais são cartões brancos. */
-.relatorio .numero { border-radius: 1.5rem; padding: 0.9rem 1rem; }
-.relatorio .numero[data-destaque] { background: var(--rel-limao); }
-.relatorio .numero[data-destaque] :is(p, span) { color: #1f2a0e; }
-.relatorio .numero p.font-bold { font-size: 1.5rem; font-weight: 400; line-height: 1.2; }
-/* Gráficos: cartão escuro com grade pontilhada e barras/linhas pastel. */
-.relatorio .grafico {
-  --g-grade: rgba(255, 255, 255, 0.16);
-  --g-texto: #b9b8d0;
-  --g-s0: var(--rel-lavanda);
-  --g-s1: var(--rel-pessego);
-  --g-s2: var(--rel-ciano);
-  padding: 1.25rem 1.25rem 0.75rem;
-  border-radius: 2rem;
-  background: var(--rel-escuro);
-  color: #fff;
-}
-.relatorio .grafico figcaption { margin-bottom: 0.75rem; color: #d9d8e8; }
-.relatorio .grafico figcaption > span:first-child { color: #fff; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.relatorio .grafico line { stroke-dasharray: 3 4; }
-.relatorio .grafico polyline { stroke-width: 3; }
-/* Controles (filtros, seletores, botões secundários) em pílula. */
-.relatorio :is(.controle, select, input:not([type='checkbox'], [type='radio'], [type='color'], [type='range'])):not(textarea) { border-radius: 9999px; }
-.relatorio [role='switch'][aria-checked='true'] { background: var(--rel-escuro); }
-.relatorio table thead :is(th, td) { font-size: 11px; font-weight: 500; color: var(--color-texto-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.relatorio .border.border-borda:not(.bg-white, input, select, textarea, button, summary, [role='button'], .controle) { background: #fff; }
+.relatorio .numero { border-radius: 14px; padding: 0.75rem 0.875rem; }
+.relatorio .numero p.font-bold { font-family: var(--font-jakarta), var(--font-inter), sans-serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.035em; line-height: 1.2; }
+.relatorio table thead :is(th, td) { font-family: var(--font-sometype), ui-monospace, monospace; font-size: 11px; font-weight: 500; color: var(--color-texto-3); }
 
-/* Tipografia da plataforma inteira (área logada, incluindo menus e diálogos): Outfit, títulos em caixa-alta espaçada. */
-body:has(.app-ui) { font-family: var(--font-outfit), var(--font-sans); }
-body:has(.app-ui) :is(.text-rotulo, .text-corpo, .text-legenda, .text-micro, .text-destaque, button, input, select, textarea) { font-family: inherit; }
-body:has(.app-ui) .page-title { font-family: inherit; font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-body:has(.app-ui) .eyebrow { text-transform: none; letter-spacing: 0; font-size: 13px; font-family: inherit; }
-body:has(.app-ui) :is(h2, h3):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8125rem; }
+/* Tipografia da área logada (inclui menus e diálogos): títulos em Plus Jakarta Sans, rótulos em Sometype Mono. */
+body:has(.app-ui) :is(h1, h2, h3, h4, .font-display):not(.documento *, .artigo-blog *, .ProseMirror *) { font-family: var(--font-jakarta), var(--font-inter), sans-serif; }
+body:has(.app-ui) :is(h2, h3):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 650; letter-spacing: -0.02em; }
+body:has(.app-ui) .font-display { font-weight: 700; letter-spacing: -0.04em; }
+body:has(.app-ui) :is(.page-title) { font-family: var(--font-jakarta), var(--font-inter), sans-serif; }
 
-/* Home: cartões grandes e arredondados em preto, branco e o vermelho da marca. */
+/* Home: cartões brancos de 20px sobre a superfície cinza-clara, painel escuro (#1E1E1E) e acento roxo. */
 .home-ui {
-  --h-preto: #111111;
-  --h-vermelho: #d80d12;
-  --h-claro: #f4f4f5;
-  background: #fff;
+  --h-escuro: #1e1e1e;
+  --h-acento: #7612fa;
+  --h-palido: #efedfd;
+  --h-superficie: #f8f9fa;
+  background: var(--h-superficie);
 }
-body .home-ui :is(h2, p).home-titulo { font-size: 1.125rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #111; }

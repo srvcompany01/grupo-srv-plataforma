@@ -1,8 +1,8 @@
 /**
  * Gráfico por dia em SVG (sem biblioteca): barras para uma série, linhas para até 3 séries da MESMA unidade
- * (nunca dois eixos). Passar o mouse mostra o valor do dia. Cores: paleta categorial validada (azul, laranja, aqua).
+ * (nunca dois eixos). Passar o mouse mostra o valor do dia. Cores: cores da marca ClickUp (roxo, azul, laranja).
  */
-export const CORES_SERIE = ['#2a78d6', '#eb6834', '#1baf7a'] as const
+export const CORES_SERIE = ['#6647f0', '#0091ff', '#f76808'] as const
 
 /** Cor da série; dentro das páginas de relatório o CSS troca por tons pastel (--g-s0..2). */
 const cor = (i: number) => `var(--g-s${i}, ${CORES_SERIE[i]})`
