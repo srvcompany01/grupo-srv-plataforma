@@ -21,12 +21,12 @@ export function BoasVindas({ nome, atrasadas, hoje, semana }: { nome: string; at
   const data = agora?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: FUSO })
   const maior = Math.max(1, atrasadas, hoje, semana)
   const colunas = [
-    { rotulo: 'Atrasadas', n: atrasadas, cor: 'var(--h-roxo)' },
-    { rotulo: 'Hoje', n: hoje, cor: 'var(--h-verde)' },
-    { rotulo: '7 dias', n: semana, cor: 'var(--h-verde)' },
+    { rotulo: 'Atrasadas', n: atrasadas, cor: 'var(--h-vermelho)', letra: '#fff' },
+    { rotulo: 'Hoje', n: hoje, cor: '#fff', letra: '#111' },
+    { rotulo: '7 dias', n: semana, cor: 'rgba(255,255,255,.6)', letra: '#111' },
   ]
   return (
-    <section className="flex min-h-72 flex-col justify-between rounded-[2rem] bg-[var(--h-preto)] p-6 text-white">
+    <section className="flex h-full min-h-72 flex-col justify-between rounded-[2rem] bg-[var(--h-preto)] p-6 text-white">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-[1.375rem] font-medium leading-tight">{agora ? saudacao : 'Bem-vindo'}, {nome.split(' ')[0]}</h1>
@@ -36,7 +36,7 @@ export function BoasVindas({ nome, atrasadas, hoje, semana }: { nome: string; at
       </div>
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="mb-1 flex items-center gap-2 text-rotulo text-white/60">Agora <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--h-verde)] text-black"><ArrowUpRight className="h-3 w-3" /></span></p>
+          <p className="mb-1 flex items-center gap-2 text-rotulo text-white/60">Agora <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--h-vermelho)] text-white"><ArrowUpRight className="h-3 w-3" /></span></p>
           <p className="text-[3.25rem] font-medium leading-none tabular-nums" aria-live="off">{hm}<span className="text-2xl text-white/40">{seg ? `:${seg}` : ''}</span></p>
         </div>
         <div className="flex items-end gap-2" aria-label="Tarefas por prazo">
@@ -44,7 +44,7 @@ export function BoasVindas({ nome, atrasadas, hoje, semana }: { nome: string; at
             <div key={c.rotulo} className="w-[4.5rem]">
               <p className="mb-1 text-center text-legenda text-white/60">{c.rotulo}</p>
               <div className="flex h-24 items-end rounded-t-xl bg-[repeating-linear-gradient(135deg,rgba(255,255,255,.1)_0_1px,transparent_1px_5px)]">
-                <div className="flex w-full items-center justify-center rounded-[1.1rem] text-lg font-medium text-black" style={{ background: c.cor, height: `${Math.max(22, (c.n / maior) * 100)}%` }}>{c.n}</div>
+                <div className="flex w-full items-center justify-center rounded-[1.1rem] text-lg font-medium" style={{ color: c.letra, background: c.cor, height: `${Math.max(22, (c.n / maior) * 100)}%` }}>{c.n}</div>
               </div>
             </div>
           ))}
