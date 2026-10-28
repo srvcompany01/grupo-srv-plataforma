@@ -39,7 +39,7 @@ function Cartao({ c }: { c: Comentario }) {
     })
   const alerta = (c.tom === 'negativo' || c.tom === 'agressivo') && !c.resolvidoEm
   return (
-    <li id={`c-${c.plataforma}-${c.id}`} className={`space-y-2 rounded-xl border bg-white p-3 ${alerta ? (c.tom === 'agressivo' ? 'border-perigo/40 ring-1 ring-perigo/20' : 'border-aviso/50') : 'border-borda'} ${c.oculto ? 'opacity-60' : ''}`}>
+    <li id={`c-${c.plataforma}-${c.id}`} className={`space-y-2 rounded-lg border bg-white p-3 ${alerta ? (c.tom === 'agressivo' ? 'border-perigo/40 ring-1 ring-perigo/20' : 'border-aviso/50') : 'border-borda'} ${c.oculto ? 'opacity-60' : ''}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-full text-micro font-bold text-claro" style={{ background: COR_REDE[c.plataforma] }}>{c.plataforma === 'instagram' ? 'IG' : 'FB'}</span>
         <span className="text-rotulo font-semibold text-texto">{c.plataforma === 'instagram' ? '@' : ''}{c.autor || 'alguém'}</span>
@@ -87,7 +87,7 @@ function Cartao({ c }: { c: Comentario }) {
 /** Lista de comentários com responder, ocultar e resolver. */
 export function ListaComentarios({ comentarios }: { comentarios: Comentario[] }) {
   if (!comentarios.length) {
-    return <p className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-borda py-10 text-center text-rotulo text-texto-3"><MessageCircle className="h-6 w-6" />Nenhum comentário aqui. Clique em “Atualizar agora” para buscar os mais recentes.</p>
+    return <p className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-borda py-10 text-center text-rotulo text-texto-3"><MessageCircle className="h-6 w-6" />Nenhum comentário aqui. Clique em “Atualizar agora” para buscar os mais recentes.</p>
   }
   return <ul className="space-y-2">{comentarios.map((c) => <Cartao key={`${c.plataforma}-${c.id}`} c={c} />)}</ul>
 }

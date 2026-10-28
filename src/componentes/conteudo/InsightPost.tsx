@@ -41,7 +41,7 @@ function Numero({ icone: Icone, cor, rotulo, valor, media }: { icone: LucideIcon
 function Bloco({ titulo, icone: Icone, tom, itens }: { titulo: string; icone: LucideIcon; tom: string; itens: string[] }) {
   if (!itens.length) return null
   return (
-    <div className={`rounded-xl border p-3 ${tom}`}>
+    <div className={`rounded-lg border p-3 ${tom}`}>
       <p className="mb-1.5 flex items-center gap-1.5 text-rotulo font-semibold"><Icone className="h-4 w-4" />{titulo}</p>
       <ul className="list-disc space-y-1 pl-5 text-rotulo text-texto">{itens.map((i) => <li key={i}>{i}</li>)}</ul>
     </div>
@@ -92,7 +92,7 @@ export async function PainelInsight({ id, fechar }: { id: string; fechar: string
         </>
       )}
 
-      <div className="space-y-3 rounded-xl border border-borda bg-fundo/50 p-3">
+      <div className="space-y-3 rounded-lg border border-borda bg-fundo/50 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-rotulo font-semibold text-texto"><Sparkles className="h-4 w-4 text-[#6250d6]" /> Análise da IA</p>
           {m && <BotaoAnalisar id={p.id} refazer={!!a} />}

@@ -13,7 +13,7 @@ const dia = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/')
 
 function Lista({ titulo, tom, linhas, maior, vazio }: { titulo: string; tom: 'bom' | 'ruim'; linhas: LinhaRanking[]; maior: number; vazio: string }) {
   return (
-    <div className="rounded-xl border border-borda p-3">
+    <div className="rounded-lg border border-borda p-3">
       <h2 className={`mb-2 text-rotulo font-semibold ${tom === 'bom' ? 'text-sucesso' : 'text-perigo'}`}>{titulo} ({linhas.length})</h2>
       {linhas.length === 0 ? (
         <p className="py-6 text-center text-rotulo text-texto-3">{vazio}</p>
@@ -67,7 +67,7 @@ export default async function RelatorioClientes({ searchParams }: PageProps<'/cl
       </header>
 
       <main className="space-y-4 p-4 md:p-5">
-        <section className="rounded-xl border border-borda p-3">
+        <section className="rounded-lg border border-borda p-3">
           <h2 className="mb-2 text-rotulo font-semibold text-texto">Clientes por dia <span className="font-normal text-texto-3">· média de {media.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por dia</span></h2>
           <div className="flex h-32 items-end gap-1">
             {porDia.map((d) => (

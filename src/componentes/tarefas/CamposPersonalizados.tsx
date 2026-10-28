@@ -152,7 +152,7 @@ export function EditorValorCampo({ definicao, equipe, aoMudar }: { definicao: De
 export function CamposPersonalizados({ tarefaId, campos, equipe }: { tarefaId: string; campos: DefinicaoCampo[]; equipe: Pessoa[] }) {
   if (campos.length === 0) return null
   return (
-    <div className="divide-y divide-borda rounded-xl border border-borda bg-white">
+    <div className="divide-y divide-borda rounded-lg border border-borda bg-white">
       {campos.map((item) => (
         <div key={item.id} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[150px_1fr] sm:items-center">
           <div className="flex min-w-0 items-center gap-2 text-corpo font-medium"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-4 w-4" /></span><span className="truncate">{item.nome}</span></div>

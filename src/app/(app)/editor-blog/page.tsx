@@ -46,7 +46,7 @@ export default async function EditorBlog() {
           ['Cliques no CTA (90 dias)', [...numeros.values()].reduce((s, d) => s + d.cliquesCta + d.cliquesCta2, 0)],
           ['Inscritos na newsletter', lista.length],
         ].map(([r, v]) => (
-          <div key={r} className="rounded-xl border border-borda bg-white p-3">
+          <div key={r} className="rounded-lg border border-borda bg-white p-3">
             <p className="text-micro text-texto-3">{r}</p>
             <p className="text-destaque font-bold tabular-nums">{Number(v).toLocaleString('pt-BR')}</p>
           </div>

@@ -5,7 +5,7 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 /** Tabela compacta de totais (departamento ou cliente), cada linha leva para a tela correspondente. */
 export function TabelaResumo({ titulo, descricao, linhas, href, clientes }: { titulo: string; descricao: string; linhas: LinhaResumo[]; href: (linha: LinhaResumo) => string; /** Linhas são clientes: nome em destaque (negrito e azul). */ clientes?: boolean }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-borda bg-white shadow-cartao">
+    <section className="overflow-hidden rounded-lg border border-borda bg-white shadow-cartao">
       <div className="border-b border-borda px-4 py-3">
         <h2 className="text-corpo font-semibold">{titulo}</h2>
         <p className="text-rotulo text-texto-3">{descricao}</p>

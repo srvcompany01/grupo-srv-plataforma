@@ -11,7 +11,7 @@ const dia = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/')
 
 function Cartao({ rotulo, valor, detalhe, tom }: { rotulo: string; valor: string; detalhe?: string; tom?: 'bom' | 'ruim' }) {
   return (
-    <div className="rounded-xl border border-borda p-3">
+    <div className="rounded-lg border border-borda p-3">
       <p className="text-legenda font-medium text-texto-3">{rotulo}</p>
       <p className={`mt-1 text-xl font-bold tabular-nums ${tom === 'bom' ? 'text-sucesso' : tom === 'ruim' ? 'text-perigo' : 'text-texto'}`}>{valor}</p>
       {detalhe && <p className="mt-0.5 text-legenda text-texto-3">{detalhe}</p>}
@@ -68,7 +68,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
       </section>
 
       <section className="grid gap-3 lg:grid-cols-[1fr_2fr]">
-        <div className="rounded-xl border border-borda p-3">
+        <div className="rounded-lg border border-borda p-3">
           <h2 className="mb-2 text-rotulo font-semibold text-texto">Tempo por semana</h2>
           <div className="flex h-32 items-end gap-1.5">
             {semanas.map((s) => (
@@ -80,7 +80,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-borda p-3">
+        <div className="rounded-lg border border-borda p-3">
           <h2 className="mb-2 text-rotulo font-semibold text-texto">Onde está o foco <span className="font-normal text-texto-3">· tempo no período</span></h2>
           {totais.segundosPeriodo === 0 ? (
             <p className="py-6 text-center text-rotulo text-texto-3">Nenhum tempo lançado no período. Use o cronômetro ou &quot;Lançar tempo&quot; nas tarefas.</p>
@@ -101,7 +101,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
       </section>
 
       {atencao.length > 0 && (
-        <section className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 p-3">
+        <section className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 p-3">
           <h2 className="mb-1 text-rotulo font-semibold text-perigo-forte">Precisando de atenção ({atencao.length})</h2>
           <p className="mb-2 text-legenda text-texto-2">Com tarefas abertas e sem tempo lançado nem entrega nos últimos 7 dias.</p>
           <ul className="flex flex-wrap gap-1.5">
@@ -118,7 +118,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
       )}
 
       {ativas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda py-12 text-center text-corpo text-texto-3">{vazio}</p>
+        <p className="rounded-lg border border-dashed border-borda py-12 text-center text-corpo text-texto-3">{vazio}</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-borda">
           <table className="w-full min-w-[820px] text-left text-rotulo">

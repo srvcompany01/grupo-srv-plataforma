@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { normalizarMime, validarAnexo } from '@/dominio/anexos'
 import { NOME_CANAL, nomeDeCanal, validarAnexosChat } from '@/dominio/chat'
 import { mensagemErro } from '@/dominio/erros-banco'
@@ -9,6 +10,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as chat from '@/servicos/chat'
+import * as tarefas from '@/servicos/tarefas'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const atualizar = () => revalidatePath('/chat', 'layout')
@@ -105,4 +107,41 @@ export async function marcarCanalLidoAcao(canalId: string): Promise<void> {
   if (!UUID.test(canalId)) return
   const sb = await criarClienteServidor()
   await chat.marcarCanalLido(sb, canalId).catch((e) => console.error(e))
+}
+
+/** Abre (ou cria) a conversa direta entre a pessoa logada e outra: um canal privado de duas pessoas, `dm-<início dos ids>`. */
+export async function abrirConversaAcao(outroId: string): Promise<Resultado & { nome?: string }> {
+  const eu = await exigirEquipe()
+  if (!UUID.test(outroId) || outroId === eu.id) return { erro: 'Pessoa inválida.' }
+  const nome = `dm-${[eu.id, outroId].map((id) => id.slice(0, 8)).sort().join('-')}`
+  const sb = await criarClienteServidor()
+  try {
+    const { data } = await sb.from('chat_channels').select('id').eq('name', nome).maybeSingle()
+    if (!data) await chat.criarCanal(sb, eu.id, { nome, descricao: 'Conversa direta', privado: true, membros: [outroId] })
+    atualizar()
+    return { nome }
+  } catch (err) {
+    console.error(err)
+    return { erro: mensagemErro(err) }
+  }
+}
+
+/** Cria uma tarefa (ou post, em lista de conteúdo) a partir do chat e avisa no canal com o link. */
+export async function criarTarefaNoChatAcao(e: { canalId: string; listaId: string; titulo: string; post: boolean }): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  if (!UUID.test(e.canalId) || !UUID.test(e.listaId)) return { erro: 'Canal ou lista inválidos.' }
+  const titulo = e.titulo.trim()
+  if (!titulo || titulo.length > 200) return { erro: 'Informe o título (até 200 caracteres).' }
+  const sb = await criarClienteServidor()
+  try {
+    const id = await tarefas.criarTarefa(sb, { listaId: e.listaId, titulo, responsaveis: [eu.id] })
+    const cab = await headers()
+    const origem = `${cab.get('x-forwarded-proto') ?? 'https'}://${cab.get('host') ?? 'app.gruposrv.com.br'}`
+    await chat.enviarMensagem(sb, { canalId: e.canalId, paiId: null, texto: `${e.post ? 'Novo post' : 'Nova tarefa'}: ${titulo} ${origem}/tarefas/${id}`, mencoes: [], anexos: [] })
+    atualizar()
+    return { ok: e.post ? 'Post criado.' : 'Tarefa criada.' }
+  } catch (err) {
+    console.error(err)
+    return { erro: mensagemErro(err) }
+  }
 }

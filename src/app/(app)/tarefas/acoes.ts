@@ -9,6 +9,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as comentarios from '@/servicos/comentarios'
+import * as modelos from '@/servicos/modelos'
 import * as status from '@/servicos/status'
 import * as recorrencias from '@/servicos/recorrencias'
 import * as tarefas from '@/servicos/tarefas'
@@ -177,4 +178,36 @@ export async function editarComentarioAcao(id: string, texto: string): Promise<R
 
 export async function apagarComentarioAcao(id: string): Promise<Resultado> {
   return executar((sb) => comentarios.apagarComentario(sb, id))
+}
+
+export async function criarDoModeloAcao(modeloId: string, listaId: string): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  return executar((sb) => modelos.criarDoModelo(sb, modeloId, listaId, eu.id), 'Tarefa criada a partir do modelo.')
+}
+
+export async function salvarModeloAcao(m: { nome: string; titulo: string; subtarefas: string[] }): Promise<Resultado> {
+  const nome = m.nome.trim()
+  const titulo = m.titulo.trim()
+  const subtarefas = m.subtarefas.map((s) => s.trim()).filter(Boolean).slice(0, 30)
+  if (!nome || nome.length > 80 || !titulo || titulo.length > 200) return { erro: 'Informe o nome do modelo (até 80) e o título da tarefa (até 200).' }
+  if (subtarefas.some((s) => s.length > 200)) return { erro: 'Cada subtarefa pode ter até 200 caracteres.' }
+  return executar((sb) => modelos.salvarModelo(sb, { nome, titulo, subtarefas }), 'Modelo salvo.')
+}
+
+export async function excluirModeloAcao(id: string): Promise<Resultado> {
+  return executar((sb) => modelos.excluirModelo(sb, id), 'Modelo excluído.')
+}
+
+/** Importação de CSV: cada linha vira uma tarefa na lista (coluna 1 = título; coluna 2 opcional = vencimento AAAA-MM-DD). Máximo de 200 linhas. */
+export async function importarTarefasAcao(listaId: string, linhas: { titulo: string; prazo?: string | null }[]): Promise<Resultado> {
+  const eu = await exigirEquipe()
+  const validas = linhas.map((l) => ({ titulo: l.titulo.trim(), prazo: l.prazo && /^\d{4}-\d{2}-\d{2}$/.test(l.prazo) ? l.prazo : null })).filter((l) => l.titulo && l.titulo.length <= 200)
+  if (!validas.length) return { erro: 'Nenhuma linha válida encontrada no arquivo.' }
+  if (validas.length > 200) return { erro: 'O arquivo tem mais de 200 linhas. Divida em partes.' }
+  return executar(async (sb) => {
+    for (const l of validas) {
+      const id = await tarefas.criarTarefa(sb, { listaId, titulo: l.titulo, responsaveis: [eu.id] })
+      if (l.prazo) await tarefas.atualizarTarefa(sb, id, { prazo: l.prazo })
+    }
+  }, `${validas.length} ${validas.length === 1 ? 'tarefa importada' : 'tarefas importadas'}.`)
 }

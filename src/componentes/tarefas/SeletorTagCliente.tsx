@@ -68,7 +68,7 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
           {atualOuNulo ? <Chip tag={atual} /> : <span className="controle inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={7} className="w-80 gap-0 overflow-hidden rounded-xl border border-borda bg-white p-0 shadow-xl">
+      <PopoverContent align="start" sideOffset={7} className="w-80 gap-0 overflow-hidden rounded-lg border border-borda bg-white p-0 shadow-xl">
         {configurando ? (
           <div>
             <div className="flex items-center gap-2 border-b border-borda px-3 py-2.5">

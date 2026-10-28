@@ -13,7 +13,7 @@ export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }
     <BotaoTrabalhado clienteId={c.id} nome={c.nome} marcado={trabalhadoHoje} />
     <Link
       href={`/clientes/${c.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-borda bg-white transition-[border-color,transform] hover:-translate-y-0.5 hover:border-borda-forte focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25"
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-borda bg-white transition-[border-color,transform] hover:-translate-y-0.5 hover:border-borda-forte focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25"
     >
       <div className="relative aspect-[2/1] w-full overflow-hidden" style={{ background: c.cor }}>
         {capa?.url ? (
@@ -24,7 +24,7 @@ export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }
         )}
         {capa?.logo && (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" className="absolute bottom-2 left-2 h-14 w-14 rounded-xl border-2 border-claro bg-white object-cover shadow-md" />
+          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" className="absolute bottom-2 left-2 h-14 w-14 rounded-lg border-2 border-claro bg-white object-cover shadow-md" />
         )}
         {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-claro/90">{capa.credito}</span>}
       </div>

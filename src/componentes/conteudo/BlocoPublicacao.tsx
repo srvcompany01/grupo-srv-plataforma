@@ -43,7 +43,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
   const cor = p.status === 'publicado' ? 'bg-sucesso-fundo text-sucesso-forte' : p.status === 'falhou' ? 'bg-perigo-fundo text-perigo-forte' : agendado ? 'bg-aviso-fundo text-aviso-forte' : 'bg-hover text-texto-2'
 
   return (
-    <div className="space-y-3 rounded-xl border border-borda p-3">
+    <div className="space-y-3 rounded-lg border border-borda p-3">
       <div className="flex flex-wrap items-center gap-2">
         <CalendarClock className="h-4 w-4 text-texto-2" />
         <h3 className="text-corpo font-semibold">Publicação no Instagram e Facebook</h3>

@@ -57,7 +57,6 @@ export default async function Home() {
   const atrasadas = pendentes.filter((t) => prazo(t) === 'atrasadas').length
   const paraHoje = pendentes.filter((t) => prazo(t) === 'hoje').length
   const semana = pendentes.filter((t) => prazo(t) === 'semana').length
-  const emDia = pendentes.length ? Math.round(((pendentes.length - atrasadas) / pendentes.length) * 100) : 100
   const lista = pendentes.filter((t) => ['atrasadas', 'hoje', 'semana'].includes(prazo(t))).sort((a, b) => (a.prazo ?? '9').localeCompare(b.prazo ?? '9')).slice(0, 6)
 
   // Panorama dos clientes: tarefas de toda a operação por cliente.

@@ -21,7 +21,7 @@ const pct = (parte: number, total: number) => (total ? Math.round((parte / total
 
 function Metrica({ icone: Icone, rotulo, valor, detalhe, tom }: { icone: typeof ClipboardList; rotulo: string; valor: number; detalhe?: string; tom: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-borda bg-white p-4 shadow-cartao">
+    <div className="flex items-center gap-4 rounded-lg border border-borda bg-white p-4 shadow-cartao">
       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${tom}`}><Icone className="h-6 w-6" aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <p className="text-rotulo font-semibold text-texto-2">{rotulo}</p>

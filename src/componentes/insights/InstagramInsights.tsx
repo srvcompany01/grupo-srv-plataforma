@@ -71,7 +71,7 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
           <p className="mb-2 text-legenda font-semibold text-texto-2">Melhores posts do período</p>
           <ul className="grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-6">
             {melhores.map((p) => (
-              <li key={p.id} className="overflow-hidden rounded-xl border border-borda bg-white">
+              <li key={p.id} className="overflow-hidden rounded-lg border border-borda bg-white">
                 <a href={p.link} target="_blank" rel="noreferrer" className="block">
                   <div className="relative aspect-square bg-fundo">
                     {p.imagem && (

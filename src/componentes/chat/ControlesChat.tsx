@@ -3,7 +3,7 @@
 import { Archive, Lock, Plus, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { arquivarCanalAcao, criarCanalAcao, definirMembrosAcao, enviarMensagemAcao, prepararEnvioChatAcao } from '@/app/(app)/chat/acoes'
+import { arquivarCanalAcao, criarCanalAcao, criarTarefaNoChatAcao, definirMembrosAcao, enviarMensagemAcao, prepararEnvioChatAcao } from '@/app/(app)/chat/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { CaixaMensagem } from '@/componentes/mensagens/CaixaMensagem'
 import { avisar } from '@/componentes/tarefas/avisar'
@@ -12,19 +12,57 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { nomeDeCanal } from '@/dominio/chat'
 import { botaoFantasma, botaoPrimario, campo, rotulo } from '@/lib/ui'
 
-/** Caixa de envio do canal (ou do tópico, com `paiId`). Enter envia; Shift+Enter quebra linha. */
-export function CaixaChat({ canalId, paiId, canalNome, pessoas }: { canalId: string; paiId?: string; canalNome: string; pessoas: PessoaMencao[] }) {
+export type ListaChat = { id: string; nome: string; post: boolean }
+
+/** Caixa de envio do canal (ou do tópico, com `paiId`). Enter envia; Shift+Enter quebra linha. Seletor Mensagem / Tarefa / Post: os dois últimos criam a tarefa na lista escolhida e avisam no canal. */
+export function CaixaChat({ canalId, paiId, canalNome, pessoas, listas = [] }: { canalId: string; paiId?: string; canalNome: string; pessoas: PessoaMencao[]; listas?: ListaChat[] }) {
+  const [modo, setModo] = useState<'mensagem' | 'tarefa' | 'post'>('mensagem')
+  const [titulo, setTitulo] = useState('')
+  const [listaId, setListaId] = useState('')
+  const [pendente, iniciar] = useTransition()
+  const opcoes = listas.filter((l) => (modo === 'post' ? l.post : true))
+  const escolhida = opcoes.find((l) => l.id === listaId)?.id ?? opcoes[0]?.id ?? ''
+  const modos = paiId ? ([['mensagem', 'Mensagem']] as const) : ([['mensagem', 'Mensagem'], ['tarefa', 'Tarefa'], ['post', 'Post']] as const)
   return (
-    <CaixaMensagem
-      key={paiId ?? canalId}
-      pessoas={pessoas}
-      preparar={(a) => prepararEnvioChatAcao(canalId, a)}
-      aoEnviar={async (texto, mencoes, anexos) => avisar(await enviarMensagemAcao(canalId, paiId ?? null, texto, mencoes, anexos))}
-      placeholder={paiId ? 'Responder no tópico…' : `Escreva em #${canalNome}…`}
-      rotulo={paiId ? 'Resposta' : 'Mensagem'}
-      enterEnvia
-      autoFoco
-    />
+    <div className="space-y-2">
+      {modos.length > 1 && (
+        <div role="tablist" aria-label="Tipo de envio" className="flex w-fit gap-0.5 rounded-md bg-[var(--bg-active)] p-0.5 text-rotulo">
+          {modos.map(([valor, rotuloModo]) => (
+            <button key={valor} type="button" role="tab" aria-selected={modo === valor} onClick={() => setModo(valor)} className={`rounded px-2.5 py-0.5 font-medium ${modo === valor ? 'bg-[var(--bg)] text-texto' : 'text-texto-2 hover:text-texto'}`}>{rotuloModo}</button>
+          ))}
+        </div>
+      )}
+      {modo === 'mensagem' ? (
+        <CaixaMensagem
+          key={paiId ?? canalId}
+          pessoas={pessoas}
+          preparar={(a) => prepararEnvioChatAcao(canalId, a)}
+          aoEnviar={async (texto, mencoes, anexos) => avisar(await enviarMensagemAcao(canalId, paiId ?? null, texto, mencoes, anexos))}
+          placeholder={paiId ? 'Responder no tópico…' : `Escreva em #${canalNome}…`}
+          rotulo={paiId ? 'Resposta' : 'Mensagem'}
+          enterEnvia
+          autoFoco
+        />
+      ) : (
+        <form
+          className="flex flex-wrap items-center gap-2 rounded-md border border-borda bg-white p-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            iniciar(async () => {
+              if (!avisar(await criarTarefaNoChatAcao({ canalId, listaId: escolhida, titulo, post: modo === 'post' }), true)) return
+              setTitulo('')
+            })
+          }}
+        >
+          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={modo === 'post' ? 'Título do post' : 'Nome da tarefa'} maxLength={200} aria-label="Título" className="h-8 min-w-48 flex-1 bg-transparent text-corpo outline-none" />
+          <select value={escolhida} onChange={(e) => setListaId(e.target.value)} aria-label="Lista" className={`${campo} h-8 w-auto max-w-56 py-0 text-rotulo`}>
+            {opcoes.length === 0 && <option value="">{modo === 'post' ? 'Nenhuma lista de posts' : 'Nenhuma lista'}</option>}
+            {opcoes.map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}
+          </select>
+          <button disabled={pendente || !titulo.trim() || !escolhida} className={botaoPrimario}>{pendente ? 'Criando…' : modo === 'post' ? 'Criar post' : 'Criar tarefa'}</button>
+        </form>
+      )}
+    </div>
   )
 }
 

@@ -47,7 +47,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
           {PREDEFINICOES.map((p) => {
             const ativa = igual(p.tema, tema)
             return (
-              <button key={p.nome} type="button" onClick={() => aplicar(p.tema)} aria-pressed={ativa} className={`rounded-xl border p-3 text-left transition hover:shadow-cartao ${ativa ? 'border-marca ring-2 ring-marca/20' : 'border-borda'}`} style={{ background: p.tema.superficie }}>
+              <button key={p.nome} type="button" onClick={() => aplicar(p.tema)} aria-pressed={ativa} className={`rounded-lg border p-3 text-left transition hover:shadow-cartao ${ativa ? 'border-marca ring-2 ring-marca/20' : 'border-borda'}`} style={{ background: p.tema.superficie }}>
                 <span className="flex gap-1" aria-hidden="true">
                   {CHAVES.map((k) => <span key={k} className="h-5 w-5 rounded-full ring-1 ring-black/10" style={{ background: p.tema[k] }} />)}
                 </span>
@@ -62,7 +62,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
         <div className="space-y-4">
           <h2 className="text-destaque font-semibold">Cores</h2>
           {CHAVES.map((k) => (
-            <div key={`${k}-${versao}`} className="space-y-1.5 rounded-xl border border-borda bg-white p-3">
+            <div key={`${k}-${versao}`} className="space-y-1.5 rounded-lg border border-borda bg-white p-3">
               <p className="text-corpo font-semibold">{ROTULO_COR_TEMA[k].nome} <span className="font-normal text-texto-3">· {ROTULO_COR_TEMA[k].dica}</span></p>
               <SeletorCor cor={tema[k]} onChange={(cor) => setTema((t) => ({ ...t, [k]: cor }))} />
             </div>
@@ -71,7 +71,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
 
         <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
           <h2 className="text-destaque font-semibold">Prévia</h2>
-          <div className="space-y-3 rounded-2xl border border-borda bg-fundo p-4">
+          <div className="space-y-3 rounded-lg border border-borda bg-fundo p-4">
             <p className="page-title !text-[28px]">Painel</p>
             <div className="flex flex-wrap gap-2">
               <span className={botaoPrimario}><Plus className="h-4 w-4" /> Nova tarefa</span>
@@ -81,7 +81,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
               <span className="rounded-full bg-marca px-3 py-1 text-rotulo font-semibold text-claro">Todas as tarefas</span>
               <span className="rounded-full border border-borda bg-white px-3 py-1 text-rotulo">Minhas tarefas</span>
             </div>
-            <div className="rounded-xl border border-borda bg-white p-3 shadow-cartao">
+            <div className="rounded-lg border border-borda bg-white p-3 shadow-cartao">
               <span className="rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Marketing</span>
               <p className="mt-1.5 text-corpo font-medium">Revisar calendário editorial</p>
               <p className="text-legenda text-texto-3">14/09 · Amanda</p>
@@ -93,7 +93,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
       </section>
 
       {erros.length > 0 && (
-        <ul className="space-y-1 rounded-xl border border-perigo-borda bg-perigo-fundo p-3 text-rotulo text-perigo-forte" role="alert">
+        <ul className="space-y-1 rounded-lg border border-perigo-borda bg-perigo-fundo p-3 text-rotulo text-perigo-forte" role="alert">
           {erros.map((e) => <li key={e} className="flex gap-2"><TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />{e}</li>)}
         </ul>
       )}

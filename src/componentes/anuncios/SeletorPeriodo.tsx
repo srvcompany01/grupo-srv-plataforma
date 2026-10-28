@@ -35,7 +35,7 @@ export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo:
         </button>
       </nav>
       {aberto && (
-        <div role="dialog" aria-label="Escolher período" className="absolute right-0 top-full z-30 mt-1 w-64 space-y-2 rounded-xl border border-borda bg-white p-3 shadow-flutuante">
+        <div role="dialog" aria-label="Escolher período" className="absolute right-0 top-full z-30 mt-1 w-64 space-y-2 rounded-lg border border-borda bg-white p-3 shadow-flutuante">
           <label className="block space-y-1"><span className="text-legenda text-texto-3">De</span><input type="date" value={de} max={ate || hoje} onChange={(e) => setDe(e.target.value)} className={`${campo} h-9`} /></label>
           <label className="block space-y-1"><span className="text-legenda text-texto-3">Até</span><input type="date" value={ate} min={de} max={hoje} onChange={(e) => setAte(e.target.value)} className={`${campo} h-9`} /></label>
           <button type="button" onClick={aplicar} disabled={!de || !ate || de > ate} className={`${botaoPrimario} w-full`}>Aplicar</button>

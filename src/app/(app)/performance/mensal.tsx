@@ -142,7 +142,7 @@ export async function PanoramaMensal({ clientes, mes, hoje, acoes }: { clientes:
           </p>
         )}
         {ativos.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com anúncios, cliques ou faturamento neste mês.</p>
+          <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com anúncios, cliques ou faturamento neste mês.</p>
         ) : (
           <TabelaMeses linhas={ativos.map(({ c, h }) => ({ chave: c.id, rotulo: <NomeCliente nome={c.nome} href={`/performance?cliente=${c.id}&${q}`} />, m: h.meses[0] }))} total={total} />
         )}

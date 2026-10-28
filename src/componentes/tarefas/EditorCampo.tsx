@@ -57,7 +57,7 @@ export function EditorCampo({ alvo, espacos, listas, campos, aoFechar }: { alvo:
     <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); salvar() }}>
       {!editando && <button type="button" className="text-xs font-semibold text-marca hover:underline" onClick={() => setItem(null)}>← Voltar aos tipos</button>}
       <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-fundo" style={{ color: cor }}>{(icone || item.icone) === 'nenhum' ? <span className="text-lg font-bold">{nome.trim().charAt(0).toUpperCase() || 'A'}</span> : <IconeVisual icone={icone || item.icone} className="h-6 w-6" />}</span>
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-fundo" style={{ color: cor }}>{(icone || item.icone) === 'nenhum' ? <span className="text-lg font-bold">{nome.trim().charAt(0).toUpperCase() || 'A'}</span> : <IconeVisual icone={icone || item.icone} className="h-6 w-6" />}</span>
         <div><p className="font-semibold">{item.nome}</p><p className="text-xs text-texto-3">{editando ? 'O tipo não pode ser alterado depois de criado.' : item.descricao}</p></div>
       </div>
       <label className="block space-y-1"><span className={rotulo}>Nome do campo</span><input autoFocus required maxLength={80} className={estiloCampo} value={nome} onChange={(e) => setNome(e.target.value)} /></label>

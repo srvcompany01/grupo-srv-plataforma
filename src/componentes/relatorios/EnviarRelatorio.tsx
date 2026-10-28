@@ -65,7 +65,7 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
         })} className={botaoPrimario}><FileText className="h-4 w-4" /> {pendente ? 'Gerando…' : 'Gerar relatório'}</button>
       </div>
       {pronto && (
-        <div className="space-y-2 rounded-xl border border-sucesso/30 bg-sucesso-fundo/40 p-3">
+        <div className="space-y-2 rounded-lg border border-sucesso/30 bg-sucesso-fundo/40 p-3">
           <div className="flex flex-wrap gap-2">
             {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> Enviar no WhatsApp do cliente</a>}
             {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Abrir WhatsApp e escolher o contato</a>}

@@ -100,7 +100,7 @@ export function GerenciarCamposCliente({ campos }: { campos: CampoCliente[] }) {
             if (avisar(await criarCampoClienteAcao(nome, tipo, naCapa), true)) setNome('')
           })
         }}
-        className="flex flex-wrap items-end gap-3 rounded-xl border border-borda p-3"
+        className="flex flex-wrap items-end gap-3 rounded-lg border border-borda p-3"
       >
         <label className="block min-w-48 flex-1">
           <span className="mb-1 block text-legenda font-semibold text-texto-2">Nome do campo</span>
@@ -124,9 +124,9 @@ export function GerenciarCamposCliente({ campos }: { campos: CampoCliente[] }) {
       </form>
 
       {campos.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda px-4 py-8 text-center text-rotulo text-texto-3">Nenhum campo criado ainda.</p>
+        <p className="rounded-lg border border-dashed border-borda px-4 py-8 text-center text-rotulo text-texto-3">Nenhum campo criado ainda.</p>
       ) : (
-        <ul className="overflow-hidden rounded-xl border border-borda bg-white">
+        <ul className="overflow-hidden rounded-lg border border-borda bg-white">
           {campos.map((c) => (
             <LinhaCampo key={c.id} campo={c} />
           ))}

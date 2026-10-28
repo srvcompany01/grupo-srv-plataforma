@@ -50,7 +50,7 @@ export function Placar({ nota, itens }: { nota: number; itens: ItemSaude[] }) {
 
 export function CartaoLugar({ d }: { d: Detalhes }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-borda bg-white">
+    <div className="overflow-hidden rounded-lg border border-borda bg-white">
       {d.fotos[0] && (
         // eslint-disable-next-line @next/next/no-img-element -- foto do Google pela rota com a chave no servidor
         <img src={`/api/gmn/foto?nome=${encodeURIComponent(d.fotos[0])}`} alt={`Foto de ${d.nome}`} className="aspect-[16/9] w-full object-cover" />

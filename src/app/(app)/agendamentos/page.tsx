@@ -84,7 +84,7 @@ function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string;
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {colunas.map((c) => (
-        <section key={c.titulo} className="flex min-w-0 flex-col rounded-xl border border-borda bg-fundo/50">
+        <section key={c.titulo} className="flex min-w-0 flex-col rounded-lg border border-borda bg-fundo/50">
           <h2 className="flex items-center gap-2 border-b border-borda px-3 py-2 text-rotulo font-semibold text-texto">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.cor }} aria-hidden /> {c.titulo}
             <span className="ml-auto rounded-full bg-white px-1.5 text-micro font-semibold text-texto-2">{c.itens.length}</span>

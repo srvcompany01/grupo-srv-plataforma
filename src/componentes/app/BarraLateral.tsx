@@ -34,6 +34,7 @@ import {
   SlidersHorizontal,
   Star,
   Rocket,
+  Plus,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -46,7 +47,7 @@ import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
-import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
+import { DestinosMover, LinhaNavegacao, type DestinoMover, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
@@ -54,7 +55,7 @@ import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral, type ModoTema } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; /** Listas com a estrela da pessoa (seção Favoritos). */ favoritas?: { id: string; nome: string }[]; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
+export type PropsPainel = { navegacao: Navegacao; /** Canais do chat (seção Canais do painel). */ canais?: { id: string; nome: string; naoLidas: number; privado: boolean }[]; /** Listas com a estrela da pessoa (seção Favoritos). */ favoritas?: { id: string; nome: string }[]; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
 type IconeLucide = ComponentType<{ className?: string }>
 
 type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
@@ -328,7 +329,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
 }
 
 /** Segunda barra: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos, o tema e o perfil. */
-export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, tema, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
+export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, nome, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, tema, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
@@ -355,6 +356,16 @@ export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronomet
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   const arvore = navegacao.espacos
+  const destinos = useMemo(() => {
+    const lista: DestinoMover[] = []
+    const visitar = (e: Navegacao['espacos'][number]) => {
+      lista.push({ id: e.id, nome: e.nome, tipo: 'space' })
+      for (const pa of e.pastas) lista.push({ id: pa.id, nome: `${e.nome} › ${pa.nome}`, tipo: 'folder' })
+      e.filhos.forEach(visitar)
+    }
+    navegacao.espacos.forEach(visitar)
+    return lista
+  }, [navegacao])
   const itensOrdenaveis = useMemo(() => idsDaNavegacao(navegacao), [navegacao])
 
   const concluirMovimento = (evento: DragEndEvent) => {
@@ -385,12 +396,15 @@ export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronomet
 
   return (
     <Recolhidos.Provider value={recolhimento}>
+    <DestinosMover.Provider value={destinos}>
     <div className="flex h-full min-w-0 flex-1 flex-col bg-lat-bg text-lat-fg">
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         {!comAtalhos && (
           <>
             <div className="flex h-7 items-center px-2">
               <h2 className="min-w-0 flex-1 text-corpo font-semibold text-lat-fg">Início</h2>
+              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" className="inline-flex h-[26px] items-center gap-1 rounded-md border border-lat-borda px-2 text-rotulo font-medium text-lat-fg hover:bg-lat-hover"><Plus className="h-3.5 w-3.5" /> Criar</button>} />}
+              {acaoTopo}
             </div>
             <nav className="space-y-0.5">
               {['home', 'tarefas', 'agenda', ...NO_PAINEL_INICIO.filter((id) => id !== 'tarefas')].filter((id, i, l) => l.indexOf(id) === i).map((id) => atalhos.find((a) => a.id === id)).filter((a): a is Atalho => !!a).map((a) => <div key={a.id}>{link(a.href, a.rotulo, a.Icone, a.contador)}</div>)}
@@ -420,7 +434,6 @@ export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronomet
               <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Espaços</h2>
               <button type="button" aria-label="Pesquisar espaços e listas" title="Pesquisar (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))} className={botaoTopo}><Search className="h-3.5 w-3.5" /></button>
               {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} />}
-              {acaoTopo}
             </div>
 
             {favoritas.length > 0 && (
@@ -450,6 +463,24 @@ export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronomet
           </SortableContext>
         </DndContext>
 
+        {!comAtalhos && canais.length > 0 && (
+          <div className="mt-3 border-t border-lat-borda pt-2">
+            <div className="flex h-7 items-center px-2">
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Canais</h2>
+              <Link href="/chat" aria-label="Abrir o chat" title="Abrir o chat" className={botaoTopo}><Plus className="h-3.5 w-3.5" /></Link>
+            </div>
+            <nav className="space-y-0.5">
+              {canais.map((c) => (
+                <Link key={c.id} href={`/chat/${c.nome}`} className={`${item} ${caminho === `/chat/${c.nome}` ? ativo : ''}`}>
+                  <span className="w-4 text-center text-lat-3">{c.privado ? '🔒' : '#'}</span>
+                  <span className={`min-w-0 flex-1 truncate ${c.naoLidas ? 'font-semibold text-lat-fg' : ''}`}>{c.nome}</span>
+                  {c.naoLidas > 0 && <span className="rounded-full bg-[#d80d12] px-1.5 text-micro font-bold text-white">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
+
       </div>
 
       <div className="shrink-0 space-y-1 border-t border-lat-borda p-2">
@@ -468,6 +499,7 @@ export function PainelEspacos({ navegacao, favoritas = [], papel, nome, cronomet
         )}
       </div>
     </div>
+    </DestinosMover.Provider>
     </Recolhidos.Provider>
   )
 }

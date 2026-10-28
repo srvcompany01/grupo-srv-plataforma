@@ -5,7 +5,7 @@ import { ESTILO_TOM, ORDEM_TOM, SeloTom } from './tom'
 function Lista({ titulo, icone: Icone, cor, itens, comAcao }: { titulo: string; icone: LucideIcon; cor: string; itens: Item[]; comAcao: boolean }) {
   const ordenados = comAcao ? [...itens].sort((a, b) => ORDEM_TOM[a.tom] - ORDEM_TOM[b.tom]) : itens
   return (
-    <div className="rounded-xl border border-borda bg-white p-3">
+    <div className="rounded-lg border border-borda bg-white p-3">
       <h4 className="mb-2 flex items-center gap-2 text-rotulo font-semibold text-texto">
         <span className={`flex h-6 w-6 items-center justify-center rounded-md ${cor}`}><Icone className="h-3.5 w-3.5" /></span> {titulo}
       </h4>
@@ -59,7 +59,7 @@ export function Numeros({ itens }: { itens: Numero[] }) {
       {itens.map((n, k) => {
         const Icone = n.icone
         return (
-          <div key={n.rotulo} data-destaque={k === 0 ? '' : undefined} className="numero relative overflow-hidden rounded-xl border border-borda bg-white p-2.5">
+          <div key={n.rotulo} data-destaque={k === 0 ? '' : undefined} className="numero relative overflow-hidden rounded-lg border border-borda bg-white p-2.5">
             {n.tom && n.tom !== 'neutro' && <span className={`absolute inset-x-0 top-0 h-1 ${ESTILO_TOM[n.tom].forte}`} aria-hidden />}
             <div className="flex items-center gap-1.5">
               {Icone && (

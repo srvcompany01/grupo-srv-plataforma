@@ -49,7 +49,7 @@ export function ListaTelas({ tipo, telas, euId }: { tipo: TipoTela; telas: Resum
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {telas.map((tela) => (
-            <li key={tela.id} className="group relative rounded-xl border border-borda p-3 transition hover:border-borda-forte hover:shadow-sm">
+            <li key={tela.id} className="group relative rounded-lg border border-borda p-3 transition hover:border-borda-forte hover:shadow-sm">
               <Link href={`${t.base}/${tela.id}`} className="block">
                 <span className="block truncate text-corpo font-semibold text-texto">{tela.titulo}</span>
                 <span className="mt-1 block truncate text-legenda text-texto-3">{tela.donoNome ?? '—'} · atualizado em {dia.format(new Date(tela.atualizadoEm))}</span>

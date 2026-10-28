@@ -5,7 +5,7 @@ import { urlBibliotecaAnuncios } from '@/dominio/biblioteca-anuncios'
 export function BibliotecaAnuncios({ paginaId, semPagina }: { paginaId: string | null; semPagina?: string }) {
   if (!paginaId && !semPagina) return null
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-borda bg-white p-4">
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-borda bg-white p-4">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0866ff]/10 text-[#0866ff]"><Megaphone className="h-5 w-5" /></span>
       <div className="min-w-0 flex-1">
         <p className="text-corpo font-semibold text-texto">Anúncios no Meta</p>

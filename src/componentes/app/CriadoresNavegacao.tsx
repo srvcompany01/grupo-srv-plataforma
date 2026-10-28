@@ -101,7 +101,7 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
           className="space-y-5"
         >
           <div className="grid gap-4 sm:grid-cols-[72px_1fr]">
-            <div className="flex h-[72px] items-center justify-center rounded-2xl text-claro" style={{ background: visual.cor }}>
+            <div className="flex h-[72px] items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}>
               <IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-8 w-8" />
             </div>
             <div className="space-y-3">
@@ -156,7 +156,7 @@ export function CriarEstruturaDialog({
     <>
       <Popover open={menuAberto} onOpenChange={setMenuAberto}>
         <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
-        <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-2xl border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
+        <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-lg border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
           <div className="px-4 pb-2 pt-4"><p className="text-rotulo font-medium text-[#77787d]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
           <div className="px-2 pb-2">
             <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="#5f6368" onClick={() => abrirCriador('lista')} />
@@ -177,7 +177,7 @@ export function CriarEstruturaDialog({
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>Adicionar em {espaco?.nome ?? 'Itens soltos'}</DialogTitle><DialogDescription>Crie a estrutura sem sair da navegação lateral.</DialogDescription></DialogHeader>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-fundo p-1">
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-fundo p-1">
           <button type="button" onClick={() => trocarModo('pasta')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'pasta' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><FolderPlus className="h-4 w-4" /> Pasta</button>
           <button type="button" onClick={() => trocarModo('lista')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'lista' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><ListPlus className="h-4 w-4" /> Lista</button>
         </div>
@@ -198,7 +198,7 @@ export function CriarEstruturaDialog({
           className="space-y-4"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-5 w-5" /></div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-5 w-5" /></div>
             <label className="block flex-1 space-y-1"><span className={rotulo}>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
           </div>
           {modo === 'lista' && <div className="grid gap-3 sm:grid-cols-2">
@@ -237,7 +237,7 @@ export function PersonalizarItemDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>Personalizar</DialogTitle><DialogDescription>Escolha o nome, a cor e um ícone Lucide ou emoji.</DialogDescription></DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }} className="space-y-5">
-          <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-xl text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-6 w-6" /></div><label className="flex-1 space-y-1"><span className={rotulo}>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label></div>
+          <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-6 w-6" /></div><label className="flex-1 space-y-1"><span className={rotulo}>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label></div>
           <SeletorVisual valor={visual} onChange={setVisual} />
           <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>Salvar</button></div>
         </form>

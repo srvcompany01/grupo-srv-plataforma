@@ -83,7 +83,7 @@ export default async function Armazenamento() {
 
 function Cartao({ icone: Icone, cor, rotulo, valor }: { icone: typeof HardDrive; cor: string; rotulo: string; valor: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-borda bg-white p-3">
+    <div className="flex items-center gap-3 rounded-lg border border-borda bg-white p-3">
       <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${cor}1f`, color: cor }}><Icone className="h-4 w-4" /></span>
       <div>
         <p className="text-micro text-texto-3">{rotulo}</p>

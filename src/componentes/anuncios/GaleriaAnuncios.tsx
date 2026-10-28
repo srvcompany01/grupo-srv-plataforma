@@ -29,7 +29,7 @@ function Metrica({ rotulo, valor }: { rotulo: string; valor: string }) {
 function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean }) {
   const diag = [['Qualidade', a.qualidade], ['Engajamento', a.engajamento], ['Conversão', a.conversao]].filter(([, v]) => v) as [string, NonNullable<Ranking>][]
   return (
-    <li className="flex flex-col overflow-hidden rounded-xl border border-borda bg-white">
+    <li className="flex flex-col overflow-hidden rounded-lg border border-borda bg-white">
       <div className="relative aspect-square bg-fundo">
         {a.imagem && (
           // eslint-disable-next-line @next/next/no-img-element -- imagem do CDN do Meta (URL assinada que expira)
@@ -89,9 +89,9 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
     <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
       <div className="@container space-y-3">
       {'erro' in r ? (
-        <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
+        <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
       ) : r.anuncios.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum anúncio ativo nesta conta agora.</p>
+        <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum anúncio ativo nesta conta agora.</p>
       ) : (
         <>
           <Resumo anuncios={r.anuncios} mostrarGasto={mostrarGasto} />
@@ -125,7 +125,7 @@ function Resumo({ anuncios, mostrarGasto }: { anuncios: AnuncioAvaliado[]; mostr
   return (
     <div className="grid grid-cols-2 gap-2 @xl:grid-cols-4 @5xl:grid-cols-7">
       {itens.map(([r, v]) => (
-        <div key={r} className="rounded-xl border border-borda bg-white p-2.5">
+        <div key={r} className="rounded-lg border border-borda bg-white p-2.5">
           <p className="text-micro text-texto-3">{r}</p>
           <p className="text-destaque font-bold tabular-nums text-texto">{v}</p>
         </div>

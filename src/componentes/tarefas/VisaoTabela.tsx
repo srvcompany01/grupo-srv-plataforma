@@ -47,7 +47,7 @@ export function VisaoTabela({ tarefas, ctx }: { tarefas: TarefaResumo[]; ctx: Co
 
   if (!tarefas.length) return <p className="py-10 text-center text-corpo text-texto-3">Nenhuma tarefa nesta visualização.</p>
   return (
-    <div className="overflow-x-auto rounded-xl border border-borda bg-white">
+    <div className="overflow-x-auto rounded-lg border border-borda bg-white">
       <table className="w-full min-w-[720px] border-collapse text-corpo">
         <thead>
           <tr className="border-b border-borda text-left text-rotulo font-medium text-texto-3">

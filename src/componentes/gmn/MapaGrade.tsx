@@ -30,7 +30,7 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
   const bolinha = (Math.min(Math.max(passo * 0.72, LADO * 0.04), LADO * 0.08) / LADO) * 100
   return (
     <figure className="space-y-1">
-      <div className="@container relative aspect-square w-full overflow-hidden rounded-xl border border-borda bg-[#e8e4da]" role="img" aria-label={rotulo}>
+      <div className="@container relative aspect-square w-full overflow-hidden rounded-lg border border-borda bg-[#e8e4da]" role="img" aria-label={rotulo}>
         {tiles.map((t) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiles públicos do OpenStreetMap
           <img

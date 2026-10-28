@@ -14,9 +14,9 @@ export async function GoogleAds({ contaId, periodo, seletor }: { contaId: string
   return (
     <Modulo icone={Search} titulo="Google Ads" descricao={`Conta ${formatarContaGoogleAds(contaId)} · campanhas ativas, ${rotuloPeriodo(periodo)}`} acoes={seletor}>
       {'erro' in r ? (
-        <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
+        <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
       ) : r.campanhas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma campanha ativa nesta conta agora.</p>
+        <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma campanha ativa nesta conta agora.</p>
       ) : (
         <ResumoCampanhas r={r} hoje={periodo.atalho === 'hoje'} />
       )}
@@ -39,7 +39,7 @@ function ResumoCampanhas({ r, hoje }: { r: { campanhas: Campanha[]; moeda: strin
     <div className="@container space-y-3">
       <div className="grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-6">
         {itens.map(([rot, v]) => (
-          <div key={rot} className="rounded-xl border border-borda bg-white p-2.5">
+          <div key={rot} className="rounded-lg border border-borda bg-white p-2.5">
             <p className="text-micro text-texto-3">{rot}</p>
             <p className="text-destaque font-bold tabular-nums text-texto">{v}</p>
           </div>

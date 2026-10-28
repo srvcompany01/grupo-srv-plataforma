@@ -57,7 +57,7 @@ export function Catalogo({ busca, onSelect }: { busca: string; onSelect: (item: 
       {!busca && <p className="mb-2 px-1 text-xs font-semibold text-texto-3">Popular</p>}
       <div className="grid gap-1 sm:grid-cols-2">
         {itens.map((item) => (
-          <button key={item.tipo} type="button" onClick={() => onSelect(item)} className="flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-hover">
+          <button key={item.tipo} type="button" onClick={() => onSelect(item)} className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-hover">
             <span className="mt-0.5" style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span>
             <span><span className="block text-sm font-medium">{item.nome}</span><span className="block text-legenda leading-4 text-texto-3">{item.descricao}</span></span>
           </button>
@@ -105,7 +105,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
         {selecionado ? (
           <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await criarCampoPersonalizado({ espacoId, listaId, nome, tipo: selecionado.tipo, configuracao: config, cor: corNova, icone: iconeNovo || selecionado.icone }); if (!avisar(resultado)) return; setSelecionado(null); setAberto(false) }) }}>
             <button type="button" className="text-xs font-semibold text-marca hover:underline" onClick={() => setSelecionado(null)}>← Voltar aos tipos</button>
-            <div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-fundo" style={{ color: corNova }}>{(iconeNovo || selecionado.icone) === 'nenhum' ? <span className="text-lg font-bold">{nome.trim().charAt(0).toUpperCase() || 'A'}</span> : <IconeVisual icone={iconeNovo || selecionado.icone} className="h-6 w-6" />}</span><div><p className="font-semibold">{selecionado.nome}</p><p className="text-xs text-texto-3">{selecionado.descricao}</p></div></div>
+            <div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-lg bg-fundo" style={{ color: corNova }}>{(iconeNovo || selecionado.icone) === 'nenhum' ? <span className="text-lg font-bold">{nome.trim().charAt(0).toUpperCase() || 'A'}</span> : <IconeVisual icone={iconeNovo || selecionado.icone} className="h-6 w-6" />}</span><div><p className="font-semibold">{selecionado.nome}</p><p className="text-xs text-texto-3">{selecionado.descricao}</p></div></div>
             <label className="block space-y-1"><span className={rotulo}>Nome do campo</span><input autoFocus required className={campo} value={nome} onChange={(e) => setNome(e.target.value)} /></label>
             <ConfiguracaoCampo item={selecionado} config={config} onChange={setConfig} campos={camposDoEspaco} />
             <AparenciaCampo cor={corNova} aoMudarCor={setCorNova} icone={iconeNovo} aoMudarIcone={setIconeNovo} iconePadrao={selecionado.icone} />
@@ -119,14 +119,14 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
             <TabsContent value="existente" className="space-y-1 pt-3">
               {camposDoEspaco.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => {
                 const adicionado = vinculados.has(item.id)
-                return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-sucesso" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
+                return <button key={item.id} type="button" disabled={adicionado || pendente} onClick={() => iniciar(async () => { if (avisar(await adicionarCampoExistente(listaId, item.id))) setAberto(false) })} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-hover disabled:opacity-60"><span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span><span className="flex-1 text-sm font-medium">{item.nome}</span>{adicionado ? <><Check className="h-4 w-4 text-sucesso" /><span className="text-xs text-texto-3">Adicionado</span></> : <Plus className="h-4 w-4" />}</button>
               })}
-              {camposDoEspaco.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Ainda não há campos reutilizáveis neste espaço.</p>}
+              {camposDoEspaco.length === 0 && <p className="rounded-lg bg-fundo p-4 text-sm text-texto-3">Ainda não há campos reutilizáveis neste espaço.</p>}
             </TabsContent>
             <TabsContent value="padrao" className="space-y-1 pt-3">
               <p className="px-1 pb-1 text-xs text-texto-3">Campos que toda tarefa já tem. Escolha quais aparecem como coluna na lista.</p>
               {colunasPadrao.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
-                <button key={item.id} type="button" onClick={() => aoAlternarColuna?.(item.id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-hover">
+                <button key={item.id} type="button" onClick={() => aoAlternarColuna?.(item.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-hover">
                   <span className="flex-1 text-sm font-medium">{item.nome}</span>
                   {item.visivel ? <><Check className="h-4 w-4 text-sucesso" /><span className="text-xs text-texto-3">Na lista</span></> : <><Plus className="h-4 w-4" /><span className="text-xs text-texto-3">Mostrar</span></>}
                 </button>
@@ -134,7 +134,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
             </TabsContent>
             <TabsContent value="lista" className="space-y-1 pt-3">
               {camposDaLista.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR'))).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 rounded-xl border border-borda px-3 py-2.5">
+                <div key={item.id} className="flex items-center gap-3 rounded-lg border border-borda px-3 py-2.5">
                   <span style={{ color: item.cor }}><IconeVisual icone={item.icone} className="h-5 w-5" /></span>
                   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{item.nome}</span><span className="block text-legenda text-texto-3">{CATALOGO_CAMPOS.find((catalogo) => catalogo.tipo === item.tipo)?.nome ?? item.tipo}</span></span>
                   <button
@@ -149,7 +149,7 @@ export function GerenciarCampos({ listaId, espacoId, camposDaLista, camposDoEspa
                   </button>
                 </div>
               ))}
-              {camposDaLista.length === 0 && <p className="rounded-xl bg-fundo p-4 text-sm text-texto-3">Nenhum campo foi adicionado a esta lista.</p>}
+              {camposDaLista.length === 0 && <p className="rounded-lg bg-fundo p-4 text-sm text-texto-3">Nenhum campo foi adicionado a esta lista.</p>}
             </TabsContent>
           </Tabs>
         )}

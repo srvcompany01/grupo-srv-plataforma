@@ -1,8 +1,9 @@
-import { Hash, Lock, MessagesSquare, X } from 'lucide-react'
+import { CalendarDays, FileText, Hash, ListChecks, Lock, MessagesSquare, X } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AoVivo } from '@/componentes/chat/AoVivo'
-import { CaixaChat, GerenciarCanal, NovoCanal } from '@/componentes/chat/ControlesChat'
+import { CaixaChat, GerenciarCanal, NovoCanal, type ListaChat } from '@/componentes/chat/ControlesChat'
+import { ConversasDiretas, type PessoaConversa } from '@/componentes/chat/ConversasDiretas'
 import { ItemMensagem } from '@/componentes/chat/ItemMensagem'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
 import { continuacao, referenciasInternas, rotuloDia } from '@/dominio/chat'
@@ -11,6 +12,9 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { fioDaMensagem, listarCanais, membrosDoCanal, mensagensDoCanal, titulosReferencias, type Canal, type Mensagem } from '@/servicos/chat'
 import { listarEquipe } from '@/servicos/usuarios'
+import { situacao } from '@/dominio/time'
+import { quadroDoTime } from '@/servicos/time'
+import { listarArvore } from '@/servicos/espacos'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
@@ -32,11 +36,14 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
   const canal = canais.find((c) => c.nome === decodeURIComponent(nome))
   if (!canal) notFound()
   const fioId = texto(sp.fio)
-  const [mensagens, fio, equipe, membros] = await Promise.all([
+  const [mensagens, fio, equipe, membros, quadro, arvore, tipos] = await Promise.all([
     mensagensDoCanal(sb, canal.id),
     fioId && UUID.test(fioId) ? fioDaMensagem(sb, fioId) : null,
     listarEquipe(sb),
     canal.privado ? membrosDoCanal(sb, canal.id) : [],
+    quadroDoTime(sb, dataDeHoje(new Date())).catch(() => null),
+    listarArvore(sb).catch(() => null),
+    sb.from('lists').select('id, kind').is('archived_at', null).then((q) => q.data ?? []),
   ])
   const todas = [...mensagens, ...(fio ? [fio.principal, ...fio.respostas] : [])]
   const titulos = await titulosReferencias(sb, referenciasInternas(todas.map((m) => m.texto))).catch(() => ({}))
@@ -45,6 +52,27 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
   const admin = eu.papel === 'admin'
   const hoje = dataDeHoje(new Date())
   const base = `/chat/${canal.nome}`
+
+  // Mensagens diretas = canais privados de duas pessoas chamados dm-<início dos ids>. Os demais são canais.
+  const nomeDm = (outroId: string) => `dm-${[eu.id, outroId].map((id) => id.slice(0, 8)).sort().join('-')}`
+  const ehDm = (nome: string) => nome.startsWith('dm-')
+  const canaisComuns = canais.filter((c) => !ehDm(c.nome))
+  const presenca = new Map((quadro ?? []).map((m) => [m.id, situacao(m, new Date())]))
+  const conversas: PessoaConversa[] = outros.map((p) => {
+    const dm = canais.find((c) => c.nome === nomeDm(p.id))
+    return { id: p.id, nome: p.nome, situacao: presenca.get(p.id) ?? 'offline', canal: dm?.nome, naoLidas: dm?.naoLidas ?? 0, aberta: dm?.id === canal.id }
+  })
+  const interlocutor = ehDm(canal.nome) ? outros.find((p) => nomeDm(p.id) === canal.nome) : undefined
+  const tituloCanal = interlocutor?.nome ?? canal.nome
+  const kinds = new Map(tipos.map((t) => [t.id, t.kind]))
+  const listas: ListaChat[] = []
+  const coletar = (e: NonNullable<typeof arvore>['espacos'][number], prefixo: string) => {
+    const nome = prefixo ? `${prefixo} › ${e.nome}` : e.nome
+    for (const l of [...e.listas, ...e.pastas.flatMap((pa) => pa.listas)]) listas.push({ id: l.id, nome: `${nome} › ${l.nome}`, post: kinds.get(l.id) === 'conteudo' })
+    for (const f of e.filhos) coletar(f, nome)
+  }
+  for (const e of arvore?.espacos ?? []) coletar(e, '')
+  for (const l of arvore?.listasRaiz ?? []) listas.push({ id: l.id, nome: l.nome, post: kinds.get(l.id) === 'conteudo' })
 
   const lista = (msgs: Mensagem[], comFio: boolean) =>
     msgs.map((m, i) => {
@@ -72,27 +100,30 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
           <NovoCanal equipe={outros} />
         </div>
         <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
-          {canais.map((c) => (
+          <p className="px-2 pb-0.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Canais</p>
+          {canaisComuns.map((c) => (
             <Link key={c.id} href={`/chat/${c.nome}`} className={`flex items-center gap-2 rounded px-2 py-1 text-corpo ${c.id === canal.id ? 'bg-[var(--bg-active)] font-semibold text-texto' : c.naoLidas ? 'font-semibold text-texto hover:bg-hover' : 'text-texto-2 hover:bg-hover'}`}>
               <IconeCanal c={c} className="h-3.5 w-3.5 shrink-0 text-texto-3" />
               <span className="min-w-0 flex-1 truncate">{c.nome}</span>
               {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-claro">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
             </Link>
           ))}
+          <p className="px-2 pb-0.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Mensagens diretas</p>
+          <ConversasDiretas pessoas={conversas} />
         </nav>
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col" aria-label={`Canal ${canal.nome}`}>
         <header className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-borda-fraca px-3">
           <div className="min-w-0">
-            <h1 className="flex items-center gap-1.5 text-destaque font-bold text-texto"><IconeCanal c={canal} className="h-4 w-4 text-texto-3" />{canal.nome}</h1>
+            <h1 className="flex items-center gap-1.5 text-destaque font-bold text-texto">{!interlocutor && <IconeCanal c={canal} className="h-4 w-4 text-texto-3" />}{tituloCanal}</h1>
             {canal.descricao && <p className="truncate text-legenda text-texto-3">{canal.descricao}</p>}
           </div>
           <GerenciarCanal canalId={canal.id} privado={canal.privado} membros={membros} equipe={outros} podeGerir={canal.nome !== 'geral' && (canal.criadoPor === eu.id || admin)} />
         </header>
         {/* No celular os canais viram uma faixa rolável. */}
         <nav className="flex gap-1 overflow-x-auto border-b border-borda px-3 py-2 md:hidden" aria-label="Canais">
-          {canais.map((c) => (
+          {canaisComuns.map((c) => (
             <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-claro' : 'border border-borda text-texto-2'}`}>
               <IconeCanal c={c} className="h-3 w-3" /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
             </Link>
@@ -107,8 +138,13 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
           )}
         </AoVivo>
         <div className="border-t border-borda p-3">
-          <CaixaChat canalId={canal.id} canalNome={canal.nome} pessoas={pessoas} />
+          <CaixaChat canalId={canal.id} canalNome={tituloCanal} pessoas={pessoas} listas={listas} />
         </div>
+        <nav aria-label="Visualizações vinculadas" className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-t border-borda-fraca px-3 text-corpo">
+          {[{ href: '/inicio', rotulo: 'Minhas tarefas', Icone: ListChecks }, { href: '/agenda', rotulo: 'Agenda', Icone: CalendarDays }, { href: '/documentos', rotulo: 'Documentos', Icone: FileText }].map(({ href, rotulo, Icone }) => (
+            <Link key={href} href={href} className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded px-2 text-texto-2 hover:bg-hover hover:text-texto"><Icone className="h-[15px] w-[15px]" />{rotulo}</Link>
+          ))}
+        </nav>
       </section>
 
       {fio && (

@@ -26,7 +26,7 @@ export async function ProjecaoCliente({ cliente, hoje, ajustesBrutos }: { client
   if (!base) {
     return (
       <Modulo icone={TrendingUp} titulo="Projeção de 3 meses" descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · base: {meses.map(rotuloMesCurto).join(', ')}</>}>
-        <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">
+        <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">
           Para projetar, lance o <strong>faturamento</strong> e o <strong>número de vendas</strong> de pelo menos um dos últimos meses fechados ({meses.map(rotuloMesLongo).join(', ')}) em Performance → Lançamentos. A taxa de conversão e o custo por cliente saem das vendas.
         </p>
       </Modulo>

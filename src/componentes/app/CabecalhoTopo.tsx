@@ -7,6 +7,8 @@ import { sair } from '@/app/(auth)/login/acoes'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
+import type { AlertaSistema } from '@/servicos/alertas-sistema'
+import { AlertasSistema } from './AlertasSistema'
 import { AtalhosDialog } from './AtalhosDialog'
 import { MenuPerfil } from './MenuPerfil'
 import { AtalhosGlobais } from './AtalhosGlobais'
@@ -16,7 +18,7 @@ import { papelPodeUsarIA } from '@/ia/acesso'
 import { PaletaComandos } from './PaletaComandos'
 import { SinoAvisos } from './SinoAvisos'
 
-type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string }
+type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string; alertas: AlertaSistema[] }
 
 const botaoIcone = 'flex h-6 w-6 items-center justify-center rounded-md text-texto-3 transition-colors hover:bg-ink/10 hover:text-texto'
 
@@ -24,7 +26,7 @@ const botaoIcone = 'flex h-6 w-6 items-center justify-center rounded-md text-tex
  * Barra do topo, fixa, de 40px: logo da empresa, busca central que abre a paleta ⌘K, atalhos (Minhas tarefas, Agenda) e avisos.
  * Configurações, tema e perfil ficam no pé da faixa de ícones. No celular abre o menu lateral.
  */
-export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
+export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props) {
   const [paleta, setPaleta] = useState(false)
   const [ajuda, setAjuda] = useState(false)
   const abrirPaleta = useCallback(() => setPaleta(true), [])
@@ -58,6 +60,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
       <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={`${botaoIcone} hidden sm:flex`}><CalendarDays className="h-4 w-4" /></Link>
+      <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
 
       <button
         type="button"

@@ -16,7 +16,7 @@ const dia = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/')
 
 function Cartao({ rotulo, valor, tom, detalhe }: { rotulo: string; valor: number; tom?: 'bom' | 'ruim'; detalhe?: string }) {
   return (
-    <div className="rounded-xl border border-borda p-3">
+    <div className="rounded-lg border border-borda p-3">
       <p className="text-legenda font-medium text-texto-3">{rotulo}</p>
       <p className={`mt-1 text-xl font-bold tabular-nums ${tom === 'bom' ? 'text-sucesso' : tom === 'ruim' ? 'text-perigo' : 'text-texto'}`}>{formatarReais(valor)}</p>
       {detalhe && <p className="mt-0.5 text-legenda text-texto-3">{detalhe}</p>}
@@ -69,7 +69,7 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
         </section>
 
         <section className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-xl border border-borda p-3">
+          <div className="rounded-lg border border-borda p-3">
             <h2 className="mb-2 text-rotulo font-semibold text-texto">Últimos 6 meses</h2>
             <div className="flex h-36 items-end gap-3">
               {serie.map((m) => (
@@ -84,7 +84,7 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
             </div>
             <p className="mt-1 text-legenda text-texto-3"><span className="text-sucesso">■</span> entradas <span className="ml-2 text-perigo">■</span> despesas (pagas e pendentes)</p>
           </div>
-          <div className="rounded-xl border border-borda p-3">
+          <div className="rounded-lg border border-borda p-3">
             <h2 className="mb-2 text-rotulo font-semibold text-texto">Por categoria</h2>
             {resumo.porCategoria.length === 0 ? (
               <p className="py-6 text-center text-rotulo text-texto-3">Nada lançado neste mês.</p>

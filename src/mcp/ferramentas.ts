@@ -13,6 +13,7 @@ import { diasDoPeriodo, rankingDeTrabalho } from '@/dominio/trabalho-clientes'
 import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrada, semanaDe, somarDias, type EntradaCompromisso } from '@/dominio/agenda'
 import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
+import * as modelosTarefa from '@/servicos/modelos'
 import * as conteudoSvc from '@/servicos/conteudo'
 import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
@@ -196,6 +197,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       regras: [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
+        'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1306,6 +1308,33 @@ export const FERRAMENTAS: Ferramenta[] = [
       const tarefaId = await criarUma(ctx, a)
       if (a.clienteId) await tarefas.definirTagCliente(ctx.sb, tarefaId, a.clienteId)
       return { tarefaId }
+    },
+  }),
+
+  definir({
+    nome: 'listar_modelos_tarefa',
+    descricao: 'Lista os modelos de tarefa da equipe (título e subtarefas prontos). Use o id em criar_tarefa_de_modelo.',
+    escrita: false,
+    entrada: {},
+    executar: async (ctx) => ({ modelos: await modelosTarefa.listarModelos(ctx.sb) }),
+  }),
+
+  definir({
+    nome: 'criar_tarefa_de_modelo',
+    descricao: 'Cria uma tarefa na lista a partir de um modelo (com as subtarefas do modelo), tendo a pessoa dona do token como responsável.',
+    escrita: true,
+    entrada: { modeloId: id('Id do modelo (de listar_modelos_tarefa)'), listaId: id('Id da lista onde criar') },
+    executar: async (ctx, a) => ({ tarefaId: await modelosTarefa.criarDoModelo(ctx.sb, a.modeloId, a.listaId, ctx.userId) }),
+  }),
+
+  definir({
+    nome: 'salvar_modelo_tarefa',
+    descricao: 'Cria um modelo de tarefa: nome, título da tarefa e até 30 subtarefas.',
+    escrita: true,
+    entrada: { nome: z.string().min(1).max(80), titulo: z.string().min(1).max(200), subtarefas: z.array(z.string().min(1).max(200)).max(30).optional() },
+    executar: async (ctx, a) => {
+      await modelosTarefa.salvarModelo(ctx.sb, { nome: a.nome.trim(), titulo: a.titulo.trim(), subtarefas: a.subtarefas ?? [] })
+      return { ok: true }
     },
   }),
 

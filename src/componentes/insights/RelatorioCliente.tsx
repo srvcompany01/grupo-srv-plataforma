@@ -18,7 +18,7 @@ const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits:
 /** Cada parte do relatório tem a sua cor (azul = pago, rosa = orgânico, violeta = os dois juntos). */
 function Secao({ icone: Icone, titulo, descricao, cor, children }: { icone: typeof Megaphone; titulo: string; descricao: string; cor: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-xl border-l-4 bg-white pl-3" style={{ borderLeftColor: cor }}>
+    <section className="space-y-3 rounded-lg border-l-4 bg-white pl-3" style={{ borderLeftColor: cor }}>
       <header className="flex items-center gap-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg text-claro" style={{ background: cor }}><Icone className="h-4 w-4" /></span>
         <div>

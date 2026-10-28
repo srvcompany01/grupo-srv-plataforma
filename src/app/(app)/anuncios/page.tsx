@@ -291,7 +291,7 @@ async function Panorama({ clientes, periodo, googleConectado, seletor }: { clien
           </div>
         </div>
         {linhas.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com conta de anúncios no cadastro. Preencha a conta do Meta e/ou do Google Ads na página do cliente.</p>
+          <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com conta de anúncios no cadastro. Preencha a conta do Meta e/ou do Google Ads na página do cliente.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[48rem] text-rotulo">

@@ -50,7 +50,7 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
       </div>
 
       {tipos.map((tipo) => (
-        <section key={tipo} className="overflow-hidden rounded-xl border border-borda bg-white">
+        <section key={tipo} className="overflow-hidden rounded-lg border border-borda bg-white">
           <h2 className="border-b border-borda bg-fundo px-3 py-2 text-rotulo font-semibold">{nomeDoTipo(tipo)} <span className="font-normal text-texto-3">{visiveis.filter((c) => c.tipo === tipo).length}</span></h2>
           <ul>
             {visiveis.filter((c) => c.tipo === tipo).map((c) => (

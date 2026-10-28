@@ -15,7 +15,7 @@ const pct = (v: number) => `${n(v)}%`
 const q = (periodo: PeriodoAnuncios) => (consultaPeriodo(periodo) ? `&${consultaPeriodo(periodo)}` : '')
 export const hrefBiolytics = (aba: string, c: Cliente, periodo: PeriodoAnuncios) => `/biolytics?aba=${aba}&cliente=${c.id}${q(periodo)}`
 
-export const Vazio = ({ children }: { children: ReactNode }) => <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
+export const Vazio = ({ children }: { children: ReactNode }) => <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
 
 /** Etapa do funil: cada número e, entre eles, a seta com a taxa de conversão de uma etapa para a próxima. */
 type Etapa = { rotulo: string; valor: number; extra?: string; icone: LucideIcon; cor: string }
@@ -36,7 +36,7 @@ function Funil({ etapas }: { etapas: Etapa[] }) {
                 <ArrowRight className="hidden h-5 w-5 text-texto-3 md:block" aria-hidden />
               </div>
             )}
-            <div className="min-w-0 flex-1 rounded-xl border border-borda bg-white p-3">
+            <div className="min-w-0 flex-1 rounded-lg border border-borda bg-white p-3">
               <div className="flex items-center gap-1.5">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ background: `${e.cor}1f`, color: e.cor }}><Icone className="h-3.5 w-3.5" /></span>
                 <p className="truncate text-micro text-texto-3">{e.rotulo}</p>
@@ -107,7 +107,7 @@ export function GeralCliente({ c, periodo, r, ativos }: { c: Cliente; periodo: P
           {MODULOS.map((m) => {
             const ligado = ativos.includes(m.id)
             return (
-              <li key={m.id} className="flex flex-col gap-2 rounded-xl border border-borda bg-white p-3">
+              <li key={m.id} className="flex flex-col gap-2 rounded-lg border border-borda bg-white p-3">
                 <div className="flex items-center justify-between gap-2">
                   <strong className="text-texto">{m.nome}</strong>
                   <span className={`rounded-full px-2 py-0.5 text-micro font-semibold ${ligado ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-fundo text-texto-3'}`}>{ligado ? 'Ativo' : 'Não criado'}</span>

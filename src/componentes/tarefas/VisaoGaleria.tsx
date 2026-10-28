@@ -28,7 +28,7 @@ export function VisaoGaleria({ grupos, ctx }: { grupos: GrupoTarefas[]; ctx: Con
               const atrasada = !!t.prazo && t.prazo < ctx.hoje && !t.concluidaEm
               return (
                 <li key={t.id}>
-                  <Link href={`/tarefas/${t.id}`} className="block overflow-hidden rounded-xl border border-borda bg-white transition-shadow hover:shadow-flutuante">
+                  <Link href={`/tarefas/${t.id}`} className="block overflow-hidden rounded-lg border border-borda bg-white transition-shadow hover:shadow-flutuante">
                     <span className="block h-1.5" style={{ background: st?.cor ?? g.cor }} aria-hidden />
                     <span className="block space-y-2 p-3">
                       <span className={`block text-corpo font-semibold ${t.concluidaEm ? 'text-texto-3 line-through' : 'text-texto'}`}>{t.titulo}</span>

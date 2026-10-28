@@ -34,7 +34,7 @@ export function VisaoLinhaDoTempo({ tarefas, ctx }: { tarefas: TarefaResumo[]; c
         <span className="font-medium text-texto-2">{rotuloPeriodo.format(new Date(`${dias[0]}T00:00:00Z`)).replace('.', '')} – {rotuloPeriodo.format(new Date(`${dias[DIAS - 1]}T00:00:00Z`)).replace('.', '')}</span>
         {fora > 0 && <span className="text-texto-3">· {fora} tarefa{fora > 1 ? 's' : ''} com vencimento fora deste período</span>}
       </div>
-      <div className="overflow-x-auto rounded-xl border border-borda bg-white">
+      <div className="overflow-x-auto rounded-lg border border-borda bg-white">
         <div className="min-w-[1000px]">
           <div className="grid border-b border-borda text-center text-legenda text-texto-3" style={colunas}>
             <span className="px-3 py-1.5 text-left text-rotulo font-medium">Tarefa</span>
@@ -65,7 +65,7 @@ export function VisaoLinhaDoTempo({ tarefas, ctx }: { tarefas: TarefaResumo[]; c
         </div>
       </div>
       {semPrazo.length > 0 && (
-        <section className="rounded-xl border border-borda bg-white p-3">
+        <section className="rounded-lg border border-borda bg-white p-3">
           <h3 className="mb-1.5 text-rotulo font-semibold text-texto-2">Sem vencimento ({semPrazo.length})</h3>
           <ul className="flex flex-wrap gap-1.5">
             {semPrazo.map((t) => <li key={t.id}><Link href={`/tarefas/${t.id}`} className="inline-flex items-center gap-1.5 rounded-md border border-borda px-2 py-1 text-rotulo text-texto-2 hover:bg-hover"><span className="h-2 w-2 rotate-45 rounded-[2px]" style={{ background: cor(t) }} />{t.titulo}</Link></li>)}

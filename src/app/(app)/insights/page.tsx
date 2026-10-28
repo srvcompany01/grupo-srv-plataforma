@@ -133,7 +133,7 @@ async function DetalheInstagram({ cliente, periodo, seletor }: { cliente: Client
   return (
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? `Instagram de ${cliente.nome}` : `@${ig.usuario}`} descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · {rotuloPeriodo(periodo)}</>} acoes={seletor}>
-        {'erro' in ig ? <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <><InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />{periodo.atalho === 'hoje' && <p className="mt-3 text-legenda text-texto-3">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}</>}
+        {'erro' in ig ? <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p> : <><InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />{periodo.atalho === 'hoje' && <p className="mt-3 text-legenda text-texto-3">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}</>}
       </Modulo>
       {!('erro' in ig) && (
         <Modulo icone={Sparkles} titulo="Insights e recomendações" descricao="O que os números mostram e o que fazer no orgânico">
@@ -169,7 +169,7 @@ async function Panorama({ clientes, periodo, seletor }: { clientes: Cliente[]; p
           ]}
         />
         {linhas.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com a Página do Facebook no cadastro (é por ela que o Instagram profissional é encontrado).</p>
+          <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com a Página do Facebook no cadastro (é por ela que o Instagram profissional é encontrado).</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[48rem] text-rotulo">

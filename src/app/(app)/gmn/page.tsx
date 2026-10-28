@@ -73,7 +73,7 @@ export default async function Gmn({ searchParams }: PageProps<'/gmn'>) {
 }
 
 function Erro({ e }: { e: unknown }) {
-  return <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{e instanceof Error ? e.message : 'Não foi possível falar com o Google agora.'}</p>
+  return <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{e instanceof Error ? e.message : 'Não foi possível falar com o Google agora.'}</p>
 }
 
 async function Perfil({ cliente, placeId }: { cliente: Cliente; placeId: string }) {
@@ -194,7 +194,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
         <NovaVarredura clienteId={cliente.id} base={base} palavraInicial={atual?.palavra ?? ''} gradeInicial={atual?.grade} raioInicial={atual?.raioKm} />
       </Modulo>
       {!atual ? (
-        <p className="rounded-xl border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma varredura ainda. Rode a primeira acima.</p>
+        <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma varredura ainda. Rode a primeira acima.</p>
       ) : (
         <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`} acoes={monitores.some((m) => m.palavra === atual.palavra) ? <span className="inline-flex items-center gap-1 rounded-full bg-sucesso-fundo px-2 py-1 text-legenda font-semibold text-sucesso-forte">Acompanhada toda segunda</span> : <BotaoMonitor clienteId={cliente.id} palavra={atual.palavra} grade={atual.grade} raioKm={atual.raioKm} ligado={false} />}>
           <div className="space-y-4">
@@ -207,7 +207,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
               ].map((m) => {
                 const Icone = m.icone
                 return (
-                  <div key={m.rotulo} className="relative overflow-hidden rounded-xl border border-borda bg-white p-3">
+                  <div key={m.rotulo} className="relative overflow-hidden rounded-lg border border-borda bg-white p-3">
                     {m.tom && <span className={`absolute inset-x-0 top-0 h-1 ${ESTILO_TOM[m.tom as 'bom'].forte}`} aria-hidden />}
                     <p className="flex items-center gap-1.5 text-legenda text-texto-3"><span className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: `${m.cor}1f`, color: m.cor }}><Icone className="h-3 w-3" /></span>{m.rotulo}</p>
                     <p className="mt-1 text-destaque font-bold tabular-nums text-texto">{m.valor}</p>
@@ -225,7 +225,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
                 <p className="flex items-center gap-1.5 text-rotulo font-semibold text-texto"><Users className="h-4 w-4 text-texto-3" /> Quem aparece no top 3</p>
                 <p className="text-legenda text-texto-3">Concorrentes mais frequentes nos {atual.metricas.pontos} pontos da grade</p>
                 {concorrentes.length === 0 ? <p className="text-rotulo text-texto-3">Sem concorrentes no top 3.</p> : (
-                  <ul className="divide-y divide-borda/60 rounded-xl border border-borda text-rotulo">
+                  <ul className="divide-y divide-borda/60 rounded-lg border border-borda text-rotulo">
                     {concorrentes.map((c) => {
                       const l = nomes.get(c.id)
                       return (
@@ -299,7 +299,7 @@ async function Panorama({ clientes }: { clientes: Cliente[] }) {
   return (
     <Modulo icone={MapPin} titulo="Todos os clientes" descricao="Nota, avaliações e saúde do perfil no Google, e a última varredura do geogrid">
       <div className="space-y-4">
-        {linhas.length === 0 ? <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">Nenhum cliente com o perfil do Google ligado. Escolha um cliente no seletor acima para ligar.</p> : (
+        {linhas.length === 0 ? <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">Nenhum cliente com o perfil do Google ligado. Escolha um cliente no seletor acima para ligar.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-rotulo">
               <thead>
@@ -371,7 +371,7 @@ async function Prospeccao({ busca, lugar, base }: { busca: string; lugar: string
             <div className="space-y-4">
               <Placar nota={analise.nota} itens={analise.itens} />
               <ItensSaude itens={analise.itens} />
-              <div className="space-y-1.5 rounded-xl border border-borda bg-fundo/50 p-3">
+              <div className="space-y-1.5 rounded-lg border border-borda bg-fundo/50 p-3">
                 <div className="flex items-center justify-between gap-2"><p className="text-rotulo font-semibold">Texto para a abordagem</p><CopiarTexto texto={textoProposta(analise.d.nome, analise)} rotulo="Copiar" /></div>
                 <pre className="whitespace-pre-wrap font-sans text-legenda text-texto-2">{textoProposta(analise.d.nome, analise)}</pre>
               </div>

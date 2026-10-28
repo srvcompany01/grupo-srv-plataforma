@@ -2,17 +2,22 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Copy, CopyPlus, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { Copy, CopyPlus, ExternalLink, FolderInput, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react'
-import { duplicarListaNavegacao, excluirItemNavegacao, renomearItemNavegacao } from '@/app/(app)/acoes-navegacao'
+import { createContext, useContext, useState, useTransition, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react'
+import { duplicarListaNavegacao, excluirItemNavegacao, moverItemNavegacao, renomearItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/componentes/ui/context-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { botaoPrimario, botaoSecundario, campo } from '@/lib/ui'
 
 export type TipoArrastavel = 'space' | 'folder' | 'list'
+
+/** Espaços e pastas que podem receber um item (para "Mover para…"). */
+export type DestinoMover = { id: string; nome: string; tipo: 'space' | 'folder' }
+export const DestinosMover = createContext<DestinoMover[]>([])
 
 const ROTULO = { space: 'espaço', folder: 'pasta', list: 'lista' } as const
 const CAMINHO = { space: '/espacos/', folder: null, list: '/listas/' } as const
@@ -48,6 +53,8 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
   const [pendente, iniciar] = useTransition()
   const [renomeando, setRenomeando] = useState(false)
   const [novoNome, setNovoNome] = useState(nome)
+  const [movendo, setMovendo] = useState(false)
+  const destinos = useContext(DestinosMover).filter((d) => d.id !== id && (tipo === 'list' || d.tipo === 'space'))
   const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `${tipo}:${id}`, data: { tipo, id }, disabled: !habilitado })
 
   // Os ouvintes do dnd-kit só valem para eventos que nascem na própria linha.
@@ -85,6 +92,12 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
       if (!avisar(r, true)) return
       router.refresh()
     })
+  const mover = (alvo: { tipo: 'root' } | { tipo: 'space' | 'folder'; id: string }) =>
+    iniciar(async () => {
+      if (!avisar(await moverItemNavegacao({ tipo, id, alvo }), true)) return
+      setMovendo(false)
+      router.refresh()
+    })
   const salvarNome = () =>
     iniciar(async () => {
       if (!avisar(await renomearItemNavegacao({ tipo, id, nome: novoNome }), true)) return
@@ -105,6 +118,19 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
             style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
           >
             {children}
+            {(podeEditar || podeExcluir) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="hidden h-5 w-5 shrink-0 items-center justify-center rounded text-lat-3 hover:bg-lat-hover hover:text-lat-fg group-hover:flex data-[state=open]:flex"><MoreHorizontal className="h-3.5 w-3.5" /></DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {podeEditar && <DropdownMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</DropdownMenuItem>}
+                  {podeEditar && <DropdownMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</DropdownMenuItem>}
+                  {podeEditar && tipo === 'list' && <DropdownMenuItem disabled={pendente} onSelect={duplicar}><CopyPlus /> Duplicar</DropdownMenuItem>}
+                  {caminho && <DropdownMenuItem onSelect={copiarLink}><Copy /> Copiar link</DropdownMenuItem>}
+                  {podeExcluir && <DropdownMenuSeparator />}
+                  {podeExcluir && <DropdownMenuItem variant="destructive" disabled={pendente} onSelect={excluir}><Trash2 /> Excluir</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
@@ -116,6 +142,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
             <>
               {caminho && <ContextMenuSeparator />}
               <ContextMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</ContextMenuItem>
+              <ContextMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</ContextMenuItem>
               {tipo === 'list' && <ContextMenuItem disabled={pendente} onSelect={duplicar}><CopyPlus /> Duplicar</ContextMenuItem>}
             </>
           )}
@@ -127,6 +154,24 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
           )}
         </ContextMenuContent>
       </ContextMenu>
+      <Dialog open={movendo} onOpenChange={setMovendo}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Mover {ROTULO[tipo]}</DialogTitle>
+            <DialogDescription>Escolha onde &quot;{nome}&quot; vai ficar.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-72 space-y-0.5 overflow-y-auto">
+            {tipo === 'space' && <button type="button" disabled={pendente} onClick={() => mover({ tipo: 'root' })} className="flex h-8 w-full items-center rounded px-2 text-left text-corpo hover:bg-hover">Raiz (sem espaço pai)</button>}
+            {destinos.map((d) => (
+              <button key={`${d.tipo}-${d.id}`} type="button" disabled={pendente} onClick={() => mover({ tipo: d.tipo, id: d.id })} className="flex h-8 w-full items-center gap-2 rounded px-2 text-left text-corpo hover:bg-hover">
+                <span className="text-texto-3">{d.tipo === 'space' ? 'Espaço' : 'Pasta'}</span>
+                <span className="truncate">{d.nome}</span>
+              </button>
+            ))}
+            {destinos.length === 0 && tipo !== 'space' && <p className="px-2 py-3 text-rotulo text-texto-3">Nenhum destino disponível.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={renomeando} onOpenChange={setRenomeando}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>

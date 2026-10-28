@@ -47,7 +47,7 @@ export function GerenciarTokens({ tokens, urlMcp }: { tokens: TokenApi[]; urlMcp
         Conecte o Claude, o Codex ou outra IA à plataforma pelo MCP. Elas agem com as suas permissões e enxergam as ferramentas da plataforma. Tokens com escopo de leitura não alteram nada.
       </p>
 
-      <section className="space-y-3 rounded-xl border border-borda bg-white p-4">
+      <section className="space-y-3 rounded-lg border border-borda bg-white p-4">
         <h2 className="font-semibold">Novo token</h2>
         <div className="flex flex-wrap gap-2">
           <input className={`${campo} min-w-52 flex-1`} placeholder="Nome (ex.: Codex no meu Mac)" value={nome} onChange={(e) => setNome(e.target.value)} />
@@ -76,7 +76,7 @@ export function GerenciarTokens({ tokens, urlMcp }: { tokens: TokenApi[]; urlMcp
         {tokens.length === 0 ? (
           <EstadoVazio titulo="Nenhum token ainda" descricao="Gere um token para conectar uma IA." />
         ) : (
-          <ul className="divide-y divide-borda rounded-xl border border-borda bg-white">
+          <ul className="divide-y divide-borda rounded-lg border border-borda bg-white">
             {tokens.map((t) => {
               const expirado = new Date(t.expiraEm) <= new Date()
               return (
@@ -95,7 +95,7 @@ export function GerenciarTokens({ tokens, urlMcp }: { tokens: TokenApi[]; urlMcp
         )}
       </section>
 
-      <section className="space-y-3 rounded-xl border border-borda bg-white p-4">
+      <section className="space-y-3 rounded-lg border border-borda bg-white p-4">
         <h2 className="font-semibold">Como conectar</h2>
         <div className="space-y-1">
           <p className="text-corpo font-medium">Claude Code</p>

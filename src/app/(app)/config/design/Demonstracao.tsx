@@ -14,7 +14,7 @@ const CORES = [
 const TAMANHOS = [['micro', 'text-micro', '10'], ['legenda', 'text-legenda', '11'], ['rótulo', 'text-rotulo', '12'], ['corpo', 'text-corpo', '13'], ['destaque', 'text-destaque', '14']] as const
 
 const Secao = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
-  <section className="rounded-xl border border-borda bg-white p-4">
+  <section className="rounded-lg border border-borda bg-white p-4">
     <h2 className="mb-3 text-destaque font-semibold text-texto">{titulo}</h2>
     {children}
   </section>
@@ -57,7 +57,7 @@ export function Demonstracao() {
         </div>
       </Secao>
       <Secao titulo="Painel lateral: grupo de linhas (interruptor 24×14, linha 28px)">
-        <div className="w-80 rounded-xl border border-borda">
+        <div className="w-80 rounded-lg border border-borda">
           <GrupoCampos legenda="Layout da página">
             <LinhaInterruptor rotulo="Mostrar status vazios" marcado={a} aoMudar={setA} />
             <LinhaInterruptor rotulo="Quebrar texto" marcado={b} aoMudar={setB} />

@@ -185,7 +185,7 @@ export function Propostas({ propostas, podeGerir, mostrarCliente }: { propostas:
   return (
     <ul className="space-y-2">
       {propostas.map((p) => (
-        <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-xl border border-aviso-fundo bg-aviso-fundo/30 px-3 py-2 ${pendente ? 'opacity-60' : ''}`}>
+        <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-lg border border-aviso-fundo bg-aviso-fundo/30 px-3 py-2 ${pendente ? 'opacity-60' : ''}`}>
           <div className="min-w-0 flex-1 text-rotulo">
             <p className="font-semibold text-texto">
               {p.acao === 'ativar' ? 'Ativar' : 'Orçamento'} · {p.plataforma === 'meta' ? 'Meta' : 'Google Ads'} · {NIVEL[p.nivel as Nivel] ?? p.nivel} &quot;{p.nome}&quot;
@@ -238,11 +238,11 @@ export function Criativos({ clienteId, criativos }: { clienteId: string; criativ
         <p className="text-legenda text-texto-3">JPG, PNG, WEBP, MP4 ou MOV. Depois peça à IA: &quot;crie uma campanha de WhatsApp com o criativo …&quot;.</p>
       </div>
       {criativos.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">Nenhum criativo ainda.</p>
+        <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">Nenhum criativo ainda.</p>
       ) : (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {criativos.map((c) => (
-            <li key={c.id} className={`overflow-hidden rounded-xl border border-borda bg-white ${pendente ? 'opacity-60' : ''}`}>
+            <li key={c.id} className={`overflow-hidden rounded-lg border border-borda bg-white ${pendente ? 'opacity-60' : ''}`}>
               <div className="flex aspect-square items-center justify-center bg-fundo">
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2 */}
                 {c.tipo === 'imagem' ? <img src={c.url} alt={c.nome} className="h-full w-full object-cover" /> : <video src={c.url} className="h-full w-full object-cover" muted preload="metadata" />}

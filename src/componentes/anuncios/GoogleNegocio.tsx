@@ -23,7 +23,7 @@ export async function GoogleNegocio({ clienteId, perfil, perfilNome, periodo, se
     <Modulo icone={MapPin} titulo="Google Meu Negócio" descricao={`${perfilNome ?? 'Perfil'} · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
       <div className="@container space-y-3">
         {'erro' in r ? (
-          <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
+          <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-6">
@@ -35,7 +35,7 @@ export async function GoogleNegocio({ clienteId, perfil, perfilNome, periodo, se
                 ['Mensagens', r.mensagens, null],
                 ['Ações no total', r.ligacoes + r.site + r.rotas + r.mensagens + r.reservas + r.pedidosComida + r.cliquesCardapio, null],
               ] as const).map(([rot, v, extra]) => (
-                <div key={rot} className="rounded-xl border border-borda bg-white p-2.5">
+                <div key={rot} className="rounded-lg border border-borda bg-white p-2.5">
                   <p className="text-micro text-texto-3">{rot}</p>
                   <p className="text-destaque font-bold tabular-nums text-texto">{numero.format(v)}</p>
                   {extra && <p className="text-micro text-texto-3">{extra}</p>}
@@ -54,14 +54,14 @@ export async function GoogleNegocio({ clienteId, perfil, perfilNome, periodo, se
               </div>
             )}
             {r.avaliacoes && (
-              <div className="rounded-xl border border-borda bg-white p-3">
+              <div className="rounded-lg border border-borda bg-white p-3">
                 <p className="text-legenda font-semibold text-texto-2">Avaliações no período</p>
                 <p className="mt-0.5 text-destaque font-bold tabular-nums text-texto">{numero.format(r.avaliacoes.novas)} novas</p>
                 <p className="text-legenda text-texto-3">{r.avaliacoes.notaMedia === null ? 'Sem nota no período' : `Média ★ ${r.avaliacoes.notaMedia.toLocaleString('pt-BR')}`} · {numero.format(r.avaliacoes.respondidas)} respondidas · {numero.format(r.avaliacoes.semResposta)} sem resposta</p>
               </div>
             )}
             {r.palavrasChave?.length ? (
-              <div className="rounded-xl border border-borda bg-white p-3">
+              <div className="rounded-lg border border-borda bg-white p-3">
                 <p className="text-legenda font-semibold text-texto-2">Termos que levaram ao perfil</p>
                 <p className="text-micro text-texto-3">Dados mensais de {r.palavrasPeriodo?.de} a {r.palavrasPeriodo?.ate}</p>
                 <ol className="mt-2 grid gap-x-5 gap-y-1 text-rotulo sm:grid-cols-2">

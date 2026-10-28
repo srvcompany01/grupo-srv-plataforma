@@ -251,7 +251,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               const r = calculo.nos[n.id]
               const sel = selecao?.tipo === 'no' && selecao.id === n.id
               return (
-                <div key={n.id} data-ui onPointerDown={(ev) => moverNo(ev, n)} className={`group absolute flex cursor-grab items-stretch overflow-visible rounded-xl border bg-white shadow-sm active:cursor-grabbing ${sel ? 'border-[#2563eb] ring-2 ring-[#2563eb]/30' : 'border-borda'}`} style={{ left: n.x, top: n.y, width: NO_LARGURA, height: NO_ALTURA }}>
+                <div key={n.id} data-ui onPointerDown={(ev) => moverNo(ev, n)} className={`group absolute flex cursor-grab items-stretch overflow-visible rounded-lg border bg-white shadow-sm active:cursor-grabbing ${sel ? 'border-[#2563eb] ring-2 ring-[#2563eb]/30' : 'border-borda'}`} style={{ left: n.x, top: n.y, width: NO_LARGURA, height: NO_ALTURA }}>
                   <span className="flex w-10 shrink-0 items-center justify-center rounded-l-xl text-claro" style={{ background: info.cor }}><Icone className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1 px-2 py-1.5">
                     <span className="block truncate text-rotulo font-semibold text-texto">{n.nome || info.rotulo}</span>
@@ -264,7 +264,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
             })}
           </div>
 
-          <div data-ui className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1 rounded-xl border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Adicionar etapa">
+          <div data-ui className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1 rounded-lg border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Adicionar etapa">
             {TIPOS_NO.map((tipo) => {
               const Icone = ICONE[tipo]
               return (

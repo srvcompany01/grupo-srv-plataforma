@@ -17,7 +17,7 @@ const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digi
 const quando = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
 
 /** Texto com @menções destacadas, links clicáveis e links de tarefa/documento como cartõezinhos com o título. */
-export function TextoMensagem({ texto, titulos, euId }: { texto: string; titulos: Record<string, string>; euId: string }) {
+export function TextoMensagem({ texto, titulos }: { texto: string; titulos: Record<string, string>; euId?: string }) {
   return (
     <p className="whitespace-pre-wrap break-words text-corpo text-texto">
       {segmentarTexto(texto).map((s, i) =>

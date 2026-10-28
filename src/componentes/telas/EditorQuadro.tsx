@@ -442,7 +442,7 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
           )}
         </div>
 
-        <div data-ui className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-0.5 rounded-xl border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Ferramentas" aria-orientation="vertical">
+        <div data-ui className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-0.5 rounded-lg border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Ferramentas" aria-orientation="vertical">
           {FERRAMENTAS.map(({ id: f, rotulo, tecla, Icone }) => (
             <button key={f} type="button" onClick={() => setFerramenta(f)} aria-pressed={ferramenta === f} title={`${rotulo} (${tecla})`} aria-label={rotulo} className={`rounded-lg p-2 ${ferramenta === f ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover'}`}>
               <Icone className="h-4 w-4" />
@@ -451,7 +451,7 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
         </div>
 
         {caixaSelecao && !editando && (
-          <div data-ui className="absolute left-1/2 top-3 z-10 flex max-w-[95%] -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl border border-borda bg-white px-2 py-1.5 shadow-md" role="toolbar" aria-label="Propriedades">
+          <div data-ui className="absolute left-1/2 top-3 z-10 flex max-w-[95%] -translate-x-1/2 flex-wrap items-center gap-2 rounded-lg border border-borda bg-white px-2 py-1.5 shadow-md" role="toolbar" aria-label="Propriedades">
             {temPreenchimento && (
               <div className="flex items-center gap-1" role="group" aria-label="Preenchimento">
                 {CORES_NOTA.map((c) => <button key={c} type="button" onClick={() => preencher(c)} aria-label={`Preencher com ${c}`} className="h-5 w-5 rounded-full border border-borda" style={{ background: c }} />)}

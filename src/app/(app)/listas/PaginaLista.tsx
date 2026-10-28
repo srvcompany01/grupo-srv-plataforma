@@ -37,6 +37,7 @@ import { listarEspacosComMembros } from '@/servicos/espacos'
 import { listarAtividadeDaLista, listarTarefas } from '@/servicos/tarefas'
 import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
+import { listarModelos } from '@/servicos/modelos'
 import { buscarVisaoSalva, listarFiltrosSalvos } from '@/servicos/visoes'
 import { FiltrosSalvos } from '@/componentes/tarefas/FiltrosSalvos'
 import { listarClientes } from '@/servicos/clientes-plataforma'
@@ -53,6 +54,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   // Sem nada escolhido na URL, a lista abre como a pessoa salvou (ou no original). Qualquer escolha na tela vale como está.
   const salva = await buscarVisaoSalva(sb, id).catch(() => null) // sem a migration das visões salvas a lista abre normalmente
   const { spEfetivo, atual, alterada } = resolverVisao(sp, salva)
+  const modelosDeTarefa = await listarModelos(sb)
   const filtrosSalvos = await listarFiltrosSalvos(sb, id).catch(() => []) // idem: sem a migration, a lista abre sem filtros salvos
   const filtros = lerFiltros(spEfetivo)
   const hoje = dataDeHoje(new Date())
@@ -148,7 +150,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
         <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
         {tipo === 'conteudo' && <NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} />}
-        <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} />
+        <CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} />
       </div>
       )}
       <main className="p-4 md:p-5">

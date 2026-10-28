@@ -1404,6 +1404,12 @@ export type Database = {
           },
         ]
       }
+      task_templates: {
+        Row: { created_at: string; created_by: string; id: string; name: string; subtasks: string[]; title: string }
+        Insert: { created_at?: string; created_by?: string; id?: string; name: string; subtasks?: string[]; title: string }
+        Update: { created_at?: string; created_by?: string; id?: string; name?: string; subtasks?: string[]; title?: string }
+        Relationships: []
+      }
       saved_filters: {
         Row: { created_at: string; id: string; list_id: string; name: string; params: string; user_id: string }
         Insert: { created_at?: string; id?: string; list_id: string; name: string; params: string; user_id?: string }

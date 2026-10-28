@@ -20,6 +20,9 @@ import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/ser
 import { ROTULO_STATUS_CLIENTE, buscarCliente, linkDoCliente, listarClientes } from '@/servicos/clientes-plataforma'
 import { statusDasListas } from '@/servicos/listas'
 import { listarTarefas } from '@/servicos/tarefas'
+import { listarDocumentos } from '@/servicos/documentos'
+import { instagramDoCliente } from '@/servicos/insights-instagram'
+import { atalhoPeriodo } from '@/dominio/periodo-anuncios'
 import { listarEquipe } from '@/servicos/usuarios'
 import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { Modulo } from '@/componentes/Modulo'
@@ -36,7 +39,9 @@ import { SeletorLogo } from './SeletorLogo'
 const ABAS = [
   { id: 'visao', rotulo: 'Visão geral' },
   { id: 'tarefas', rotulo: 'Tarefas' },
+  { id: 'posts', rotulo: 'Posts' },
   { id: 'relatorio', rotulo: 'Relatório' },
+  { id: 'arquivos', rotulo: 'Arquivos' },
   { id: 'acessos', rotulo: 'Acessos' },
 ] as const
 
@@ -77,11 +82,14 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   const raizes = tarefas.filter((t) => !t.paiId)
   const doMes = raizes.filter((t) => t.prazo?.startsWith(hoje.slice(0, 7)))
   const emAtraso = raizes.filter((t) => !t.concluidaEm && categoria(t) !== 'done' && t.prazo && t.prazo < hoje).length
+  const tiposDeLista = new Map((await sb.from('lists').select('id, kind').in('id', [...new Set(tarefas.map((t) => t.listaId))]).then((q) => q.data ?? [])).map((l) => [l.id, l.kind]))
+  const posts = raizes.filter((t) => tiposDeLista.get(t.listaId) === 'conteudo').sort((a, b) => (b.prazo ?? '').localeCompare(a.prazo ?? ''))
+  const arquivos = aba === 'arquivos' ? (await listarDocumentos(sb).catch(() => [])).filter((d) => d.clienteId === id && !d.arquivadoEm) : []
+  const nomeStatus = (t: { listaId: string; statusId: string }) => statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.nome ?? ''
   const indicadores = [
     { rotulo: 'Posts no mês', valor: doMes.length, vermelho: false },
     { rotulo: 'Aprovados ou publicados', valor: doMes.filter((t) => t.concluidaEm || categoria(t) === 'done').length, vermelho: false },
     { rotulo: 'Em atraso', valor: emAtraso, vermelho: emAtraso > 0 },
-    { rotulo: 'Tarefas abertas', valor: raizes.filter((t) => !t.concluidaEm && categoria(t) !== 'done').length, vermelho: false },
   ]
 
   return (
@@ -111,6 +119,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           {aba === 'visao' && (
             <div className="max-w-[1100px] space-y-4">
               <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                <Suspense fallback={<div className="rounded-lg border border-borda px-3 py-2.5"><p className="text-rotulo text-texto-2">Alcance 30 dias</p><p className="text-xl font-semibold text-texto-3">…</p></div>}>
+                  <AlcanceIndicador paginaId={cliente.metaPaginaId} hoje={hoje} />
+                </Suspense>
                 {indicadores.map((i) => (
                   <div key={i.rotulo} className="rounded-lg border border-borda px-3 py-2.5">
                     <p className="text-rotulo text-texto-2">{i.rotulo}</p>
@@ -188,6 +199,41 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           )}
         </Modulo>
           </div>}
+          {aba === 'posts' && (
+            <Modulo icone={ListChecks} titulo="Posts" descricao="Tarefas das listas de conteúdo com a tag deste cliente" acoes={<span className="text-rotulo text-texto-3">{posts.length}</span>}>
+              {posts.length === 0 ? <p className="py-6 text-center text-corpo text-texto-3">Nenhum post deste cliente ainda.</p> : (
+                <ul className="-mx-3 -my-3">
+                  {posts.map((t) => (
+                    <li key={t.id}>
+                      <Link href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-3 border-b border-borda-fraca px-3 text-corpo last:border-b-0 hover:bg-hover">
+                        <span className="min-w-0 flex-1 truncate">{t.titulo}</span>
+                        <span className="hidden w-40 truncate text-rotulo text-texto-3 sm:block">{t.listaNome}</span>
+                        <span className="w-28 truncate text-rotulo text-texto-2">{nomeStatus(t)}</span>
+                        <span className={`w-16 text-right text-rotulo tabular-nums ${t.prazo && t.prazo < hoje && !t.concluidaEm ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Modulo>
+          )}
+          {aba === 'arquivos' && (
+            <Modulo icone={IdCard} titulo="Arquivos" descricao="Documentos ligados a este cliente" acoes={<Link href="/documentos" className="text-rotulo text-texto-2 hover:text-texto">Abrir Documentos</Link>}>
+              {arquivos.length === 0 ? <p className="py-6 text-center text-corpo text-texto-3">Nenhum documento deste cliente.</p> : (
+                <ul className="-mx-3 -my-3">
+                  {arquivos.map((d) => (
+                    <li key={d.id}>
+                      <Link href={`/documentos/${d.id}`} className="flex h-9 items-center gap-3 border-b border-borda-fraca px-3 text-corpo last:border-b-0 hover:bg-hover">
+                        <span className="min-w-0 flex-1 truncate">{d.icone ? `${d.icone} ` : ''}{d.titulo}</span>
+                        <span className="w-32 truncate text-rotulo text-texto-3">{d.donoNome}</span>
+                        <span className="w-20 text-right text-rotulo tabular-nums text-texto-3">{new Date(d.atualizadoEm).toLocaleDateString('pt-BR', { timeZone: 'America/Belem', day: '2-digit', month: '2-digit' })}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Modulo>
+          )}
           {aba === 'relatorio' && <div className="space-y-4">
         {!cliente.interno && (cliente.metaPaginaId || cliente.metaContaId || cliente.googleAdsId) && (
           <Suspense fallback={<Modulo icone={BarChart3} titulo="Relatório do cliente" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Montando o relatório (pago, orgânico e os dois juntos)…</p></Modulo>}>
@@ -236,6 +282,18 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         </div>
       </div>
       </div>
+    </div>
+  )
+}
+
+/** Alcance do Instagram nos últimos 30 dias (Meta). Sem página ligada ou com erro, mostra traço. */
+async function AlcanceIndicador({ paginaId, hoje }: { paginaId: string | null; hoje: string }) {
+  const r = paginaId ? await instagramDoCliente(paginaId, atalhoPeriodo(30, hoje), false).catch(() => null) : null
+  const valor = r && !('erro' in r) ? r.alcance.toLocaleString('pt-BR') : '—'
+  return (
+    <div className="rounded-lg border border-borda px-3 py-2.5">
+      <p className="text-rotulo text-texto-2">Alcance 30 dias</p>
+      <p className="text-xl font-semibold tabular-nums">{valor}</p>
     </div>
   )
 }

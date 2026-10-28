@@ -38,7 +38,7 @@ export function GerenciarFormularios({ formularios, listas, clientes, equipe }: 
       {formularios.length === 0 ? (
         <EstadoVazio titulo="Nenhum formulário ainda" descricao="Crie um briefing para o cliente preencher sem precisar de login." />
       ) : (
-        <ul className="divide-y divide-borda rounded-xl border border-borda bg-white">
+        <ul className="divide-y divide-borda rounded-lg border border-borda bg-white">
           {formularios.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">

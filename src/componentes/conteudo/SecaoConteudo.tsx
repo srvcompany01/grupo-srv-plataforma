@@ -98,7 +98,7 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
     })
 
   return (
-    <section className="space-y-4 rounded-2xl border border-borda bg-white p-4 shadow-cartao" aria-label="Conteúdo do post">
+    <section className="space-y-4 rounded-lg border border-borda bg-white p-4 shadow-cartao" aria-label="Conteúdo do post">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-corpo font-semibold">Conteúdo do post</h2>
         {podeEditar ? (

@@ -37,8 +37,8 @@ const n = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 const compacto = (v: number) => v.toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (v: number) => `${n(v)}%`
 
-export const Aviso = ({ children }: { children: ReactNode }) => <p className="rounded-xl border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
-const Erro = ({ texto: t }: { texto: string }) => <p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{t}</p>
+export const Aviso = ({ children }: { children: ReactNode }) => <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
+const Erro = ({ texto: t }: { texto: string }) => <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{t}</p>
 
 /** Tabela comparando os clientes no canal. */
 function Tabela({ cabecalho, linhas }: { cabecalho: string[]; linhas: { c: Cliente; href: string; celulas: ReactNode[] }[] }) {
@@ -320,7 +320,7 @@ export function PanoramaEscolha({ clientes, periodo }: { clientes: Cliente[]; pe
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {clientes.map((c) => (
             <li key={c.id}>
-              <Link href={hrefCliente('resumo', c, periodo)} className="flex items-center justify-between gap-2 rounded-xl border border-borda bg-white px-3 py-2.5 hover:bg-hover">
+              <Link href={hrefCliente('resumo', c, periodo)} className="flex items-center justify-between gap-2 rounded-lg border border-borda bg-white px-3 py-2.5 hover:bg-hover">
                 <NomeCliente nome={c.nome} />
                 <span className="flex shrink-0 gap-1 text-micro text-texto-3">{c.metaContaId && 'Meta'}{c.googleAdsId && ' · Google'}{c.metaPaginaId && ' · IG'}</span>
               </Link>
@@ -336,7 +336,7 @@ type LinhaCanal = [rotulo: string, valor: ReactNode]
 
 function CartaoCanal({ titulo, icone: Icone, cor, href, linhas, vazio }: { titulo: string; icone: typeof Camera; cor: string; href: string; linhas: LinhaCanal[]; vazio?: string }) {
   return (
-    <section className="flex flex-col gap-2 rounded-2xl border border-borda bg-white p-4">
+    <section className="flex flex-col gap-2 rounded-lg border border-borda bg-white p-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-corpo font-bold text-texto"><span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${cor}1f`, color: cor }}><Icone className="h-4 w-4" /></span>{titulo}</h3>
         <Link href={href} className="text-legenda font-semibold text-[#1d6fe0] hover:underline">Ver detalhes</Link>
