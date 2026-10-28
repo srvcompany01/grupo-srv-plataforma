@@ -10,7 +10,7 @@ import { AGRUPAMENTOS_BASICOS, ROTULO_AGRUPAMENTO } from '@/dominio/agrupamento'
 import type { Filtros } from '@/dominio/filtros'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
 
-const NOME_VISAO: Record<Filtros['visao'], string> = { lista: 'Lista', kanban: 'Quadro', calendario: 'Calendário', tabela: 'Tabela', galeria: 'Galeria', cronograma: 'Linha do tempo', painel: 'Painel', documentos: 'Documentos' }
+const NOME_VISAO: Record<Filtros['visao'], string> = { lista: 'Lista', kanban: 'Quadro', calendario: 'Calendário', tabela: 'Tabela', galeria: 'Galeria', cronograma: 'Linha do tempo', carga: 'Carga de trabalho', atividade: 'Atividade', painel: 'Painel', documentos: 'Documentos' }
 const VISOES_COM_GRUPO: Filtros['visao'][] = ['lista', 'galeria']
 
 /** Atalho "Modo eu": mostra só as tarefas em que a própria pessoa é responsável (liga e desliga o filtro de responsável). */

@@ -12,6 +12,8 @@ const OPCOES: Record<VisaoTarefas, { rotulo: string }> = {
   tabela: { rotulo: 'Tabela' },
   galeria: { rotulo: 'Galeria' },
   cronograma: { rotulo: 'Linha do tempo' },
+  carga: { rotulo: 'Carga de trabalho' },
+  atividade: { rotulo: 'Atividade' },
   painel: { rotulo: 'Painel' },
   documentos: { rotulo: 'Documentos' },
 }

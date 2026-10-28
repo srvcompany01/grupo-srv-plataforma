@@ -1,7 +1,7 @@
 import type { VisaoTarefas } from '@/dominio/filtros'
 
 /** Cor de cada tipo de visualização: lista amarela, quadro azul, calendário laranja, tabela teal, galeria roxa, linha do tempo vermelha, painel verde. */
-export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', tabela: '#12a594', galeria: '#6049e7', cronograma: '#e5484d', painel: '#22865d', documentos: '#7c5cd6' }
+export const COR_VISAO: Record<VisaoTarefas, string> = { lista: '#f2b01e', kanban: '#3e78b8', calendario: '#f76808', tabela: '#12a594', galeria: '#6049e7', cronograma: '#e5484d', carga: '#0091ff', atividade: '#e93d82', painel: '#22865d', documentos: '#7c5cd6' }
 
 /** Ícones preenchidos (não só linhas). O desenho é branco sobre um quadrado arredondado colorido. */
 export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTarefas; className?: string }) {
@@ -52,6 +52,13 @@ export function IconeVisao({ visao, className = 'h-4 w-4' }: { visao: VisaoTaref
           <rect x="6.5" y="15" width="7" height="3" rx="1.4" />
         </g>
       )}
+      {visao === 'carga' && (
+        <g fill="#fff">
+          <circle cx="12" cy="8.5" r="2.6" />
+          <path d="M6.5 18c0-3 2.5-5 5.5-5s5.5 2 5.5 5Z" />
+        </g>
+      )}
+      {visao === 'atividade' && <path d="M5.5 12.5h3l2-5.5 3 10 2-4.5h3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
       {visao === 'calendario' && (
         <g fill="#fff">
           <rect x="6" y="5" width="2.2" height="3.4" rx="1" />

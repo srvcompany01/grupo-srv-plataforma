@@ -127,6 +127,7 @@ export function VisaoCalendario({
     return mapa
   }, [tarefas])
   const semData = tarefas.filter((tarefa) => !tarefa.prazo)
+  const emAtraso = tarefas.filter((tarefa) => tarefa.prazo && tarefa.prazo < hoje && !tarefa.concluidaEm)
   const [ano, mes] = anoMes.split('-').map(Number)
 
   return (
@@ -258,9 +259,22 @@ export function VisaoCalendario({
         </div>
       </div>
 
-      {semData.length > 0 && (
+      {(semData.length > 0 || emAtraso.length > 0) && (
         <div className="border-t border-borda bg-fundo/50 px-4 py-3">
-          <p className="mb-2 text-legenda font-medium text-texto-3">Sem vencimento · {semData.length} <span className="font-medium">(arraste para um dia)</span></p>
+          {emAtraso.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-2 text-legenda font-medium text-perigo">Em atraso · {emAtraso.length} <span className="font-medium text-texto-3">(arraste para um dia)</span></p>
+              <div className="flex flex-wrap gap-2">
+                {emAtraso.slice(0, 12).map((tarefa) => (
+                  <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-full border border-perigo/40 bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                  )}</Arrastavel>
+                ))}
+                {emAtraso.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{emAtraso.length - 12}</span>}
+              </div>
+            </div>
+          )}
+          {semData.length > 0 && <><p className="mb-2 text-legenda font-medium text-texto-3">Sem vencimento · {semData.length} <span className="font-medium">(arraste para um dia)</span></p>
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
@@ -268,7 +282,7 @@ export function VisaoCalendario({
               )}</Arrastavel>
             ))}
             {semData.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{semData.length - 12}</span>}
-          </div>
+          </div></>}
         </div>
       )}
       </DndContext>

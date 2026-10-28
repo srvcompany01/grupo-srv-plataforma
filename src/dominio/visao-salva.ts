@@ -3,7 +3,7 @@ import { escreverFiltros, lerFiltros, type Filtros } from './filtros'
 type Params = Record<string, string | string[] | undefined>
 
 /** Chaves da URL que descrevem a visualização de uma lista. `ed` marca "o usuário mexeu" (mesmo que volte ao padrão). */
-const CHAVES_VISAO = ['resp', 'status', 'prio', 'tag', 'cliente', 'prazo', 'mes', 'busca', 'visao', 'grupo', 'niveis', 'cal', 'semconcl', 'ed'] as const
+const CHAVES_VISAO = ['resp', 'status', 'prio', 'tag', 'cliente', 'prazo', 'mes', 'busca', 'visao', 'grupo', 'niveis', 'cal', 'semconcl', 'logica', 'ed'] as const
 
 /** URL "limpa" = ninguém escolheu nada: abre a visualização salva (ou o original). */
 export const temParametrosDeVisao = (sp: Params): boolean => CHAVES_VISAO.some((chave) => sp[chave] !== undefined)

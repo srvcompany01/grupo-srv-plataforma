@@ -13,6 +13,8 @@ import { VisaoDocumentos } from '@/componentes/documentos/VisaoDocumentos'
 import { PainelDoEscopo } from '@/componentes/projetos/PainelDoEscopo'
 import { ModoEu, PainelVisao } from '@/componentes/tarefas/PainelVisao'
 import { VisaoCalendario } from '@/componentes/tarefas/VisaoCalendario'
+import { VisaoAtividade } from '@/componentes/tarefas/VisaoAtividade'
+import { VisaoCarga } from '@/componentes/tarefas/VisaoCarga'
 import { VisaoGaleria } from '@/componentes/tarefas/VisaoGaleria'
 import { VisaoLinhaDoTempo } from '@/componentes/tarefas/VisaoLinhaDoTempo'
 import { VisaoTabela } from '@/componentes/tarefas/VisaoTabela'
@@ -29,10 +31,11 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { buscarLista, listarTags, tipoDaLista } from '@/servicos/listas'
 import { carregarValoresPersonalizados, listarCamposDaLista, listarCamposDoContexto } from '@/servicos/campos-personalizados'
-import { listarTarefas } from '@/servicos/tarefas'
+import { listarAtividadeDaLista, listarTarefas } from '@/servicos/tarefas'
 import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
-import { buscarVisaoSalva } from '@/servicos/visoes'
+import { buscarVisaoSalva, listarFiltrosSalvos } from '@/servicos/visoes'
+import { FiltrosSalvos } from '@/componentes/tarefas/FiltrosSalvos'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { tarefasMaeDeConteudo } from '@/servicos/conteudo'
 
@@ -47,6 +50,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   // Sem nada escolhido na URL, a lista abre como a pessoa salvou (ou no original). Qualquer escolha na tela vale como está.
   const salva = await buscarVisaoSalva(sb, id).catch(() => null) // sem a migration das visões salvas a lista abre normalmente
   const { spEfetivo, atual, alterada } = resolverVisao(sp, salva)
+  const filtrosSalvos = await listarFiltrosSalvos(sb, id).catch(() => []) // idem: sem a migration, a lista abre sem filtros salvos
   const filtros = lerFiltros(spEfetivo)
   const hoje = dataDeHoje(new Date())
   const [tarefasBrutas, equipe, tags, camposDaLista, camposDoEspaco, clientes] = await Promise.all([
@@ -85,6 +89,13 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const [documentosDaLista, todosDocumentos] = filtros.visao === 'documentos'
     ? await Promise.all([listarDocumentosDaLista(sb, id), listarDocumentos(sb)]).catch(() => [[], []] as [Awaited<ReturnType<typeof listarDocumentosDaLista>>, Awaited<ReturnType<typeof listarDocumentos>>])
     : [[], []]
+  const atividade = filtros.visao === 'atividade' ? await listarAtividadeDaLista(sb, id).catch(() => []) : []
+  const nomesAtividade = {
+    status: Object.fromEntries(lista.status.map((x) => [x.id, x.nome])),
+    usuarios: Object.fromEntries(equipe.map((u) => [u.id, u.nome])),
+    tags: Object.fromEntries(tags.map((g) => [g.id, g.nome])),
+    campos: Object.fromEntries(camposDaLista.map((c) => [c.id, { nome: c.nome, tipo: c.tipo, configuracao: c.configuracao }])),
+  }
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
@@ -120,11 +131,12 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
             {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
           </div>
         </div>
-        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'painel', 'documentos']} abas />
+        <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />
       </header>
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
       <div className="flex flex-wrap items-center gap-2 border-b border-borda bg-fundo/45 px-4 py-2.5 md:px-5">
         <div className="min-w-0 flex-1"><BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} /></div>
+        <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
         <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
         <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
         <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
@@ -138,6 +150,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
         {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}
         {filtros.visao === 'galeria' && <VisaoGaleria grupos={grupos} ctx={ctx} />}
         {filtros.visao === 'cronograma' && <VisaoLinhaDoTempo tarefas={arvore} ctx={ctx} />}
+        {filtros.visao === 'carga' && <VisaoCarga tarefas={tarefas} hoje={hoje} />}
+        {filtros.visao === 'atividade' && <VisaoAtividade itens={atividade} nomes={nomesAtividade} />}
         {filtros.visao === 'painel' && <PainelDoEscopo escopo={{ listaId: id, cor: lista.cor }} caminho={caminho} sp={spEfetivo} euId={eu.id} rotulo={rotuloPainel} />}
         {filtros.visao === 'documentos' && (
           <VisaoDocumentos

@@ -1,5 +1,5 @@
 import { idsDaArvore } from '@/dominio/arvore-tarefa'
-import { prazoEm, type Filtros } from '@/dominio/filtros'
+import { passaPeloOu, prazoEm, type Filtros } from '@/dominio/filtros'
 import { posicaoEntre } from '@/dominio/posicao'
 import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -17,7 +17,10 @@ const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date,
   comments(count)`
 
 /** Tarefas não arquivadas do escopo, com os filtros aplicados no banco. A RLS esconde o resto. */
-export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtros, hoje: string): Promise<TarefaResumo[]> {
+export async function listarTarefas(sb: Supabase, escopo: Escopo, filtrosPedidos: Filtros, hoje: string): Promise<TarefaResumo[]> {
+  // Lógica "ou": o banco só aplica escopo, mês e busca; os demais filtros viram "basta um" aqui em memória.
+  const ou = filtrosPedidos.logica === 'ou'
+  const filtros: Filtros = ou ? { ...filtrosPedidos, responsaveis: [], status: [], prioridades: [], tags: [], clientes: [], prazo: null } : filtrosPedidos
   // Aliases extras (!inner) filtram sem cortar a lista completa de responsáveis/etiquetas exibida.
   let campos = CAMPOS_RESUMO
   if (filtros.responsaveis.length || 'responsavelId' in escopo) campos += ', filtro_resp:task_assignees!inner(user_id)'
@@ -48,7 +51,8 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtros: Filtr
   if (filtros.prazo === 'atrasadas') q = q.is('completed_at', null)
 
   const linhas = dados(await q.order('position').limit(2000)) as unknown as LinhaResumo[]
-  return linhas.map(paraResumo)
+  const tarefas = linhas.map(paraResumo)
+  return ou ? tarefas.filter((t) => passaPeloOu(t, filtrosPedidos, hoje)) : tarefas
 }
 
 type LinhaResumo = {
@@ -294,6 +298,31 @@ export async function listarAtividade(sb: Supabase, tarefaId: string): Promise<I
     new_value: a.new_value,
     ator: a.profiles?.full_name ?? null,
     criadoEm: a.created_at,
+  }))
+}
+
+export type ItemAtividadeLista = ItemAtividade & { tarefaId: string; tarefaTitulo: string }
+
+/** Últimos eventos de todas as tarefas da lista (visão Atividade). A RLS esconde o que a pessoa não pode ver. */
+export async function listarAtividadeDaLista(sb: Supabase, listaId: string): Promise<ItemAtividadeLista[]> {
+  const linhas = dados(
+    await sb
+      .from('task_activity')
+      .select('id, task_id, action, field, old_value, new_value, created_at, profiles(full_name), tasks!inner(title, list_id)')
+      .eq('tasks.list_id', listaId)
+      .order('id', { ascending: false })
+      .limit(200),
+  )
+  return linhas.map((a) => ({
+    id: a.id,
+    action: a.action,
+    field: a.field,
+    old_value: a.old_value,
+    new_value: a.new_value,
+    ator: a.profiles?.full_name ?? null,
+    criadoEm: a.created_at,
+    tarefaId: a.task_id,
+    tarefaTitulo: a.tasks?.title ?? '',
   }))
 }
 

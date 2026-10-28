@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataDeHoje, escreverFiltros, lerFiltros, prazoEm } from '@/dominio/filtros'
+import { aplicarFiltroSalvo, dataDeHoje, escreverFiltros, filtrosEmTexto, lerFiltros, passaPeloOu, prazoEm } from '@/dominio/filtros'
 
 describe('filtros', () => {
   it('lê da URL ignorando valores desconhecidos', () => {
@@ -25,6 +25,7 @@ describe('filtros', () => {
       niveis: 'ambas',
       campos: [],
       semConcluidas: false,
+      logica: 'e',
     })
   })
 
@@ -62,5 +63,25 @@ describe('visões novas e ocultar concluídas', () => {
     expect(f.semConcluidas).toBe(true)
     expect(escreverFiltros(f).get('semconcl')).toBe('1')
     expect(escreverFiltros(lerFiltros({})).has('semconcl')).toBe(false)
+  })
+})
+
+describe('filtros E/OU e salvos', () => {
+  const t = { responsaveis: [{ id: 'a' }], tags: [], statusId: 's1', prioridade: 'alta', clienteId: '', prazo: null, concluidaEm: null }
+  const base = lerFiltros({})
+  it('lê e escreve a lógica', () => {
+    expect(lerFiltros({ logica: 'ou' }).logica).toBe('ou')
+    expect(lerFiltros({ logica: 'x' }).logica).toBe('e')
+    expect(escreverFiltros({ ...base, logica: 'ou' }).toString()).toBe('logica=ou')
+  })
+  it('OU: basta um filtro bater; sem filtros, passa', () => {
+    expect(passaPeloOu(t, { ...base, responsaveis: ['b'], status: ['s1'] }, '2026-10-28')).toBe(true)
+    expect(passaPeloOu(t, { ...base, responsaveis: ['b'], status: ['s2'] }, '2026-10-28')).toBe(false)
+    expect(passaPeloOu(t, base, '2026-10-28')).toBe(true)
+  })
+  it('filtro salvo guarda só filtros e aplica sem mexer na visão', () => {
+    const texto = filtrosEmTexto({ ...base, status: ['s1'], visao: 'kanban', logica: 'ou' })
+    expect(texto).toBe('status=s1&logica=ou')
+    expect(aplicarFiltroSalvo({ ...base, visao: 'tabela' }, texto)).toMatchObject({ visao: 'tabela', status: ['s1'], logica: 'ou' })
   })
 })
