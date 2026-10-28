@@ -8,7 +8,7 @@ export function Avatar({ nome, tamanho = 'h-7 w-7 text-xs' }: { nome: string; ta
     .map((p) => p[0]?.toUpperCase())
     .join('')
   return (
-    <span className={`${tamanho} ${corAvatar(nome)} inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white`}>
+    <span className={`${tamanho} ${corAvatar(nome)} inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-claro`}>
       {iniciais || '?'}
     </span>
   )

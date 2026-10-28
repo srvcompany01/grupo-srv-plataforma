@@ -103,7 +103,7 @@ export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: Espaco
                 aria-label={`Remover ${m.nome}`}
                 disabled={pendente}
                 onClick={() => rodar(() => removerMembroEspaco(espaco.id, m.id))}
-                className="rounded-full p-0.5 hover:bg-black/10"
+                className="rounded-full p-0.5 hover:bg-ink/10"
               >
                 <X className="h-3 w-3" />
               </button>

@@ -385,7 +385,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
           {uniaColuna && campoDaFaixa(uniaColuna) && (
-            <button type="button" onClick={() => setAlterandoColuna(true)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white hover:bg-petroleo-700">Alterar valor…</button>
+            <button type="button" onClick={() => setAlterandoColuna(true)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro hover:bg-petroleo-700">Alterar valor…</button>
           )}
           <button type="button" onClick={() => copiarFaixa()} className="inline-flex h-8 items-center rounded-lg px-2.5 text-rotulo font-medium text-texto-2 hover:bg-hover">Copiar</button>
           {camposNaFaixa.length > 0 && (

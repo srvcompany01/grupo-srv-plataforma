@@ -78,7 +78,7 @@ export function EditorTema({ atual }: { atual: Tema }) {
               <span className={botaoSecundario}>Compartilhar</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-marca px-3 py-1 text-rotulo font-semibold text-white">Todas as tarefas</span>
+              <span className="rounded-full bg-marca px-3 py-1 text-rotulo font-semibold text-claro">Todas as tarefas</span>
               <span className="rounded-full border border-borda bg-white px-3 py-1 text-rotulo">Minhas tarefas</span>
             </div>
             <div className="rounded-xl border border-borda bg-white p-3 shadow-cartao">

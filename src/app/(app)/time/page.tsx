@@ -77,7 +77,7 @@ export default async function Time({ searchParams }: PageProps<'/time'>) {
               <li key={m.id} className="flex items-start gap-3 rounded-lg border border-borda p-3">
                 <span className="relative">
                   <Avatar nome={m.nome} tamanho="h-9 w-9 text-xs" />
-                  <span className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full ring-2 ring-white ${COR[s]}`} title={s} />
+                  <span className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full ring-2 ring-claro ${COR[s]}`} title={s} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-corpo font-semibold text-texto">{m.nome}{m.id === eu.id && <span className="font-normal text-texto-3"> (você)</span>}</p>
@@ -103,7 +103,7 @@ export default async function Time({ searchParams }: PageProps<'/time'>) {
           acoes={
             <div className="flex gap-1">
               {[7, 30].map((n) => (
-                <Link key={n} href={`/time?dias=${n}`} className={`rounded-md px-2.5 py-1 text-rotulo ${dias === n ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover'}`}>{n} dias</Link>
+                <Link key={n} href={`/time?dias=${n}`} className={`rounded-md px-2.5 py-1 text-rotulo ${dias === n ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover'}`}>{n} dias</Link>
               ))}
             </div>
           }

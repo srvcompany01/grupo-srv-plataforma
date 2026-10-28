@@ -481,7 +481,7 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
               <section className="space-y-2 rounded-xl border border-perigo-borda bg-perigo-fundo/20 p-4">
                 <h2 className="text-corpo font-semibold text-perigo-forte">Excluir artigo</h2>
                 <p className="text-legenda text-texto-2">{situacao === 'Publicado' || situacao === 'Agendado' ? 'Tire do ar antes de excluir: assim ninguém cai num link quebrado vindo do Google.' : 'Apaga o artigo de vez, com as métricas de leitura.'}</p>
-                <button type="button" onClick={() => void excluir()} disabled={pendente || situacao === 'Publicado' || situacao === 'Agendado'} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-perigo px-3 text-rotulo font-semibold text-white hover:bg-perigo-forte disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Excluir artigo</button>
+                <button type="button" onClick={() => void excluir()} disabled={pendente || situacao === 'Publicado' || situacao === 'Agendado'} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-perigo px-3 text-rotulo font-semibold text-claro hover:bg-perigo-forte disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Excluir artigo</button>
               </section>
             )}
 

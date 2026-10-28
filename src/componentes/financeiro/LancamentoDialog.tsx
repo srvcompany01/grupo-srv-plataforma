@@ -56,7 +56,7 @@ export function LancamentoDialog({ lancamento, clientes, hoje, tipoInicial = 'en
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-fundo p-1" role="group" aria-label="Tipo">
             {TIPOS_LANCAMENTO.map((t) => (
-              <button key={t} type="button" onClick={() => trocarTipo(t)} aria-pressed={tipo === t} className={`h-8 rounded-md text-rotulo font-semibold ${tipo === t ? (t === 'entrada' ? 'bg-sucesso text-white' : 'bg-perigo text-white') : 'text-texto-2 hover:bg-hover'}`}>
+              <button key={t} type="button" onClick={() => trocarTipo(t)} aria-pressed={tipo === t} className={`h-8 rounded-md text-rotulo font-semibold ${tipo === t ? (t === 'entrada' ? 'bg-sucesso text-claro' : 'bg-perigo text-claro') : 'text-texto-2 hover:bg-hover'}`}>
                 {ROTULO_TIPO[t]}
               </button>
             ))}

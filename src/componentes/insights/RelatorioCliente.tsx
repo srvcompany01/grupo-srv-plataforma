@@ -20,7 +20,7 @@ function Secao({ icone: Icone, titulo, descricao, cor, children }: { icone: type
   return (
     <section className="space-y-3 rounded-xl border-l-4 bg-white pl-3" style={{ borderLeftColor: cor }}>
       <header className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: cor }}><Icone className="h-4 w-4" /></span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg text-claro" style={{ background: cor }}><Icone className="h-4 w-4" /></span>
         <div>
           <h3 className="text-corpo font-semibold text-texto">{titulo}</h3>
           <p className="text-legenda text-texto-3">{descricao}</p>

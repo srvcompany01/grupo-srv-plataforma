@@ -35,7 +35,7 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
           // eslint-disable-next-line @next/next/no-img-element -- imagem do CDN do Meta (URL assinada que expira)
           <img src={a.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
         )}
-        {a.video && <PlayCircle className="absolute right-2 top-2 h-6 w-6 text-white drop-shadow" aria-label="Vídeo" />}
+        {a.video && <PlayCircle className="absolute right-2 top-2 h-6 w-6 text-claro drop-shadow" aria-label="Vídeo" />}
         <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-legenda font-semibold ${SELO[a.desempenho].classe}`} title={a.motivos.join('\n')}>{SELO[a.desempenho].rotulo}</span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">

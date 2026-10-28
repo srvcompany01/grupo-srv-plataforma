@@ -23,7 +23,7 @@ export default function Login() {
     <button
       type="button"
       onClick={() => setModo(m)}
-      className={`flex-1 rounded-full py-2 text-rotulo font-semibold transition ${modo === m ? 'bg-texto text-white' : 'text-texto-2 hover:text-texto'}`}
+      className={`flex-1 rounded-full py-2 text-rotulo font-semibold transition ${modo === m ? 'bg-texto text-claro' : 'text-texto-2 hover:text-texto'}`}
     >
       {texto}
     </button>

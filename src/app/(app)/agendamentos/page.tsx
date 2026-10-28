@@ -42,7 +42,7 @@ function Linha({ a, agora, soHora, hoje, x }: { a: Agendamento; agora: Date; soH
         {a.status === 'publicado' && a.publicadoEm ? diaHora.format(new Date(a.publicadoEm)) : a.em ? (soHora ? hora.format(new Date(a.em)) : diaHora.format(new Date(a.em))) : '—'}
       </span>
       <Link href={`/tarefas/${a.id}`} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-fundo">
-        {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-white drop-shadow" /></> : (
+        {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
           <img src={a.capa.url} alt="" className="h-full w-full object-cover" />
         ))}
@@ -99,7 +99,7 @@ function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string;
                 <li key={a.id} className={`overflow-hidden rounded-lg border-l-4 bg-white shadow-sm ${corDoItem(a)}`}>
                   <Link href={`/tarefas/${a.id}`} className="flex gap-2 p-2 hover:bg-hover/50">
                     <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-fundo">
-                      {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-white drop-shadow" /></> : (
+                      {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
                         // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
                         <img src={a.capa.url} alt="" className="h-full w-full object-cover" />
                       ))}
@@ -156,7 +156,7 @@ function Calendario({ itens, mes, hoje, href }: { itens: Agendamento[]; mes: str
           const fora = !dia.startsWith(mes)
           return (
             <div key={dia} className={`min-h-24 min-w-0 p-1 md:min-h-32 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-              <span className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-white' : fora ? 'text-texto-3/60' : 'text-texto-2'}`}>{Number(dia.slice(8))}</span>
+              <span className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2'}`}>{Number(dia.slice(8))}</span>
               <ul className="space-y-0.5">
                 {lista.slice(0, 4).map((a) => (
                   <li key={a.id}>
@@ -225,7 +225,7 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
     const dia = a.em ? dataDeHoje(new Date(a.em)) : hoje
     porDia.set(dia, [...(porDia.get(dia) ?? []), a])
   }
-  const chip = (ativo: boolean) => `rounded-full px-3 py-1 text-rotulo font-medium ${ativo ? 'bg-petroleo text-white' : 'border border-borda bg-white text-texto-2 hover:bg-hover'}`
+  const chip = (ativo: boolean) => `rounded-full px-3 py-1 text-rotulo font-medium ${ativo ? 'bg-petroleo text-claro' : 'border border-borda bg-white text-texto-2 hover:bg-hover'}`
 
   return (
     <div className="page-shell">

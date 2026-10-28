@@ -84,7 +84,7 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
           <button type="button" disabled={enviando} onClick={() => setDecisao(null)} className={`${botaoSecundario} h-11`}>
             Voltar
           </button>
-          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')} className={`${botao} h-11 bg-st-ajuste text-white hover:brightness-95`}>
+          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')} className={`${botao} h-11 bg-st-ajuste text-claro hover:brightness-95`}>
             {enviando ? 'Enviando…' : 'Enviar ajuste'}
           </button>
         </div>

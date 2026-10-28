@@ -37,7 +37,7 @@ export function PainelEtiquetas({ tipo, titulo, linhas, extras = [] }: { tipo: '
       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: corItem }} />
     ) : (
       <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border-2" style={{ borderColor: corItem, background: visivel ? corItem : 'transparent' }}>
-        {visivel && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+        {visivel && <Check className="h-2.5 w-2.5 text-claro" strokeWidth={3} />}
       </span>
     )
 

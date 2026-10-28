@@ -91,7 +91,7 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
               className="h-9 w-full rounded-lg border border-borda bg-white pl-9 pr-3 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20"
             />
           </label>
-          <button disabled={buscando || !busca.trim()} className="h-9 rounded-lg bg-texto px-4 text-rotulo font-semibold text-white transition-colors hover:bg-carbon disabled:opacity-40">
+          <button disabled={buscando || !busca.trim()} className="h-9 rounded-lg bg-texto px-4 text-rotulo font-semibold text-claro transition-colors hover:bg-carbon disabled:opacity-40">
             {buscando ? 'Buscando…' : 'Buscar'}
           </button>
         </form>
@@ -110,7 +110,7 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- miniatura externa do Unsplash */}
                   <img src={foto.miniatura} alt={foto.descricao} width={400} height={250} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]" />
-                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-left text-legenda text-white">{foto.credito}</span>
+                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-left text-legenda text-claro">{foto.credito}</span>
                 </button>
               </li>
             ))}

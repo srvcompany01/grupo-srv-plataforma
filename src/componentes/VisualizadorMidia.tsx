@@ -52,7 +52,7 @@ export function VisualizadorMidia({
         </div>
         {midias.length > 1 && (
           <>
-            <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
+            <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-claro">
               {atual + 1}/{midias.length}
             </span>
             {atual > 0 && (

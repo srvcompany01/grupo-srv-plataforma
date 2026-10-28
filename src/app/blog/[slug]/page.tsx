@@ -149,7 +149,7 @@ export default async function Artigo({ params }: PageProps<'/blog/[slug]'>) {
                 // eslint-disable-next-line @next/next/no-img-element -- imagem servida por /blog/imagem
                 <img src={p.autor.foto} alt={p.autor.nome} width={64} height={64} className="h-16 w-16 shrink-0 rounded-full object-cover" />
               ) : (
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#070707] font-[family-name:var(--blog-titulo)] text-2xl font-bold text-white">{p.autor.nome.slice(0, 1)}</span>
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#070707] font-[family-name:var(--blog-titulo)] text-2xl font-bold text-claro">{p.autor.nome.slice(0, 1)}</span>
               )}
               <div>
                 <p className="font-[family-name:var(--blog-mono)] text-[11px] uppercase tracking-widest text-[#656565]">Escrito por</p>
@@ -160,9 +160,9 @@ export default async function Artigo({ params }: PageProps<'/blog/[slug]'>) {
             </section>
           )}
 
-          <section className="mt-10 rounded-2xl bg-[#070707] p-6 text-white">
+          <section className="mt-10 rounded-2xl bg-[#070707] p-6 text-claro">
             <p className="font-[family-name:var(--blog-titulo)] text-3xl font-extrabold uppercase leading-none">Gostou? Receba os próximos no seu e-mail</p>
-            <p className="mt-2 text-[14px] text-white/70">Conteúdo prático de marketing e vendas, sem enrolação.</p>
+            <p className="mt-2 text-[14px] text-claro/70">Conteúdo prático de marketing e vendas, sem enrolação.</p>
             <div className="mt-4"><Newsletter origem={`artigo:${p.slug}`} /></div>
           </section>
         </div>

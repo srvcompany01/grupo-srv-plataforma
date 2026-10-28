@@ -33,7 +33,7 @@ export function SeletorVisual({ valor, onChange }: { valor: EstadoVisual; onChan
               type="button"
               title={icone}
               onClick={() => onChange({ ...valor, icone, emoji: null })}
-              className={`flex h-8 items-center justify-center rounded-lg border transition ${valor.icone === icone && !valor.emoji ? 'border-texto bg-texto text-white' : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}
+              className={`flex h-8 items-center justify-center rounded-lg border transition ${valor.icone === icone && !valor.emoji ? 'border-texto bg-texto text-claro' : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}
             >
               <IconeVisual icone={icone} className="h-4 w-4" />
             </button>

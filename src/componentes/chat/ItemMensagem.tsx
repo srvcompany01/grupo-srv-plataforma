@@ -95,7 +95,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
         <ListaAnexos anexos={m.anexos} />
         {hrefFio && m.respostas.total > 0 && (
           <Link href={hrefFio} scroll={false} className="mt-1 inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-rotulo hover:bg-white">
-            <span className="flex -space-x-1.5">{m.respostas.autores.slice(0, 3).map((a) => <Avatar key={a.nome} nome={a.nome || '?'} tamanho="h-5 w-5 text-[9px] ring-2 ring-white" />)}</span>
+            <span className="flex -space-x-1.5">{m.respostas.autores.slice(0, 3).map((a) => <Avatar key={a.nome} nome={a.nome || '?'} tamanho="h-5 w-5 text-[9px] ring-2 ring-claro" />)}</span>
             <span className="font-semibold text-[#7c3aed]">{m.respostas.total} {m.respostas.total === 1 ? 'resposta' : 'respostas'}</span>
             {m.respostas.ultima && <span className="text-legenda text-texto-3">última {quando.format(new Date(m.respostas.ultima))}</span>}
           </Link>

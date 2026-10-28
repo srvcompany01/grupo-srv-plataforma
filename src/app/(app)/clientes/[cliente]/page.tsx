@@ -69,24 +69,24 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
             <img src={capa.url} alt="" width={1600} height={400} className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-rotulo text-white/90">{iniciais(cliente.nome)}</span>
+            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-rotulo text-claro/90">{iniciais(cliente.nome)}</span>
           )}
           <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          <Link href="/clientes" className="absolute left-3 top-3 rounded-full bg-black/40 px-3 py-1 text-rotulo font-medium text-white backdrop-blur hover:bg-black/55">← Clientes</Link>
+          <Link href="/clientes" className="absolute left-3 top-3 rounded-full bg-black/40 px-3 py-1 text-rotulo font-medium text-claro backdrop-blur hover:bg-black/55">← Clientes</Link>
           <div className="absolute bottom-3 left-4 right-4 flex flex-wrap items-end justify-between gap-2">
             <div className="flex min-w-0 items-end gap-3">
               {capa?.logo && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl border-2 border-white bg-white object-cover shadow-lg" />
+                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl border-2 border-claro bg-white object-cover shadow-lg" />
               )}
               <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold text-white drop-shadow md:text-3xl">{cliente.nome}</h1>
-              {cliente.razaoSocial && <p className="truncate text-rotulo text-white/85">{cliente.razaoSocial}</p>}
+              <h1 className="truncate text-2xl font-bold text-claro drop-shadow md:text-3xl">{cliente.nome}</h1>
+              {cliente.razaoSocial && <p className="truncate text-rotulo text-claro/85">{cliente.razaoSocial}</p>}
               </div>
             </div>
             <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-legenda font-semibold text-texto">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
           </div>
-          {capa?.credito && <span className="absolute right-2 top-3 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
+          {capa?.credito && <span className="absolute right-2 top-3 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-claro/90">{capa.credito}</span>}
         </div>
         {podeGerir && <div className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>

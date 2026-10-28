@@ -133,7 +133,7 @@ export function VisaoCalendario({
     <section className="area-lista overflow-hidden border border-borda bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda bg-white px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-aviso text-white shadow-sm"><CalendarDays className="h-4 w-4" /></span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-aviso text-claro shadow-sm"><CalendarDays className="h-4 w-4" /></span>
           <div>
             <h2 className="text-sm font-bold capitalize text-texto">{formatadorMes.format(new Date(Date.UTC(ano, mes - 1, 1)))}</h2>
             <p className="text-legenda text-texto-3">{tarefas.length} {niveis === 'subtarefas' ? 'subtarefas' : niveis === 'maes' ? 'tarefas-mãe' : 'itens'} nesta visualização</p>
@@ -149,7 +149,7 @@ export function VisaoCalendario({
               scroll={false}
               title={n.dica}
               aria-pressed={niveis === n.valor}
-              className={`rounded-md px-2.5 py-1 text-legenda font-semibold transition ${niveis === n.valor ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover hover:text-texto'}`}
+              className={`rounded-md px-2.5 py-1 text-legenda font-semibold transition ${niveis === n.valor ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`}
             >
               {n.rotulo}
             </Link>
@@ -158,7 +158,7 @@ export function VisaoCalendario({
         {campos.length > 0 && (
           <Popover>
             <PopoverTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-borda bg-white px-2.5 py-1.5 text-legenda font-semibold text-texto-2 shadow-sm hover:bg-hover">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-full bg-petroleo px-1.5 text-micro text-white">{camposVisiveis.length}</span>}
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-full bg-petroleo px-1.5 text-micro text-claro">{camposVisiveis.length}</span>}
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-0.5 p-2">
               <p className="px-2 pb-1 text-legenda font-medium text-texto-3">Mostrar nos itens</p>
@@ -167,7 +167,7 @@ export function VisaoCalendario({
                 const novos = marcado ? filtros.campos.filter((id) => id !== c.id) : [...filtros.campos, c.id]
                 return (
                   <Link key={c.id} href={enderecoDaVisao(caminho, { ...filtros, campos: novos })} replace scroll={false} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-rotulo hover:bg-hover">
-                    <span className={`flex h-4 w-4 items-center justify-center rounded border text-micro ${marcado ? 'border-petroleo bg-petroleo text-white' : 'border-borda'}`}>{marcado && '✓'}</span>
+                    <span className={`flex h-4 w-4 items-center justify-center rounded border text-micro ${marcado ? 'border-petroleo bg-petroleo text-claro' : 'border-borda'}`}>{marcado && '✓'}</span>
                     <span className="truncate">{c.nome}</span>
                   </Link>
                 )
@@ -207,7 +207,7 @@ export function VisaoCalendario({
                   </div>
                 )}
                 <Dia key={dia.iso} iso={dia.iso} className={`min-h-28 border-b border-r border-borda p-1.5 ${dia.atual ? 'bg-white' : 'bg-fundo/45'}`}>
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-marca text-white' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-marca text-claro' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
                   <div className="mt-1 space-y-1">
                     {(diasAbertos.has(dia.iso) ? itens : itens.slice(0, 4)).map((tarefa) => {
                       const sub = ehSubtarefa(tarefa)

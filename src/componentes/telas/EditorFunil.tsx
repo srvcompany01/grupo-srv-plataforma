@@ -252,13 +252,13 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               const sel = selecao?.tipo === 'no' && selecao.id === n.id
               return (
                 <div key={n.id} data-ui onPointerDown={(ev) => moverNo(ev, n)} className={`group absolute flex cursor-grab items-stretch overflow-visible rounded-xl border bg-white shadow-sm active:cursor-grabbing ${sel ? 'border-[#2563eb] ring-2 ring-[#2563eb]/30' : 'border-borda'}`} style={{ left: n.x, top: n.y, width: NO_LARGURA, height: NO_ALTURA }}>
-                  <span className="flex w-10 shrink-0 items-center justify-center rounded-l-xl text-white" style={{ background: info.cor }}><Icone className="h-4 w-4" /></span>
+                  <span className="flex w-10 shrink-0 items-center justify-center rounded-l-xl text-claro" style={{ background: info.cor }}><Icone className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1 px-2 py-1.5">
                     <span className="block truncate text-rotulo font-semibold text-texto">{n.nome || info.rotulo}</span>
                     <span className="block truncate text-legenda tabular-nums text-texto-3">{numero.format(r.visitantes)} pessoas{n.tipo === 'venda' && n.valor > 0 ? ` · ${formatarReais(r.receita * 100)}` : ''}</span>
                     {r.excesso && <span className="block truncate text-micro text-perigo">Saídas somam mais de 100%</span>}
                   </span>
-                  <span data-ui onPointerDown={(ev) => ligar(ev, n)} title="Arraste até outra etapa para ligar" aria-label={`Ligar ${n.nome} a outra etapa`} className="absolute -right-2.5 top-1/2 h-5 w-5 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-white bg-slate-500 opacity-70 shadow transition hover:scale-125 hover:bg-[#2563eb] hover:opacity-100 group-hover:opacity-100" />
+                  <span data-ui onPointerDown={(ev) => ligar(ev, n)} title="Arraste até outra etapa para ligar" aria-label={`Ligar ${n.nome} a outra etapa`} className="absolute -right-2.5 top-1/2 h-5 w-5 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-claro bg-slate-500 opacity-70 shadow transition hover:scale-125 hover:bg-[#2563eb] hover:opacity-100 group-hover:opacity-100" />
                 </div>
               )
             })}
@@ -269,7 +269,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               const Icone = ICONE[tipo]
               return (
                 <button key={tipo} type="button" onClick={() => adicionar(tipo)} title={`Adicionar ${INFO_NO[tipo].rotulo}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-legenda font-semibold text-texto-2 hover:bg-hover">
-                  <span className="flex h-5 w-5 items-center justify-center rounded text-white" style={{ background: INFO_NO[tipo].cor }}><Icone className="h-3 w-3" /></span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded text-claro" style={{ background: INFO_NO[tipo].cor }}><Icone className="h-3 w-3" /></span>
                   <span className="hidden xl:inline">{INFO_NO[tipo].rotulo}</span>
                 </button>
               )

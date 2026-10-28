@@ -20,13 +20,13 @@ export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }
           // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
           <img src={capa.url} alt="" width={640} height={360} loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-[26px] font-bold tracking-rotulo text-white/90">{iniciais(c.nome)}</span>
+          <span className="flex h-full w-full items-center justify-center text-[26px] font-bold tracking-rotulo text-claro/90">{iniciais(c.nome)}</span>
         )}
         {capa?.logo && (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" className="absolute bottom-2 left-2 h-14 w-14 rounded-xl border-2 border-white bg-white object-cover shadow-md" />
+          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" className="absolute bottom-2 left-2 h-14 w-14 rounded-xl border-2 border-claro bg-white object-cover shadow-md" />
         )}
-        {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-white/90">{capa.credito}</span>}
+        {capa?.credito && <span className="absolute bottom-1 right-1.5 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-claro/90">{capa.credito}</span>}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <div className="flex items-start gap-2">

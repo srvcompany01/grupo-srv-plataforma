@@ -103,7 +103,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'etiquetas':
         return (
           <span key={colunaId} {...marca(colunaId)} className={`flex min-w-0 flex-wrap gap-1 px-2${realce(colunaId)}`}>
-            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-white" style={{ background: t.cor }}>{t.nome}</span>)}
+            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
           </span>
         )
       default:
@@ -125,7 +125,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           <button
             aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'}
             onClick={() => setAberta(!aberta)}
-            className="rounded p-0.5 text-texto-3 hover:bg-black/5 hover:text-texto"
+            className="rounded p-0.5 text-texto-3 hover:bg-ink/5 hover:text-texto"
           >
             <ChevronRight className={`h-3.5 w-3.5 transition ${aberta ? 'rotate-90' : ''}`} />
           </button>
@@ -146,7 +146,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             />
           )}
           {!colunas.includes('etiquetas') && tarefa.tags.map((t) => (
-            <span key={t.id} className="hidden rounded-full px-2 py-0.5 text-legenda font-medium text-white xl:inline" style={{ background: t.cor }}>
+            <span key={t.id} className="hidden rounded-full px-2 py-0.5 text-legenda font-medium text-claro xl:inline" style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}

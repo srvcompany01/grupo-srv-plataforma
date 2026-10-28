@@ -444,7 +444,7 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
 
         <div data-ui className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-0.5 rounded-xl border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Ferramentas" aria-orientation="vertical">
           {FERRAMENTAS.map(({ id: f, rotulo, tecla, Icone }) => (
-            <button key={f} type="button" onClick={() => setFerramenta(f)} aria-pressed={ferramenta === f} title={`${rotulo} (${tecla})`} aria-label={rotulo} className={`rounded-lg p-2 ${ferramenta === f ? 'bg-petroleo text-white' : 'text-texto-2 hover:bg-hover'}`}>
+            <button key={f} type="button" onClick={() => setFerramenta(f)} aria-pressed={ferramenta === f} title={`${rotulo} (${tecla})`} aria-label={rotulo} className={`rounded-lg p-2 ${ferramenta === f ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover'}`}>
               <Icone className="h-4 w-4" />
             </button>
           ))}
@@ -458,11 +458,11 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
               </div>
             )}
             <div className="flex items-center gap-1" role="group" aria-label="Cor do traço">
-              {CORES_TRACO.map((c) => <button key={c} type="button" onClick={() => tracar(c)} aria-label={`Traço ${c}`} className="h-5 w-5 rounded-full border border-white ring-1 ring-borda" style={{ background: c }} />)}
+              {CORES_TRACO.map((c) => <button key={c} type="button" onClick={() => tracar(c)} aria-label={`Traço ${c}`} className="h-5 w-5 rounded-full border border-claro ring-1 ring-borda" style={{ background: c }} />)}
             </div>
             {unico?.tipo === 'texto' && (
               <div className="flex items-center gap-0.5" role="group" aria-label="Tamanho do texto">
-                {TAMANHOS_TEXTO.map((t) => <button key={t} type="button" onClick={() => tamanhoTexto(t)} aria-pressed={unico.tamanho === t} className={`rounded px-1.5 py-0.5 text-legenda ${unico.tamanho === t ? 'bg-petroleo text-white' : 'hover:bg-hover'}`}>{t}</button>)}
+                {TAMANHOS_TEXTO.map((t) => <button key={t} type="button" onClick={() => tamanhoTexto(t)} aria-pressed={unico.tamanho === t} className={`rounded px-1.5 py-0.5 text-legenda ${unico.tamanho === t ? 'bg-petroleo text-claro' : 'hover:bg-hover'}`}>{t}</button>)}
               </div>
             )}
             <span className="h-4 w-px bg-borda" />

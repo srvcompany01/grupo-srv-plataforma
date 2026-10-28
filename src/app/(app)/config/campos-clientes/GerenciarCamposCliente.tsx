@@ -29,7 +29,7 @@ function EditorOpcoes({ campo }: { campo: CampoCliente }) {
       ))}
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setOpcoes([...opcoes, { nome: '', cor: COR_OPCAO_PADRAO }])} disabled={opcoes.length >= 20} className="inline-flex h-8 items-center gap-1 rounded-md border border-borda bg-white px-2.5 text-legenda font-semibold text-texto-2 hover:bg-hover"><Plus className="h-3.5 w-3.5" /> Adicionar opção</button>
-        <button type="button" disabled={!mudou || pendente} onClick={() => iniciar(async () => void avisar(await atualizarCampoClienteAcao(campo.id, { opcoes: opcoes.filter((o) => o.nome.trim()) }), true))} className="h-8 rounded-md bg-marca px-3 text-legenda font-semibold text-white hover:bg-marca-escura disabled:opacity-40">Salvar opções</button>
+        <button type="button" disabled={!mudou || pendente} onClick={() => iniciar(async () => void avisar(await atualizarCampoClienteAcao(campo.id, { opcoes: opcoes.filter((o) => o.nome.trim()) }), true))} className="h-8 rounded-md bg-marca px-3 text-legenda font-semibold text-claro hover:bg-marca-escura disabled:opacity-40">Salvar opções</button>
       </div>
     </div>
   )
@@ -118,7 +118,7 @@ export function GerenciarCamposCliente({ campos }: { campos: CampoCliente[] }) {
           <input type="checkbox" checked={naCapa} onChange={(e) => setNaCapa(e.target.checked)} className="h-3.5 w-3.5 cursor-pointer accent-marca" />
           Mostrar na galeria
         </label>
-        <button disabled={pendente || !nome.trim()} className="h-9 rounded-lg bg-marca px-4 text-rotulo font-semibold text-white transition-colors hover:bg-marca-escura disabled:opacity-40">
+        <button disabled={pendente || !nome.trim()} className="h-9 rounded-lg bg-marca px-4 text-rotulo font-semibold text-claro transition-colors hover:bg-marca-escura disabled:opacity-40">
           {pendente ? 'Criando…' : 'Criar campo'}
         </button>
       </form>

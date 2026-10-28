@@ -49,7 +49,7 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
             <span
               key={i}
               title={`${p.posicao ? `${p.posicao}º lugar neste ponto` : 'Fora do top 20 neste ponto'}${noEndereco ? ' (endereço do cliente)' : ''}`}
-              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 font-bold shadow-md ${noEndereco ? 'border-[#1d6fe0] ring-4 ring-[#1d6fe0]/35' : 'border-white'}`}
+              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 font-bold shadow-md ${noEndereco ? 'border-[#1d6fe0] ring-4 ring-[#1d6fe0]/35' : 'border-claro'}`}
               style={{ ...pos(p), width: `${bolinha}%`, height: `${bolinha}%`, fontSize: `${bolinha * 0.42}cqw`, background: c.fundo, color: c.texto }}
             >
               {rotuloPosicao(p.posicao)}

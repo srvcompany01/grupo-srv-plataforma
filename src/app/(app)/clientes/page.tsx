@@ -36,7 +36,7 @@ export default async function Clientes() {
       </div>
       {podeCriar && (
         <details className="group">
-          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-corpo font-semibold text-white transition hover:bg-carbon">+ Novo cliente</summary>
+          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-corpo font-semibold text-claro transition hover:bg-carbon">+ Novo cliente</summary>
           <div className="mt-2">
             <FormCliente acao={criarCliente} podeEditar />
           </div>

@@ -132,7 +132,7 @@ export function GradePropriedades({
         <Linha icone={Tag} titulo="Etiquetas">
           <div className="flex flex-wrap items-center gap-1">
             {t.tags.map((g) => (
-              <span key={g.id} className="rounded px-1.5 py-0.5 text-legenda text-white" style={{ background: g.cor }}>
+              <span key={g.id} className="rounded px-1.5 py-0.5 text-legenda text-claro" style={{ background: g.cor }}>
                 {g.nome}
               </span>
             ))}

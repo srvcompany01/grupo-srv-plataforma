@@ -51,7 +51,7 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
             // eslint-disable-next-line @next/next/no-img-element
             <img src={p.logo} alt="" className="h-28 w-28 rounded-full border border-black/10 object-cover" />
           ) : (
-            <span className="flex h-28 w-28 items-center justify-center rounded-full bg-black text-4xl font-semibold text-white">{p.nome.trim().charAt(0).toUpperCase()}</span>
+            <span className="flex h-28 w-28 items-center justify-center rounded-full bg-black text-4xl font-semibold text-claro">{p.nome.trim().charAt(0).toUpperCase()}</span>
           )}
           <h1 className="text-xl font-semibold tracking-tight">{p.nome}</h1>
         </div>
@@ -59,7 +59,7 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
           {botoes.map((b, i) => b.id === 'whatsapp' ? (
             <QuizWhatsapp key={b.id} rotulo={b.rotulo} quiz={p.quiz} origem={origem} destaque={i === 0} />
           ) : (
-            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
+            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
               {b.rotulo}
             </a>
           ))}

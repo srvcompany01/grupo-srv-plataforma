@@ -123,7 +123,7 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'pap
     <Link key={id} href={href} title={rotulo} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botao} ${ativoEm(href) ? 'bg-lat-ativo text-lat-fg' : ''}`}>
       <Icone className="h-4 w-4" />
       <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{curto}</span>
-      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
+      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-claro">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
   return (
@@ -271,7 +271,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         style={{ paddingLeft: 8 + nivel * 14 }}
       >
         {cartao && (
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-white" style={{ background: espaco.cor }}>
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-claro" style={{ background: espaco.cor }}>
             <IconeVisual icone={espaco.icone} emoji={espaco.emoji} className="h-2.5 w-2.5" />
           </span>
         )}
@@ -342,7 +342,7 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
     <Link href={href} draggable={false} className={`${item} ${estaEm(caminho, href) ? ativo : ''}`}>
       <Icone className="h-3.5 w-3.5 text-lat-2" />
       <span className="truncate">{rotulo}</span>
-      {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
+      {contador > 0 && <span className="ml-auto rounded-full bg-perigo px-1.5 text-micro font-bold text-claro">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
 

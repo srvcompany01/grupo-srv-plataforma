@@ -36,7 +36,7 @@ function Capa({ p, className, prioridade }: { p: PostResumo; className: string; 
         <img src={p.capa} alt={p.capaAlt} width={1200} height={675} loading={prioridade ? 'eager' : 'lazy'} fetchPriority={prioridade ? 'high' : undefined} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
       ) : (
         <div className="flex h-full w-full items-end p-4" style={{ background: `linear-gradient(135deg, ${p.categoria?.cor ?? '#d80d12'}, #070707)` }}>
-          <span className="font-[family-name:var(--blog-titulo)] text-2xl font-bold uppercase leading-none text-white/90">{p.categoria?.nome ?? 'Grupo SRV'}</span>
+          <span className="font-[family-name:var(--blog-titulo)] text-2xl font-bold uppercase leading-none text-claro/90">{p.categoria?.nome ?? 'Grupo SRV'}</span>
         </div>
       )}
     </div>
@@ -68,16 +68,16 @@ export function ChamadaLanding({ slug, variante = 'escura', cta }: { slug: strin
   const escura = variante === 'escura'
   const destino = cta?.url ? (cta.url.startsWith('/') ? linkLanding(slug, cta.url) : cta.url) : linkLanding(slug)
   return (
-    <aside className={`not-prose my-10 overflow-hidden rounded-2xl p-6 md:p-8 ${escura ? 'bg-[#070707] text-white' : 'border border-[#e6e6e2] bg-white text-[#070707]'}`}>
+    <aside className={`not-prose my-10 overflow-hidden rounded-2xl p-6 md:p-8 ${escura ? 'bg-[#070707] text-claro' : 'border border-[#e6e6e2] bg-white text-[#070707]'}`}>
       <p className="font-[family-name:var(--blog-mono)] text-[11px] font-semibold uppercase tracking-widest text-[#d80d12]">Grupo SRV · Máquina de Vendas</p>
       <p className="mt-2 font-[family-name:var(--blog-titulo)] text-3xl font-bold uppercase leading-none md:text-4xl">{cta?.label ? cta.label : 'Quer transformar isso em vendas na sua empresa?'}</p>
-      <p className={`mt-3 max-w-xl text-[15px] ${escura ? 'text-white/75' : 'text-[#4a4a4a]'}`}>{cta?.contexto || 'A Grupo SRV implementa a Máquina de Vendas: um fluxo contínuo, previsível, controlável e escalável de vendas pela internet.'}</p>
+      <p className={`mt-3 max-w-xl text-[15px] ${escura ? 'text-claro/75' : 'text-[#4a4a4a]'}`}>{cta?.contexto || 'A Grupo SRV implementa a Máquina de Vendas: um fluxo contínuo, previsível, controlável e escalável de vendas pela internet.'}</p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Link href={destino} data-cta="1" className="inline-flex items-center gap-2 rounded-full bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-[#a2070a]">
+        <Link href={destino} data-cta="1" className="inline-flex items-center gap-2 rounded-full bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a]">
           {cta?.label || 'Faça o pré-diagnóstico'} <ArrowRight className="h-4 w-4" />
         </Link>
         {cta?.label2 && cta.url2 && (
-          <Link href={cta.url2} data-cta="2" className={`text-[14px] font-semibold underline underline-offset-4 ${escura ? 'text-white/85 hover:text-white' : 'text-[#2a2a2a] hover:text-[#d80d12]'}`}>{cta.label2}</Link>
+          <Link href={cta.url2} data-cta="2" className={`text-[14px] font-semibold underline underline-offset-4 ${escura ? 'text-claro/85 hover:text-claro' : 'text-[#2a2a2a] hover:text-[#d80d12]'}`}>{cta.label2}</Link>
         )}
       </div>
     </aside>

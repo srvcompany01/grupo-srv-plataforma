@@ -85,30 +85,30 @@ export default async function Home() {
         <section className={`${cartao} lg:col-span-7 xl:col-span-4`}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="home-titulo">Minhas tarefas</h2>
-            <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-9 w-9 items-center justify-center rounded-full border border-black/15 text-black/70 transition hover:bg-black/5"><ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-9 w-9 items-center justify-center rounded-full border border-borda text-texto-2 transition hover:bg-ink/5"><ArrowRight className="h-4 w-4" /></Link>
           </div>
-          <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-acento)] p-5 text-white">
+          <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-acento)] p-5 text-claro">
             <div>
               <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--h-acento)]"><CircleCheck className="h-5 w-5" /></span>
               <p className="text-3xl font-medium leading-none">{emDia}%</p>
-              <p className="mt-1 text-rotulo text-white/75">em dia · {pendentes.length} pendente{pendentes.length === 1 ? '' : 's'}</p>
+              <p className="mt-1 text-rotulo text-claro/75">em dia · {pendentes.length} pendente{pendentes.length === 1 ? '' : 's'}</p>
             </div>
             <Medidor pct={emDia} total={pendentes.length} />
           </div>
           {lista.length === 0 ? (
-            <p className="px-1 pt-4 text-corpo text-black/50">Nada urgente por enquanto.</p>
+            <p className="px-1 pt-4 text-corpo text-texto-3">Nada urgente por enquanto.</p>
           ) : (
             <ul className="mt-3 space-y-2">
               {lista.map((t) => {
                 const atrasada = !!t.prazo && t.prazo < hoje
                 return (
                   <li key={t.id}>
-                    <Link href={`/tarefas/${t.id}`} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-2.5 transition hover:bg-black/5">
+                    <Link href={`/tarefas/${t.id}`} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-2.5 transition hover:bg-ink/5">
                       <span className="min-w-0">
-                        <span className="block truncate text-corpo font-medium text-black">{t.titulo}</span>
+                        <span className="block truncate text-corpo font-medium text-texto">{t.titulo}</span>
                         <NomeCliente nome={t.clienteNome} className="text-rotulo" />
                       </span>
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-legenda font-medium ${atrasada ? 'bg-[var(--h-acento)] text-white' : 'bg-black/5 text-black/60'}`}>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-legenda font-medium ${atrasada ? 'bg-[var(--h-acento)] text-claro' : 'bg-ink/5 text-texto-3'}`}>
                         {t.prazo === hoje ? 'Hoje' : t.prazo ? formatar(t.prazo, { day: '2-digit', month: 'short' }) : ''}
                       </span>
                     </Link>
@@ -125,17 +125,17 @@ export default async function Home() {
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--h-palido)] text-[var(--h-acento)]"><CalendarDays className="h-4 w-4" /></span>
               <h2 className="home-titulo">Agenda</h2>
             </div>
-            <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-9 w-9 items-center justify-center rounded-full border border-black/15 text-black/70 transition hover:bg-black/5"><ChevronRight className="h-4 w-4" /></Link>
+            <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-9 w-9 items-center justify-center rounded-full border border-borda text-texto-2 transition hover:bg-ink/5"><ChevronRight className="h-4 w-4" /></Link>
           </div>
           {proximos.length === 0 ? (
-            <p className="text-corpo text-black/50">Nenhum compromisso nos próximos {DIAS_A_FRENTE} dias.</p>
+            <p className="text-corpo text-texto-3">Nenhum compromisso nos próximos {DIAS_A_FRENTE} dias.</p>
           ) : (
-            <ol className="relative space-y-5 pl-8 before:absolute before:bottom-2 before:left-[0.4375rem] before:top-2 before:w-px before:bg-black/20">
+            <ol className="relative space-y-5 pl-8 before:absolute before:bottom-2 before:left-[0.4375rem] before:top-2 before:w-px before:bg-ink/20">
               {proximos.map((e, i) => (
                 <li key={e.id} className="relative">
-                  <span className={`absolute -left-8 top-1 h-3.5 w-3.5 rounded-full border ${i === 0 ? 'border-[var(--h-acento)] bg-[var(--h-acento)]' : 'border-black/30 bg-white'}`} />
-                  <p className="text-corpo font-medium text-black">{rotuloDia(dataLocal(e.inicio), hoje)}</p>
-                  <p className="text-rotulo text-black/50"><span className="tabular-nums">{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span> · {e.titulo}</p>
+                  <span className={`absolute -left-8 top-1 h-3.5 w-3.5 rounded-full border ${i === 0 ? 'border-[var(--h-acento)] bg-[var(--h-acento)]' : 'border-borda-forte bg-white'}`} />
+                  <p className="text-corpo font-medium text-texto">{rotuloDia(dataLocal(e.inicio), hoje)}</p>
+                  <p className="text-rotulo text-texto-3"><span className="tabular-nums">{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span> · {e.titulo}</p>
                 </li>
               ))}
             </ol>
@@ -150,15 +150,15 @@ export default async function Home() {
 
         <section className={`${cartao} lg:col-span-12 xl:col-span-4`}>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-[14px] bg-[var(--h-escuro)] p-4 text-white" aria-label="Calendário do mês">
+            <div className="rounded-[14px] bg-[var(--h-escuro)] p-4 text-claro" aria-label="Calendário do mês">
               <p className="mb-2 text-center text-rotulo font-medium capitalize">{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>
               <div className="grid grid-cols-7 gap-y-0.5 text-center text-legenda">
-                {SEMANA.map((d, i) => <span key={i} className="text-white/50">{d}</span>)}
+                {SEMANA.map((d, i) => <span key={i} className="text-claro/50">{d}</span>)}
                 {grade.map((dia) => {
                   const doMes = dia.startsWith(mes)
                   const feriado = feriados.get(dia)
                   return (
-                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[var(--h-acento)] font-semibold text-white' : doMes ? (feriado ? 'font-semibold text-[#b38cff]' : '') : 'text-white/25'}`}>
+                    <span key={dia} title={feriado} className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full tabular-nums ${dia === hoje ? 'bg-[var(--h-acento)] font-semibold text-claro' : doMes ? (feriado ? 'font-semibold text-[#b38cff]' : '') : 'text-claro/25'}`}>
                       {Number(dia.slice(8))}
                       {comEvento.has(dia) && <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-white" />}
                     </span>
@@ -166,11 +166,11 @@ export default async function Home() {
                 })}
               </div>
             </div>
-            <div className="rounded-[14px] bg-white p-4 text-black">
-              <p className="flex items-center justify-between text-rotulo text-black/50">Próximo feriado <PartyPopper className="h-4 w-4" /></p>
+            <div className="rounded-[14px] bg-white p-4 text-texto">
+              <p className="flex items-center justify-between text-rotulo text-texto-3">Próximo feriado <PartyPopper className="h-4 w-4" /></p>
               <p className="mt-1 text-xl font-medium leading-tight">{proxFeriado?.nome ?? '—'}</p>
-              <p className="text-rotulo text-black/50">{proxFeriado ? (diasAteFeriado === 0 ? 'É hoje' : `em ${diasAteFeriado} dia${diasAteFeriado > 1 ? 's' : ''} · ${formatar(proxFeriado.data, { day: '2-digit', month: 'short' })}`) : ''}</p>
-              <div className="mt-3 h-2.5 rounded-full bg-black/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${Math.max(6, 100 - Math.min(90, diasAteFeriado) * (100 / 90))}%` }} /></div>
+              <p className="text-rotulo text-texto-3">{proxFeriado ? (diasAteFeriado === 0 ? 'É hoje' : `em ${diasAteFeriado} dia${diasAteFeriado > 1 ? 's' : ''} · ${formatar(proxFeriado.data, { day: '2-digit', month: 'short' })}`) : ''}</p>
+              <div className="mt-3 h-2.5 rounded-full bg-ink/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${Math.max(6, 100 - Math.min(90, diasAteFeriado) * (100 / 90))}%` }} /></div>
             </div>
           </div>
         </section>
@@ -179,12 +179,12 @@ export default async function Home() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="home-titulo">Panorama dos clientes</h2>
-              <p className="text-rotulo text-black/50">{ativos.length} ativo{ativos.length === 1 ? '' : 's'}{pausados ? ` · ${pausados} pausado${pausados > 1 ? 's' : ''}` : ''} · tarefas por cliente</p>
+              <p className="text-rotulo text-texto-3">{ativos.length} ativo{ativos.length === 1 ? '' : 's'}{pausados ? ` · ${pausados} pausado${pausados > 1 ? 's' : ''}` : ''} · tarefas por cliente</p>
             </div>
-            <Link href="/clientes" className="rounded-full border border-black/15 px-3.5 py-1 text-rotulo text-black/70 transition hover:bg-black/5">Clientes</Link>
+            <Link href="/clientes" className="rounded-full border border-borda px-3.5 py-1 text-rotulo text-texto-2 transition hover:bg-ink/5">Clientes</Link>
           </div>
           {clientesEmFoco.length === 0 ? (
-            <p className="text-corpo text-black/50">Sem tarefas de clientes para mostrar.</p>
+            <p className="text-corpo text-texto-3">Sem tarefas de clientes para mostrar.</p>
           ) : (
             <div className="space-y-2">
               {clientesEmFoco.map((l) => {
@@ -194,13 +194,13 @@ export default async function Home() {
                   <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
                     <NomeCliente nome={l.nome} href={`/clientes/${l.id}`} className="truncate" />
                     <div className="order-last col-span-2 sm:order-none sm:col-span-1" title={`${pronto}% concluído`}>
-                      <div className="h-2 overflow-hidden rounded-full bg-black/10"><div className="h-full rounded-full bg-black" style={{ width: `${pronto}%` }} /></div>
+                      <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-[var(--h-acento)]" style={{ width: `${pronto}%` }} /></div>
                     </div>
-                    <p className="flex items-center gap-2 text-legenda tabular-nums text-black/60">
+                    <p className="flex items-center gap-2 text-legenda tabular-nums text-texto-3">
                       <span>{l.total} tarefas</span>
                       <span>{l.emAndamento} em andamento</span>
-                      <span className={`rounded-full px-2 py-0.5 font-medium ${l.atrasadas ? 'bg-[var(--h-acento)] text-white' : 'bg-black/5'}`}>{l.atrasadas} atrasada{l.atrasadas === 1 ? '' : 's'}</span>
-                      {c && c.status !== 'ativo' && <span className="rounded-full bg-black/10 px-2 py-0.5">{ROTULO_STATUS_CLIENTE[c.status]}</span>}
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${l.atrasadas ? 'bg-[var(--h-acento)] text-claro' : 'bg-ink/5'}`}>{l.atrasadas} atrasada{l.atrasadas === 1 ? '' : 's'}</span>
+                      {c && c.status !== 'ativo' && <span className="rounded-full bg-ink/10 px-2 py-0.5">{ROTULO_STATUS_CLIENTE[c.status]}</span>}
                     </p>
                   </div>
                 )
@@ -212,14 +212,14 @@ export default async function Home() {
         <section className={`${cartao} lg:col-span-5 xl:col-span-4`}>
           <h2 className="home-titulo mb-4 flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-[var(--h-acento)]" /> Pontos de atenção</h2>
           {atencao.length === 0 ? (
-            <p className="text-corpo text-black/50">Tudo em ordem por aqui.</p>
+            <p className="text-corpo text-texto-3">Tudo em ordem por aqui.</p>
           ) : (
             <ul className="space-y-2">
               {atencao.map((a, i) => (
                 <li key={i}>
-                  <Link href={a.href} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 text-corpo text-black/80 transition hover:bg-black/5">
+                  <Link href={a.href} className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--h-superficie)] px-4 py-3 text-corpo text-texto-2 transition hover:bg-ink/5">
                     <span>{a.texto}</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-black/40" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-texto-3" />
                   </Link>
                 </li>
               ))}

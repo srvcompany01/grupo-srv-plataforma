@@ -77,7 +77,7 @@ class ProtegePainel extends Component<{ children: ReactNode }, { erro: Error | n
       <section className="fixed bottom-4 right-4 z-40 w-[22rem] max-w-[calc(100vw-2rem)] space-y-2 rounded-2xl bg-white p-4 shadow-flutuante ring-1 ring-black/10">
         <p className="text-corpo font-semibold text-perigo">A Emma encontrou um problema</p>
         <p className="break-words text-legenda text-texto-2">{this.state.erro.message}</p>
-        <button type="button" onClick={() => this.setState({ erro: null })} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white">Tentar de novo</button>
+        <button type="button" onClick={() => this.setState({ erro: null })} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro">Tentar de novo</button>
       </section>
     )
   }
@@ -222,7 +222,7 @@ function PainelIAInterno() {
 
   if (!aberto) {
     return (
-      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-white shadow-flutuante transition hover:bg-petroleo-700">
+      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-claro shadow-flutuante transition hover:bg-petroleo-700">
         <Sparkles className="h-5 w-5" />
       </button>
     )
@@ -262,7 +262,7 @@ function PainelIAInterno() {
         )}
         {mensagens.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-white' : 'bg-fundo text-texto'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-claro' : 'bg-fundo text-texto'}`}>
               {m.role === 'user' ? comoTexto(m.content) : <TextoFormatado texto={comoTexto(m.content)} />}
             </div>
           </div>
@@ -272,7 +272,7 @@ function PainelIAInterno() {
             <p className="font-semibold text-texto">Confirma estas ações?</p>
             <ul className="list-disc space-y-1 pl-5 text-rotulo text-texto-2">{propostas.map((p) => <li key={p.id}>{p.resumo}</li>)}</ul>
             <div className="flex gap-2">
-              <button type="button" disabled={!!andamento} onClick={() => void confirmar()} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-white disabled:opacity-50">{andamento ?? 'Confirmar e executar'}</button>
+              <button type="button" disabled={!!andamento} onClick={() => void confirmar()} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro disabled:opacity-50">{andamento ?? 'Confirmar e executar'}</button>
               <button type="button" disabled={!!andamento} onClick={() => { setPropostas(null); setMensagens((m) => [...m, { role: 'assistant', content: 'Cancelado. Nada foi alterado.' }]) }} className="h-8 rounded-lg px-3 text-rotulo font-medium text-texto-2 hover:bg-white/60 disabled:opacity-50">Cancelar</button>
             </div>
           </div>
@@ -310,7 +310,7 @@ function PainelIAInterno() {
                   localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
                 } catch {}
               }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-white' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
             >
               <Brain className="h-3.5 w-3.5" /> Pensar {pensar ? 'ligado' : 'desligado'}
             </button>
@@ -321,11 +321,11 @@ function PainelIAInterno() {
               aria-label={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar'}
               title={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar (o navegador transcreve a sua voz)'}
               onClick={alternarMicrofone}
-              className={`flex h-9 w-9 items-center justify-center rounded-full transition ${ouvindo ? 'animate-pulse bg-perigo text-white' : 'text-texto-2 hover:bg-hover'}`}
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition ${ouvindo ? 'animate-pulse bg-perigo text-claro' : 'text-texto-2 hover:bg-hover'}`}
             >
               <Mic className="h-4 w-4" />
             </button>
-            <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-full bg-petroleo text-white transition disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+            <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-full bg-petroleo text-claro transition disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
           </div>
         </div>
         <p className="mt-1.5 hidden px-2 text-legenda text-texto-3 sm:block">Enter envia · Shift+Enter nova linha</p>

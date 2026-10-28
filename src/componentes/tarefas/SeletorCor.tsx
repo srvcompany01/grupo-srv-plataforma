@@ -17,7 +17,7 @@ export function SeletorCor({ cor, onChange }: { cor: string; onChange: (cor: str
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         {CORES_PERSONALIZACAO.map((c) => (
-          <button key={c} type="button" aria-label={`Cor ${c}`} onClick={() => aplicar(c)} className={`h-6 w-6 rounded-full border-2 ${normalizarHex(texto) === c ? 'border-texto' : 'border-white ring-1 ring-borda'}`} style={{ background: c }} />
+          <button key={c} type="button" aria-label={`Cor ${c}`} onClick={() => aplicar(c)} className={`h-6 w-6 rounded-full border-2 ${normalizarHex(texto) === c ? 'border-texto' : 'border-claro ring-1 ring-borda'}`} style={{ background: c }} />
         ))}
       </div>
       <div className="flex items-center gap-2">

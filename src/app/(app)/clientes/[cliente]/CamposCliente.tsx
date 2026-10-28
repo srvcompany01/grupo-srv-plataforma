@@ -57,7 +57,7 @@ export function CamposCliente({ clienteId, campos, valores, podeEditar }: { clie
         ))}
       </div>
       {podeEditar && (
-        <button disabled={!mudou || pendente} className="h-9 rounded-lg bg-marca px-4 text-rotulo font-semibold text-white transition-colors hover:bg-marca-escura disabled:opacity-40">
+        <button disabled={!mudou || pendente} className="h-9 rounded-lg bg-marca px-4 text-rotulo font-semibold text-claro transition-colors hover:bg-marca-escura disabled:opacity-40">
           {pendente ? 'Salvando…' : 'Salvar informações'}
         </button>
       )}

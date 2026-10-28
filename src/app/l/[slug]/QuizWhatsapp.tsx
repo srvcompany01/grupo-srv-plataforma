@@ -47,7 +47,7 @@ export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: strin
   const q = perguntas[s.etapa]
   return (
     <>
-      <button type="button" onClick={abrir} style={cores} className={`${botaoBase} ${cores ? 'hover:opacity-85' : destaque ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
+      <button type="button" onClick={abrir} style={cores} className={`${botaoBase} ${cores ? 'hover:opacity-85' : destaque ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
         {rotulo}
       </button>
       {aberto && (
@@ -57,7 +57,7 @@ export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: strin
               <div className="space-y-4 text-center">
                 <p className="text-lg font-semibold">Tudo certo!</p>
                 <p className="text-sm text-black/70">Abrindo o WhatsApp…</p>
-                <a href={s.url} style={cores} className={`${botaoBase} ${cores ? '' : 'bg-black text-white'}`}>Abrir o WhatsApp</a>
+                <a href={s.url} style={cores} className={`${botaoBase} ${cores ? '' : 'bg-black text-claro'}`}>Abrir o WhatsApp</a>
               </div>
             ) : (
               <div className="space-y-5">
@@ -74,7 +74,7 @@ export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: strin
                 <p className="text-xl font-semibold leading-snug">{q.pergunta}</p>
                 <div className="flex flex-col gap-2.5">
                   {q.opcoes.map((o, i) => (
-                    <button key={o} type="button" disabled={s.enviando} onClick={() => escolher(i)} className={`${botaoBase} bg-white text-black hover:bg-black hover:text-white disabled:opacity-50`}>{o}</button>
+                    <button key={o} type="button" disabled={s.enviando} onClick={() => escolher(i)} className={`${botaoBase} bg-white text-black hover:bg-black hover:text-claro disabled:opacity-50`}>{o}</button>
                   ))}
                 </div>
                 {s.etapa > 0 && !s.enviando && <button type="button" onClick={() => setS({ ...s, etapa: s.etapa - 1 })} className="block w-full text-center text-sm text-black/60 underline-offset-2 hover:underline">Voltar</button>}

@@ -15,7 +15,7 @@ const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', y
 const quando = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Belem' })
 
 function SeloPost({ p }: { p: PostPortal }) {
-  const [texto, cor] = p.status === 'publicado' ? ['Publicado', 'bg-sucesso text-white'] : p.aprovacao === 'aguardando' ? ['Aguardando sua aprovação', 'bg-aviso text-white'] : p.aprovacao === 'aprovado' ? ['Aprovado', 'bg-sucesso-fundo text-sucesso-forte'] : ['Ajuste pedido', 'bg-perigo-fundo text-perigo-forte']
+  const [texto, cor] = p.status === 'publicado' ? ['Publicado', 'bg-sucesso text-claro'] : p.aprovacao === 'aguardando' ? ['Aguardando sua aprovação', 'bg-aviso text-claro'] : p.aprovacao === 'aprovado' ? ['Aprovado', 'bg-sucesso-fundo text-sucesso-forte'] : ['Ajuste pedido', 'bg-perigo-fundo text-perigo-forte']
   return <span className={`rounded-full px-2 py-0.5 text-micro font-semibold ${cor}`}>{texto}</span>
 }
 

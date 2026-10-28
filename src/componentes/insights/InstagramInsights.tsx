@@ -78,8 +78,8 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
                       // eslint-disable-next-line @next/next/no-img-element -- imagem do CDN do Instagram (URL que expira)
                       <img src={p.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
                     )}
-                    {p.formato === 'Reels' && <PlayCircle className="absolute right-1.5 top-1.5 h-5 w-5 text-white drop-shadow" aria-label="Reels" />}
-                    <span className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-micro font-semibold text-white" style={{ background: COR_FORMATO_IG[p.formato] }}>{p.formato}</span>
+                    {p.formato === 'Reels' && <PlayCircle className="absolute right-1.5 top-1.5 h-5 w-5 text-claro drop-shadow" aria-label="Reels" />}
+                    <span className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-micro font-semibold text-claro" style={{ background: COR_FORMATO_IG[p.formato] }}>{p.formato}</span>
                   </div>
                   <div className="space-y-0.5 p-2">
                     <p className="flex items-center justify-between text-micro text-texto-3"><span>{quando.format(new Date(p.em))}</span><ExternalLink className="h-3 w-3" /></p>

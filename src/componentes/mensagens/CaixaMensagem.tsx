@@ -228,7 +228,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
           <BotaoIcone rotulo="Gravar vídeo ou tela" onClick={() => setGravando('video')} icone={Video} />
           <div className="ml-auto flex items-center gap-2">
             {extras}
-            <button type="button" onClick={enviar} disabled={!podeEnviar} aria-label="Enviar" className="rounded-md bg-texto p-1.5 text-white hover:bg-carbon disabled:opacity-40">
+            <button type="button" onClick={enviar} disabled={!podeEnviar} aria-label="Enviar" className="rounded-md bg-texto p-1.5 text-claro hover:bg-carbon disabled:opacity-40">
               <SendHorizontal className="h-4 w-4" />
             </button>
           </div>

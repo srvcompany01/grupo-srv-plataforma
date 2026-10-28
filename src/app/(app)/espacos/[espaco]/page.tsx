@@ -40,7 +40,7 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
   return (
     <div className="page-shell">
       <header className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl text-white ring-4 ring-fundo" style={{ background: espaco.color }}><IconeVisual icone={espaco.icon} emoji={espaco.emoji} className="h-5 w-5" /></span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl text-claro ring-4 ring-fundo" style={{ background: espaco.color }}><IconeVisual icone={espaco.icon} emoji={espaco.emoji} className="h-5 w-5" /></span>
         <div>
           <p className="eyebrow">Espaço</p>
           <h1 className="page-title mt-1">{espaco.name}</h1>

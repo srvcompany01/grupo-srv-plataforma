@@ -39,7 +39,7 @@ export function Placar({ nota, itens }: { nota: number; itens: ItemSaude[] }) {
       <ul className="space-y-2">
         {(['ruim', 'atencao', 'bom'] as const).map((t) => (
           <li key={t} className="flex items-center gap-3">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-full text-corpo font-bold text-white ${ESTILO_TOM[t].forte}`}>{conta(t)}</span>
+            <span className={`flex h-9 w-9 items-center justify-center rounded-full text-corpo font-bold text-claro ${ESTILO_TOM[t].forte}`}>{conta(t)}</span>
             <span className={`text-corpo font-semibold ${ESTILO_TOM[t].texto}`}>{ROTULO_TOM[t]}</span>
           </li>
         ))}

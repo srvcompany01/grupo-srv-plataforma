@@ -60,7 +60,7 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
                     if (avisar(await removerMidiaAcao(m.id), true)) router.refresh()
                   })
                 }}
-                className="absolute right-1 top-1 rounded-md bg-black/55 p-1.5 text-white opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+                className="absolute right-1 top-1 rounded-md bg-black/55 p-1.5 text-claro opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -107,13 +107,13 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
             value={conteudo.formato}
             disabled={pendente}
             onChange={(e) => iniciar(async () => { if (avisar(await alterarFormatoAcao(tarefaId, e.target.value), true)) router.refresh() })}
-            className="cursor-pointer rounded-full border-0 px-2 py-0.5 text-legenda font-semibold text-white outline-none"
+            className="cursor-pointer rounded-full border-0 px-2 py-0.5 text-legenda font-semibold text-claro outline-none"
             style={{ background: corDoFormato(conteudo.formato) }}
           >
             {FORMATOS.map((f) => <option key={f} value={f} className="bg-white text-texto">{ROTULO_FORMATO[f]}</option>)}
           </select>
         ) : (
-          <span className="rounded-full px-2 py-0.5 text-legenda font-semibold text-white" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
+          <span className="rounded-full px-2 py-0.5 text-legenda font-semibold text-claro" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
         )}
         <span className={`rounded-full px-2 py-0.5 text-legenda font-semibold ${COR_APROVACAO[conteudo.aprovacao]}`}>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
         <span className="ml-auto text-legenda text-texto-3">Versão {conteudo.versaoAtual}</span>

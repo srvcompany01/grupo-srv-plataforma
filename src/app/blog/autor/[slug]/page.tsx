@@ -27,7 +27,7 @@ export default async function PaginaAutor({ params, searchParams }: PageProps<'/
           // eslint-disable-next-line @next/next/no-img-element -- imagem servida por /blog/imagem
           <img src={a.foto} alt={a.nome} width={96} height={96} className="h-24 w-24 rounded-full object-cover" />
         ) : (
-          <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#070707] font-[family-name:var(--blog-titulo)] text-4xl font-bold text-white">{a.nome.slice(0, 1)}</span>
+          <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#070707] font-[family-name:var(--blog-titulo)] text-4xl font-bold text-claro">{a.nome.slice(0, 1)}</span>
         )}
         <div>
           <h1 className="font-[family-name:var(--blog-titulo)] text-4xl font-extrabold uppercase leading-none">{a.nome}</h1>

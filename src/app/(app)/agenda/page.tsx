@@ -146,7 +146,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                     {c?.descricao && <span className="mt-0.5 line-clamp-2 block text-legenda text-texto-2">{c.descricao}</span>}
                     {tagsDoItem.length > 0 && (
                       <span className="mt-1 flex flex-wrap gap-0.5">
-                        {tagsDoItem.map((t) => <span key={t.id} className="rounded px-1 text-micro font-medium text-white" style={{ background: t.cor }}>{t.nome}</span>)}
+                        {tagsDoItem.map((t) => <span key={t.id} className="rounded px-1 text-micro font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
                       </span>
                     )}
                   </span>
@@ -169,7 +169,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
           {dias.map((dia, i) => (
             <Link key={dia} href={url({ visao: 'dia', data: dia })} className="border-l border-borda px-1 py-1.5 text-center hover:bg-hover">
               <span className="block text-micro font-semibold uppercase text-texto-3">{SEMANA[i]}</span>
-              <span className={`mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-rotulo font-bold ${dia === hoje ? 'bg-petroleo text-white' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
+              <span className={`mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-rotulo font-bold ${dia === hoje ? 'bg-petroleo text-claro' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
             </Link>
           ))}
         </div>
@@ -178,7 +178,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
           {dias.map((dia) => (
             <ul key={dia} className="min-h-6 space-y-0.5 border-l border-borda p-0.5">
               {doDia(todas, dia).filter((o) => o.diaInteiro).map((o) => (
-                <li key={o.id}>{abrir(o, 'block w-full truncate rounded px-1 py-0.5 text-left text-micro font-medium text-white', { background: corDe(o) }, o.titulo)}</li>
+                <li key={o.id}>{abrir(o, 'block w-full truncate rounded px-1 py-0.5 text-left text-micro font-medium text-claro', { background: corDe(o) }, o.titulo)}</li>
               ))}
             </ul>
           ))}
@@ -235,7 +235,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         const fora = !dia.startsWith(mes)
         return (
           <div key={dia} className={`min-h-20 min-w-0 p-1 md:min-h-28 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-            <Link href={url({ visao: 'dia', data: dia })} className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-white' : fora ? 'text-texto-3/60' : 'text-texto-2 hover:bg-hover'}`}>
+            <Link href={url({ visao: 'dia', data: dia })} className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2 hover:bg-hover'}`}>
               {Number(dia.slice(8))}
             </Link>
             <ul className="space-y-0.5">
@@ -243,7 +243,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                 <li key={o.id}>
                   {abrir(o, 'flex w-full min-w-0 items-center gap-1 rounded px-0.5 text-left hover:bg-hover', o.diaInteiro ? { background: corDe(o) } : {}, (
                     o.diaInteiro ? (
-                      <span className="truncate text-micro font-medium text-white">{o.titulo}</span>
+                      <span className="truncate text-micro font-medium text-claro">{o.titulo}</span>
                     ) : (
                       <>
                         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: corDe(o) }} />

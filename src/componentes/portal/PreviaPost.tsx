@@ -13,7 +13,7 @@ export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { n
         <span className="ml-auto rounded-full bg-fundo px-2 py-0.5 text-micro font-semibold text-texto-2">{ROTULO_FORMATO[formato]}</span>
       </header>
       <div className={`flex snap-x snap-mandatory overflow-x-auto bg-black ${vertical ? 'aspect-[9/16]' : 'aspect-[4/5]'}`}>
-        {midias.length === 0 && <p className="m-auto text-rotulo text-white/70">Sem mídia ainda</p>}
+        {midias.length === 0 && <p className="m-auto text-rotulo text-claro/70">Sem mídia ainda</p>}
         {midias.map((m, i) => (
           <div key={i} className="relative h-full w-full shrink-0 snap-center">
             {m.tipo === 'video' ? (
@@ -22,7 +22,7 @@ export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { n
               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
               <img src={m.url} alt="" className="h-full w-full object-contain" />
             )}
-            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-micro font-semibold text-white">{i + 1}/{midias.length}</span>}
+            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-micro font-semibold text-claro">{i + 1}/{midias.length}</span>}
           </div>
         ))}
       </div>

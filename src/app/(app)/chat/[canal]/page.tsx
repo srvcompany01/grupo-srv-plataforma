@@ -76,7 +76,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
             <Link key={c.id} href={`/chat/${c.nome}`} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-rotulo ${c.id === canal.id ? 'bg-white font-semibold text-texto shadow-sm' : c.naoLidas ? 'font-semibold text-texto hover:bg-hover' : 'text-texto-2 hover:bg-hover'}`}>
               <IconeCanal c={c} className="h-3.5 w-3.5 shrink-0 text-texto-3" />
               <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-              {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-white">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
+              {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-claro">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
             </Link>
           ))}
         </nav>
@@ -93,7 +93,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
         {/* No celular os canais viram uma faixa rolável. */}
         <nav className="flex gap-1 overflow-x-auto border-b border-borda px-3 py-2 md:hidden" aria-label="Canais">
           {canais.map((c) => (
-            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-white' : 'border border-borda text-texto-2'}`}>
+            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-claro' : 'border border-borda text-texto-2'}`}>
               <IconeCanal c={c} className="h-3 w-3" /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
             </Link>
           ))}

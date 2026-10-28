@@ -149,7 +149,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
       {tarefa.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {tarefa.tags.map((t) => (
-            <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-white" style={{ background: t.cor }}>
+            <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}

@@ -42,7 +42,7 @@ export function CriarTarefaTopo({ listaId, euId, status }: { listaId: string; eu
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <button className="inline-flex h-9 items-center gap-2 rounded-lg bg-petroleo px-3.5 text-rotulo font-bold text-white shadow-cartao transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
+        <button className="inline-flex h-9 items-center gap-2 rounded-lg bg-petroleo px-3.5 text-rotulo font-bold text-claro shadow-cartao transition hover:bg-petroleo-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/25">
           <Plus className="h-4 w-4" /> Tarefa <ChevronDown className="h-3 w-3 opacity-80" />
         </button>
       </PopoverTrigger>
@@ -71,7 +71,7 @@ export function CriarTarefaTopo({ listaId, euId, status }: { listaId: string; eu
                 {status.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}
               </select>
             </label>
-            <button disabled={pendente || !titulo.trim()} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-texto px-3 text-rotulo font-semibold text-white disabled:opacity-50">
+            <button disabled={pendente || !titulo.trim()} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-texto px-3 text-rotulo font-semibold text-claro disabled:opacity-50">
               <Check className="h-3.5 w-3.5" /> {pendente ? 'Criando…' : 'Criar'}
             </button>
           </div>

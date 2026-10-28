@@ -64,7 +64,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
 
       <div className="flex flex-wrap gap-1.5">
         {PLATAFORMAS.map((p) => (
-          <span key={p.nome} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-legenda ${p.ativa ? 'font-semibold text-white shadow-sm' : 'border border-dashed border-borda bg-white text-texto-3'}`} style={p.ativa ? { background: p.cor } : undefined}>
+          <span key={p.nome} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-legenda ${p.ativa ? 'font-semibold text-claro shadow-sm' : 'border border-dashed border-borda bg-white text-texto-3'}`} style={p.ativa ? { background: p.cor } : undefined}>
             {!p.ativa && <span className="h-2 w-2 rounded-full" style={{ background: p.cor }} aria-hidden />}
             {p.nome}{!p.ativa && ` · ${p.situacao}`}
           </span>
@@ -75,7 +75,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         {([['geral', 'Visão geral', null], ['organico', 'Comentários orgânicos', resumo?.organico], ['anuncios', 'Comentários de anúncios', resumo?.anuncio]] as const).map(([a, rotulo, n]) => (
           <Link key={a} href={linkAba(a)} className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-rotulo font-semibold ${aba === a ? 'border-petroleo text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>
             {a !== 'geral' && <MessageCircle className="h-3.5 w-3.5" />}{rotulo}
-            {n && n.alertas > 0 && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-white" title="Negativos ou agressivos sem decisão">{n.alertas}</span>}
+            {n && n.alertas > 0 && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-claro" title="Negativos ou agressivos sem decisão">{n.alertas}</span>}
             {n && n.semResposta > 0 && <span className="rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-2" title="Sem resposta">{n.semResposta}</span>}
           </Link>
         ))}
@@ -91,7 +91,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
           <div className="space-y-3">
             <div className="flex flex-wrap gap-1">
               {([['todos', 'Todos'], ['sem_resposta', 'Sem resposta'], ['alerta', 'Negativos e agressivos'], ['respondidos', 'Respondidos'], ['ocultos', 'Ocultos']] as const).map(([f, r]) => (
-                <Link key={f} href={linkAba(aba, f)} className={`rounded-full border px-2.5 py-1 text-legenda font-semibold ${filtro === f ? (f === 'alerta' ? 'border-perigo bg-perigo text-white' : 'border-petroleo bg-petroleo text-white') : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>{r}</Link>
+                <Link key={f} href={linkAba(aba, f)} className={`rounded-full border px-2.5 py-1 text-legenda font-semibold ${filtro === f ? (f === 'alerta' ? 'border-perigo bg-perigo text-claro' : 'border-petroleo bg-petroleo text-claro') : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>{r}</Link>
               ))}
             </div>
             <Suspense fallback={<p className="py-6 text-center text-rotulo text-texto-3">Carregando os comentários…</p>}>

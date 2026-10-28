@@ -32,7 +32,7 @@ export function MeuStatus({ status, texto }: { status: StatusTime; texto: string
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {STATUS_TIME.map((s) => (
-          <button key={s} type="button" onClick={() => setEscolhido(s)} aria-pressed={escolhido === s} className={`rounded-full border px-3 py-1.5 text-rotulo ${escolhido === s ? 'border-petroleo bg-petroleo text-white' : 'border-borda bg-white text-texto hover:bg-hover'}`}>
+          <button key={s} type="button" onClick={() => setEscolhido(s)} aria-pressed={escolhido === s} className={`rounded-full border px-3 py-1.5 text-rotulo ${escolhido === s ? 'border-petroleo bg-petroleo text-claro' : 'border-borda bg-white text-texto hover:bg-hover'}`}>
             {EMOJI_STATUS_TIME[s]} {ROTULO_STATUS_TIME[s]}
           </button>
         ))}

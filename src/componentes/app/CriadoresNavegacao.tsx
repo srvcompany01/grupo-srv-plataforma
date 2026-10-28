@@ -101,7 +101,7 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
           className="space-y-5"
         >
           <div className="grid gap-4 sm:grid-cols-[72px_1fr]">
-            <div className="flex h-[72px] items-center justify-center rounded-2xl text-white" style={{ background: visual.cor }}>
+            <div className="flex h-[72px] items-center justify-center rounded-2xl text-claro" style={{ background: visual.cor }}>
               <IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-8 w-8" />
             </div>
             <div className="space-y-3">
@@ -198,7 +198,7 @@ export function CriarEstruturaDialog({
           className="space-y-4"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-5 w-5" /></div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-5 w-5" /></div>
             <label className="block flex-1 space-y-1"><span className={rotulo}>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
           </div>
           {modo === 'lista' && <div className="grid gap-3 sm:grid-cols-2">
@@ -237,7 +237,7 @@ export function PersonalizarItemDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>Personalizar</DialogTitle><DialogDescription>Escolha o nome, a cor e um ícone Lucide ou emoji.</DialogDescription></DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }} className="space-y-5">
-          <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-xl text-white" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-6 w-6" /></div><label className="flex-1 space-y-1"><span className={rotulo}>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label></div>
+          <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-xl text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-6 w-6" /></div><label className="flex-1 space-y-1"><span className={rotulo}>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label></div>
           <SeletorVisual valor={visual} onChange={setVisual} />
           <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>Salvar</button></div>
         </form>

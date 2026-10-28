@@ -4,28 +4,31 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Sistema visual baseado no design.md do ClickUp: botões pretos, acento roxo, cartões brancos arredondados com borda fina, tipografia compacta. */
+/* Sistema visual baseado no design.md do Reddit: casca escura em camadas, botões em pílula laranja, cartões de conversa arredondados, rótulos pesados. */
 @theme inline {
-  /* Plus Jakarta Sans nos títulos e números grandes, Inter no texto e Sometype Mono nos rótulos (identidade ClickUp). */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-sometype), ui-monospace, monospace;
+  /* Reddit Sans em toda a interface (títulos em peso 700-800), como no design.md do Reddit. */
+  --font-sans: var(--font-reddit), Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-reddit), Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Identidade editorial: bordô como acento, petróleo para ação principal e navegação, marfim como base. */
   /* Ação e acento vêm do tema (Configurações → Personalização); as variações saem por color-mix. */
   --color-marca: var(--tema-acento);
   --color-marca-escura: color-mix(in oklab, var(--tema-acento) 72%, black);
-  --color-marca-clara: color-mix(in oklab, var(--tema-acento) 28%, white);
-  --color-marca-fundo: color-mix(in oklab, var(--tema-acento) 10%, white);
+  --color-marca-clara: color-mix(in oklab, var(--tema-acento) 28%, var(--tema-superficie));
+  --color-marca-fundo: color-mix(in oklab, var(--tema-acento) 10%, var(--tema-superficie));
   --color-petroleo: var(--tema-acao);
-  --color-petroleo-700: color-mix(in oklab, var(--tema-acao) 84%, white);
-  --color-petroleo-100: color-mix(in oklab, var(--tema-acao) 14%, white);
+  --color-petroleo-700: color-mix(in oklab, var(--tema-acao) 84%, var(--tema-superficie));
+  --color-petroleo-100: color-mix(in oklab, var(--tema-acao) 14%, var(--tema-superficie));
   --color-terracota: #f76808;
-  --color-areia: #f1f1f9;
-  --color-azul: #0091ff;
-  --color-azul-fundo: #e5f3ff;
+  --color-areia: var(--c-areia);
+  --color-azul: var(--c-azul);
+  --color-azul-fundo: var(--c-azul-fundo);
   /* Superfície marfim no lugar do branco puro (bg-white/text-white seguem o token). */
   --color-white: var(--tema-superficie);
+  /* Branco de verdade (texto sobre botões coloridos) e cor de tinta do tema (sobreposições leves). */
+  --color-claro: #ffffff;
+  --color-ink: var(--c-ink);
   --color-lat-bg: var(--lat-bg);
   --color-lat-fg: var(--lat-fg);
   --color-lat-2: var(--lat-2);
@@ -34,7 +37,7 @@
   --color-lat-ativo: var(--lat-ativo);
   --color-lat-borda: var(--lat-borda);
   --color-sinal: #e5484d;
-  --color-carbon: #202020;
+  --color-carbon: var(--c-carbon);
 
   /* Escala tipográfica: piso de 11px (nada abaixo disso). Só define o tamanho; a altura de linha vem do contexto. */
   --text-micro: 10px;
@@ -48,32 +51,32 @@
   --tracking-rotulo: 0.06em;
 
   --color-perigo: #e5484d;
-  --color-perigo-forte: #c23035;
-  --color-perigo-borda: #f6c9ca;
-  --color-perigo-fundo: #fdecec;
+  --color-perigo-forte: var(--c-perigo-forte);
+  --color-perigo-borda: var(--c-perigo-borda);
+  --color-perigo-fundo: var(--c-perigo-fundo);
   --color-sucesso: #30a46c;
-  --color-sucesso-forte: #1f7a4f;
-  --color-sucesso-fundo: #e4f5ec;
+  --color-sucesso-forte: var(--c-sucesso-forte);
+  --color-sucesso-fundo: var(--c-sucesso-fundo);
   --color-aviso: #ffc53d;
-  --color-aviso-forte: #8a6200;
-  --color-aviso-fundo: #fff4d1;
-  --color-pale-purple: #efedfd;
-  --color-pale-pink: #fff1fe;
-  --color-pale-orange: #ffece5;
+  --color-aviso-forte: var(--c-aviso-forte);
+  --color-aviso-fundo: var(--c-aviso-fundo);
+  --color-pale-purple: var(--c-pale-purple);
+  --color-pale-pink: var(--c-pale-pink);
+  --color-pale-orange: var(--c-pale-orange);
 
   /* Sombras: cartão (repouso) e flutuante (menus, painéis, hover de card). */
-  --shadow-cartao: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-flutuante: 0 10px 25px rgba(18, 43, 165, 0.1), 0 0 1px rgba(0, 0, 0, 0.27);
+  --shadow-cartao: var(--c-shadow-cartao);
+  --shadow-flutuante: var(--c-shadow-flutuante);
 
-  --color-texto: #202020;
+  --color-texto: var(--c-texto);
   /* Contraste sobre o branco: texto-2 ~8:1, texto-3 (muted do ClickUp) ~5,9:1 (mínimo AA 4,5:1). */
-  --color-texto-2: #444448;
-  --color-texto-3: #646464;
-  --color-borda: #e1e1e6;
-  --color-borda-forte: #cfcfcf;
+  --color-texto-2: var(--c-texto-2);
+  --color-texto-3: var(--c-texto-3);
+  --color-borda: var(--c-borda);
+  --color-borda-forte: var(--c-borda-forte);
   --color-fundo: var(--tema-fundo);
-  --color-hover: color-mix(in oklab, var(--tema-fundo), #202020 3.5%);
-  --color-trilho: #202020;
+  --color-hover: color-mix(in oklab, var(--tema-fundo), var(--c-texto) 4%);
+  --color-trilho: var(--c-trilho);
 
   --color-st-rascunho: #87909e;
   --color-st-aguardando: #7612fa;
@@ -115,8 +118,8 @@
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 14px;
-  --radius-2xl: 20px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
@@ -127,8 +130,8 @@ body {
   letter-spacing: 0;
 }
 
-:root {
-  /* Tema padrão (Editorial). O layout da área interna sobrescreve com o tema salvo pelo admin. */
+:root, body:has(.app-ui) {
+  /* Tema claro (padrão das páginas públicas). A área logada usa o bloco escuro logo abaixo; o admin pode trocar as cores em Personalização. */
   --tema-acao: #202020;
   --tema-acento: #7612fa;
   --tema-fundo: #f8f9fa;
@@ -173,6 +176,82 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --c-areia: #f1f1f9;
+  --c-azul: #0091ff;
+  --c-azul-fundo: #e5f3ff;
+  --c-carbon: #202020;
+  --c-perigo-forte: #c23035;
+  --c-perigo-borda: #f6c9ca;
+  --c-perigo-fundo: #fdecec;
+  --c-sucesso-forte: #1f7a4f;
+  --c-sucesso-fundo: #e4f5ec;
+  --c-aviso-forte: #8a6200;
+  --c-aviso-fundo: #fff4d1;
+  --c-pale-purple: #efedfd;
+  --c-pale-pink: #fff1fe;
+  --c-pale-orange: #ffece5;
+  --c-shadow-cartao: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --c-shadow-flutuante: 0 10px 25px rgba(18, 43, 165, 0.1), 0 0 1px rgba(0, 0, 0, 0.27);
+  --c-texto: #202020;
+  --c-texto-2: #444448;
+  --c-texto-3: #646464;
+  --c-borda: #e1e1e6;
+  --c-borda-forte: #cfcfcf;
+  --c-trilho: #202020;
+  --c-ink: #202020;
+}
+
+/* Área logada: casca escura em camadas (canvas, superfície, superfície alternativa), texto azul-acinzentado e laranja Reddit. */
+body:has(.app-ui) {
+  --tema-acao: #d93900;
+  --tema-acento: #ff4500;
+  --tema-fundo: #0e1113;
+  --tema-superficie: #181c1f;
+  --c-texto: #eef1f3;
+  --c-texto-2: #b7cad4;
+  --c-texto-3: #8ba2ad;
+  --c-borda: rgba(255, 255, 255, 0.15);
+  --c-borda-forte: rgba(255, 255, 255, 0.4);
+  --c-perigo-forte: #ff7a7e;
+  --c-perigo-borda: rgba(229, 72, 77, 0.45);
+  --c-perigo-fundo: rgba(229, 72, 77, 0.16);
+  --c-sucesso-forte: #52d28c;
+  --c-sucesso-fundo: rgba(48, 164, 108, 0.16);
+  --c-aviso-forte: #ffd666;
+  --c-aviso-fundo: rgba(255, 197, 61, 0.14);
+  --c-azul: #648efc;
+  --c-azul-fundo: rgba(100, 142, 252, 0.16);
+  --c-areia: #21272a;
+  --c-pale-purple: rgba(100, 142, 252, 0.14);
+  --c-pale-pink: rgba(211, 22, 139, 0.16);
+  --c-pale-orange: rgba(255, 69, 0, 0.16);
+  --c-trilho: #eef1f3;
+  --c-carbon: #eef1f3;
+  --c-shadow-cartao: none;
+  --c-shadow-flutuante: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --c-ink: #ffffff;
+  --lat-bg: #0e1113;
+  --lat-fg: #eef1f3;
+  --lat-2: rgba(238, 241, 243, 0.78);
+  --lat-3: rgba(183, 202, 212, 0.7);
+  --lat-hover: rgba(255, 255, 255, 0.07);
+  --lat-ativo: rgba(255, 69, 0, 0.18);
+  --lat-borda: rgba(255, 255, 255, 0.15);
+  --foreground: #eef1f3;
+  --card-foreground: #eef1f3;
+  --popover-foreground: #eef1f3;
+  --primary-foreground: #ffffff;
+  --secondary: #21272a;
+  --secondary-foreground: #eef1f3;
+  --muted: #21272a;
+  --muted-foreground: #8ba2ad;
+  --accent: #21272a;
+  --accent-foreground: #eef1f3;
+  --destructive: #ff5a5f;
+  --border: rgba(255, 255, 255, 0.15);
+  --input: rgba(255, 255, 255, 0.25);
+  --linha-lista: rgba(255, 255, 255, 0.1);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -192,8 +271,8 @@ body {
     letter-spacing: -0.02em;
   }
   ::selection {
-    background: #e3d4fe;
-    color: #202020;
+    background: rgba(255, 69, 0, 0.35);
+    color: #ffffff;
   }
 }
 
@@ -202,19 +281,19 @@ body {
     @apply w-full space-y-5 px-4 py-5 md:px-6 md:py-6;
   }
 
-  /* Título da página: compacto, como o cabeçalho das telas do ClickUp. */
+  /* Título da página: Reddit Sans pesado, sem tracking negativo. */
   .page-title {
     @apply text-texto;
-    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
+    font-family: var(--font-reddit), Arial, sans-serif;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.2;
-    letter-spacing: -0.035em;
+    letter-spacing: 0;
   }
 
   .eyebrow {
-    @apply text-legenda leading-5 font-medium text-texto-3;
-    font-family: var(--font-sometype), ui-monospace, monospace;
+    @apply text-legenda leading-5 font-semibold text-texto-3;
+    font-family: var(--font-reddit), Arial, sans-serif;
   }
 
   .surface-card {
@@ -267,17 +346,17 @@ body {
 .documento ul[data-type='taskList'] li > label { margin-top: 0.35rem; }
 .documento ul[data-type='taskList'] li[data-checked='true'] > div { text-decoration: line-through; opacity: 0.6; }
 .documento blockquote { border-left: 3px solid var(--color-borda-forte, #c9ced6); margin: 0.6em 0; padding-left: 0.9rem; color: var(--color-texto-2, #555); }
-.documento pre { background: #f4f5f7; border-radius: 8px; padding: 0.75rem 1rem; font-family: ui-monospace, monospace; font-size: 0.8125rem; overflow-x: auto; margin: 0.6em 0; }
-.documento code { background: #f4f5f7; border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
+.documento pre { background: var(--color-hover, #f4f5f7); border-radius: 8px; padding: 0.75rem 1rem; font-family: ui-monospace, monospace; font-size: 0.8125rem; overflow-x: auto; margin: 0.6em 0; }
+.documento code { background: var(--color-hover, #f4f5f7); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
 .documento pre code { background: none; padding: 0; }
 .documento hr { border: none; border-top: 1px solid var(--color-borda, #e3e6ea); margin: 1.2em 0; }
 .documento a { color: var(--color-marca, #0f8a5f); text-decoration: underline; }
-.documento mark { background: #fff3a3; border-radius: 3px; padding: 0 0.1em; }
+.documento mark { color: #202020; background: #fff3a3; border-radius: 3px; padding: 0 0.1em; }
 .documento img { max-width: 100%; border-radius: 8px; margin: 0.5em 0; }
-.documento .mencao { background: #e6f4ee; color: var(--color-marca-escura, #0b6b4a); border-radius: 4px; padding: 0 0.25em; font-weight: 500; }
+.documento .mencao { background: var(--color-azul-fundo, #e6f4ee); color: var(--color-marca-escura, #0b6b4a); border-radius: 4px; padding: 0 0.25em; font-weight: 500; }
 .documento table { border-collapse: collapse; width: 100%; margin: 0.8em 0; table-layout: fixed; }
 .documento th, .documento td { border: 1px solid var(--color-borda, #e3e6ea); padding: 0.4rem 0.6rem; vertical-align: top; text-align: left; font-size: 0.875rem; }
-.documento th { background: #f7f8fa; font-weight: 600; }
+.documento th { background: var(--color-hover, #f7f8fa); font-weight: 600; }
 .documento p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #9aa1ac; float: left; height: 0; pointer-events: none; }
 
 /*
@@ -313,30 +392,24 @@ body {
 .artigo-blog hr { border: 0; border-top: 1px solid #e6e6e2; margin: 2em 0; }
 
 /*
- * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): mesma linguagem do resto da plataforma, só que
- * com a superfície cinza-clara do ClickUp por trás, para os cartões brancos (borda fina e sombra mínima) se destacarem.
+ * Páginas de relatório e métricas (classe `relatorio` junto de page-shell): mesma casca escura em camadas do resto da
+ * plataforma; os cartões ficam na superfície (#181C1F) sobre o canvas (#0E1113), com borda fina e cantos de 20px.
  */
 .relatorio { min-height: 100%; background: var(--color-fundo); }
-.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) {
-  border-radius: 20px;
-  box-shadow: var(--shadow-cartao);
-}
-.relatorio .border.border-borda:not(.bg-white, input, select, textarea, button, summary, [role='button'], .controle) { background: #fff; }
-.relatorio .numero { border-radius: 14px; padding: 0.75rem 0.875rem; }
-.relatorio .numero p.font-bold { font-family: var(--font-jakarta), var(--font-inter), sans-serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.035em; line-height: 1.2; }
-.relatorio table thead :is(th, td) { font-family: var(--font-sometype), ui-monospace, monospace; font-size: 11px; font-weight: 500; color: var(--color-texto-3); }
+.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) { border-radius: 20px; }
+.relatorio .numero { border-radius: 20px; padding: 0.75rem 0.875rem; }
+.relatorio .numero p.font-bold { font-size: 1.375rem; font-weight: 800; line-height: 1.2; }
+.relatorio table thead :is(th, td) { font-size: 11px; font-weight: 700; color: var(--color-texto-3); }
 
-/* Tipografia da área logada (inclui menus e diálogos): títulos em Plus Jakarta Sans, rótulos em Sometype Mono. */
-body:has(.app-ui) :is(h1, h2, h3, h4, .font-display):not(.documento *, .artigo-blog *, .ProseMirror *) { font-family: var(--font-jakarta), var(--font-inter), sans-serif; }
-body:has(.app-ui) :is(h2, h3):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 650; letter-spacing: -0.02em; }
-body:has(.app-ui) .font-display { font-weight: 700; letter-spacing: -0.04em; }
-body:has(.app-ui) :is(.page-title) { font-family: var(--font-jakarta), var(--font-inter), sans-serif; }
+/* Títulos da área logada: Reddit Sans em peso alto, sem espaçamento negativo. */
+body:has(.app-ui) :is(h1, h2, h3, h4):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 700; letter-spacing: 0; }
+body:has(.app-ui) .font-display { font-weight: 800; letter-spacing: 0; }
 
-/* Home: cartões brancos de 20px sobre a superfície cinza-clara, painel escuro (#1E1E1E) e acento roxo. */
+/* Home: cartões de conversa (superfície escura, borda fina, 20px), um painel de destaque laranja e botões em pílula. */
 .home-ui {
-  --h-escuro: #1e1e1e;
-  --h-acento: #7612fa;
-  --h-palido: #efedfd;
-  --h-superficie: #f8f9fa;
-  background: var(--h-superficie);
+  --h-escuro: #21272a;
+  --h-acento: #ff4500;
+  --h-palido: rgba(255, 69, 0, 0.16);
+  --h-superficie: #0e1113;
+  background: var(--color-fundo);
 }
