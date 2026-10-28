@@ -56,14 +56,14 @@ export type Numero = { rotulo: string; valor: string; extra?: string; tom?: Tom;
 export function Numeros({ itens }: { itens: Numero[] }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-      {itens.map((n) => {
+      {itens.map((n, k) => {
         const Icone = n.icone
         return (
-          <div key={n.rotulo} className="relative overflow-hidden rounded-xl border border-borda bg-white p-2.5">
+          <div key={n.rotulo} data-destaque={k === 0 ? '' : undefined} className="numero relative overflow-hidden rounded-xl border border-borda bg-white p-2.5">
             {n.tom && n.tom !== 'neutro' && <span className={`absolute inset-x-0 top-0 h-1 ${ESTILO_TOM[n.tom].forte}`} aria-hidden />}
             <div className="flex items-center gap-1.5">
               {Icone && (
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: `${n.cor ?? '#52514e'}1f`, color: n.cor ?? '#52514e' }}>
+                <span className="numero-icone flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: `${n.cor ?? '#52514e'}1f`, color: n.cor ?? '#52514e' }}>
                   <Icone className="h-3 w-3" />
                 </span>
               )}
