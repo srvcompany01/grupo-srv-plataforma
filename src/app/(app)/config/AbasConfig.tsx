@@ -12,6 +12,7 @@ const ABAS = [
   ['/config/integracoes', 'Integrações'],
   ['/config/armazenamento', 'Armazenamento'],
   ['/config/personalizacao', 'Personalização'],
+  ['/config/design', 'Design'],
 ] as const
 
 export function AbasConfig() {

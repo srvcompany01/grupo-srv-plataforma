@@ -36,16 +36,18 @@ import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
+import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
+import { MenuPerfil } from './MenuPerfil'
 import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
-import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral } from '@/dominio/tema-lateral'
+import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral, type ModoTema } from '@/dominio/tema-lateral'
 
 type Opcao = { id: string; nome: string }
-export type PropsPainel = { navegacao: Navegacao; papel: string; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
+export type PropsPainel = { navegacao: Navegacao; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
 type IconeLucide = ComponentType<{ className?: string }>
 
 type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
@@ -84,10 +86,9 @@ function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
 
 const estaEm = (caminho: string, href: string) => caminho === href || caminho.startsWith(`${href}/`)
 
-/** Faixa estreita (desktop) com os atalhos dos módulos: ícone e o nome embaixo, compacto. Ordem por arrastar. */
 /**
- * Grupos da faixa de ícones: os de uso diário ficam soltos; os outros abrem um menu ao lado. Módulo novo entra no
- * grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto no fim.
+ * Atalhos da barra lateral: os de uso diário ficam soltos no topo; os grupos ficam recolhidos e abrem por uma setinha.
+ * Módulo novo entra no grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto abaixo dos grupos.
  */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
   { id: 'marketing', rotulo: 'Marketing e resultados', curto: 'Marketing', Icone: Megaphone, itens: ['anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'agendamentos', 'blog'] },
@@ -96,7 +97,14 @@ const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLuc
 ]
 const SOLTOS_NO_TOPO = ['home', 'tarefas', 'chat', 'agenda']
 
-export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'papel' | 'chatNaoLidas' | 'ordemInicio'>) {
+const botaoFaixa = 'relative flex w-full flex-col items-center gap-0.5 rounded-lg px-0.5 py-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white'
+const ativoFaixa = 'bg-white text-[#d80d12] hover:bg-white hover:text-[#d80d12]'
+
+/**
+ * Faixa estreita de ícones (desktop, 64px, escura): atalhos soltos no topo, grupos que abrem um menu ao lado e, no pé,
+ * tema claro/escuro, Configurações e o perfil. Os atalhos se reorganizam arrastando (a ordem fica em cookie).
+ */
+export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], tema }: Pick<PropsPainel, 'papel' | 'nome' | 'chatNaoLidas' | 'ordemInicio' | 'tema'>) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   // O menu vale só para a página em que foi aberto: navegar já fecha, sem efeito.
@@ -108,7 +116,8 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'pap
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
   const porId = new Map(atalhos.map((a) => [a.id, a]))
   const agrupados = new Set(GRUPOS_FAIXA.flatMap((g) => g.itens))
-  const soltosFim = atalhos.filter((a) => !SOLTOS_NO_TOPO.includes(a.id) && !agrupados.has(a.id))
+  const soltosTopo = SOLTOS_NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
+  const soltosFim = atalhos.filter((a) => !SOLTOS_NO_TOPO.includes(a.id) && !agrupados.has(a.id) && a.id !== 'config')
   // Fecha ao clicar fora ou com Esc.
   useEffect(() => {
     if (!aberto) return
@@ -118,19 +127,20 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'pap
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
   }, [aberto])
-  const botao = 'relative flex w-full flex-col items-center gap-0.5 rounded-md px-0.5 py-1.5 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
-  const solto = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => (
-    <Link key={id} href={href} title={rotulo} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botao} ${ativoEm(href) ? 'bg-lat-ativo text-lat-fg' : ''}`}>
-      <Icone className="h-4 w-4" />
-      <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{curto}</span>
-      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-perigo px-1 text-[9px] leading-3.5 font-bold text-claro">{contador > 99 ? '99+' : contador}</span>}
+  const itemFaixa = ({ id, href, rotulo, curto, Icone, contador }: Atalho) => (
+    <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativoEm(href) ? 'page' : undefined} className={`${botaoFaixa} ${ativoEm(href) ? ativoFaixa : ''}`}>
+      <Icone className="h-5 w-5" />
+      <span className="w-full truncate text-center text-micro leading-3 font-semibold">{curto}</span>
+      {!!contador && <span className="absolute right-1 top-0.5 rounded-full bg-[#d80d12] px-1 text-[9px] leading-3.5 font-bold text-white">{contador > 99 ? '99+' : contador}</span>}
     </Link>
   )
+  const ordenar = (lista: Atalho[], classe: string) => <ListaOrdenavel className={classe} cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={lista.map((a) => ({ id: a.id, no: itemFaixa(a) }))} />
+  const config = porId.get('config')
   return (
-    <nav ref={faixa} aria-label="Módulos" className="sticky top-14 z-30 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 border-r border-lat-borda bg-lat-bg px-1 py-1.5 md:block">
-      <div className="space-y-0.5">
-        {SOLTOS_NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a).map(solto)}
-        <div className="mx-2 my-1.5 border-t border-lat-borda" />
+    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-14 z-30 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 flex-col justify-between px-1 py-1.5 md:flex">
+      <div className="min-h-0 space-y-0.5">
+        {ordenar(soltosTopo, 'space-y-0.5')}
+        <div className="mx-2 my-1.5 border-t border-white/15" />
         {GRUPOS_FAIXA.map((g) => {
           const itens = g.itens.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
           if (!itens.length) return null
@@ -139,27 +149,39 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0 }: Pick<PropsPainel, 'pap
           const Icone = atual?.Icone ?? g.Icone
           return (
             <div key={g.id} className="relative">
-              <button type="button" onClick={() => setAberto(aberto === g.id ? null : g.id)} aria-expanded={aberto === g.id} aria-haspopup="menu" title={g.rotulo} className={`${botao} ${ativoNoGrupo || aberto === g.id ? 'bg-lat-ativo text-lat-fg' : ''}`}>
-                <Icone className="h-4 w-4" />
-                <span className="w-full truncate text-center text-[10px] leading-3 font-medium">{atual?.curto ?? g.curto}</span>
-                <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-lat-3" aria-hidden />
+              <button type="button" onClick={() => setAberto(aberto === g.id ? null : g.id)} aria-expanded={aberto === g.id} aria-haspopup="menu" title={g.rotulo} className={`${botaoFaixa} ${ativoNoGrupo || aberto === g.id ? ativoFaixa : ''}`}>
+                <Icone className="h-5 w-5" />
+                <span className="w-full truncate text-center text-micro leading-3 font-semibold">{atual?.curto ?? g.curto}</span>
+                <span className="absolute right-1.5 top-1.5 h-1 w-1 rounded-full bg-current opacity-60" aria-hidden />
               </button>
               {aberto === g.id && (
-                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-56 rounded-xl border border-borda bg-white p-1.5 shadow-xl">
+                <div role="menu" aria-label={g.rotulo} className="absolute left-full top-0 z-40 ml-2 w-56 rounded-xl border border-borda bg-white p-1.5 shadow-flutuante">
                   <p className="px-2 pb-1 pt-0.5 text-micro font-semibold uppercase tracking-rotulo text-texto-3">{g.rotulo}</p>
-                  {itens.map(({ id, href, rotulo, Icone: I }) => (
-                    <Link key={id} href={href} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-rotulo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-fundo font-semibold text-texto' : 'text-texto-2'}`}>
-                      <I className="h-4 w-4 shrink-0" />
-                      {rotulo}
-                    </Link>
-                  ))}
+                  <ListaOrdenavel
+                    cookie={COOKIE_ORDEM_INICIO}
+                    ordemInicial={ordemInicio}
+                    itens={itens.map(({ id, href, rotulo, Icone: I }) => ({
+                      id,
+                      no: (
+                        <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-rotulo transition-colors hover:bg-hover ${ativoEm(href) ? 'bg-fundo font-semibold text-texto' : 'text-texto-2'}`}>
+                          <I className="h-4 w-4 shrink-0" />
+                          {rotulo}
+                        </Link>
+                      ),
+                    }))}
+                  />
                 </div>
               )}
             </div>
           )
         })}
-        {soltosFim.length > 0 && <div className="mx-2 my-1.5 border-t border-lat-borda" />}
-        {soltosFim.map(solto)}
+        {soltosFim.length > 0 && <div className="mx-2 my-1.5 border-t border-white/15" />}
+        {soltosFim.map(itemFaixa)}
+      </div>
+      <div className="space-y-0.5 border-t border-white/15 pt-1.5">
+        <AlternarTema inicial={tema} className={botaoFaixa} />
+        {config && itemFaixa(config)}
+        <MenuPerfil nome={nome} papel={papel} className="flex w-full items-center justify-center rounded-lg py-2 outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60" />
       </div>
     </nav>
   )
@@ -171,14 +193,6 @@ const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (
 const item =
   'flex h-7 items-center gap-2 rounded-md px-2 text-legenda text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg'
 const ativo = 'bg-lat-ativo font-semibold text-lat-fg hover:bg-lat-ativo hover:text-lat-fg'
-
-function TituloSecao({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex h-7 items-center px-2">
-      <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">{children}</h2>
-    </div>
-  )
-}
 
 function idArrastavel(tipo: TipoArrastavel, id: string) {
   return `${tipo}:${id}`
@@ -291,9 +305,10 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
   return cartao ? <section className="rounded-xl border border-lat-borda p-1.5">{corpo}</section> : <div>{corpo}</div>
 }
 
-/** Barra dos espaços: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos. */
-export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
+/** Segunda barra: cada departamento (espaço) com as suas pastas e listas. No celular, também os atalhos dos módulos, o tema e o perfil. */
+export function PainelEspacos({ navegacao, papel, nome, cronometro, fechados: fechadosIniciais = [], ordemInicio = [], chatNaoLidas = 0, tema, acaoTopo, comAtalhos = false }: PropsPainel & { acaoTopo?: ReactNode; /** Atalhos dos módulos no topo (no celular, onde não há a faixa de ícones). */ comAtalhos?: boolean }) {
   const caminho = usePathname()
+  const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   const [fechados, setFechados] = useState(() => new Set(fechadosIniciais))
   const recolhimento = useMemo(
     () => ({
@@ -352,16 +367,19 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
       <div className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${movendo ? 'pointer-events-none opacity-70' : ''}`}>
         {comAtalhos && (
           <>
-            <TituloSecao>Início</TituloSecao>
+            <div className="flex h-7 items-center px-2">
+              <h2 className="min-w-0 flex-1 text-legenda font-semibold tracking-rotulo text-lat-3">Início</h2>
+            </div>
             <ListaOrdenavel
               className="space-y-0.5"
               cookie={COOKIE_ORDEM_INICIO}
               ordemInicial={ordemInicio}
-              itens={atalhosDoInicio(papel, chatNaoLidas).map((a) => ({ id: a.id, no: link(a.href, a.rotulo, a.Icone, a.contador) }))}
+              itens={atalhos.map((a) => ({ id: a.id, no: link(a.href, a.rotulo, a.Icone, a.contador) }))}
             />
             <div className="mx-2 my-3 border-t border-lat-borda" />
           </>
         )}
+
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
@@ -394,8 +412,14 @@ export function PainelEspacos({ navegacao, papel, cronometro, fechados: fechados
 
       </div>
 
-      <div className="shrink-0 border-t border-lat-borda p-2">
+      <div className="shrink-0 space-y-1 border-t border-lat-borda p-2">
         <IndicadorCronometro cronometro={cronometro} />
+        {comAtalhos && (
+          <div className="flex items-center gap-1">
+            <MenuPerfil nome={nome} papel={papel} lado="top" comNome className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-lat-hover focus-visible:ring-2 focus-visible:ring-marca" />
+            <AlternarTema inicial={tema} className="rounded-md p-2 text-lat-2 transition-colors hover:bg-lat-hover hover:text-lat-fg" />
+          </div>
+        )}
       </div>
     </div>
     </Recolhidos.Provider>
@@ -408,7 +432,7 @@ function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
 
-/** Camada 2 no desktop (ao lado da faixa de atalhos): a barra de espaços, abaixo do cabeçalho, recolhível e redimensionável. */
+/** Barra lateral do desktop, abaixo do cabeçalho: recolhível e redimensionável. */
 export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPainel & { modoInicial: ModoLateral; larguraInicial: number }) {
   const [modo, setModo] = useState(modoInicial)
   const [largura, setLargura] = useState(larguraInicial)

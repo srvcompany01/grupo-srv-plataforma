@@ -1,21 +1,18 @@
 'use client'
 
-import { LogOut, Menu, Search, Settings } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
-import { sair } from '@/app/(auth)/login/acoes'
-import { Avatar } from '@/componentes/Avatar'
 import { LogoGrupo } from '@/componentes/Marca'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import type { Aviso } from '@/servicos/avisos'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
 import { SinoAvisos } from './SinoAvisos'
 
-type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string; nome: string; papel: string }
+type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string }
 
-/** Barra do topo, fixa: nome da empresa, pesquisa global de tarefas, avisos, configurações e menu do usuário. No celular abre o menu lateral. */
-export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: Props) {
+/** Barra do topo, fixa: nome da empresa, pesquisa global de tarefas e avisos (configurações e perfil ficam no rodapé da barra lateral). No celular abre o menu lateral. */
+export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
   const busca = useRef<HTMLInputElement>(null)
 
   // Ctrl/⌘ + K foca a pesquisa.
@@ -63,28 +60,6 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, nome, papel }: P
 
       <div className="ml-auto flex items-center gap-1 sm:ml-0">
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
-        {papel === 'admin' && (
-          <Link href="/config" aria-label="Configurações" title="Configurações" className="hidden rounded-lg p-2 text-texto-2 transition hover:bg-hover hover:text-texto md:inline-flex">
-            <Settings className="h-[18px] w-[18px]" aria-hidden="true" />
-          </Link>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger aria-label={`Conta de ${nome}`} className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-petroleo/40">
-            <Avatar nome={nome || '?'} tamanho="h-8 w-8 text-rotulo" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="space-y-0.5">
-              <p className="truncate text-corpo font-semibold text-texto">{nome}</p>
-              <p className="truncate text-legenda font-normal capitalize text-texto-3">{papel}</p>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <form action={sair}>
-              <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-corpo text-texto-2 outline-none transition hover:bg-hover hover:text-texto focus-visible:bg-hover">
-                <LogOut className="h-4 w-4" aria-hidden="true" /> Sair
-              </button>
-            </form>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </header>
   )

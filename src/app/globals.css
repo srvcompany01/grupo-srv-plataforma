@@ -201,12 +201,13 @@ body {
   --c-ink: #202020;
 }
 
-/* Área logada: branco e preto com cinzas neutros e um azul de apoio (links, foco, gráficos). */
+/* Área logada, tema claro (principal): preto na ação, vermelho SRV no destaque, neutros frios. O escuro vem logo abaixo. */
 body:has(.app-ui) {
   --tema-acao: #111111;
-  --tema-acento: #3b5bdb;
-  --tema-fundo: #ffffff;
+  --tema-acento: #d80d12;
+  --tema-fundo: #f7f7f8;
   --tema-superficie: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Helvetica, Arial, sans-serif;
   --c-texto: #111111;
   --c-texto-2: #404040;
   --c-texto-3: #6f6f6f;
@@ -219,8 +220,8 @@ body:has(.app-ui) {
   --c-sucesso-fundo: #e6f6e9;
   --c-aviso-forte: #7a5a00;
   --c-aviso-fundo: #fff3cf;
-  --c-azul: #3b5bdb;
-  --c-azul-fundo: #e8edfd;
+  --c-azul: #1d6fe0;
+  --c-azul-fundo: #e6f0fb;
   --c-areia: #f4f4f5;
   --c-pale-purple: #eef0fd;
   --c-pale-pink: #fdeef7;
@@ -230,12 +231,12 @@ body:has(.app-ui) {
   --c-shadow-cartao: none;
   --c-shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
   --c-ink: #111111;
-  --lat-bg: #fcfcfc;
+  --lat-bg: #f9f9f9;
   --lat-fg: #111111;
   --lat-2: rgba(17, 17, 17, 0.72);
   --lat-3: rgba(17, 17, 17, 0.55);
   --lat-hover: rgba(0, 0, 0, 0.04);
-  --lat-ativo: rgba(0, 0, 0, 0.06);
+  --lat-ativo: rgba(216, 13, 18, 0.09);
   --lat-borda: #ececec;
   --foreground: #111111;
   --card-foreground: #111111;
@@ -252,6 +253,72 @@ body:has(.app-ui) {
   --input: #dcdcdc;
   --linha-lista: #f0f0f0;
   color-scheme: light;
+}
+
+/* Área logada, tema escuro (botão sol/lua): ação em vermelho SRV com texto branco, superfícies em camadas (#0E0E10 / #18181B / #232327). */
+body:has(.app-ui[data-tema='escuro']) {
+  --tema-acao: #d80d12;
+  --tema-acento: #ff5a5f;
+  --tema-fundo: #0e0e10;
+  --tema-superficie: #18181b;
+  --c-texto: #f4f4f5;
+  --c-texto-2: #c9c9ce;
+  --c-texto-3: #9b9ba3;
+  --c-borda: rgba(255, 255, 255, 0.11);
+  --c-borda-forte: rgba(255, 255, 255, 0.24);
+  --c-perigo-forte: #ff8084;
+  --c-perigo-borda: rgba(229, 72, 77, 0.45);
+  --c-perigo-fundo: rgba(229, 72, 77, 0.15);
+  --c-sucesso-forte: #52d28c;
+  --c-sucesso-fundo: rgba(48, 164, 108, 0.16);
+  --c-aviso-forte: #ffd666;
+  --c-aviso-fundo: rgba(255, 197, 61, 0.14);
+  --c-azul: #7da2ff;
+  --c-azul-fundo: rgba(100, 142, 252, 0.16);
+  --c-areia: #232327;
+  --c-pale-purple: rgba(100, 142, 252, 0.14);
+  --c-pale-pink: rgba(211, 22, 139, 0.16);
+  --c-pale-orange: rgba(255, 69, 0, 0.16);
+  --c-trilho: #f4f4f5;
+  --c-carbon: #f4f4f5;
+  --c-shadow-cartao: none;
+  --c-shadow-flutuante: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --c-ink: #ffffff;
+  --lat-bg: #131315;
+  --lat-fg: #f4f4f5;
+  --lat-2: rgba(244, 244, 245, 0.76);
+  --lat-3: rgba(244, 244, 245, 0.56);
+  --lat-hover: rgba(255, 255, 255, 0.07);
+  --lat-ativo: rgba(255, 90, 95, 0.18);
+  --lat-borda: rgba(255, 255, 255, 0.1);
+  --foreground: #f4f4f5;
+  --card-foreground: #f4f4f5;
+  --popover-foreground: #f4f4f5;
+  --primary-foreground: #ffffff;
+  --secondary: #232327;
+  --secondary-foreground: #f4f4f5;
+  --muted: #232327;
+  --muted-foreground: #9b9ba3;
+  --accent: #232327;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ff5a5f;
+  --border: rgba(255, 255, 255, 0.11);
+  --input: rgba(255, 255, 255, 0.22);
+  --linha-lista: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
+/* Escala do design (medidas do ClickUp): tamanhos em múltiplos de 4, raios e elevações 1–5. Usados pelos componentes novos. */
+:root {
+  --cu-size-1: 4px; --cu-size-2: 8px; --cu-size-3: 12px; --cu-size-4: 16px; --cu-size-5: 20px; --cu-size-6: 24px; --cu-size-7: 28px; --cu-size-8: 32px;
+  --cu-radii-1: 2px; --cu-radii-2: 4px; --cu-radii-3: 6px; --cu-radii-4: 8px; --cu-radii-5: 10px; --cu-radii-6: 12px; --cu-radii-7: 16px; --cu-radii-8: 20px; --cu-radii-9: 24px;
+  --cu-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.055);
+  --cu-elevation-2: 0 1px 3px rgba(0, 0, 0, 0.106), 0 1px 2px -1px rgba(0, 0, 0, 0.106);
+  --cu-elevation-3: 0 4px 6px -1px rgba(0, 0, 0, 0.106), 0 2px 4px -2px rgba(0, 0, 0, 0.106);
+  --cu-elevation-4: 0 10px 15px -3px rgba(0, 0, 0, 0.106), 0 4px 6px -4px rgba(0, 0, 0, 0.106);
+  --cu-elevation-5: 0 20px 25px -5px rgba(0, 0, 0, 0.106), 0 8px 10px -6px rgba(0, 0, 0, 0.106);
+  --cu-ring: 0 0 1px 0 rgba(0, 0, 0, 0.267);
+  --faixa-bg: linear-gradient(180deg, #1d1d20 0%, #0b0b0c 100%);
 }
 
 @layer base {
@@ -419,3 +486,6 @@ body:has(.app-ui) nav svg { stroke-width: 1.6; }
   --h-superficie: #f7f7f8;
   background: var(--color-fundo);
 }
+
+/* Tipografia da área logada: pilha de sistema também nos controles, títulos e portais (menus, diálogos). */
+body:has(.app-ui) :is(button, input, select, textarea, h1, h2, h3, h4, .font-display, .page-title, .eyebrow) { font-family: inherit; }

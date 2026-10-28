@@ -22,10 +22,11 @@ export const ROTULO_COR_TEMA: Record<keyof Tema, { nome: string; dica: string }>
   superficie: { nome: 'Superfície', dica: 'Cartões, menus e campos' },
 }
 
-export const TEMA_PADRAO: Tema = { acao: '#111111', acento: '#3b5bdb', fundo: '#ffffff', superficie: '#ffffff' }
+export const TEMA_PADRAO: Tema = { acao: '#111111', acento: '#d80d12', fundo: '#f7f7f8', superficie: '#ffffff' }
 
 export const PREDEFINICOES: { nome: string; tema: Tema }[] = [
-  { nome: 'ElevenLabs', tema: TEMA_PADRAO },
+  { nome: 'SRV', tema: TEMA_PADRAO },
+  { nome: 'Neutro azul', tema: { acao: '#111111', acento: '#3b5bdb', fundo: '#ffffff', superficie: '#ffffff' } },
   { nome: 'Reddit', tema: { acao: '#d93900', acento: '#d93900', fundo: '#f6f9fb', superficie: '#ffffff' } },
   { nome: 'Floresta', tema: { acao: '#0f7a5c', acento: '#0f7a5c', fundo: '#f4f8f6', superficie: '#ffffff' } },
   { nome: 'Grafite', tema: { acao: '#27272a', acento: '#d93900', fundo: '#f5f5f4', superficie: '#ffffff' } },

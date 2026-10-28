@@ -37,9 +37,18 @@ export function lerOrdem(valor: string | undefined): string[] {
 
 export const escreverOrdem = (ids: string[]): string => ids.join('.')
 
+/** Ordem de uma lista que acabou de ser reorganizada + a ordem das outras listas que já estava salva (mesmo cookie). */
+export const mesclarOrdem = (novaDaLista: string[], salva: string[]): string[] => [...novaDaLista, ...salva.filter((id) => !novaDaLista.includes(id))].slice(0, 40)
+
 /** Aplica a ordem salva. Itens que não estão nela (novos) ficam no fim, na ordem padrão; ids salvos que sumiram são ignorados. */
 export function ordenarItens<T extends { id: string }>(itens: T[], ordem: string[]): T[] {
   const posicao = new Map(ordem.map((id, i) => [id, i]))
   const conhecidos = itens.filter((i) => posicao.has(i.id)).sort((a, b) => posicao.get(a.id)! - posicao.get(b.id)!)
   return [...conhecidos, ...itens.filter((i) => !posicao.has(i.id))]
 }
+
+export const COOKIE_TEMA = 'srv-tema'
+export type ModoTema = 'claro' | 'escuro'
+
+/** Tema escolhido pela pessoa (botão sol/lua). O padrão e o principal é o claro; qualquer valor estranho cai nele. */
+export const lerModoTema = (valor: string | undefined): ModoTema => (valor === 'escuro' ? 'escuro' : 'claro')

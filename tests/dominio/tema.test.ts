@@ -26,7 +26,7 @@ it('bloqueia combinações ilegíveis', () => {
 it('cai no padrão quando o valor salvo é inválido', () => {
   expect(lerTema(null)).toEqual(TEMA_PADRAO)
   expect(lerTema({ acao: 'x' })).toEqual(TEMA_PADRAO)
-  expect(cssTema(TEMA_PADRAO)).toBe('body:has(.app-ui){--tema-acao:#111111;--tema-acento:#3b5bdb;--tema-fundo:#ffffff;--tema-superficie:#ffffff}')
+  expect(cssTema(TEMA_PADRAO)).toBe('body:has(.app-ui){--tema-acao:#111111;--tema-acento:#d80d12;--tema-fundo:#f7f7f8;--tema-superficie:#ffffff}')
 })
 
 it('temas escuros salvos antes caem no padrão claro (não passam na validação)', () => {

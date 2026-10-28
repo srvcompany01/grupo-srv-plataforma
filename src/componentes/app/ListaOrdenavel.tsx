@@ -4,11 +4,13 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type D
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useId, useRef, useState, type ReactNode } from 'react'
-import { escreverOrdem, ordenarItens } from '@/dominio/tema-lateral'
+import { escreverOrdem, lerOrdem, mesclarOrdem, ordenarItens } from '@/dominio/tema-lateral'
 
 function gravarCookie(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
+
+const lerCookie = (chave: string): string | undefined => document.cookie.split('; ').find((c) => c.startsWith(`${chave}=`))?.slice(chave.length + 1)
 
 type ItemOrdenavel = { id: string; no: ReactNode }
 
@@ -50,8 +52,10 @@ export function ListaOrdenavel({ itens, ordemInicial, cookie, className }: { ite
     if (!over || active.id === over.id) return
     const ids = exibidos.map((i) => i.id)
     const proxima = arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)))
-    setOrdem(proxima)
-    gravarCookie(cookie, escreverOrdem(proxima))
+    // Várias listas (atalhos soltos, cada grupo, menu do celular) dividem o mesmo cookie: só a deste grupo é reordenada.
+    const completa = mesclarOrdem(proxima, lerOrdem(lerCookie(cookie)))
+    setOrdem(completa)
+    gravarCookie(cookie, escreverOrdem(completa))
   }
 
   return (

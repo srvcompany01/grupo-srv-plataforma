@@ -20,3 +20,11 @@ it('lembra quais espaços e pastas estão recolhidos', async () => {
   expect(lerFechados(escreverFechados([a, b]))).toEqual([a, b])
   expect(lerFechados(Array.from({ length: 100 }, (_, i) => `00000000-0000-0000-0000-${String(i).padStart(12, '0')}`).join('.'))).toHaveLength(60)
 })
+
+it('tema claro é o padrão; só "escuro" liga o modo noturno', async () => {
+  const { lerModoTema } = await import('@/dominio/tema-lateral')
+  expect(lerModoTema(undefined)).toBe('claro')
+  expect(lerModoTema('claro')).toBe('claro')
+  expect(lerModoTema('qualquer')).toBe('claro')
+  expect(lerModoTema('escuro')).toBe('escuro')
+})
