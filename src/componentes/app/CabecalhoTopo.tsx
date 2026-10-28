@@ -1,37 +1,35 @@
 'use client'
 
-import { Menu, Search } from 'lucide-react'
+import { CalendarDays, ListChecks, Menu, Search } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useCallback, useState } from 'react'
 import { LogoGrupo } from '@/componentes/Marca'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
+import { AtalhosDialog } from './AtalhosDialog'
+import { AtalhosGlobais } from './AtalhosGlobais'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
+import { PaletaComandos } from './PaletaComandos'
 import { SinoAvisos } from './SinoAvisos'
 
 type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: string }
 
-/** Barra do topo, fixa: nome da empresa, pesquisa global de tarefas e avisos (configurações e perfil ficam no rodapé da barra lateral). No celular abre o menu lateral. */
-export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
-  const busca = useRef<HTMLInputElement>(null)
+const botaoIcone = 'flex h-6 w-6 items-center justify-center rounded-md text-texto-3 transition-colors hover:bg-ink/10 hover:text-texto'
 
-  // Ctrl/⌘ + K foca a pesquisa.
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        busca.current?.focus()
-        busca.current?.select()
-      }
-    }
-    window.addEventListener('keydown', aoTeclar)
-    return () => window.removeEventListener('keydown', aoTeclar)
-  }, [])
+/**
+ * Barra do topo, fixa, de 40px: logo da empresa, busca central que abre a paleta ⌘K, atalhos (Minhas tarefas, Agenda) e avisos.
+ * Configurações, tema e perfil ficam no pé da faixa de ícones. No celular abre o menu lateral.
+ */
+export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
+  const [paleta, setPaleta] = useState(false)
+  const [ajuda, setAjuda] = useState(false)
+  const abrirPaleta = useCallback(() => setPaleta(true), [])
+  const abrirAjuda = useCallback(() => setAjuda(true), [])
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-borda bg-white px-3 md:px-5">
+    <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center gap-2 border-b border-borda bg-white px-2 md:px-3">
       <Sheet>
-        <SheetTrigger aria-label="Abrir menu" className="rounded-lg p-2 hover:bg-hover md:hidden">
+        <SheetTrigger aria-label="Abrir menu" className="rounded-md p-1.5 hover:bg-hover md:hidden">
           <Menu className="h-5 w-5" aria-hidden="true" />
         </SheetTrigger>
         <SheetContent side="left" className="w-[300px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
@@ -40,27 +38,31 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId }: Props) {
         </SheetContent>
       </Sheet>
 
-      <Link href="/inicio" aria-label="Grupo SRV, ir para o início" className="flex shrink-0 items-center">
+      <Link href="/home" aria-label="Grupo SRV, ir para a Home" className="flex shrink-0 items-center rounded-md px-1.5 py-1 hover:bg-ink/10">
         <LogoGrupo altura="h-4" />
       </Link>
 
-      <form action="/painel-de-gestao" method="get" role="search" className="relative mx-auto hidden w-full max-w-md sm:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" aria-hidden="true" />
-        <input
-          ref={busca}
-          name="busca"
-          type="search"
-          autoComplete="off"
-          aria-label="Pesquisar tarefas"
-          placeholder="Pesquisar tarefas…"
-          className="h-9 w-full rounded-lg border border-borda bg-fundo pl-9 pr-12 text-corpo outline-none transition placeholder:text-texto-3 hover:border-borda-forte focus:border-petroleo focus:bg-white focus:ring-3 focus:ring-petroleo/15"
-        />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 controle rounded border border-borda bg-white px-1.5 text-legenda text-texto-3">⌘ K</kbd>
-      </form>
+      <button
+        type="button"
+        onClick={abrirPaleta}
+        aria-label="Pesquisar (⌘K)"
+        className="controle mx-auto hidden h-7 w-full max-w-sm items-center gap-1 rounded-full border border-borda bg-white px-2 text-destaque font-medium text-texto-3 transition-colors hover:bg-hover sm:flex"
+      >
+        <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="flex-1 text-left">Pesquisar</span>
+        <kbd className="text-rotulo font-medium text-texto-3/80">⌘ K</kbd>
+      </button>
 
-      <div className="ml-auto flex items-center gap-1 sm:ml-0">
+      <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
+        <button type="button" onClick={abrirPaleta} aria-label="Pesquisar" className={`${botaoIcone} sm:hidden`}><Search className="h-4 w-4" /></button>
+        <Link href="/inicio" aria-label="Minhas tarefas" title="Minhas tarefas (I)" className={botaoIcone}><ListChecks className="h-4 w-4" /></Link>
+        <Link href="/agenda" aria-label="Agenda" title="Agenda (A)" className={botaoIcone}><CalendarDays className="h-4 w-4" /></Link>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
       </div>
+
+      <AtalhosGlobais aoAbrirPaleta={abrirPaleta} aoAbrirAjuda={abrirAjuda} />
+      <PaletaComandos aberta={paleta} aoMudar={setPaleta} navegacao={painel.navegacao} papel={painel.papel} chatNaoLidas={painel.chatNaoLidas ?? 0} aoAbrirAjuda={abrirAjuda} />
+      <AtalhosDialog aberto={ajuda} aoMudar={setAjuda} />
     </header>
   )
 }

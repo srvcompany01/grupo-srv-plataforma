@@ -1,23 +1,22 @@
 'use client'
 
 import { Moon, Sun } from 'lucide-react'
-import { useState } from 'react'
-import { COOKIE_TEMA, type ModoTema } from '@/dominio/tema-lateral'
+import { useEffect, useState } from 'react'
+import type { ModoTema } from '@/dominio/tema-lateral'
+import { alternarTemaGlobal, EVENTO_TEMA } from './tema-cliente'
 
-/** Botão sol/lua: troca claro e escuro na hora (atributo `data-tema` na área logada) e lembra a escolha em cookie. Claro é o padrão. */
+/** Botão sol/lua: troca claro e escuro na hora e lembra a escolha. Claro é o padrão. Acompanha trocas feitas por outros lugares (paleta ⌘K). */
 export function AlternarTema({ inicial, className = '', comRotulo = false }: { inicial: ModoTema; className?: string; comRotulo?: boolean }) {
   const [modo, setModo] = useState<ModoTema>(inicial)
-  const alternar = () => {
-    const novo: ModoTema = modo === 'escuro' ? 'claro' : 'escuro'
-    setModo(novo)
-    document.querySelector('.app-ui')?.setAttribute('data-tema', novo)
-    document.cookie = `${COOKIE_TEMA}=${novo}; path=/; max-age=31536000; samesite=lax`
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', novo === 'escuro' ? '#0e0e10' : '#ffffff')
-  }
+  useEffect(() => {
+    const ouvir = (e: Event) => setModo((e as CustomEvent<ModoTema>).detail)
+    window.addEventListener(EVENTO_TEMA, ouvir)
+    return () => window.removeEventListener(EVENTO_TEMA, ouvir)
+  }, [])
   const Icone = modo === 'escuro' ? Sun : Moon
   const rotulo = modo === 'escuro' ? 'Tema claro' : 'Tema escuro'
   return (
-    <button type="button" onClick={alternar} title={rotulo} aria-label={rotulo} className={className}>
+    <button type="button" onClick={() => alternarTemaGlobal()} title={rotulo} aria-label={rotulo} className={className}>
       <Icone className="h-5 w-5" aria-hidden="true" />
       {comRotulo && <span>{rotulo}</span>}
     </button>

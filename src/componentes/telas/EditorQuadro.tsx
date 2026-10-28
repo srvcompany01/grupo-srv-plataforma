@@ -372,7 +372,7 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
   const temPreenchimento = selecionados.some((e) => e.tipo === 'nota' || e.tipo === 'retangulo' || e.tipo === 'elipse' || e.tipo === 'losango')
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
+    <div className="flex h-[calc(100dvh-2.5rem)] flex-col">
       <BarraTela
         tipo="quadro"
         id={id}

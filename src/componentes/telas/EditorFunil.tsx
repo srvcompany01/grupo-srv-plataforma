@@ -181,7 +181,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
   const recebe = (idNo: string) => dados.ligacoes.some((l) => l.para === idNo)
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
+    <div className="flex h-[calc(100dvh-2.5rem)] flex-col">
       <BarraTela
         tipo="funil"
         id={id}

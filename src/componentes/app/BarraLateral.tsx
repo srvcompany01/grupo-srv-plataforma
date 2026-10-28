@@ -38,6 +38,7 @@ import { IconeVisual } from '@/componentes/IconeVisual'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
+import { EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
 import { LinhaNavegacao, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
@@ -53,7 +54,7 @@ type IconeLucide = ComponentType<{ className?: string }>
 type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
 
 /** Atalhos dos módulos: na faixa de ícones (desktop) e no topo do menu (celular). `curto` = rótulo da faixa. */
-function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
+export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
   return [
     { id: 'home', href: '/home', rotulo: 'Home', curto: 'Home', Icone: House },
     { id: 'tarefas', href: '/inicio', rotulo: 'Minhas tarefas', curto: 'Tarefas', Icone: CheckSquare },
@@ -137,7 +138,7 @@ export function FaixaAtalhos({ papel, nome, chatNaoLidas = 0, ordemInicio = [], 
   const ordenar = (lista: Atalho[], classe: string) => <ListaOrdenavel className={classe} cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={lista.map((a) => ({ id: a.id, no: itemFaixa(a) }))} />
   const config = porId.get('config')
   return (
-    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-14 z-30 hidden h-[calc(100dvh-3.5rem)] w-16 shrink-0 flex-col justify-between px-1 py-1.5 md:flex">
+    <nav ref={faixa} aria-label="Módulos" style={{ background: 'var(--faixa-bg)' }} className="sticky top-10 z-30 hidden h-[calc(100dvh-2.5rem)] w-16 shrink-0 flex-col justify-between px-1 py-1.5 md:flex">
       <div className="min-h-0 space-y-0.5">
         {ordenar(soltosTopo, 'space-y-0.5')}
         <div className="mx-2 my-1.5 border-t border-white/15" />
@@ -451,6 +452,12 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
     if (atraso.current) clearTimeout(atraso.current)
     setAberta(true)
   }
+  // ⌘/Ctrl+\ alterna entre fixa e recolhida.
+  useEffect(() => {
+    const alternar = () => trocarModo(modo === 'recolhida' ? 'fixa' : 'recolhida')
+    window.addEventListener(EVENTO_ALTERNAR_BARRA, alternar)
+    return () => window.removeEventListener(EVENTO_ALTERNAR_BARRA, alternar)
+  })
   const fecharComAtraso = () => {
     if (atraso.current) clearTimeout(atraso.current)
     atraso.current = setTimeout(() => {
@@ -489,7 +496,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-14 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-16 top-10 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -497,10 +504,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-[calc(100dvh-3.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-2.5rem)] w-[var(--lat-w)] border-r border-lat-borda md:flex ${
           recolhida
-            ? `fixed bottom-0 left-16 top-14 z-40 shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
-            : 'sticky top-14 z-20 shrink-0'
+            ? `fixed bottom-0 left-16 top-10 z-40 shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            : 'sticky top-10 z-20 shrink-0'
         }`}
       >
         <PainelEspacos

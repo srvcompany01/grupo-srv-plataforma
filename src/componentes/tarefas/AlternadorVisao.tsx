@@ -35,7 +35,7 @@ export function AlternadorVisao({
       aria-current={filtros.visao === visao ? 'page' : undefined}
       className={`inline-flex items-center gap-1.5 text-rotulo font-semibold transition ${
         abas
-          ? `-mb-px border-b-2 px-1.5 py-1.5 ${filtros.visao === visao ? 'border-petroleo text-petroleo' : 'border-transparent text-texto-2 hover:border-borda-forte hover:text-texto'}`
+          ? `my-1.5 h-6 rounded-[5px] px-2 ${filtros.visao === visao ? 'bg-ink/10 text-texto' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
           : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
@@ -49,7 +49,7 @@ export function AlternadorVisao({
       {visoes.map(aba)}
       {abas && (
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 whitespace-nowrap px-1.5 py-1.5 text-rotulo font-medium text-texto-3 transition hover:text-texto">
+          <DropdownMenuTrigger className="my-1.5 inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-[5px] px-2 text-rotulo font-medium text-texto-3 transition hover:bg-hover hover:text-texto">
             <Plus className="h-4 w-4" /> Visualização
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
