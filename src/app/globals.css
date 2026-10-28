@@ -379,3 +379,13 @@ body:has(.app-ui) :is(.text-rotulo, .text-corpo, .text-legenda, .text-micro, .te
 body:has(.app-ui) .page-title { font-family: inherit; font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 body:has(.app-ui) .eyebrow { text-transform: none; letter-spacing: 0; font-size: 13px; font-family: inherit; }
 body:has(.app-ui) :is(h2, h3):not(.documento *, .artigo-blog *, .ProseMirror *) { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8125rem; }
+
+/* Home: referência "Sales statistics / Current balance" (sálvia claro, cartão preto, verde-menta e roxo). */
+.home-ui {
+  --h-preto: #1a1a1a;
+  --h-verde: #9dfa9d;
+  --h-roxo: #b388f5;
+  --h-claro: #eef2ee;
+  background: #dde4dd;
+}
+body .home-ui :is(h2, p).home-titulo { font-size: 1.125rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #111; }
