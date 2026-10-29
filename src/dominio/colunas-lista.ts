@@ -8,6 +8,17 @@ export const COLUNAS_PADRAO = [
   { id: 'status', nome: 'Status', padrao: false, largura: 150, minima: 110, maxima: 320 },
   { id: 'tagcliente', nome: 'Tag do cliente', padrao: false, largura: 150, minima: 100, maxima: 320 },
   { id: 'etiquetas', nome: 'Etiquetas', padrao: false, largura: 180, minima: 100, maxima: 480 },
+  { id: 'comentarios', nome: 'Comentários', padrao: false, largura: 100, minima: 70, maxima: 200 },
+  { id: 'criado_por', nome: 'Criado por', padrao: false, largura: 140, minima: 90, maxima: 320 },
+  { id: 'data_criada', nome: 'Data criada', padrao: false, largura: 110, minima: 84, maxima: 240 },
+  { id: 'data_atualizacao', nome: 'Data de atualização', padrao: false, largura: 130, minima: 100, maxima: 260 },
+  { id: 'data_conclusao', nome: 'Data de conclusão', padrao: false, largura: 130, minima: 100, maxima: 260 },
+  { id: 'data_inicial', nome: 'Data inicial', padrao: false, largura: 110, minima: 84, maxima: 240 },
+  { id: 'estimativa', nome: 'Estimativa de tempo', padrao: false, largura: 140, minima: 100, maxima: 260 },
+  { id: 'id_tarefa', nome: 'ID da tarefa', padrao: false, largura: 100, minima: 80, maxima: 200 },
+  { id: 'linha_tempo', nome: 'Linha do tempo', padrao: false, largura: 150, minima: 110, maxima: 300 },
+  { id: 'lista', nome: 'Listas', padrao: false, largura: 160, minima: 100, maxima: 320 },
+  { id: 'tempo_rastreado', nome: 'Tempo rastreado', padrao: false, largura: 130, minima: 100, maxima: 260 },
 ] as const
 
 export const COLUNA_NOME = { id: 'nome', largura: 360, minima: 160, maxima: 800 } as const

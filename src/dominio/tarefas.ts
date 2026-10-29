@@ -43,6 +43,15 @@ export type TarefaResumo = {
   comentarios?: number
   /** Valores dos campos vinculados à lista, indexados pelo id da definição. */
   camposPersonalizados?: Record<string, Json | null>
+  /** ISO de criação e da última atualização. */
+  criadaEm?: string
+  atualizadaEm?: string
+  /** YYYY-MM-DD de início. */
+  inicio?: string | null
+  estimativaMin?: number | null
+  criadoPorNome?: string
+  /** Soma dos lançamentos de tempo já encerrados, em segundos. */
+  tempoSeg?: number
 }
 
 export type No<T> = T & { filhos: No<T>[] }

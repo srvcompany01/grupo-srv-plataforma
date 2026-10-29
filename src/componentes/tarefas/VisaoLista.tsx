@@ -1,6 +1,7 @@
 'use client'
 
 import { Ic } from '@/componentes/app/Ic'
+import { PainelCampos } from './PainelCampos'
 import { EVENTO_ABRIR_COLUNAS } from '@/dominio/eventos-lista'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, ArrowLeftToLine, ArrowRightToLine, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
@@ -23,7 +24,6 @@ import { avisar } from './avisar'
 import { linhasVisiveis, useFaixaDeCelulas } from './usarFaixaDeCelulas'
 import { ConfigurarCampo } from './ConfigurarCampo'
 import { EditarCamposEmLote } from './EditarCamposEmLote'
-import { GerenciarCampos } from './GerenciarCampos'
 import { EtiquetaGrupo } from './EtiquetaGrupo'
 import { LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
@@ -101,7 +101,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const camposPorColuna = useMemo(() => new Map(campos.map((campo) => [`campo:${campo.id}`, campo])), [campos])
   /** Colunas opcionais fora da lista agora: ocultadas pelo usuário ou nativas que começam ocultas. */
   const colunasFora = [
-    ...COLUNAS_PADRAO.filter((c) => !visivel(c.id, config)).map((c) => ({ id: c.id, nome: c.nome, campo: undefined })),
+    ...COLUNAS_PADRAO.filter((c) => (c.padrao || ['status', 'tagcliente', 'etiquetas'].includes(c.id)) && !visivel(c.id, config)).map((c) => ({ id: c.id, nome: c.nome, campo: undefined })),
     ...campos.filter((campo) => !visivel(campo.id, config)).map((campo) => ({ id: campo.id, nome: campo.nome, campo })),
   ]
   const tarefas = useMemo(() => grupos.flatMap((grupo) => tarefasEmProfundidade(grupo.tarefas)), [grupos])
@@ -332,7 +332,6 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   }, [faixa, tarefaPorId, camposPorColuna, ctx.equipe])
 
   const contexto = { ...ctx, camposPersonalizados: campos, colunas, largurasColunas: larguras, selecionadas, alternarSelecao, faixa: faixaSets }
-  const colunasPadrao = COLUNAS_PADRAO.map((c) => ({ id: c.id, nome: c.nome, visivel: visivel(c.id, config) }))
 
   const menuDaColuna = (colunaId: string, gatilho: ReactNode, titulo: string) => {
     const bruto = idBruto(colunaId)
@@ -411,7 +410,19 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-corpo font-medium transition hover:bg-white/10"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
-      {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} colunasPadrao={colunasPadrao} aoAlternarColuna={alternarColuna} />}
+      <PainelCampos
+        aberto={novoCampo}
+        aoFechar={() => setNovoCampo(false)}
+        listaId={ctx.gerirCampos?.listaId ?? ''}
+        espacoId={ctx.gerirCampos?.espacoId ?? null}
+        camposDaLista={campos}
+        camposDoEspaco={ctx.gerirCampos?.camposDoEspaco ?? []}
+        podeGerir={!!ctx.gerirCampos}
+        colunas={colunas}
+        alternar={alternarColuna}
+        reordenar={(ids) => atualizarColunas({ ...config, ordem: ids })}
+        aoConfigurar={(id) => setConfigurando(id)}
+      />
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
       <div className="overflow-x-auto pb-2">

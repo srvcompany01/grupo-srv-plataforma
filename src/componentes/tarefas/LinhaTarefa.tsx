@@ -5,6 +5,7 @@ import { Ic } from '@/componentes/app/Ic'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { EVENTO_EXPANDIR_SUBTAREFAS } from '@/dominio/eventos-lista'
+import { formatarDuracao } from '@/dominio/formatar'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
@@ -61,6 +62,26 @@ export function gradeDaLista(colunas: string[], larguras: Record<string, number>
   return ['28px', '20px', '24px', nome, ...colunas.map((id) => `${larguraDaColuna(id, larguras)}px`), ...(comMais ? [`${LARGURA_NOVO_CAMPO}px`] : [])].join(' ')
 }
 
+const dia = (iso?: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '—')
+
+/** Texto de uma coluna nativa extra (as que não têm editor próprio). */
+export function valorDaColunaNativa(id: string, t: TarefaResumo): string {
+  switch (id) {
+    case 'comentarios': return String(t.comentarios ?? 0)
+    case 'criado_por': return t.criadoPorNome || '—'
+    case 'data_criada': return dia(t.criadaEm)
+    case 'data_atualizacao': return dia(t.atualizadaEm)
+    case 'data_conclusao': return dia(t.concluidaEm)
+    case 'data_inicial': return dia(t.inicio)
+    case 'estimativa': return t.estimativaMin ? formatarDuracao(t.estimativaMin * 60) : '—'
+    case 'id_tarefa': return `SRV-${t.id.slice(0, 4).toUpperCase()}`
+    case 'linha_tempo': return t.inicio || t.prazo ? `${dia(t.inicio)} → ${dia(t.prazo)}` : '—'
+    case 'lista': return t.listaNome || '—'
+    case 'tempo_rastreado': return t.tempoSeg ? formatarDuracao(t.tempoSeg) : '—'
+    default: return '—'
+  }
+}
+
 export { Prazo }
 
 export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto; euId: string }) {
@@ -103,6 +124,18 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         )
       case 'status':
         return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
+      case 'comentarios':
+      case 'criado_por':
+      case 'data_criada':
+      case 'data_atualizacao':
+      case 'data_conclusao':
+      case 'data_inicial':
+      case 'estimativa':
+      case 'id_tarefa':
+      case 'linha_tempo':
+      case 'lista':
+      case 'tempo_rastreado':
+        return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 truncate px-2 text-[13px] text-texto-2${realce(colunaId)}`}>{valorDaColunaNativa(colunaId, tarefa)}</span>
       case 'tagcliente':
         return (
           <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}>

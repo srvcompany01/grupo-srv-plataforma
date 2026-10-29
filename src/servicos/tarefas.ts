@@ -9,7 +9,9 @@ import { dados } from './resultado'
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
-const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
+const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes,
+  criador:profiles!tasks_created_by_fkey(full_name),
+  time_entries(duration_seconds),
   clients(id, name, color),
   lists!inner(name, space_id, reference_month, archived_at),
   task_assignees(profiles(id, full_name, avatar_url)),
@@ -71,6 +73,12 @@ type LinhaResumo = {
   task_assignees: { profiles: { id: string; full_name: string; avatar_url: string | null } | null }[]
   task_tags: { tags: { id: string; name: string; color: string } | null }[]
   comments: { count: number }[]
+  created_at: string
+  updated_at: string
+  start_date: string | null
+  estimate_minutes: number | null
+  criador: { full_name: string } | null
+  time_entries: { duration_seconds: number | null }[]
 }
 
 function paraResumo(t: LinhaResumo): TarefaResumo {
@@ -84,6 +92,12 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     posicao: t.position,
     concluidaEm: t.completed_at,
     comentarios: t.comments?.[0]?.count ?? 0,
+    criadaEm: t.created_at,
+    atualizadaEm: t.updated_at,
+    inicio: t.start_date,
+    estimativaMin: t.estimate_minutes,
+    criadoPorNome: t.criador?.full_name ?? '',
+    tempoSeg: (t.time_entries ?? []).reduce((s, x) => s + (x.duration_seconds ?? 0), 0),
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',
     clienteId: t.clients?.id ?? '',

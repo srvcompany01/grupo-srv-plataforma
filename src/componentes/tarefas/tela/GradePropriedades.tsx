@@ -58,9 +58,6 @@ export function GradePropriedades({
   const [novaTag, setNovaTag] = useState('')
   const [editandoEstimativa, setEditandoEstimativa] = useState(false)
   const salvar = (campos: Parameters<typeof atualizarTarefaAcao>[1]) => iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, campos)))
-  const atual = status.find((s) => s.id === t.statusId)
-  const concluido = status.find((s) => s.categoria === 'done')
-  const proximo = status[status.findIndex((s) => s.id === t.statusId) + 1]
   const vencida = !!t.prazo && !t.concluidaEm && t.prazo < hoje
   const horas = t.estimativaMin != null ? Math.floor(t.estimativaMin / 60) : ''
   const minutos = t.estimativaMin != null ? t.estimativaMin % 60 : ''
