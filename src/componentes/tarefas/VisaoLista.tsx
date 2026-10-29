@@ -465,7 +465,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                 )}
               </div>
               {g.tarefas.map((t) => (
-                <LinhaTarefa key={t.id} tarefa={t} nivel={0} ctx={contexto} euId={euId} />
+                <LinhaTarefa key={`${t.id}-${ctx.subtarefasAbertas ? 'a' : 'f'}`} tarefa={t} nivel={0} ctx={contexto} euId={euId} />
               ))}
               {criarEm && <NovaTarefa listaId={criarEm} statusId={g.statusId} euId={euId} />}
             </>

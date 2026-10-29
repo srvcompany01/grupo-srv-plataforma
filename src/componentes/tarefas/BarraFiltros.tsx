@@ -1,7 +1,7 @@
 'use client'
 
 import { Ic } from '@/componentes/app/Ic'
-import { EVENTO_ABRIR_COLUNAS, EVENTO_EXPANDIR_SUBTAREFAS } from '@/dominio/eventos-lista'
+import { EVENTO_ABRIR_COLUNAS } from '@/dominio/eventos-lista'
 import { ChevronDown, CircleDot, Flag, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -144,7 +144,22 @@ export function BarraFiltros({
       )}
       {comAgrupamento && (
         <>
-          <button type="button" title="Expandir/recolher subtarefas" aria-label="Expandir ou recolher subtarefas" onClick={() => window.dispatchEvent(new Event(EVENTO_EXPANDIR_SUBTAREFAS))} className="b-icon"><Ic n="account_tree" s={16} /></button>
+          <Popover>
+            <PopoverTrigger title="Subtarefas" aria-label="Opções de subtarefas" className={`b-icon ${filtros.subtarefas === 'planas' || filtros.expandidas ? 'on' : ''}`} style={filtros.subtarefas === 'planas' ? { background: 'var(--bg-active)', color: 'var(--text)' } : undefined}><Ic n="account_tree" s={16} /></PopoverTrigger>
+            <PopoverContent align="start" className="w-80 gap-3 p-3">
+              {([
+                { chave: 'expandidas', titulo: 'Expandir subtarefas', texto: 'As tarefas já abrem mostrando as subtarefas.', ligado: filtros.expandidas, desabilitado: filtros.subtarefas === 'planas', mudar: () => aplicar({ expandidas: !filtros.expandidas }) },
+                { chave: 'planas', titulo: 'Subtarefas como tarefas principais', texto: 'Mostra só as subtarefas, soltas, e esconde as tarefas-mãe. Assim os posts aparecem juntos e dá para agrupar por formato, mês e outros campos.', ligado: filtros.subtarefas === 'planas', desabilitado: false, mudar: () => aplicar({ subtarefas: filtros.subtarefas === 'planas' ? 'normal' : 'planas' }) },
+              ] as const).map((o) => (
+                <div key={o.chave} className="flex items-start gap-3" style={{ opacity: o.desabilitado ? 0.5 : 1 }}>
+                  <span className="min-w-0 flex-1"><span className="block text-[13px] font-medium text-texto">{o.titulo}</span><span className="block text-[12px] leading-4 text-texto-3">{o.texto}</span></span>
+                  <button type="button" role="switch" aria-checked={o.ligado} aria-label={o.titulo} disabled={o.desabilitado} onClick={o.mudar} style={{ width: 28, height: 16, flex: 'none', marginTop: 2, borderRadius: 8, border: 0, padding: 0, position: 'relative', cursor: 'pointer', background: o.ligado ? 'var(--primary)' : 'var(--border-strong)', transition: 'background 150ms' }}>
+                    <span style={{ position: 'absolute', top: 2, left: o.ligado ? 14 : 2, width: 12, height: 12, borderRadius: '50%', background: 'var(--bg)', transition: 'left 150ms' }} />
+                  </button>
+                </div>
+              ))}
+            </PopoverContent>
+          </Popover>
           <button type="button" title="Colunas" aria-label="Colunas" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_COLUNAS))} className="b-icon"><Ic n="view_week" s={16} /></button>
         </>
       )}

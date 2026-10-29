@@ -26,6 +26,8 @@ describe('filtros', () => {
       campos: [],
       semConcluidas: false,
       logica: 'e',
+      subtarefas: 'normal',
+      expandidas: false,
     })
   })
 

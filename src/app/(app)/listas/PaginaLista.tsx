@@ -69,7 +69,12 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const tarefas = filtros.semConcluidas ? todasAsTarefas.filter((t) => !t.concluidaEm) : todasAsTarefas
   // Lista de conteúdo: as tarefas-mãe onde os posts nascem como subtarefas.
   const maes = tipo === 'conteudo' ? (await tarefasMaeDeConteudo(sb).catch(() => [])).filter((m) => m.listaId === id) : []
-  const arvore = montarArvore(tarefas)
+  // "Subtarefas como tarefas principais": só as subtarefas entram, soltas e sem as mães, para olhar os posts de forma unificada
+  // (e agrupar por formato, mês etc.). Cada uma guarda o título da mãe de origem.
+  const tituloDaMae = new Map(tarefas.map((t) => [t.id, t.titulo]))
+  const arvore = filtros.subtarefas === 'planas'
+    ? montarArvore(tarefas.filter((t) => t.paiId).map((t) => ({ ...t, paiTitulo: tituloDaMae.get(t.paiId as string), paiId: null })))
+    : montarArvore(tarefas)
   const tagsCliente = clientes
     .filter((cliente) => cliente.status !== 'encerrado' || cliente.id === lista.cliente.id)
     .map((cliente) => ({ id: cliente.id, nome: cliente.nome, cor: cliente.cor }))
@@ -78,6 +83,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
     hoje,
     statusPorLista: { [id]: lista.status },
     mostrarLista: false,
+    subtarefasAbertas: filtros.expandidas,
     camposPersonalizados: camposDaLista,
     tagsCliente,
     podeGerirTagCliente: lista.podeGerir,

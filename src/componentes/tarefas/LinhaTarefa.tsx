@@ -3,8 +3,7 @@
 import { CornerDownRight } from 'lucide-react'
 import { Ic } from '@/componentes/app/Ic'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { EVENTO_EXPANDIR_SUBTAREFAS } from '@/dominio/eventos-lista'
+import { useState } from 'react'
 import { formatarDuracao } from '@/dominio/formatar'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
@@ -25,6 +24,8 @@ export type Contexto = {
   /** Status por lista (no departamento há tarefas de várias listas). */
   statusPorLista: Record<string, StatusLista[]>
   mostrarLista: boolean
+  /** Subtarefas já abertas ao carregar (opção do botão de subtarefas da barra). */
+  subtarefasAbertas?: boolean
   camposPersonalizados?: DefinicaoCampo[]
   /** Ids das colunas após Nome, na ordem: nativas (`status`) e campos (`campo:<id>`). */
   colunas?: string[]
@@ -85,14 +86,7 @@ export function valorDaColunaNativa(id: string, t: TarefaResumo): string {
 export { Prazo }
 
 export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto; euId: string }) {
-  const [aberta, setAberta] = useState(false)
-  // Botão "expandir/recolher subtarefas" da barra: alterna todas as linhas que têm subtarefas.
-  useEffect(() => {
-    if (!tarefa.filhos.length) return
-    const alternar = () => setAberta((a) => !a)
-    window.addEventListener(EVENTO_EXPANDIR_SUBTAREFAS, alternar)
-    return () => window.removeEventListener(EVENTO_EXPANDIR_SUBTAREFAS, alternar)
-  }, [tarefa.filhos.length])
+  const [aberta, setAberta] = useState(ctx.subtarefasAbertas ?? false)
   const [criandoSubtarefa, setCriandoSubtarefa] = useState(false)
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   const colunas = colunasDoContexto(ctx)
@@ -189,6 +183,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           {tarefa.filhos.length > 0 && (
             <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] text-texto-3"><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
           )}
+          {tarefa.paiTitulo && <span className="hidden max-w-[40%] shrink truncate text-[12px] text-texto-3 lg:inline" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
           {ctx.mostrarLista && <span className="hidden truncate text-[12px] text-texto-3 xl:inline" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
           <button
             type="button"

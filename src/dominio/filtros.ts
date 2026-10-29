@@ -29,6 +29,10 @@ export type Filtros = {
   semConcluidas: boolean
   /** 'e' = a tarefa precisa passar em todos os filtros; 'ou' = basta passar em um. */
   logica: 'e' | 'ou'
+  /** 'normal' = subtarefas dentro das tarefas-mãe; 'planas' = só as subtarefas, como tarefas principais (as mães somem). */
+  subtarefas: 'normal' | 'planas'
+  /** Abre as subtarefas já expandidas na Lista. */
+  expandidas: boolean
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -60,6 +64,8 @@ export function lerFiltros(sp: Params): Filtros {
     campos: lista(sp, 'cal').filter((id) => UUID.test(id)),
     semConcluidas: valor(sp, 'semconcl') === '1',
     logica: valor(sp, 'logica') === 'ou' ? 'ou' : 'e',
+    subtarefas: valor(sp, 'subs') === 'planas' ? 'planas' : 'normal',
+    expandidas: valor(sp, 'abertas') === '1',
   }
 }
 
@@ -80,6 +86,8 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   por('cal', f.campos)
   if (f.semConcluidas) sp.set('semconcl', '1')
   if (f.logica === 'ou') sp.set('logica', 'ou')
+  if (f.subtarefas === 'planas') sp.set('subs', 'planas')
+  if (f.expandidas) sp.set('abertas', '1')
   return sp
 }
 

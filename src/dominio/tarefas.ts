@@ -52,6 +52,8 @@ export type TarefaResumo = {
   criadoPorNome?: string
   /** Soma dos lançamentos de tempo já encerrados, em segundos. */
   tempoSeg?: number
+  /** Só no modo "subtarefas como tarefas principais": título da tarefa-mãe de origem. */
+  paiTitulo?: string
 }
 
 export type No<T> = T & { filhos: No<T>[] }
