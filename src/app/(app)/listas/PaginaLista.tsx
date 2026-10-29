@@ -148,8 +148,8 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
           <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
           <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
           {tipo === 'conteudo' && (<><div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px', flex: 'none' }} /><NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} /></>)}
+          <div className="ml-0.5 flex shrink-0"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
         </div>
-        <div className="ml-0.5 flex shrink-0"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
       </div>
       )}
       <main className="min-h-0 flex-1 p-0" style={{ borderTop: '1px solid var(--border-soft)' }}>

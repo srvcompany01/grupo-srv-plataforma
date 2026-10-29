@@ -117,7 +117,7 @@ export function BarraFiltros({
     !!filtros.busca
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="contents">
       {comAgrupamento && (
         <DropdownMenu>
           <DropdownMenuTrigger
