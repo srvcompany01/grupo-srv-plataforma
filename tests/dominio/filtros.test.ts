@@ -28,6 +28,7 @@ describe('filtros', () => {
       logica: 'e',
       subtarefas: 'normal',
       expandidas: false,
+      vista: '',
     })
   })
 
@@ -85,5 +86,14 @@ describe('filtros E/OU e salvos', () => {
     const texto = filtrosEmTexto({ ...base, status: ['s1'], visao: 'kanban', logica: 'ou' })
     expect(texto).toBe('status=s1&logica=ou')
     expect(aplicarFiltroSalvo({ ...base, visao: 'tabela' }, texto)).toMatchObject({ visao: 'tabela', status: ['s1'], logica: 'ou' })
+  })
+})
+
+describe('aba da lista (v)', () => {
+  const id = '3f1c2d4e-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+  it('lê só ids válidos e mantém o id ao reescrever a URL', () => {
+    expect(lerFiltros({ v: id }).vista).toBe(id)
+    expect(lerFiltros({ v: 'abc' }).vista).toBe('')
+    expect(escreverFiltros(lerFiltros({ v: id })).toString()).toBe(`v=${id}`)
   })
 })

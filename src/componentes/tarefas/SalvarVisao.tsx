@@ -4,24 +4,24 @@ import { Ic } from '@/componentes/app/Ic'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { restaurarVisaoAcao, salvarVisaoAcao } from '@/app/(app)/listas/acoes-visao'
+import { restaurarVisaoAcao, salvarParamsDaVisaoAcao, salvarVisaoAcao } from '@/app/(app)/listas/acoes-visao'
 import { avisar } from './avisar'
 
 /**
  * Aparece quando a pessoa mexe na visualização (tipo, agrupamento ou filtros). "Salvar" faz a lista abrir assim sempre;
  * sem salvar, a próxima vez volta como estava (a salva, ou o original).
  */
-export function SalvarVisao({ listaId, caminho, params, alterada, temSalva }: { listaId: string; caminho: string; params: string; alterada: boolean; temSalva: boolean }) {
+export function SalvarVisao({ listaId, caminho, params, alterada, temSalva, vistaId }: { listaId: string; caminho: string; params: string; alterada: boolean; temSalva: boolean; /** Com abas: grava na própria aba em vez da visualização única da lista. */ vistaId?: string }) {
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
 
   const salvar = () =>
     iniciar(async () => {
-      if (avisar(await salvarVisaoAcao(listaId, params), true)) router.refresh()
+      if (avisar(await (vistaId ? salvarParamsDaVisaoAcao(vistaId, params) : salvarVisaoAcao(listaId, params)), true)) router.refresh()
     })
   const restaurar = () =>
     iniciar(async () => {
-      if (!avisar(await restaurarVisaoAcao(listaId), true)) return
+      if (!avisar(await (vistaId ? salvarParamsDaVisaoAcao(vistaId, '') : restaurarVisaoAcao(listaId)), true)) return
       router.replace(caminho, { scroll: false })
       router.refresh()
     })

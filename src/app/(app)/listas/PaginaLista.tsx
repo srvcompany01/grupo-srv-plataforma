@@ -21,7 +21,7 @@ import { VisaoKanban } from '@/componentes/tarefas/VisaoKanban'
 import { VisaoLista } from '@/componentes/tarefas/VisaoLista'
 import { SalvarVisao } from '@/componentes/tarefas/SalvarVisao'
 import { agruparTarefas, TIPOS_AGRUPAVEIS } from '@/dominio/agrupamento'
-import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
+import { dataDeHoje, escreverFiltros, lerFiltros } from '@/dominio/filtros'
 import { iconeDoStatus } from '@/dominio/status-icone'
 import { resolverVisao } from '@/dominio/visao-salva'
 import { montarArvore } from '@/dominio/tarefas'
@@ -35,6 +35,8 @@ import { listarEspacosComMembros } from '@/servicos/espacos'
 import { listarAtividadeDaLista, listarTarefas } from '@/servicos/tarefas'
 import { listarDocumentos, listarDocumentosDaLista } from '@/servicos/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
+import { garantirVisoesIniciais, listarVisoes } from '@/servicos/visoes-lista'
+import { AbasDaLista } from '@/componentes/tarefas/AbasDaLista'
 import { listarModelos } from '@/servicos/modelos'
 import { buscarVisaoSalva, listarFiltrosSalvos } from '@/servicos/visoes'
 import { FiltrosSalvos } from '@/componentes/tarefas/FiltrosSalvos'
@@ -50,11 +52,22 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const tipo = await tipoDaLista(sb, id)
 
   // Sem nada escolhido na URL, a lista abre como a pessoa salvou (ou no original). Qualquer escolha na tela vale como está.
-  const salva = await buscarVisaoSalva(sb, id).catch(() => null) // sem a migration das visões salvas a lista abre normalmente
-  const { spEfetivo, atual, alterada } = resolverVisao(sp, salva)
+  // Abas da lista (várias do mesmo tipo, cada uma com os seus filtros). Sem a migration, vale o comportamento antigo (abas fixas).
+  let abas = await listarVisoes(sb, id)
+  if (abas && abas.length === 0) abas = await garantirVisoesIniciais(sb, id, eu.id)
+  // Link antigo com ?visao=<tipo> (ex.: Documentos): abre a primeira aba desse tipo.
+  const fPedido = lerFiltros(sp)
+  const vistaAtual = abas?.find((v) => v.id === fPedido.vista) ?? (sp.visao ? abas?.find((v) => v.tipo === fPedido.visao) : undefined) ?? abas?.[0] ?? null
+  const salva = vistaAtual ? vistaAtual.params || null : await buscarVisaoSalva(sb, id).catch(() => null) // sem a migration das visões salvas a lista abre normalmente
+  const resolvida = resolverVisao(sp, salva)
+  const { spEfetivo } = resolvida
   const modelosDeTarefa = await listarModelos(sb)
   const filtrosSalvos = await listarFiltrosSalvos(sb, id).catch(() => []) // idem: sem a migration, a lista abre sem filtros salvos
-  const filtros = lerFiltros(spEfetivo)
+  const filtros = vistaAtual ? { ...lerFiltros(spEfetivo), visao: vistaAtual.tipo, vista: vistaAtual.id } : lerFiltros(spEfetivo)
+  // Com abas, a aba define o tipo; "alterada" compara a tela com o que a aba guarda (sem o id da aba).
+  const comoNaAba = (texto: string) => escreverFiltros({ ...lerFiltros(Object.fromEntries(new URLSearchParams(texto))), visao: vistaAtual?.tipo ?? 'lista', vista: '' }).toString()
+  const atual = vistaAtual ? comoNaAba(escreverFiltros(filtros).toString()) : resolvida.atual
+  const alterada = vistaAtual ? atual !== comoNaAba(vistaAtual.params) : resolvida.alterada
   const hoje = dataDeHoje(new Date())
   const [tarefasBrutas, equipe, tags, camposDaLista, camposDoEspaco, clientes] = await Promise.all([
     listarTarefas(sb, { listaId: id }, filtros, hoje),
@@ -144,7 +157,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
           </div>
         </div>
       </div>
-      <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />
+      {abas && vistaAtual ? <AbasDaLista listaId={id} caminho={caminho} visoes={abas} atualId={vistaAtual.id} euId={eu.id} podeGerir={lista.podeGerir} /> : <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />}
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
       <div className="flex shrink-0 items-center gap-1" style={{ height: 44, padding: '0 10px 0 12px', color: 'var(--text-2)' }}>
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -152,7 +165,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
           <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
           <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
           <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
-          <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={salva !== null} />
+          <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={vistaAtual ? vistaAtual.params !== '' : salva !== null} vistaId={vistaAtual?.id} />
           {tipo === 'conteudo' && (<><div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px', flex: 'none' }} /><NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} /></>)}
           <div className="ml-0.5 flex shrink-0"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
         </div>

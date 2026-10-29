@@ -14,6 +14,8 @@ import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrad
 import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
 import * as modelosTarefa from '@/servicos/modelos'
+import * as abasDaLista from '@/servicos/visoes-lista'
+import { ehTipoDeVisao } from '@/dominio/visoes-lista'
 import * as conteudoSvc from '@/servicos/conteudo'
 import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
@@ -198,6 +200,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
+        'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1308,6 +1311,25 @@ export const FERRAMENTAS: Ferramenta[] = [
       const tarefaId = await criarUma(ctx, a)
       if (a.clienteId) await tarefas.definirTagCliente(ctx.sb, tarefaId, a.clienteId)
       return { tarefaId }
+    },
+  }),
+
+  definir({
+    nome: 'listar_visoes_lista',
+    descricao: 'Lista as abas (visualizações) de uma lista: id, tipo (lista, kanban, calendario, tabela, galeria, cronograma, carga, atividade, painel, documentos), nome e se é privada. Uma lista pode ter várias do mesmo tipo.',
+    escrita: false,
+    entrada: { listaId: id('Id da lista') },
+    executar: async (ctx, a) => ({ visoes: (await abasDaLista.listarVisoes(ctx.sb, a.listaId)) ?? [] }),
+  }),
+
+  definir({
+    nome: 'criar_visao_lista',
+    descricao: 'Adiciona uma aba (visualização) à lista. Pode repetir o mesmo tipo (ex.: duas Listas com filtros diferentes, depois ajustadas na plataforma).',
+    escrita: true,
+    entrada: { listaId: id('Id da lista'), tipo: z.enum(['lista', 'kanban', 'calendario', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']), privada: z.boolean().optional() },
+    executar: async (ctx, a) => {
+      if (!ehTipoDeVisao(a.tipo)) throw new Error('Tipo de visualização inválido.')
+      return { visaoId: await abasDaLista.criarVisao(ctx.sb, ctx.userId, { listaId: a.listaId, tipo: a.tipo, privada: !!a.privada, fixada: true }) }
     },
   }),
 

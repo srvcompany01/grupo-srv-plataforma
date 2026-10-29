@@ -1410,6 +1410,20 @@ export type Database = {
         Update: { created_at?: string; created_by?: string; id?: string; name?: string; subtasks?: string[]; title?: string }
         Relationships: []
       }
+      list_views: {
+        Row: { created_at: string; created_by: string; id: string; is_private: boolean; kind: string; list_id: string; name: string; params: string; pinned: boolean; position: number }
+        Insert: { created_at?: string; created_by?: string; id?: string; is_private?: boolean; kind: string; list_id: string; name: string; params?: string; pinned?: boolean; position?: number }
+        Update: { created_at?: string; created_by?: string; id?: string; is_private?: boolean; kind?: string; list_id?: string; name?: string; params?: string; pinned?: boolean; position?: number }
+        Relationships: [
+          {
+            foreignKeyName: "list_views_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_filters: {
         Row: { created_at: string; id: string; list_id: string; name: string; params: string; user_id: string }
         Insert: { created_at?: string; id?: string; list_id: string; name: string; params: string; user_id?: string }

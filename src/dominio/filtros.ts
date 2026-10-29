@@ -33,6 +33,8 @@ export type Filtros = {
   subtarefas: 'normal' | 'planas'
   /** Abre as subtarefas já expandidas na Lista. */
   expandidas: boolean
+  /** Id da aba (visualização) da lista que está aberta; vazio = a primeira. */
+  vista: string
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -66,6 +68,7 @@ export function lerFiltros(sp: Params): Filtros {
     logica: valor(sp, 'logica') === 'ou' ? 'ou' : 'e',
     subtarefas: valor(sp, 'subs') === 'planas' ? 'planas' : 'normal',
     expandidas: valor(sp, 'abertas') === '1',
+    vista: UUID.test(valor(sp, 'v')) ? valor(sp, 'v') : '',
   }
 }
 
@@ -88,6 +91,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   if (f.logica === 'ou') sp.set('logica', 'ou')
   if (f.subtarefas === 'planas') sp.set('subs', 'planas')
   if (f.expandidas) sp.set('abertas', '1')
+  if (f.vista) sp.set('v', f.vista)
   return sp
 }
 
