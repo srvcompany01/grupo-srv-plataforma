@@ -15,7 +15,7 @@ export async function listarVisoes(sb: Supabase, listaId: string): Promise<Visao
 
 /** Lista sem nenhuma aba (nova ou anterior a este recurso): cria as iniciais, públicas e fixadas. */
 export async function garantirVisoesIniciais(sb: Supabase, listaId: string, euId: string): Promise<VisaoDaLista[]> {
-  const { error } = await sb.from('list_views').insert(VISOES_INICIAIS.map((kind, i) => ({ list_id: listaId, kind, name: nomeParaNovaVisao(kind, []), position: i, created_by: euId })))
+  const { error } = await sb.from('list_views').insert(VISOES_INICIAIS.map((kind, i) => ({ list_id: listaId, kind, name: nomeParaNovaVisao(kind, []), position: i, pinned: false, created_by: euId })))
   if (error) return []
   return (await listarVisoes(sb, listaId)) ?? []
 }
@@ -56,4 +56,12 @@ export async function definirFixada(sb: Supabase, id: string, fixada: boolean): 
 export async function salvarParamsDaVisao(sb: Supabase, id: string, params: string): Promise<void> {
   const { error } = await sb.from('list_views').update({ params }).eq('id', id)
   if (error) throw error
+}
+
+/** Grava a ordem das abas (posições 0, 1, 2… na ordem dos ids). Abas que a pessoa não pode editar ficam como estavam (a RLS recusa em silêncio). */
+export async function reordenarVisoes(sb: Supabase, ids: string[]): Promise<void> {
+  for (const [i, id] of ids.entries()) {
+    const { error } = await sb.from('list_views').update({ position: i }).eq('id', id)
+    if (error) throw error
+  }
 }

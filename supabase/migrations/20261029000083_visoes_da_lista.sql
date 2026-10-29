@@ -1,6 +1,7 @@
 -- Visualizações da lista (como no ClickUp): cada lista tem as suas abas, e pode ter várias do mesmo tipo
 -- (ex.: duas Listas com filtros diferentes, mais um Quadro e um Calendário). Cada aba guarda os próprios filtros,
 -- agrupamento e colunas em `params` (query string normalizada, igual à "visualização salva").
+-- Fixada = fica na frente e não se arrasta; as demais se reorganizam arrastando.
 -- Pública = toda a equipe que lê a lista vê; privada = só quem criou. Criar: quem lê a lista. Editar/excluir: quem criou ou quem gerencia a lista.
 
 create table public.list_views (

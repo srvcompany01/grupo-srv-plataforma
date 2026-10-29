@@ -131,3 +131,13 @@ export async function salvarParamsDaVisaoAcao(id: string, params: string): Promi
   atualizarLista()
   return r
 }
+
+/** Arrastar e soltar das abas: nova ordem de todas as abas da lista (fixadas primeiro, depois as demais). */
+export async function reordenarVisoesAcao(ids: string[]): Promise<Resultado> {
+  await exigirEquipe()
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 60 || !ids.every((i) => UUID.test(i))) return { erro: 'Ordem inválida.' }
+  const sb = await criarClienteServidor()
+  const r = await tentar(() => abas.reordenarVisoes(sb, ids))
+  atualizarLista()
+  return r
+}
