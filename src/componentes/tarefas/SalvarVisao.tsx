@@ -1,7 +1,7 @@
 'use client'
 
 import { Ic } from '@/componentes/app/Ic'
-import { BookmarkCheck } from 'lucide-react'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { restaurarVisaoAcao, salvarVisaoAcao } from '@/app/(app)/listas/acoes-visao'
@@ -42,12 +42,16 @@ export function SalvarVisao({ listaId, caminho, params, alterada, temSalva }: { 
   if (temSalva) {
     return (
       <div className="flex items-center gap-1.5 text-rotulo text-texto-2">
-        <span className="inline-flex items-center gap-1.5"><BookmarkCheck className="h-3.5 w-3.5 text-sucesso" /> Visualização salva</span>
+        <span className="b-icon" title="Visualização salva" style={{ color: 'var(--ok)' }}><Ic n="save" s={16} fill /></span>
         <button type="button" onClick={restaurar} disabled={pendente} className="b-ghost" title="Apaga a visualização salva e volta ao original">
           Voltar ao original
         </button>
       </div>
     )
   }
-  return null
+  return (
+    <button type="button" className="b-icon" title="Salvar visualização" aria-label="Salvar visualização" onClick={() => toast('Mude o agrupamento, os filtros ou as colunas para poder salvar a visualização.')}>
+      <Ic n="save" s={16} />
+    </button>
+  )
 }

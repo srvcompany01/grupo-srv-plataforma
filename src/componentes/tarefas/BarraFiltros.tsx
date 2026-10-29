@@ -1,6 +1,7 @@
 'use client'
 
 import { Ic } from '@/componentes/app/Ic'
+import { EVENTO_ABRIR_COLUNAS, EVENTO_EXPANDIR_SUBTAREFAS } from '@/dominio/eventos-lista'
 import { ChevronDown, CircleDot, Flag, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -140,6 +141,12 @@ export function BarraFiltros({
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+      {comAgrupamento && (
+        <>
+          <button type="button" title="Expandir/recolher subtarefas" aria-label="Expandir ou recolher subtarefas" onClick={() => window.dispatchEvent(new Event(EVENTO_EXPANDIR_SUBTAREFAS))} className="b-icon"><Ic n="account_tree" s={16} /></button>
+          <button type="button" title="Colunas" aria-label="Colunas" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_COLUNAS))} className="b-icon"><Ic n="view_week" s={16} /></button>
+        </>
       )}
       <Popover>
         <PopoverTrigger className={`b-ghost ml-auto ${nFiltros ? 'on' : ''}`}>

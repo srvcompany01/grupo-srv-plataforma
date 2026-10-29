@@ -3,7 +3,8 @@
 import { CornerDownRight } from 'lucide-react'
 import { Ic } from '@/componentes/app/Ic'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { EVENTO_EXPANDIR_SUBTAREFAS } from '@/dominio/eventos-lista'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
@@ -64,6 +65,13 @@ export { Prazo }
 
 export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaResumo>; nivel: number; ctx: Contexto; euId: string }) {
   const [aberta, setAberta] = useState(false)
+  // Botão "expandir/recolher subtarefas" da barra: alterna todas as linhas que têm subtarefas.
+  useEffect(() => {
+    if (!tarefa.filhos.length) return
+    const alternar = () => setAberta((a) => !a)
+    window.addEventListener(EVENTO_EXPANDIR_SUBTAREFAS, alternar)
+    return () => window.removeEventListener(EVENTO_EXPANDIR_SUBTAREFAS, alternar)
+  }, [tarefa.filhos.length])
   const [criandoSubtarefa, setCriandoSubtarefa] = useState(false)
   const status = ctx.statusPorLista[tarefa.listaId] ?? []
   const colunas = colunasDoContexto(ctx)

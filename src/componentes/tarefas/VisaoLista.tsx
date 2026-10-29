@@ -1,6 +1,7 @@
 'use client'
 
 import { Ic } from '@/componentes/app/Ic'
+import { EVENTO_ABRIR_COLUNAS } from '@/dominio/eventos-lista'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { Archive, ArrowLeftToLine, ArrowRightToLine, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
@@ -86,6 +87,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const arrasteRef = useRef<Arraste | null>(null)
   const [configurando, setConfigurando] = useState<string | null>(null)
   const [novoCampo, setNovoCampo] = useState(false)
+  useEffect(() => {
+    const abrir = () => setNovoCampo(true)
+    window.addEventListener(EVENTO_ABRIR_COLUNAS, abrir)
+    return () => window.removeEventListener(EVENTO_ABRIR_COLUNAS, abrir)
+  }, [])
   const [config, setConfig] = useState<ConfigColunas>(CONFIG_COLUNAS_VAZIA)
   const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
