@@ -11,7 +11,9 @@ export type TagCliente = { id: string; nome: string; cor: string }
 
 const COR_HEX = /^#[0-9a-f]{6}$/i
 
-function Chip({ tag }: { tag: TagCliente }) {
+function Chip({ tag, compacto = false }: { tag: TagCliente; compacto?: boolean }) {
+  // Visual do redesign (linhas da Lista): fundo azul-claro, nome azul em negrito, 18px de altura.
+  if (compacto) return <span style={{ height: 18, display: 'inline-flex', alignItems: 'center', padding: '0 6px', borderRadius: 4, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{tag.nome}</span>
   return (
     <span
       className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-legenda font-bold"
@@ -24,11 +26,13 @@ function Chip({ tag }: { tag: TagCliente }) {
 }
 
 /** Tag de cliente da tarefa (opcional). Alterar em qualquer linha atualiza a mãe e todas as subtarefas. */
-export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], podeGerir = false }: {
+export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], podeGerir = false, compacto = false }: {
   tarefaId: string
   atual: TagCliente | null
   opcoes?: TagCliente[]
   podeGerir?: boolean
+  /** Aparência enxuta das linhas da Lista. */
+  compacto?: boolean
 }) {
   const atual: TagCliente = atualOuNulo ?? { id: '', nome: 'Sem cliente', cor: '#87909e' }
   const [aberto, setAberto] = useState(false)
@@ -38,7 +42,7 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
   const [pendente, iniciar] = useTransition()
   const editavel = podeGerir && opcoes.length > 0
 
-  if (!editavel) return atualOuNulo ? <Chip tag={atual} /> : <span className="text-texto-3">—</span>
+  if (!editavel) return atualOuNulo ? <Chip tag={atual} compacto={compacto} /> : <span className="text-texto-3">—</span>
 
   const abrirConfiguracao = () => {
     setNome(atual.nome)
@@ -65,7 +69,7 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
     <Popover open={aberto} onOpenChange={(valor) => { setAberto(valor); if (!valor) setConfigurando(false) }}>
       <PopoverTrigger asChild>
         <button type="button" aria-label={`Tag do cliente: ${atual.nome}`} title="Alterar tag de cliente" className="shrink-0 rounded-md outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-marca">
-          {atualOuNulo ? <Chip tag={atual} /> : <span className="controle inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
+          {atualOuNulo ? <Chip tag={atual} compacto={compacto} /> : <span className="controle inline-flex items-center gap-1 rounded-md border border-dashed border-borda px-1.5 py-0.5 text-legenda text-texto-3 hover:border-borda-forte hover:text-texto"><Tag className="h-3 w-3" /> Cliente</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={7} className="w-80 gap-0 overflow-hidden rounded-lg border border-borda bg-white p-0 shadow-xl">

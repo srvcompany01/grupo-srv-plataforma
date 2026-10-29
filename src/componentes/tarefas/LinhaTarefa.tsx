@@ -144,8 +144,14 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="truncate hover:underline" style={{ fontSize: 13 }}>
             {tarefa.titulo.trim() || <span className="italic text-texto-3">Sem título</span>}
           </Link>
-          {!colunas.includes('tagcliente') && tarefa.clienteNome && (
-            <span className="shrink-0" style={{ height: 18, display: 'inline-flex', alignItems: 'center', padding: '0 6px', borderRadius: 4, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{tarefa.clienteNome}</span>
+          {!colunas.includes('tagcliente') && (
+            <SeletorTagCliente
+              compacto
+              tarefaId={tarefa.id}
+              atual={tarefa.clienteId ? { id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor } : null}
+              opcoes={ctx.tagsCliente}
+              podeGerir={ctx.podeGerirTagCliente}
+            />
           )}
           {tarefa.filhos.length > 0 && (
             <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] text-texto-3"><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
