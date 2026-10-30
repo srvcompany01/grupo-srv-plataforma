@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { avisoDeVideoGrande, problemaDoVideo, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { avisoDeVideoGrande, problemaDoVideo, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { confirmarEnvioCaixaAcao, prepararEnvioCaixaAcao } from './acoes'
 
 type Envio = { chave: string; nome: string; pct: number; erro?: string; pronto?: boolean }
@@ -15,7 +15,7 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
   const router = useRouter()
   const confirmar = useConfirmar()
   const [envios, setEnvios] = useState<Envio[]>([])
-  const tipo: TipoDoVideo = 'indefinido'
+  const [tipo, setTipo] = useState<TipoDoVideo>('indefinido')
   const [sobre, setSobre] = useState(false)
   const entrada = useRef<HTMLInputElement>(null)
 
@@ -46,6 +46,7 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
 
   const tentarIniciar = (arquivos: FileList | File[]) => {
     if (!clienteId) return avisar({ erro: 'Escolha o cliente deste material antes de enviar.' })
+    if (tipo === 'indefinido') return avisar({ erro: 'Marque se o material é Conteúdo ou Criativo antes de enviar.' })
     return iniciar(arquivos)
   }
 
@@ -68,6 +69,12 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
 
   return (
     <section>
+      <div role="radiogroup" aria-label="O que você está enviando" className="flex items-center gap-2 px-3 pt-3 text-[13px]">
+        <span className="text-texto-3">Este material é:</span>
+        {(['organico', 'anuncio'] as const).map((t) => (
+          <button key={t} type="button" role="radio" aria-checked={tipo === t} onClick={() => setTipo(t)} className={tipo === t ? 'b-pri' : 'b-out'} style={{ height: 28, padding: '0 10px' }}>{ROTULO_TIPO_VIDEO[t]}</button>
+        ))}
+      </div>
       <div
         onDragOver={(e) => { e.preventDefault(); setSobre(true) }}
         onDragLeave={() => setSobre(false)}

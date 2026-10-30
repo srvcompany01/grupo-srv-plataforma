@@ -41,7 +41,7 @@ export function PainelDrive({ clienteId, configurado, emailDaConta }: { clienteI
         <div className="space-y-2 p-3">
           <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); procurar() }}>
             <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nome do vídeo (opcional)" aria-label="Nome do vídeo" className="h-8 min-w-48 flex-1 rounded-md border border-borda bg-white px-2 text-[13px] outline-none focus:border-[var(--focus)]" />
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo" className="h-8 rounded-md border border-borda bg-white px-2 text-[13px]"><option value="todos">Todos</option><option value="organico">Orgânico</option><option value="anuncio">Anúncio</option></select>
+            <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo" className="h-8 rounded-md border border-borda bg-white px-2 text-[13px]"><option value="todos">Todos</option><option value="organico">Conteúdo</option><option value="anuncio">Criativo</option></select>
             <button disabled={pendente} className="b-pri" style={{ padding: '0 12px' }}><Ic n="search" s={16} />{pendente ? 'Buscando…' : 'Buscar no Drive'}</button>
           </form>
           {erro && <p className="text-[13px] text-[var(--red)]">{erro} {erro.includes('pasta do Google Drive') && <Link href="/caixa-de-entrada/configuracoes" className="underline">Abrir configurações</Link>}</p>}

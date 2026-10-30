@@ -78,6 +78,14 @@ export async function renomearItemCaixaAcao(itemId: string, nome: string): Promi
   return r
 }
 
+export async function marcarTipoCaixaAcao(itemId: string, tipo: TipoDoVideo): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(itemId) || !['organico', 'anuncio', 'indefinido'].includes(tipo)) return { erro: 'Item inválido.' }
+  const r = await tentar(async () => caixa.marcarTipoItem(await criarClienteServidor(), itemId, tipo), 'Tag atualizada.')
+  atualizar()
+  return r
+}
+
 export async function excluirItemCaixaAcao(itemId: string): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }

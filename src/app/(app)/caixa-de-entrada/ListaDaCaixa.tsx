@@ -7,9 +7,9 @@ import { Ic } from '@/componentes/app/Ic'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
-import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO } from '@/dominio/caixa-de-entrada'
+import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
-import { descreverVideoAcao, excluirItemCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao } from './acoes'
+import { descreverVideoAcao, excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao } from './acoes'
 
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
 type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
@@ -51,8 +51,11 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
                   <button type="button" title="Renomear" aria-label={`Renomear ${i.nome}`} disabled={pendente} onClick={() => setEditando({ id: i.id, nome: i.nome })} className="b-icon" style={{ width: 22, height: 22, flex: 'none' }}><Ic n="edit" s={14} /></button>
                 </span>
               )}
-              <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{ROTULO_TIPO_VIDEO[i.tipo]} · {i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
+              <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
             </span>
+            <select value={i.tipo} disabled={pendente} aria-label="Tag do material" onChange={(e) => iniciar(async () => void avisar(await marcarTipoCaixaAcao(i.id, e.target.value as TipoDoVideo), true))} className="h-6 rounded border border-borda bg-transparent px-1 text-[12px]" style={i.tipo === 'indefinido' ? { color: 'var(--red)' } : undefined}>
+              {(Object.keys(ROTULO_TIPO_VIDEO) as TipoDoVideo[]).filter((t) => t !== 'indefinido' || i.tipo === 'indefinido').map((t) => <option key={t} value={t}>{ROTULO_TIPO_VIDEO[t]}</option>)}
+            </select>
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
             {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
             {i.status === 'pronto' && <button type="button" disabled={pendente} title="A IA da plataforma assiste ao vídeo e resume" onClick={() => iniciar(async () => { const r = await descreverVideoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setVendo({ nome: i.nome, d: r }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="auto_awesome" s={14} />Resumo</button>}
