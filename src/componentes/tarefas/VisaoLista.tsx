@@ -425,10 +425,10 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       />
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
-      <div className="overflow-x-auto pb-2">
-        <div className="space-y-1.5" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+      <div className="overflow-x-auto px-4 pb-2 pt-1">
+        <div style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
-        <section key={g.id} className="bg-[var(--bg)]" style={{ marginTop: indice === 0 ? 0 : 10 }}>
+        <section key={g.id} className="bg-[var(--bg)]" style={{ marginTop: indice === 0 ? 0 : 4 }}>
           {!g.semCabecalho && (
             <div className="flex h-8 items-center">
               <button onClick={() => alternar(g.id)} className="flex min-w-0 items-center gap-1.5 text-left">
