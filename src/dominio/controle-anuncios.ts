@@ -310,3 +310,75 @@ export function planoCampanhaMeta<A>(n: { nome: string; orcamentoDiario: number;
   }))
   return { campanha, conjuntos }
 }
+
+// ───────────────────────────── Meta: editar o que já está no ar ─────────────────────────────
+
+export type EdicaoTextoAnuncio = { texto?: string; titulo?: string; descricao?: string; botao?: string; link?: string }
+
+export const corta = (t: unknown) => {
+  const s = String(t ?? '')
+  return s.length > 60 ? `${s.slice(0, 57)}…` : s
+}
+
+/**
+ * A Meta não deixa editar o texto de um criativo existente: copia-se o `object_story_spec`, troca-se o que mudou e cria-se um
+ * criativo novo, que então é ligado ao anúncio. Aqui só a troca nos campos (sem chamar a Meta). Devolve a cópia e a lista do que mudou.
+ */
+export function editarSpecDoCriativo(spec: Record<string, unknown>, e: EdicaoTextoAnuncio): { spec: Record<string, unknown>; mudancas: string[] } {
+  const novo = JSON.parse(JSON.stringify(spec)) as Record<string, Record<string, unknown> | undefined>
+  const mudancas: string[] = []
+  const troca = (obj: Record<string, unknown>, campo: string, valor: string | undefined, rotulo: string) => {
+    if (valor === undefined) return
+    if (String(obj[campo] ?? '') !== valor) mudancas.push(`${rotulo}: "${corta(obj[campo])}" → "${corta(valor)}"`)
+    obj[campo] = valor
+  }
+  const cta = (obj: Record<string, unknown>) => {
+    const c = (obj.call_to_action ?? {}) as { type?: string; value?: Record<string, unknown> }
+    if (e.botao !== undefined) {
+      if (c.type !== e.botao) mudancas.push(`botão: ${c.type ?? '—'} → ${e.botao}`)
+      c.type = e.botao
+    }
+    if (e.link !== undefined && c.value && 'link' in c.value) c.value.link = e.link
+    if (e.botao !== undefined || (e.link !== undefined && c.value)) obj.call_to_action = c
+  }
+  const ld = novo.link_data
+  const vd = novo.video_data
+  const pd = novo.photo_data
+  const td = novo.text_data
+  if (ld) {
+    if (Array.isArray(ld.child_attachments) && ld.child_attachments.length && (e.titulo !== undefined || e.descricao !== undefined || e.link !== undefined || e.botao !== undefined))
+      throw new Error('Anúncio em carrossel: só o texto principal pode ser editado por aqui (título, descrição, link e botão ficam em cada cartão).')
+    troca(ld, 'message', e.texto, 'texto')
+    troca(ld, 'name', e.titulo, 'título')
+    troca(ld, 'description', e.descricao, 'descrição')
+    if (e.link !== undefined) troca(ld, 'link', e.link, 'link')
+    cta(ld)
+  } else if (vd) {
+    troca(vd, 'message', e.texto, 'texto')
+    troca(vd, 'title', e.titulo, 'título')
+    troca(vd, 'link_description', e.descricao, 'descrição')
+    cta(vd)
+  } else if (pd) {
+    troca(pd, 'caption', e.texto, 'texto')
+    if (e.titulo !== undefined || e.descricao !== undefined || e.link !== undefined || e.botao !== undefined) throw new Error('Anúncio de foto: só o texto pode ser editado.')
+  } else if (td) {
+    troca(td, 'message', e.texto, 'texto')
+  } else {
+    throw new Error('Este anúncio usa uma publicação existente ou um criativo dinâmico: o texto não pode ser editado por aqui (edite a publicação, ou crie um anúncio novo).')
+  }
+  return { spec: novo as Record<string, unknown>, mudancas }
+}
+
+/** Troca a faixa etária no público (a Meta substitui o `targeting` inteiro, então parte-se do atual). */
+export function editarFaixaEtaria(targeting: Record<string, unknown>, idadeMin?: number, idadeMax?: number): { targeting: Record<string, unknown>; mudancas: string[] } {
+  const novo = JSON.parse(JSON.stringify(targeting)) as Record<string, unknown>
+  const min = idadeMin ?? Number(novo.age_min ?? 18)
+  const max = idadeMax ?? Number(novo.age_max ?? 65)
+  if (min < 13 || max > 65 || min > max) throw new Error('Faixa etária inválida (de 13 a 65 anos, mínima não maior que a máxima).')
+  const mudancas: string[] = []
+  if (Number(novo.age_min ?? 18) !== min) mudancas.push(`idade mínima: ${novo.age_min ?? 18} → ${min}`)
+  if (Number(novo.age_max ?? 65) !== max) mudancas.push(`idade máxima: ${novo.age_max ?? 65} → ${max}`)
+  novo.age_min = min
+  novo.age_max = max
+  return { targeting: novo, mudancas }
+}

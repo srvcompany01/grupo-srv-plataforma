@@ -205,7 +205,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
-        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
+        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
@@ -890,6 +890,46 @@ export const FERRAMENTAS: Ferramenta[] = [
       const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
       if (!cliente) throw new Error('Cliente não encontrado.')
       return { ok: true, resultado: await (await import('@/servicos/controle-anuncios')).executarAlteracao(sb, { id: userId, papel }, cliente, { plataforma: a.plataforma, nivel: a.nivel, objetoId: a.objetoId, acao: 'pausar' }, 'ia') }
+    },
+  }),
+
+  definir({
+    nome: 'detalhar_objeto_meta',
+    descricao: 'Lê tudo de uma campanha, conjunto ou anúncio da Meta que JÁ FOI SUBIDO (ativo ou pausado): nome, status, objetivo, orçamento (reais), datas, público do conjunto (idades, locais, interesses) e, no anúncio, o criativo com texto, título, descrição e botão. Use antes de editar para ver o texto atual. Ids de estrutura_anuncios_cliente (campanhaId traz os anúncios).',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), nivel: z.enum(['campanha', 'conjunto', 'anuncio']), objetoId: z.string().regex(/^\d{1,25}$/) },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      return (await import('@/servicos/controle-anuncios')).detalharObjetoMeta(cliente, a.nivel, a.objetoId)
+    },
+  }),
+
+  definir({
+    nome: 'editar_objeto_meta',
+    descricao: 'Edita na Meta um item que JÁ EXISTE, mesmo ativo (só admin e gestor; fica no histórico). Campanha: nome. Conjunto: nome, idadeMin/idadeMax e fim (AAAA-MM-DD). Anúncio: nome e, no criativo, texto (legenda), titulo, descricao, botao (ex.: LEARN_MORE, SIGN_UP, WHATSAPP_MESSAGE) e link — a Meta não edita o criativo: a plataforma cria um novo com a cópia ajustada e liga ao anúncio, que volta para análise. Não edita anúncio que usa publicação existente nem criativo dinâmico/carrossel (só o texto principal). Status e orçamento NÃO mudam aqui: use pausar_anuncio e propor_alteracao_anuncio. Se o item está ATIVO, confirme com a pessoa e envie confirmarAlteracaoEmAtivo=true. Leia o texto atual com detalhar_objeto_meta e mostre o antes e o depois para a pessoa aprovar.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      nivel: z.enum(['campanha', 'conjunto', 'anuncio']),
+      objetoId: z.string().regex(/^\d{1,25}$/),
+      nome: z.string().min(1).max(200).optional(),
+      texto: z.string().min(1).max(2200).optional().describe('Texto principal (legenda) do anúncio'),
+      titulo: z.string().max(80).optional(),
+      descricao: z.string().max(120).optional(),
+      botao: z.string().regex(/^[A-Z_]{3,40}$/).optional(),
+      link: z.string().url().optional(),
+      idadeMin: z.number().int().min(13).max(65).optional(),
+      idadeMax: z.number().int().min(13).max(65).optional(),
+      fim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Data de fim do conjunto'),
+      confirmarAlteracaoEmAtivo: z.boolean().optional().describe('true só depois de a pessoa confirmar a edição de um item ativo'),
+    },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const { clienteId: _c, nivel, objetoId, confirmarAlteracaoEmAtivo, ...edicao } = a
+      void _c
+      return { ok: true, ...(await (await import('@/servicos/controle-anuncios')).editarObjetoMeta(sb, { id: userId, papel }, cliente, { nivel, objetoId, edicao, confirmarEmAtivo: confirmarAlteracaoEmAtivo })) }
     },
   }),
 
