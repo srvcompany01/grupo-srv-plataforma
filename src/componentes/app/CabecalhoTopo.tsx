@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
@@ -10,6 +10,7 @@ import type { AlertaSistema } from '@/servicos/alertas-sistema'
 import { AlertasSistema } from './AlertasSistema'
 import { AtalhosDialog } from './AtalhosDialog'
 import { MenuPerfil } from './MenuPerfil'
+import { AtalhosFixados } from './AtalhosFixados'
 import { AtalhosGlobais } from './AtalhosGlobais'
 import { Ic } from './Ic'
 import { PainelEspacos, type PropsPainel } from './BarraLateral'
@@ -63,6 +64,7 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
         </DropdownMenu>
         <Link href="/agenda" title="Agenda" aria-label="Agenda" className="hidden sm:flex hover-bg" style={tb}><Ic n="calendar_today" s={19} w={300} /></Link>
         <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
+        <Suspense fallback={null}><AtalhosFixados /></Suspense>
       </div>
 
       <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden sm:flex" style={{ flex: '0 1 360px', minWidth: 160, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'center', gap: 8, padding: '0 5px 0 10px', color: 'var(--text-3)', cursor: 'text' }}>

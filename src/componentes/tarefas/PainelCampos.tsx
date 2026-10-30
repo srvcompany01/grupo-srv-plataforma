@@ -165,7 +165,7 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
 
   if (!aberto) return null
   return (
-    <aside aria-label="Campos" className="fixed bottom-2 right-2 top-[72px] z-40 flex w-[min(400px,calc(100vw-16px))] flex-col overflow-hidden border border-borda bg-[var(--bg)] max-md:inset-0 max-md:w-auto" style={{ borderRadius: 10, boxShadow: 'var(--shadow-panel)' }}>
+    <aside aria-label="Campos" className="fixed bottom-2 right-2 top-10 z-40 flex w-[min(400px,calc(100vw-16px))] flex-col overflow-hidden border border-borda bg-[var(--bg)] max-md:inset-0 max-md:w-auto" style={{ borderRadius: 10, boxShadow: 'var(--shadow-panel)' }}>
       <header className="flex h-14 shrink-0 items-center gap-2 px-4">
         <h2 className="flex-1 text-[16px] font-semibold">Campos</h2>
         <Link href="/config/campos" title="Gerenciar campos personalizados" aria-label="Gerenciar campos personalizados" className="flex h-8 w-8 items-center justify-center rounded-md text-texto-2 hover:bg-hover"><Ic n="settings" s={19} /></Link>

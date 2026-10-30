@@ -1,7 +1,5 @@
 import { cookies } from 'next/headers'
-import { Suspense } from 'react'
 import { BarraLateral, FaixaAtalhos } from '@/componentes/app/BarraLateral'
-import { AtalhosFixados } from '@/componentes/app/AtalhosFixados'
 import { CabecalhoTopo } from '@/componentes/app/CabecalhoTopo'
 import { PainelIA } from '@/componentes/app/PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
@@ -36,7 +34,6 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,300..500,0..1,0&display=block" />
       <div className="flex min-w-0 flex-1 flex-col">
         <CabecalhoTopo painel={painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} alertas={alertas} />
-        <Suspense fallback={null}><AtalhosFixados /></Suspense>
         <div className="flex min-h-0 flex-1 gap-2 pb-2 md:px-2">
           <FaixaAtalhos papel={eu.papel} nome={eu.nome} chatNaoLidas={chatNaoLidas} ordemInicio={painel.ordemInicio} tema={painel.tema} />
           <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />

@@ -156,7 +156,7 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
   const config = porId.get('config')
 
   return (
-    <nav ref={faixa} aria-label="Módulos" className="rail-nav sticky top-[72px] z-30 hidden h-[calc(100dvh-80px)] md:flex" style={{ width: 64, flex: 'none', background: 'var(--rail)', color: 'var(--rail-text)', borderRadius: 10, flexDirection: 'column', alignItems: 'center', padding: '6px 0 8px', gap: 4, overflowY: 'auto', scrollbarWidth: 'none' }}>
+    <nav ref={faixa} aria-label="Módulos" className="rail-nav sticky top-10 z-30 hidden h-[calc(100dvh-48px)] md:flex" style={{ width: 64, flex: 'none', background: 'var(--rail)', color: 'var(--rail-text)', borderRadius: 10, flexDirection: 'column', alignItems: 'center', padding: '6px 0 8px', gap: 4, overflowY: 'auto', scrollbarWidth: 'none' }}>
       <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} title={recolhido ? 'Mostrar barra lateral' : 'Recolher barra lateral'} className="rail-btn" style={{ ...botaoRail, width: 40, height: 32 }}><Ic n={recolhido ? 'left_panel_open' : 'left_panel_close'} s={18} /></button>
       <div style={{ width: 28, height: 1, flex: 'none', background: 'rgba(255,255,255,.1)', margin: '2px 0 4px' }} />
       <ListaOrdenavel className="flex flex-col items-center" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
@@ -530,7 +530,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-[72px] z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-10 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -538,10 +538,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-[calc(100dvh-80px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-48px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda md:flex ${
           recolhida
-            ? `fixed bottom-2 left-[72px] top-[72px] z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
-            : 'sticky top-[72px] z-20 shrink-0'
+            ? `fixed bottom-2 left-[72px] top-10 z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            : 'sticky top-10 z-20 shrink-0'
         }`}
       >
         <PainelEspacos

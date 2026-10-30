@@ -93,7 +93,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
     })
 
   return (
-    <div className="flex h-[calc(100dvh-82px)] min-h-0">
+    <div className="flex h-[calc(100dvh-50px)] min-h-0">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-borda bg-[var(--bg-subtle)] md:flex" aria-label="Canais">
         <div className="flex h-10 items-center justify-between border-b border-borda-fraca px-3">
           <p className="text-destaque font-semibold text-texto">Chat</p>
