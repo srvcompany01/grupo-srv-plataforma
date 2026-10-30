@@ -28,6 +28,8 @@ export async function confirmarEnvioCaixaAcao(itemId: string): Promise<Resultado
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
   const r = await tentar(async () => caixa.confirmarEnvio(await criarClienteServidor(), itemId), 'Vídeo enviado.')
+  // Já deixa a transcrição pronta; se falhar, o botão Resumo tenta de novo.
+  if (r && !('erro' in r)) { const sb = await criarClienteServidor(); after(async () => void (await caixa.descreverVideo(sb, itemId).catch(() => {}))) }
   atualizar()
   return r
 }
@@ -48,8 +50,9 @@ export async function importarDriveAcao(clienteId: string, arquivoId: string, ti
   const eu = await exigirEquipe()
   if (!UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
   try {
-    const itemId = await caixa.iniciarImportacaoDrive(await criarClienteServidor(), eu.id, { clienteId, arquivoId, tipo: tipo === 'indefinido' ? undefined : tipo, confirmarGrande })
-    after(() => caixa.executarImportacao(itemId))
+    const sb = await criarClienteServidor()
+    const itemId = await caixa.iniciarImportacaoDrive(sb, eu.id, { clienteId, arquivoId, tipo: tipo === 'indefinido' ? undefined : tipo, confirmarGrande })
+    after(async () => { await caixa.executarImportacao(itemId); await caixa.descreverVideo(sb, itemId).catch(() => {}) })
     atualizar()
     return { ok: 'Importando do Drive… aparece na lista quando terminar.' }
   } catch (err) {

@@ -1,9 +1,11 @@
 import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { Formato } from '@/dominio/conteudo'
 import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, gerarChaveCriativo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
-import { apagarDoGemini, configGemini, enviarAoGemini, gerarJsonGemini } from '@/ia/gemini'
+import { completarTexto, configIA } from '@/ia/modelo'
+import { transcreverAudio } from '@/ia/transcricao'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
+import { extrairAudio } from './audio-video'
 import { baixarArquivo, dadosDoArquivo } from './google-drive'
 import * as conteudo from './conteudo'
 
@@ -160,9 +162,7 @@ export async function salvarFicha(sb: Supabase, f: Partial<Omit<FichaDeConteudo,
   if (error) throw error
 }
 
-// ───────────────────────────── A IA assiste ao vídeo ─────────────────────────────
-
-const LIMITE_PARA_IA = 200 * 1024 * 1024
+// ───────────────────────────── A plataforma ouve o vídeo ─────────────────────────────
 
 export type DescricaoDoVideo = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
 
@@ -178,11 +178,12 @@ const lerDescricao = (texto: string): DescricaoDoVideo | null => {
 }
 
 /**
- * A IA da plataforma (Gemini) assiste ao vídeo e devolve resumo, fala transcrita, temas, tom e ideias de abertura de legenda.
- * Serve para quem escreve a legenda (a IA conectada pelo MCP não consegue ver o vídeo). O resultado fica guardado no item.
+ * A plataforma ouve o vídeo: extrai o áudio (ffmpeg), transcreve a fala (Groq/Whisper) e o DeepSeek resume o que foi dito.
+ * Devolve resumo, fala transcrita, temas, tom e ideias de abertura de legenda; só o que é falado, não o que aparece na imagem.
+ * Serve para quem escreve a legenda (a IA conectada pelo MCP não consegue ouvir o vídeo). O resultado fica guardado no item.
  */
 export async function descreverVideo(sb: Supabase, itemId: string, refazer = false): Promise<DescricaoDoVideo> {
-  const { data: item, error } = await sb.from('content_inbox').select('id, name, r2_key, mime, size_bytes, status, ai_summary, client_id').eq('id', itemId).single()
+  const { data: item, error } = await sb.from('content_inbox').select('id, name, r2_key, status, ai_summary').eq('id', itemId).single()
   if (error) throw error
   if (item.ai_summary && !refazer) {
     const guardado = lerDescricao(item.ai_summary)
@@ -190,22 +191,29 @@ export async function descreverVideo(sb: Supabase, itemId: string, refazer = fal
   }
   if (item.status !== 'pronto' && item.status !== 'usado') throw new Error('O vídeo ainda não está pronto.')
   if (item.status === 'usado') throw new Error('Este vídeo já virou post e saiu da caixa.')
-  if (Number(item.size_bytes) > LIMITE_PARA_IA) throw new Error('Vídeo grande demais para a IA assistir (limite de 200 MB). Descreva o conteúdo à mão.')
-  const cfg = configGemini('ANALISE_POST_MODELO')
-  if (!cfg) throw new Error('A análise de vídeo precisa da chave do Gemini (GEMINI_API_KEY).')
-  const r = await fetch(await urlLeitura(item.r2_key))
-  if (!r.ok) throw new Error('Não consegui ler o vídeo no armazenamento.')
-  const arquivo = await enviarAoGemini(cfg.chave, await r.arrayBuffer(), item.mime === 'video/quicktime' ? 'video/mov' : item.mime, 'caixa')
-  try {
-    const prompt = `Assista ao vídeo "${item.name}" (conteúdo de Instagram de uma agência de marketing, em português do Brasil) e responda SÓ com JSON neste formato:
-{"resumo": "o que acontece no vídeo, em até 400 caracteres", "fala": "transcrição fiel do que é falado, ou vazio se não houver fala", "temas": ["até 6 temas ou palavras-chave"], "tom": "tom do vídeo em poucas palavras (ex.: descontraído, técnico, emocional)", "ganchos": ["até 3 primeiras frases possíveis para a legenda"]}
-Não invente nada que não esteja no vídeo.`
-    const d = await gerarJsonGemini(cfg, { uri: arquivo.uri, mime: item.mime === 'video/quicktime' ? 'video/mov' : item.mime }, prompt, lerDescricao)
-    await sb.from('content_inbox').update({ ai_summary: JSON.stringify(d), updated_at: new Date().toISOString() }).eq('id', itemId)
-    return d
-  } finally {
-    await apagarDoGemini(cfg.chave, arquivo.nome).catch(() => {})
+  const cfg = configIA()
+  if (!cfg) throw new Error('A análise do vídeo precisa da IA da plataforma (IA_API_KEY) configurada na Vercel.')
+  const fala = await transcreverAudio(await extrairAudio(await urlLeitura(item.r2_key)))
+  if (!fala) {
+    const vazio: DescricaoDoVideo = { resumo: 'Não encontrei fala neste vídeo.', fala: '', temas: [], tom: '', ganchos: [] }
+    await sb.from('content_inbox').update({ ai_summary: JSON.stringify(vazio), updated_at: new Date().toISOString() }).eq('id', itemId)
+    return vazio
   }
+  const resposta = await completarTexto(
+    cfg,
+    'Você ajuda uma agência de marketing a escrever legendas de Instagram em português do Brasil. Responda SÓ com JSON, sem comentários.',
+    `Esta é a transcrição da fala do vídeo "${item.name}". Com base SÓ nela, responda neste formato:
+{"resumo": "do que o vídeo trata, em até 400 caracteres", "temas": ["até 6 temas ou palavras-chave"], "tom": "tom da fala em poucas palavras (ex.: descontraído, técnico, emocional)", "ganchos": ["até 3 primeiras frases possíveis para a legenda"]}
+Não invente nada que não esteja na transcrição.
+
+Transcrição:
+${fala.slice(0, 30_000)}`,
+  )
+  const d = lerDescricao(resposta) ?? lerDescricao(JSON.stringify({ resumo: resposta.slice(0, 400) }))
+  if (!d) throw new Error('A IA não conseguiu resumir a transcrição.')
+  const final: DescricaoDoVideo = { ...d, fala: fala.slice(0, 4000) }
+  await sb.from('content_inbox').update({ ai_summary: JSON.stringify(final), updated_at: new Date().toISOString() }).eq('id', itemId)
+  return final
 }
 
 // ───────────────────────────── Vídeo da caixa → biblioteca de criativos de anúncio ─────────────────────────────

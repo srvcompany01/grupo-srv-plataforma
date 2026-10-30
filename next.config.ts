@@ -2,7 +2,9 @@ import type { NextConfig } from 'next'
 import { SLUGS_DAS_LANDINGS } from './src/dominio/landings'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@electric-sql/pglite'],
+  serverExternalPackages: ['@electric-sql/pglite', 'ffmpeg-static'],
+  // O binário do ffmpeg (extrai o áudio dos vídeos da caixa) precisa ir junto com as funções que o usam.
+  outputFileTracingIncludes: { '/caixa-de-entrada': ['./node_modules/ffmpeg-static/ffmpeg'], '/api/mcp': ['./node_modules/ffmpeg-static/ffmpeg'] },
   // O artigo do blog chega como arquivo (.docx/.md, até 3 MB) numa ação do servidor; o padrão é 1 MB.
   experimental: { serverActions: { bodySizeLimit: '4mb' } },
   // Cada landing é um arquivo estático em public/lp/<slug>/index.html servido em /<slug>.
