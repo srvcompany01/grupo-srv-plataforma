@@ -37,7 +37,7 @@ export async function buscarDriveAcao(clienteId: string, busca: string, tipo: 't
   if (!UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
   try {
     const ficha = await caixa.buscarFicha(await criarClienteServidor(), clienteId)
-    if (!ficha.pastaDrive) return { erro: 'Este cliente ainda não tem a pasta do Google Drive. Cole o link da pasta na ficha de conteúdo.' }
+    if (!ficha.pastaDrive) return { erro: 'Este cliente ainda não tem a pasta do Google Drive. Cole o link da pasta na ficha de conteúdo (Caixa de entrada > Configurações).' }
     return { arquivos: await listarVideos(ficha.pastaDrive, { busca: busca.trim() || undefined, tipo: tipo === 'todos' ? undefined : tipo, limite: 80 }) }
   } catch (err) {
     return { erro: msg(err) }

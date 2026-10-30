@@ -15,7 +15,7 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
   const router = useRouter()
   const confirmar = useConfirmar()
   const [envios, setEnvios] = useState<Envio[]>([])
-  const [tipo, setTipo] = useState<TipoDoVideo>('indefinido')
+  const tipo: TipoDoVideo = 'indefinido'
   const [sobre, setSobre] = useState(false)
   const entrada = useRef<HTMLInputElement>(null)
 
@@ -44,6 +44,11 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
     }
   }
 
+  const tentarIniciar = (arquivos: FileList | File[]) => {
+    if (!clienteId) return avisar({ erro: 'Escolha o cliente deste material antes de enviar.' })
+    return iniciar(arquivos)
+  }
+
   const iniciar = async (arquivos: FileList | File[]) => {
     let lista = Array.from(arquivos)
     // Acima de 1 GB: a plataforma não comprime, mas a Meta pode recusar ou recomprimir. A pessoa precisa saber antes de enviar.
@@ -62,27 +67,18 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-borda">
-      <div className="flex h-10 items-center gap-2 border-b border-borda-fraca px-3">
-        <h2 className="flex-1 text-[13px] font-semibold">Enviar vídeos</h2>
-        <label className="flex items-center gap-1.5 text-[12px] text-texto-2">
-          Tipo
-          <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoDoVideo)} className="h-6 rounded border border-borda bg-white px-1 text-[12px]">
-            <option value="indefinido">Sem tipo</option><option value="organico">Orgânico</option><option value="anuncio">Anúncio</option>
-          </select>
-        </label>
-      </div>
+    <section>
       <div
         onDragOver={(e) => { e.preventDefault(); setSobre(true) }}
         onDragLeave={() => setSobre(false)}
-        onDrop={(e) => { e.preventDefault(); setSobre(false); if (e.dataTransfer.files.length) void iniciar(e.dataTransfer.files) }}
-        className="m-3 flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-8 text-center"
-        style={{ borderColor: sobre ? 'var(--focus)' : 'var(--border-strong)', background: sobre ? 'var(--sel)' : 'transparent' }}
+        onDrop={(e) => { e.preventDefault(); setSobre(false); if (e.dataTransfer.files.length) void tentarIniciar(e.dataTransfer.files) }}
+        className="m-3 flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center"
+        style={{ borderColor: sobre ? 'var(--focus)' : 'var(--border-strong)', background: sobre ? 'var(--sel)' : 'transparent', opacity: clienteId ? 1 : 0.6 }}
       >
         <Ic n="upload_file" s={28} style={{ color: 'var(--text-3)' }} />
-        <p className="text-[14px]">Arraste os vídeos aqui ou <button type="button" onClick={() => entrada.current?.click()} className="font-semibold text-[var(--client)] hover:underline">escolha no computador</button></p>
+        <p className="text-[14px]">{clienteId ? 'Arraste os vídeos aqui ou' : 'Escolha o cliente acima e arraste os vídeos aqui, ou'} <button type="button" onClick={() => (clienteId ? entrada.current?.click() : avisar({ erro: 'Escolha o cliente primeiro.' }))} className="font-semibold text-[var(--client)] hover:underline">escolha no computador</button></p>
         <p className="text-[12px] text-texto-3">MP4 ou MOV, até 4 GB cada, sem compressão (acima de 1 GB a plataforma avisa antes). Vários de uma vez.</p>
-        <input ref={entrada} type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov" hidden onChange={(e) => { if (e.target.files?.length) void iniciar(e.target.files); e.target.value = '' }} />
+        <input ref={entrada} type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov" hidden onChange={(e) => { if (e.target.files?.length) void tentarIniciar(e.target.files); e.target.value = '' }} />
       </div>
       {envios.length > 0 && (
         <ul className="border-t border-borda-fraca">

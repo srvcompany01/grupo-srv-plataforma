@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import { avisar } from '@/componentes/tarefas/avisar'
@@ -9,7 +10,7 @@ import type { ArquivoDrive } from '@/servicos/google-drive'
 import { buscarDriveAcao, importarDriveAcao } from './acoes'
 
 /** Procura vídeos na pasta do cliente no Google Drive e copia os escolhidos para a caixa de entrada. */
-export function PainelDrive({ clienteId, temPasta, configurado, emailDaConta }: { clienteId: string; temPasta: boolean; configurado: boolean; emailDaConta: string | null }) {
+export function PainelDrive({ clienteId, configurado, emailDaConta }: { clienteId: string; configurado: boolean; emailDaConta: string | null }) {
   const confirmar = useConfirmar()
   const [busca, setBusca] = useState('')
   const [tipo, setTipo] = useState<'todos' | 'organico' | 'anuncio'>('todos')
@@ -33,12 +34,9 @@ export function PainelDrive({ clienteId, temPasta, configurado, emailDaConta }: 
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-borda">
-      <div className="flex h-10 items-center gap-2 border-b border-borda-fraca px-3"><h2 className="flex-1 text-[13px] font-semibold">Google Drive</h2></div>
+    <section>
       {!configurado ? (
-        <p className="p-3 text-[13px] text-texto-2">A integração com o Google Drive ainda não foi ligada. Falta cadastrar a chave da conta de serviço (<code>GOOGLE_DRIVE_SA_JSON</code>) no servidor.</p>
-      ) : !temPasta ? (
-        <p className="p-3 text-[13px] text-texto-2">Cole o link da pasta deste cliente na <b>ficha de conteúdo</b> (ao lado) e compartilhe a pasta com <b>{emailDaConta ?? 'a conta de serviço'}</b> como Leitor.</p>
+        <p className="p-3 text-[13px] text-texto-2">A integração com o Google Drive ainda não foi ligada. Falta cadastrar a chave da conta de serviço (<code>GOOGLE_DRIVE_SA_JSON</code>) no servidor. {emailDaConta}</p>
       ) : (
         <div className="space-y-2 p-3">
           <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); procurar() }}>
@@ -46,7 +44,7 @@ export function PainelDrive({ clienteId, temPasta, configurado, emailDaConta }: 
             <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo" className="h-8 rounded-md border border-borda bg-white px-2 text-[13px]"><option value="todos">Todos</option><option value="organico">Orgânico</option><option value="anuncio">Anúncio</option></select>
             <button disabled={pendente} className="b-pri" style={{ padding: '0 12px' }}><Ic n="search" s={16} />{pendente ? 'Buscando…' : 'Buscar no Drive'}</button>
           </form>
-          {erro && <p className="text-[13px] text-[var(--red)]">{erro}</p>}
+          {erro && <p className="text-[13px] text-[var(--red)]">{erro} {erro.includes('pasta do Google Drive') && <Link href="/caixa-de-entrada/configuracoes" className="underline">Abrir configurações</Link>}</p>}
           {achados && achados.length === 0 && <p className="text-[13px] text-texto-3">Nenhum vídeo encontrado.</p>}
           {achados && achados.length > 0 && (
             <ul className="max-h-80 overflow-y-auto rounded-md border border-borda">

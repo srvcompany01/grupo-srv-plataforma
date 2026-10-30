@@ -15,7 +15,7 @@ const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 
 type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
 
 /** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
-export function ListaDaCaixa({ itens }: { itens: ItemDaCaixa[] }) {
+export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaCaixa[]; mostrarCliente?: boolean }) {
   const router = useRouter()
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
@@ -37,7 +37,7 @@ export function ListaDaCaixa({ itens }: { itens: ItemDaCaixa[] }) {
             <Ic n={i.status === 'importando' ? 'sync' : i.status === 'erro' ? 'error' : i.status === 'usado' ? 'task_alt' : 'movie'} s={16} style={{ color: COR[i.status] }} />
             <span className="min-w-0 flex-1">
               <span className="block truncate">{i.nome}</span>
-              <span className="block truncate text-[12px] text-texto-3">{ROTULO_TIPO_VIDEO[i.tipo]} · {i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
+              <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{ROTULO_TIPO_VIDEO[i.tipo]} · {i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
             </span>
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
             {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
