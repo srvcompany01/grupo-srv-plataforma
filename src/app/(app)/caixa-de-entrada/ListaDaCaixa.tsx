@@ -9,7 +9,7 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
-import { descreverVideoAcao, excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao } from './acoes'
+import { descreverVideoAcao, excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, urlDoVideoCaixaAcao } from './acoes'
 
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
 type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
@@ -20,6 +20,7 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
   const [vendo, setVendo] = useState<{ nome: string; d: Descricao } | null>(null)
+  const [previa, setPrevia] = useState<{ nome: string; url: string } | null>(null)
   const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
   const renomear = () => {
     if (!editando) return
@@ -58,12 +59,19 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
             </select>
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
             {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
+            {i.status === 'pronto' && <button type="button" disabled={pendente} title="Assistir ao vídeo" onClick={() => iniciar(async () => { const r = await urlDoVideoCaixaAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setPrevia({ nome: i.nome, url: r.url }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="play_circle" s={14} />Prévia</button>}
             {i.status === 'pronto' && <button type="button" disabled={pendente} title="A IA da plataforma assiste ao vídeo e resume" onClick={() => iniciar(async () => { const r = await descreverVideoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setVendo({ nome: i.nome, d: r }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="auto_awesome" s={14} />Resumo</button>}
             {i.status === 'erro' && i.origem === 'drive' && <button type="button" disabled={pendente} onClick={() => iniciar(async () => void avisar(await tentarDeNovoAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}>Tentar de novo</button>}
             {i.status !== 'usado' && <button type="button" aria-label={`Remover ${i.nome}`} disabled={pendente} onClick={async () => { if (await confirmar({ titulo: `Remover "${i.nome}" da caixa?`, descricao: 'O arquivo também é apagado do armazenamento.', confirmar: 'Remover', perigo: true })) iniciar(async () => void avisar(await excluirItemCaixaAcao(i.id), true)) }} className="b-icon" style={{ width: 24, height: 24 }}><Ic n="delete" s={16} /></button>}
           </li>
         ))}
       </ul>
+      <Dialog open={!!previa} onOpenChange={(a) => !a && setPrevia(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Prévia</DialogTitle><DialogDescription className="truncate">{previa?.nome}</DialogDescription></DialogHeader>
+          {previa && <video src={previa.url} controls autoPlay playsInline preload="metadata" className="max-h-[70vh] w-full rounded bg-black" />}
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!vendo} onOpenChange={(a) => !a && setVendo(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>O que a IA viu no vídeo</DialogTitle><DialogDescription className="truncate">{vendo?.nome}</DialogDescription></DialogHeader>

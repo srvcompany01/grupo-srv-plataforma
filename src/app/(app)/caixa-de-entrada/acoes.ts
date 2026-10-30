@@ -86,6 +86,16 @@ export async function marcarTipoCaixaAcao(itemId: string, tipo: TipoDoVideo): Pr
   return r
 }
 
+export async function urlDoVideoCaixaAcao(itemId: string): Promise<{ url: string } | { erro: string }> {
+  await exigirEquipe()
+  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
+  try {
+    return { url: await caixa.urlDoVideo(await criarClienteServidor(), itemId) }
+  } catch (err) {
+    return { erro: msg(err) }
+  }
+}
+
 export async function excluirItemCaixaAcao(itemId: string): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }

@@ -115,6 +115,14 @@ export async function marcarTipoItem(sb: Supabase, itemId: string, tipo: TipoDoV
   if (error) throw error
 }
 
+/** Link temporário para assistir ao vídeo da caixa no navegador. */
+export async function urlDoVideo(sb: Supabase, itemId: string): Promise<string> {
+  const { data, error } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).single()
+  if (error) throw error
+  if (data.status !== 'pronto') throw new Error('O vídeo ainda não está pronto.')
+  return urlLeitura(data.r2_key)
+}
+
 export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   const { data } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).maybeSingle()
   const { error } = await sb.from('content_inbox').delete().eq('id', itemId)
