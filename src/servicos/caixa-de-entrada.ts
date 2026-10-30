@@ -1,6 +1,6 @@
 import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { Formato } from '@/dominio/conteudo'
-import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
+import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, gerarChaveCriativo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
 import { apagarDoGemini, configGemini, enviarAoGemini, gerarJsonGemini } from '@/ia/gemini'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -73,7 +73,7 @@ export async function iniciarImportacaoDrive(sb: Supabase, euId: string, e: { cl
 }
 
 /** Copia o arquivo do Drive para o armazenamento. Roda em segundo plano (chave mestra: não depende de quem pediu). */
-export async function executarImportacao(itemId: string): Promise<void> {
+export async function executarImportacao(itemId: string, depois?: { criarCriativo?: { nome?: string } }): Promise<void> {
   const admin = criarClienteAdmin()
   const { data: item } = await admin.from('content_inbox').select('id, drive_file_id, r2_key, mime').eq('id', itemId).single()
   if (!item?.drive_file_id) return
@@ -84,6 +84,16 @@ export async function executarImportacao(itemId: string): Promise<void> {
   } catch (e) {
     console.error('importação do Drive', e)
     await admin.from('content_inbox').update({ status: 'erro', error: (e instanceof Error ? e.message : 'Falha ao copiar do Drive.').slice(0, 480), updated_at: new Date().toISOString() }).eq('id', itemId)
+  }
+  // O vídeo já está pronto; se só a ida para a biblioteca falhar, o item continua "pronto" e o motivo fica no aviso.
+  if (depois?.criarCriativo) {
+    try {
+      const { data } = await admin.from('content_inbox').select('status').eq('id', itemId).single()
+      if (data?.status === 'pronto') await criativoDaCaixa(admin, itemId, depois.criarCriativo.nome)
+    } catch (e) {
+      console.error('criativo da caixa', e)
+      await admin.from('content_inbox').update({ error: `Importado, mas não entrou na biblioteca de criativos: ${e instanceof Error ? e.message : 'erro'}`.slice(0, 480) }).eq('id', itemId)
+    }
   }
 }
 
@@ -176,4 +186,26 @@ Não invente nada que não esteja no vídeo.`
   } finally {
     await apagarDoGemini(cfg.chave, arquivo.nome).catch(() => {})
   }
+}
+
+// ───────────────────────────── Vídeo da caixa → biblioteca de criativos de anúncio ─────────────────────────────
+
+/**
+ * Copia o vídeo da caixa para a biblioteca de criativos do cliente (aba Anúncios → Criativos), de onde a Meta o recebe.
+ * O vídeo continua na caixa, então ainda pode virar post. Devolve o id do criativo (use em criar_campanha_meta e adicionar_anuncio_meta).
+ */
+export async function criativoDaCaixa(sb: Supabase, itemId: string, nome?: string): Promise<{ criativoId: string; nome: string }> {
+  const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status').eq('id', itemId).single()
+  if (error) throw error
+  if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa. Para usar em anúncio, crie o criativo antes do post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
+  if ((await tamanhoDoArquivo(item.r2_key)) === null) throw new Error('O arquivo não está mais no armazenamento. Envie o vídeo de novo.')
+  const chave = gerarChaveCriativo(item.client_id, item.mime)
+  await copiarArquivo(item.r2_key, chave, item.mime)
+  const titulo = (nome?.trim() || item.name.replace(/\.[a-z0-9]+$/i, '')).slice(0, 200)
+  const { data, error: e2 } = await sb.from('ad_creatives').insert({ client_id: item.client_id, nome: titulo, tipo: 'video', chave, mime: item.mime, tamanho: Number(item.size_bytes) || 1 }).select('id').single()
+  if (e2) {
+    await apagarArquivos([chave]).catch(() => [])
+    throw e2
+  }
+  return { criativoId: data.id, nome: titulo }
 }

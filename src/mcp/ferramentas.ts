@@ -17,6 +17,7 @@ import * as modelosTarefa from '@/servicos/modelos'
 import * as caixa from '@/servicos/caixa-de-entrada'
 import { idDaPastaDoDrive } from '@/dominio/caixa-de-entrada'
 import { proximasJanelas, ranquearHorarios } from '@/dominio/horarios-postagem'
+import { guiaDeAnuncioGoogle, guiaDeAnuncioMeta, guiaDePost, MODOS_META_GUIA } from '@/dominio/guia-publicacao'
 import { after } from 'next/server'
 import * as abasDaLista from '@/servicos/visoes-lista'
 import { ehTipoDeVisao } from '@/dominio/visoes-lista'
@@ -205,7 +206,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → descrever_video_caixa (a plataforma assiste ao vídeo) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → descrever_video_caixa (a plataforma assiste ao vídeo) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1424,12 +1425,28 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'importar_video_drive',
     descricao: 'Copia um vídeo do Google Drive (id de buscar_videos_drive) para a caixa de entrada do cliente. A cópia roda em segundo plano: devolve o id do item com status "importando"; consulte listar_caixa_de_entrada até virar "pronto" (vídeos grandes levam alguns minutos). Limite de 4 GB; acima de 1 GB a plataforma avisa que NÃO comprime mas a Meta pode recusar ou recomprimir: mostre o aviso à pessoa e só então envie confirmarVideoGrande=true.',
     escrita: true,
-    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB') },
+    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB'), paraBiblioteca: z.boolean().optional().describe('true = ao terminar de copiar, já entra também na biblioteca de criativos de anúncio (use para subir como anúncio)'), nomeDoCriativo: z.string().max(200).optional() },
     executar: async ({ sb, userId }, a) => {
-      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.tipo, confirmarGrande: a.confirmarVideoGrande })
-      after(() => caixa.executarImportacao(itemId))
-      return { itemId, status: 'importando', proximoPasso: 'Aguarde e consulte listar_caixa_de_entrada até o status ser "pronto".' }
+      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.paraBiblioteca ? 'anuncio' : a.tipo, confirmarGrande: a.confirmarVideoGrande })
+      after(() => caixa.executarImportacao(itemId, a.paraBiblioteca ? { criarCriativo: { nome: a.nomeDoCriativo } } : undefined))
+      return { itemId, status: 'importando', proximoPasso: a.paraBiblioteca ? 'Aguarde e consulte listar_caixa_de_entrada até "pronto"; o criativo aparece em listar_criativos_cliente (use o id em criar_campanha_meta ou adicionar_anuncio_meta).' : 'Aguarde e consulte listar_caixa_de_entrada até o status ser "pronto".' }
     },
+  }),
+
+  definir({
+    nome: 'criativo_da_caixa',
+    descricao: 'Põe um vídeo "pronto" da caixa de entrada na biblioteca de criativos de anúncio do cliente e devolve o criativoId (use em criar_campanha_meta e adicionar_anuncio_meta; a Meta recebe o vídeo na hora de criar o anúncio). O vídeo continua na caixa para ainda poder virar post — se for usar nos dois, crie o criativo ANTES de criar o post. Só admin e gestor sobem anúncios depois.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), nome: z.string().max(200).optional().describe('Nome do criativo na biblioteca (padrão: nome do arquivo)') },
+    executar: async ({ sb }, a) => ({ ...(await caixa.criativoDaCaixa(sb, a.itemId, a.nome)), proximoPasso: 'Use o criativoId em criar_campanha_meta (campanha nova) ou adicionar_anuncio_meta (conjunto existente). Antes, rode guia_publicacao com tipo anuncio_meta para ver o que perguntar à pessoa.' }),
+  }),
+
+  definir({
+    nome: 'guia_publicacao',
+    descricao: 'COMECE POR AQUI ao publicar vídeos: devolve o roteiro do que perguntar à pessoa (e os padrões), o que ler antes, os passos e os avisos, para tipo=post (orgânico agendado na Meta), anuncio_meta (campanha ou anúncio na Meta; informe modo para as perguntas exatas e as opções de botão) ou anuncio_google (campanha de Pesquisa). Pergunte o que faltar, mostre o resumo e só execute depois do OK.',
+    escrita: false,
+    entrada: { tipo: z.enum(['post', 'anuncio_meta', 'anuncio_google']), modo: z.enum(MODOS_META_GUIA).optional().describe('Só para anuncio_meta: whatsapp, direct, formulario, site ou perfil_instagram') },
+    executar: async (_ctx, a) => (a.tipo === 'post' ? guiaDePost() : a.tipo === 'anuncio_meta' ? guiaDeAnuncioMeta(a.modo) : guiaDeAnuncioGoogle()),
   }),
 
   definir({
