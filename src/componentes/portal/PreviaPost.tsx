@@ -10,7 +10,7 @@ export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { n
       <header className="flex items-center gap-2 px-3 py-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[2px]"><span className="flex h-full w-full items-center justify-center rounded-full bg-white text-legenda font-bold text-texto">{nome.slice(0, 1).toUpperCase()}</span></span>
         <span className="min-w-0 truncate text-rotulo font-semibold text-texto">{nome}{collabs.length > 0 && <span className="font-normal text-texto-2"> e {collabs.map((c) => `@${c}`).join(', ')}</span>}</span>
-        <span className="ml-auto rounded-full bg-fundo px-2 py-0.5 text-micro font-semibold text-texto-2">{ROTULO_FORMATO[formato]}</span>
+        <span className="ml-auto rounded-md bg-fundo px-2 py-0.5 text-micro font-semibold text-texto-2">{ROTULO_FORMATO[formato]}</span>
       </header>
       <div className={`flex snap-x snap-mandatory overflow-x-auto bg-black ${vertical ? 'aspect-[9/16]' : 'aspect-[4/5]'}`}>
         {midias.length === 0 && <p className="m-auto text-rotulo text-claro/70">Sem mídia ainda</p>}
@@ -22,7 +22,7 @@ export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { n
               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
               <img src={m.url} alt="" className="h-full w-full object-contain" />
             )}
-            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-micro font-semibold text-claro">{i + 1}/{midias.length}</span>}
+            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-0.5 text-micro font-semibold text-claro">{i + 1}/{midias.length}</span>}
           </div>
         ))}
       </div>

@@ -160,10 +160,10 @@ export function Gravador({ clientes, listas }: { clientes: Opcao[]; listas: Opca
       <div className="space-y-2 rounded-lg border border-borda bg-fundo/50 p-3">
         <p className={rotulo}>O que gravar</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setUsarMic((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarMic} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-rotulo font-medium ${usarMic ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
+          <button type="button" onClick={() => setUsarMic((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarMic} className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-rotulo font-medium ${usarMic ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
             <Mic className="h-3.5 w-3.5" /> Microfone (reunião presencial ou você)
           </button>
-          <button type="button" onClick={() => setUsarAba((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarAba} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-rotulo font-medium ${usarAba ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
+          <button type="button" onClick={() => setUsarAba((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarAba} className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-rotulo font-medium ${usarAba ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
             <MonitorSpeaker className="h-3.5 w-3.5" /> Áudio da reunião online (aba do Meet, Zoom, Teams)
           </button>
         </div>
@@ -183,7 +183,7 @@ export function Gravador({ clientes, listas }: { clientes: Opcao[]; listas: Opca
         )}
         {gravando && (
           <>
-            <span className="inline-flex items-center gap-2 rounded-full bg-perigo-fundo px-3 py-1.5 text-rotulo font-semibold tabular-nums text-perigo-forte">
+            <span className="inline-flex items-center gap-2 rounded-md bg-perigo-fundo px-3 py-1.5 text-rotulo font-semibold tabular-nums text-perigo-forte">
               <span className={`h-2.5 w-2.5 rounded-full bg-perigo ${etapa === 'gravando' ? 'animate-pulse' : ''}`} /> {etapa === 'pausado' ? 'Pausado' : 'Gravando'} {relogio(segundos)}
             </span>
             <button type="button" className={botaoSecundario} onClick={pausar}>{etapa === 'pausado' ? <><Play className="h-3.5 w-3.5" /> Continuar</> : <><Pause className="h-3.5 w-3.5" /> Pausar</>}</button>

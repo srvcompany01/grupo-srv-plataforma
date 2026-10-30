@@ -47,7 +47,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
       <div className="flex flex-wrap items-center gap-2">
         <CalendarClock className="h-4 w-4 text-texto-2" />
         <h3 className="text-corpo font-semibold">Publicação no Instagram e Facebook</h3>
-        <span className={`rounded-full px-2 py-0.5 text-legenda font-semibold ${cor}`}>{situacao}</span>
+        <span className={`rounded-md px-2 py-0.5 text-legenda font-semibold ${cor}`}>{situacao}</span>
       </div>
 
       {p.cliente?.googlePerfil && <p className="text-legenda text-texto-2">Google Meu Negócio: <strong>perfil ligado</strong> (vai o texto e a primeira foto)</p>}

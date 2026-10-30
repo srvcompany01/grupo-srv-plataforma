@@ -9,7 +9,7 @@ const INICIO: Estado = { etapa: 0, escolhas: [], enviando: false, url: null, err
 /** Caminho do quiz no endereço atual: funciona no domínio dedicado (/cliente) e no do aplicativo (/l/cliente). */
 const caminhoQuiz = () => `${location.pathname.replace(/\/$/, '')}/quiz`
 
-const botaoBase = 'block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors'
+const botaoBase = 'block w-full rounded-md border border-black px-5 py-3.5 text-center text-base font-medium transition-colors'
 
 /** O botão do WhatsApp da bio: abre um quiz curto e só libera a conversa (e conta o lead) depois da última resposta. */
 export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: string; quiz: QuizDaPagina; origem: string; destaque: boolean }) {

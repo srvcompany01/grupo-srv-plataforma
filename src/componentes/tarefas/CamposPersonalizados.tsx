@@ -18,7 +18,7 @@ function paraTexto(valor: Json | null | undefined) {
 }
 
 function Pilula({ nome, cor }: { nome: string; cor: string }) {
-  return <span className="inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-legenda font-medium text-texto" style={{ background: `${cor}22` }}><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cor }} /><span className="truncate">{nome}</span></span>
+  return <span className="inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-0.5 text-legenda font-medium text-texto" style={{ background: `${cor}22` }}><span className="h-2 w-2 shrink-0 rounded-md" style={{ background: cor }} /><span className="truncate">{nome}</span></span>
 }
 
 /** Escolha de opções coloridas: uma (lista suspensa) ou várias (rótulos). */

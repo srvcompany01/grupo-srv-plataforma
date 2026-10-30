@@ -182,7 +182,7 @@ async function Historico({ clienteId }: { clienteId: string }) {
         {itens.map((a) => (
           <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
             <span className="w-28 shrink-0 tabular-nums text-legenda text-texto-3">{new Date(a.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}</span>
-            <span className={`rounded-full px-1.5 py-0.5 text-micro font-semibold ${a.acao === 'pausar' ? 'bg-fundo text-texto-2' : a.acao === 'ativar' ? 'bg-sucesso-fundo text-sucesso-forte' : a.acao === 'criar' ? 'bg-[#e6f0fb] text-[#2a78d6]' : 'bg-aviso-fundo text-aviso-forte'}`}>{ROTULO_ACAO[a.acao] ?? a.acao}</span>
+            <span className={`rounded-md px-1.5 py-0.5 text-micro font-semibold ${a.acao === 'pausar' ? 'bg-fundo text-texto-2' : a.acao === 'ativar' ? 'bg-sucesso-fundo text-sucesso-forte' : a.acao === 'criar' ? 'bg-[#e6f0fb] text-[#2a78d6]' : 'bg-aviso-fundo text-aviso-forte'}`}>{ROTULO_ACAO[a.acao] ?? a.acao}</span>
             <span className="min-w-0 flex-1 truncate">{a.plataforma === 'meta' ? 'Meta' : 'Google'} · {a.nome}{a.antes || a.depois ? <span className="text-texto-3"> · {a.antes ? `${a.antes} → ` : ''}{a.depois}</span> : null}</span>
             <span className="text-legenda text-texto-3">{a.origem === 'ia' ? 'IA · ' : ''}{a.por}</span>
           </li>

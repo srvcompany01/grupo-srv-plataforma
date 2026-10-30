@@ -35,7 +35,7 @@ export function VincularListas({ documentoId, vinculadas, todas, podeEditar }: {
         {vinculadas.length === 0 && <p className="text-legenda text-texto-3">Em nenhuma lista ainda.</p>}
         <div className="flex flex-wrap gap-1">
           {vinculadas.map((l) => (
-            <span key={l.id} className="inline-flex items-center gap-1 rounded-full bg-fundo px-2 py-0.5 text-legenda ring-1 ring-borda">
+            <span key={l.id} className="inline-flex items-center gap-1 rounded-md bg-fundo px-2 py-0.5 text-legenda ring-1 ring-borda">
               <Link href={`/listas/${l.id}?visao=documentos`} className="hover:text-marca">{l.nome}</Link>
               {podeEditar && <button type="button" aria-label={`Desvincular ${l.nome}`} onClick={() => mudar(() => desvincularListaAcao(documentoId, l.id))} className="text-texto-3 hover:text-perigo"><X className="h-3 w-3" /></button>}
             </span>

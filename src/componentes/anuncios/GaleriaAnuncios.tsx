@@ -36,14 +36,14 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
           <img src={a.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
         )}
         {a.video && <PlayCircle className="absolute right-2 top-2 h-6 w-6 text-claro drop-shadow" aria-label="Vídeo" />}
-        <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-legenda font-semibold ${SELO[a.desempenho].classe}`} title={a.motivos.join('\n')}>{SELO[a.desempenho].rotulo}</span>
+        <span className={`absolute left-2 top-2 rounded-md px-2 py-0.5 text-legenda font-semibold ${SELO[a.desempenho].classe}`} title={a.motivos.join('\n')}>{SELO[a.desempenho].rotulo}</span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>
           <p className="truncate text-rotulo font-semibold text-texto" title={a.nome}>{a.titulo || a.nome}</p>
           <p className="flex min-w-0 items-center gap-1.5 text-micro text-texto-3">
             <span
-              className={`shrink-0 rounded-full px-1.5 py-0.5 font-semibold ${a.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}
+              className={`shrink-0 rounded-md px-1.5 py-0.5 font-semibold ${a.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}
               title={a.papel === 'lead' ? 'Gera conversas/leads: avaliado pelo custo por resultado' : 'Tráfego/conteúdo para o Instagram: traz seguidores e visitas que viram lead depois; avaliado pelo custo do clique, não por leads'}
             >
               {a.papel === 'lead' ? 'Leads' : 'Marca'}

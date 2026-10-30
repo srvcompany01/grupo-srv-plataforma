@@ -31,7 +31,7 @@ export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <div className="flex items-start gap-2">
           <h2 className="min-w-0 flex-1 break-words text-corpo font-semibold leading-snug">{c.nome}</h2>
-          {c.interno && <span className="shrink-0 rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Interno</span>}
+          {c.interno && <span className="shrink-0 rounded-md bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Interno</span>}
         </div>
         {/* Mesmo canto do cartão (arredondado, mais quadradinho que uma pílula). */}
         {c.status === 'ativo' ? (

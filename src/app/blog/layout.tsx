@@ -54,7 +54,7 @@ export default async function LayoutBlog({ children }: { children: React.ReactNo
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/blog/busca" aria-label="Buscar no blog" className="rounded-full p-2 hover:bg-[#f0f0ec]"><Search className="h-4 w-4" /></Link>
-            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=cabecalho`} className="whitespace-nowrap rounded-full bg-[#d80d12] px-4 py-2 text-[13px] font-semibold text-claro hover:bg-[#a2070a]"><span className="hidden sm:inline">Fale com um especialista</span><span className="sm:hidden">Fale conosco</span></Link>
+            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=cabecalho`} className="whitespace-nowrap rounded-md bg-[#d80d12] px-4 py-2 text-[13px] font-semibold text-claro hover:bg-[#a2070a]"><span className="hidden sm:inline">Fale com um especialista</span><span className="sm:hidden">Fale conosco</span></Link>
           </div>
         </div>
         <nav className="flex gap-4 overflow-x-auto border-t border-[#ececea] px-4 py-2 lg:hidden" aria-label="Categorias">
@@ -69,7 +69,7 @@ export default async function LayoutBlog({ children }: { children: React.ReactNo
           <div className="space-y-3 md:col-span-2">
             <p className="font-[family-name:var(--blog-titulo)] text-2xl font-extrabold uppercase">Grupo SRV</p>
             <p className="max-w-sm text-[14px] text-claro/70">Agência de marketing e vendas: tráfego pago, redes sociais, Google e processo comercial para empresas que querem vender com previsibilidade.</p>
-            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=rodape`} className="inline-flex rounded-full bg-[#d80d12] px-4 py-2 text-[13px] font-semibold hover:bg-[#a2070a]">Conheça a Máquina de Vendas</Link>
+            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=rodape`} className="inline-flex rounded-md bg-[#d80d12] px-4 py-2 text-[13px] font-semibold hover:bg-[#a2070a]">Conheça a Máquina de Vendas</Link>
           </div>
           <div>
             <p className="mb-3 font-[family-name:var(--blog-mono)] text-[11px] uppercase tracking-widest text-claro/50">Assuntos</p>

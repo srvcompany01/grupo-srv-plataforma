@@ -110,7 +110,7 @@ export function GeralCliente({ c, periodo, r, ativos }: { c: Cliente; periodo: P
               <li key={m.id} className="flex flex-col gap-2 rounded-lg border border-borda bg-white p-3">
                 <div className="flex items-center justify-between gap-2">
                   <strong className="text-texto">{m.nome}</strong>
-                  <span className={`rounded-full px-2 py-0.5 text-micro font-semibold ${ligado ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-fundo text-texto-3'}`}>{ligado ? 'Ativo' : 'Não criado'}</span>
+                  <span className={`rounded-md px-2 py-0.5 text-micro font-semibold ${ligado ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-fundo text-texto-3'}`}>{ligado ? 'Ativo' : 'Não criado'}</span>
                 </div>
                 <p className="text-legenda text-texto-3">{m.descricao}</p>
                 <Link href={hrefBiolytics(m.id, c, periodo)} className="text-rotulo font-semibold text-petroleo hover:underline">{ligado ? 'Ver números e configurar' : 'Criar'}</Link>

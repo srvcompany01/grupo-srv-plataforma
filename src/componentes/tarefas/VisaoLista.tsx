@@ -387,7 +387,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="area-lista space-y-2">
       {faixa && !selecionadas.size && (
         <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
-          <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
+          <span className="rounded-md bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
           {uniaColuna && campoDaFaixa(uniaColuna) && (

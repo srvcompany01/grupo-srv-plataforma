@@ -78,11 +78,11 @@ export function EditorTema({ atual }: { atual: Tema }) {
               <span className={botaoSecundario}>Compartilhar</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-marca px-3 py-1 text-rotulo font-semibold text-claro">Todas as tarefas</span>
-              <span className="rounded-full border border-borda bg-white px-3 py-1 text-rotulo">Minhas tarefas</span>
+              <span className="rounded-md bg-marca px-3 py-1 text-rotulo font-semibold text-claro">Todas as tarefas</span>
+              <span className="rounded-md border border-borda bg-white px-3 py-1 text-rotulo">Minhas tarefas</span>
             </div>
             <div className="rounded-lg border border-borda bg-white p-3 shadow-cartao">
-              <span className="rounded-full bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Marketing</span>
+              <span className="rounded-md bg-marca-fundo px-2 py-0.5 text-legenda font-semibold text-marca">Marketing</span>
               <p className="mt-1.5 text-corpo font-medium">Revisar calendário editorial</p>
               <p className="text-legenda text-texto-3">14/09 · Amanda</p>
             </div>

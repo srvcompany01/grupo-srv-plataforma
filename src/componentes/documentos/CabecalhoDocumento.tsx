@@ -41,8 +41,8 @@ export function CabecalhoDocumento({ documento, pessoas, equipe, clientes, lista
         aria-label="Título do documento"
         className="min-w-0 max-w-md flex-1 rounded-md bg-transparent px-1.5 py-1 text-destaque font-bold text-texto outline-none hover:bg-hover focus:bg-hover"
       />
-      {documento.wiki && <span className="inline-flex items-center gap-1 rounded-full bg-aviso-fundo px-2 py-0.5 text-legenda font-medium text-aviso-forte"><BookOpen className="h-3 w-3" /> Wiki</span>}
-      {documento.arquivadoEm && <span className="rounded-full bg-fundo px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">Arquivado</span>}
+      {documento.wiki && <span className="inline-flex items-center gap-1 rounded-md bg-aviso-fundo px-2 py-0.5 text-legenda font-medium text-aviso-forte"><BookOpen className="h-3 w-3" /> Wiki</span>}
+      {documento.arquivadoEm && <span className="rounded-md bg-fundo px-2 py-0.5 text-legenda text-texto-3 ring-1 ring-borda">Arquivado</span>}
       <button type="button" aria-label={favorito ? 'Tirar dos favoritos' : 'Favoritar'} onClick={() => { setFavorito(!favorito); iniciar(async () => void avisar(await favoritarAcao(documento.id, !favorito))) }} className="rounded p-1 hover:bg-hover">
         <Star className={`h-4 w-4 ${favorito ? 'fill-aviso text-aviso' : 'text-texto-3'}`} />
       </button>

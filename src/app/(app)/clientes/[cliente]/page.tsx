@@ -206,7 +206,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           icone={ListChecks}
           titulo="Trabalho por departamento"
           descricao="Tarefas com a tag deste cliente, separadas pela lista em que estão"
-          acoes={<span className="rounded-full bg-fundo px-2.5 py-0.5 text-legenda font-semibold text-texto-2">{totalTarefas} {totalTarefas === 1 ? 'tarefa' : 'tarefas'}</span>}
+          acoes={<span className="rounded-md bg-fundo px-2.5 py-0.5 text-legenda font-semibold text-texto-2">{totalTarefas} {totalTarefas === 1 ? 'tarefa' : 'tarefas'}</span>}
         >
           {departamentos.length === 0 ? (
             <p className="py-6 text-center text-corpo text-texto-3">Nenhuma tarefa com a tag deste cliente ainda.</p>
@@ -219,7 +219,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
                     <div className="flex items-center justify-between gap-2 border-b border-borda bg-fundo/60 px-3 py-2">
                       <h3 className="flex min-w-0 items-center gap-2 text-rotulo font-semibold text-texto">
                         <span className="truncate">{listaNome}</span>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-legenda font-normal text-texto-3">{raizes.length}</span>
+                        <span className="rounded-md bg-white px-2 py-0.5 text-legenda font-normal text-texto-3">{raizes.length}</span>
                       </h3>
                       <Link href={`/listas/${listaId}`} className="shrink-0 text-legenda font-semibold text-petroleo hover:underline">Abrir lista →</Link>
                     </div>
@@ -345,10 +345,10 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
           <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5">
             <span className="min-w-0 flex-1">
               {data(r.de)} a {data(r.ate)}
-              {r.automatico && <span className="ml-1.5 rounded-full bg-fundo px-1.5 text-micro font-semibold text-texto-3">automático</span>}
-              {r.desatualizado && <span className="ml-1.5 rounded-full bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title="Há uma versão mais nova do cálculo e da separação entre pago e orgânico. Gere novamente antes de enviar.">desatualizado</span>}
-              {r.revogado && <span className="ml-1.5 rounded-full bg-perigo-fundo px-1.5 text-micro font-semibold text-perigo-forte">revogado</span>}
-              {r.avisos.length > 0 && <span className="ml-1.5 rounded-full bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title={r.avisos.join('\n')}>{r.avisos.length} aviso(s)</span>}
+              {r.automatico && <span className="ml-1.5 rounded-md bg-fundo px-1.5 text-micro font-semibold text-texto-3">automático</span>}
+              {r.desatualizado && <span className="ml-1.5 rounded-md bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title="Há uma versão mais nova do cálculo e da separação entre pago e orgânico. Gere novamente antes de enviar.">desatualizado</span>}
+              {r.revogado && <span className="ml-1.5 rounded-md bg-perigo-fundo px-1.5 text-micro font-semibold text-perigo-forte">revogado</span>}
+              {r.avisos.length > 0 && <span className="ml-1.5 rounded-md bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title={r.avisos.join('\n')}>{r.avisos.length} aviso(s)</span>}
             </span>
             <span className="text-legenda text-texto-3">{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
             {!r.revogado && <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>}

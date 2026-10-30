@@ -27,7 +27,7 @@ export function CamposCliente({ clienteId, campos, valores, podeEditar }: { clie
           <label key={c.id} className="block">
             <span className="mb-1 flex items-center gap-2 text-legenda font-semibold text-texto-2">
               {c.nome}
-              {c.naCapa && <span className="rounded-full bg-marca-fundo px-1.5 py-0.5 text-legenda font-semibold text-marca">Na galeria</span>}
+              {c.naCapa && <span className="rounded-md bg-marca-fundo px-1.5 py-0.5 text-legenda font-semibold text-marca">Na galeria</span>}
             </span>
             {c.tipo === 'selecao' ? (
               <select

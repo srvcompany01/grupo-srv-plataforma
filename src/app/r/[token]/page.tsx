@@ -183,7 +183,7 @@ export default async function Relatorio({ params, searchParams }: PageProps<'/r/
               <h1 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-[#1d6fe0]">{r.cliente}</h1>
             </div>
           </div>
-          <p className="rounded-full border border-borda bg-white px-3 py-1 text-rotulo font-semibold text-texto-2">{data(r.de)} a {data(r.ate)}</p>
+          <p className="rounded-md border border-borda bg-white px-3 py-1 text-rotulo font-semibold text-texto-2">{data(r.de)} a {data(r.ate)}</p>
         </header>
 
         {r.destaques.length > 0 && (
@@ -227,8 +227,8 @@ export default async function Relatorio({ params, searchParams }: PageProps<'/r/
                       <td className="py-2 pr-3">
                         <p className="font-semibold text-texto">{c.nome}</p>
                         <p className="flex flex-wrap items-center gap-1.5 text-micro text-texto-3">
-                          <span className={`rounded-full px-1.5 py-0.5 font-semibold ${c.plataforma === 'meta' ? 'bg-[#e8f0fe] text-[#0866ff]' : 'bg-[#fdeee6] text-[#c2551f]'}`}>{c.plataforma === 'meta' ? 'Meta' : 'Google'}</span>
-                          <span className={`rounded-full px-1.5 py-0.5 font-semibold ${c.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}>{c.papel === 'lead' ? 'Geração de leads' : 'Marca (alcance e seguidores)'}</span>
+                          <span className={`rounded-md px-1.5 py-0.5 font-semibold ${c.plataforma === 'meta' ? 'bg-[#e8f0fe] text-[#0866ff]' : 'bg-[#fdeee6] text-[#c2551f]'}`}>{c.plataforma === 'meta' ? 'Meta' : 'Google'}</span>
+                          <span className={`rounded-md px-1.5 py-0.5 font-semibold ${c.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}>{c.papel === 'lead' ? 'Geração de leads' : 'Marca (alcance e seguidores)'}</span>
                           {!c.ativa && <span>pausada</span>}
                         </p>
                       </td>

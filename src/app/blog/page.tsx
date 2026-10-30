@@ -31,7 +31,7 @@ export default async function InicioBlog() {
       <h1 className="sr-only">Blog da Grupo SRV: marketing e vendas para empresas</h1>
       {lidos.posts.length > 0 && (
         <div className="flex items-center gap-3 overflow-x-auto border-b border-[#e6e6e2] py-3 text-[13px]">
-          <span className="shrink-0 rounded-full bg-[#d80d12] px-2.5 py-0.5 font-[family-name:var(--blog-mono)] text-[11px] font-semibold uppercase tracking-wider text-claro">Em alta</span>
+          <span className="shrink-0 rounded-md bg-[#d80d12] px-2.5 py-0.5 font-[family-name:var(--blog-mono)] text-[11px] font-semibold uppercase tracking-wider text-claro">Em alta</span>
           {lidos.posts.slice(0, 3).map((p) => <Link key={p.id} href={`/blog/${p.slug}`} className="shrink-0 font-medium hover:text-[#d80d12]">{p.titulo}</Link>)}
         </div>
       )}

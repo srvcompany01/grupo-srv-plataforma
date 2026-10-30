@@ -71,13 +71,13 @@ export default async function PaginaDocumentos({ searchParams }: PageProps<'/doc
                     <td className="px-2 py-1.5">
                       <Link href={`/documentos/${d.id}`} className="flex items-center gap-2 font-medium text-texto hover:text-marca">
                         <FileText className="h-3.5 w-3.5 shrink-0 text-texto-3" /> <span className="truncate">{d.titulo}</span>
-                        {d.wiki && <span className="rounded-full bg-aviso-fundo px-1.5 text-legenda text-aviso-forte">Wiki</span>}
+                        {d.wiki && <span className="rounded-md bg-aviso-fundo px-1.5 text-legenda text-aviso-forte">Wiki</span>}
                       </Link>
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex flex-wrap gap-1">
                         {d.listas.length === 0 && <span className="text-texto-3">—</span>}
-                        {d.listas.map((l) => <Link key={l.id} href={`/listas/${l.id}?visao=documentos`} className="rounded-full bg-fundo px-2 py-0.5 text-legenda ring-1 ring-borda hover:text-marca">{l.nome}</Link>)}
+                        {d.listas.map((l) => <Link key={l.id} href={`/listas/${l.id}?visao=documentos`} className="rounded-md bg-fundo px-2 py-0.5 text-legenda ring-1 ring-borda hover:text-marca">{l.nome}</Link>)}
                       </div>
                     </td>
                     <td className="px-2 py-1.5 text-texto-2">{d.clienteNome ? <NomeCliente nome={d.clienteNome} /> : '—'}{d.clienteVisivel && <span className="ml-1 text-legenda text-marca" title="O cliente vê este documento">· visível</span>}</td>

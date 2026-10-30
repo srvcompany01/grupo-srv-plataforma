@@ -236,7 +236,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         const fora = !dia.startsWith(mes)
         return (
           <div key={dia} className={`min-h-20 min-w-0 p-1 md:min-h-28 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-            <Link href={url({ visao: 'dia', data: dia })} className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2 hover:bg-hover'}`}>
+            <Link href={url({ visao: 'dia', data: dia })} className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2 hover:bg-hover'}`}>
               {Number(dia.slice(8))}
             </Link>
             <ul className="space-y-0.5">
@@ -277,7 +277,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         <div className="flex flex-wrap items-center gap-2">
           <nav className="flex gap-0.5 rounded-full bg-[var(--bg-active)] p-0.5" aria-label="Visão">
             {VISOES.map((v) => (
-              <Link key={v.valor} href={url({ visao: v.valor })} className={`rounded-full px-3 py-0.5 text-rotulo font-semibold ${visao === v.valor ? 'bg-[var(--bg)] text-texto' : 'text-texto-2 hover:text-texto'}`}>{v.rotulo}</Link>
+              <Link key={v.valor} href={url({ visao: v.valor })} className={`rounded-md px-3 py-0.5 text-rotulo font-semibold ${visao === v.valor ? 'bg-[var(--bg)] text-texto' : 'text-texto-2 hover:text-texto'}`}>{v.rotulo}</Link>
             ))}
           </nav>
           {googleConfigurado() && <BotaoGoogle email={google ? google.email : null} />}

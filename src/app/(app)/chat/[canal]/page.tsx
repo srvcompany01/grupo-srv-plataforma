@@ -83,7 +83,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
           {novoDia && (
             <div className="my-3 flex items-center gap-3 px-3">
               <span className="h-px flex-1 bg-[var(--border-soft)]" />
-              <span className="rounded-full border border-borda bg-[var(--bg)] px-2.5 py-0.5 text-legenda font-semibold capitalize text-texto-2">{rotuloDia(dia, hoje)}</span>
+              <span className="rounded-md border border-borda bg-[var(--bg)] px-2.5 py-0.5 text-legenda font-semibold capitalize text-texto-2">{rotuloDia(dia, hoje)}</span>
               <span className="h-px flex-1 bg-borda" />
             </div>
           )}
@@ -105,7 +105,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
             <Link key={c.id} href={`/chat/${c.nome}`} className={`flex items-center gap-2 rounded px-2 py-1 text-corpo ${c.id === canal.id ? 'bg-[var(--bg-active)] font-semibold text-texto' : c.naoLidas ? 'font-semibold text-texto hover:bg-hover' : 'text-texto-2 hover:bg-hover'}`}>
               <IconeCanal c={c} className="h-3.5 w-3.5 shrink-0 text-texto-3" />
               <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-              {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-full bg-perigo px-1.5 text-micro font-bold text-claro">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
+              {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-md bg-perigo px-1.5 text-micro font-bold text-claro">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
             </Link>
           ))}
           <p className="px-2 pb-0.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Mensagens diretas</p>
@@ -124,7 +124,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
         {/* No celular os canais viram uma faixa rolável. */}
         <nav className="flex gap-1 overflow-x-auto border-b border-borda px-3 py-2 md:hidden" aria-label="Canais">
           {canaisComuns.map((c) => (
-            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-claro' : 'border border-borda text-texto-2'}`}>
+            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-claro' : 'border border-borda text-texto-2'}`}>
               <IconeCanal c={c} className="h-3 w-3" /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
             </Link>
           ))}

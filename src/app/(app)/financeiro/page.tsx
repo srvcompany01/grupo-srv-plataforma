@@ -122,7 +122,7 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
                       <td className="max-w-64 truncate px-3 py-2 text-texto">{l.descricao || '—'}</td>
                       <td className="px-3 py-2 text-texto-2">{l.categoria}</td>
                       <td className="px-3 py-2 text-texto-2">{l.clienteNome ? <NomeCliente nome={l.clienteNome} /> : '—'}</td>
-                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-legenda font-medium ${l.pago ? 'bg-sucesso/10 text-sucesso' : 'bg-aviso-fundo text-aviso-forte'}`}>{l.pago ? (l.tipo === 'entrada' ? 'Recebido' : 'Pago') : l.tipo === 'entrada' ? 'A receber' : 'A pagar'}</span></td>
+                      <td className="px-3 py-2"><span className={`rounded-md px-2 py-0.5 text-legenda font-medium ${l.pago ? 'bg-sucesso/10 text-sucesso' : 'bg-aviso-fundo text-aviso-forte'}`}>{l.pago ? (l.tipo === 'entrada' ? 'Recebido' : 'Pago') : l.tipo === 'entrada' ? 'A receber' : 'A pagar'}</span></td>
                       <td className={`px-3 py-2 text-right font-semibold tabular-nums ${l.tipo === 'entrada' ? 'text-sucesso' : 'text-perigo'}`}>{l.tipo === 'entrada' ? '+' : '−'} {formatarReais(l.centavos)}</td>
                       <td className="px-3 py-2"><AcoesLancamento lancamento={l} clientes={opcoesClientes} hoje={hoje} /></td>
                     </tr>

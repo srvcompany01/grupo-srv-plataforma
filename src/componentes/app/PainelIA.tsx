@@ -314,7 +314,7 @@ function PainelIAInterno() {
                   localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
                 } catch {}
               }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
             >
               <Brain className="h-3.5 w-3.5" /> Pensar {pensar ? 'ligado' : 'desligado'}
             </button>

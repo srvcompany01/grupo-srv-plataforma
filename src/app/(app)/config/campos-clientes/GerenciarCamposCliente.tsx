@@ -55,7 +55,7 @@ function LinhaCampo({ campo }: { campo: CampoCliente }) {
         autoComplete="off"
         className="h-8 min-w-40 flex-1 rounded-md border border-transparent bg-transparent px-2 text-corpo font-medium outline-none hover:border-borda focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20"
       />
-      <span className="rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2">{rotuloTipo(campo.tipo)}</span>
+      <span className="rounded-md bg-hover px-2 py-0.5 text-legenda text-texto-2">{rotuloTipo(campo.tipo)}</span>
       <label className="flex cursor-pointer items-center gap-2 text-legenda text-texto-2">
         <input
           type="checkbox"

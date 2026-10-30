@@ -138,7 +138,7 @@ export default async function Artigo({ params }: PageProps<'/blog/[slug]'>) {
 
           {p.tags.length > 0 && (
             <ul className="mt-8 flex flex-wrap gap-2" aria-label="Tags">
-              {p.tags.map((t) => <li key={t} className="rounded-full border border-[#e6e6e2] bg-white px-3 py-1 text-[12px] text-[#4a4a4a]">#{t}</li>)}
+              {p.tags.map((t) => <li key={t} className="rounded-md border border-[#e6e6e2] bg-white px-3 py-1 text-[12px] text-[#4a4a4a]">#{t}</li>)}
             </ul>
           )}
           {p.aviso && <p className="mt-6 rounded-xl bg-[#f0f0ec] px-4 py-3 text-[13px] text-[#4a4a4a]"><strong className="text-[#070707]">Nota editorial:</strong> {p.aviso}</p>}

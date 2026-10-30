@@ -87,7 +87,7 @@ function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string;
         <section key={c.titulo} className="flex min-w-0 flex-col rounded-lg border border-borda bg-fundo/50">
           <h2 className="flex items-center gap-2 border-b border-borda px-3 py-2 text-rotulo font-semibold text-texto">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.cor }} aria-hidden /> {c.titulo}
-            <span className="ml-auto rounded-full bg-white px-1.5 text-micro font-semibold text-texto-2">{c.itens.length}</span>
+            <span className="ml-auto rounded-md bg-white px-1.5 text-micro font-semibold text-texto-2">{c.itens.length}</span>
           </h2>
           <ul className="space-y-2 p-2">
             {c.itens.length === 0 && <li className="py-4 text-center text-legenda text-texto-3">Nada aqui.</li>}
@@ -156,7 +156,7 @@ function Calendario({ itens, mes, hoje, href }: { itens: Agendamento[]; mes: str
           const fora = !dia.startsWith(mes)
           return (
             <div key={dia} className={`min-h-24 min-w-0 p-1 md:min-h-32 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-              <span className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2'}`}>{Number(dia.slice(8))}</span>
+              <span className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2'}`}>{Number(dia.slice(8))}</span>
               <ul className="space-y-0.5">
                 {lista.slice(0, 4).map((a) => (
                   <li key={a.id}>
@@ -225,7 +225,7 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
     const dia = a.em ? dataDeHoje(new Date(a.em)) : hoje
     porDia.set(dia, [...(porDia.get(dia) ?? []), a])
   }
-  const chip = (ativo: boolean) => `rounded-full px-3 py-1 text-rotulo font-medium ${ativo ? 'bg-petroleo text-claro' : 'border border-borda bg-white text-texto-2 hover:bg-hover'}`
+  const chip = (ativo: boolean) => `rounded-md px-3 py-1 text-rotulo font-medium ${ativo ? 'bg-petroleo text-claro' : 'border border-borda bg-white text-texto-2 hover:bg-hover'}`
 
   return (
     <div className="page-shell">

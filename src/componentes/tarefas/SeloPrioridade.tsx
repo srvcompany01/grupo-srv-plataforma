@@ -11,7 +11,7 @@ const ESTILO: Record<Prioridade, { fundo: string; texto: string }> = {
 export function SeloPrioridade({ prioridade }: { prioridade: Prioridade }) {
   const e = ESTILO[prioridade]
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-legenda font-semibold" style={{ background: e.fundo, color: e.texto }}>
+    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-legenda font-semibold" style={{ background: e.fundo, color: e.texto }}>
       {ROTULO_PRIORIDADE[prioridade]}
     </span>
   )

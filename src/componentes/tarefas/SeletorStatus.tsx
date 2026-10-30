@@ -28,7 +28,7 @@ export function SeletorStatus({
         data-redondo={comNome ? undefined : true}
         aria-label={`Status: ${atual?.nome ?? ''}`}
         title={atual?.nome}
-        className={comNome ? 'inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded px-2 text-[12px] font-medium' : 'flex h-5 w-5 items-center justify-center rounded-full p-0'}
+        className={comNome ? 'inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded px-2 text-[12px] font-medium' : 'flex h-5 w-5 items-center justify-center rounded-md p-0'}
         style={comNome ? { background: `color-mix(in srgb, ${atual?.cor ?? '#8b8b94'} 16%, transparent)` } : undefined}
       >
         {comNome ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: atual?.cor ?? '#8b8b94' }} /><span>{atual?.nome ?? '—'}</span></> : <IconeStatus info={iconeDoStatus(opcoes, statusId)} cor={atual?.cor ?? '#8b8b94'} className="h-4 w-4" tracejado={false} />}

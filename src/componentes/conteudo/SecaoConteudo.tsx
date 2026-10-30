@@ -107,15 +107,15 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
             value={conteudo.formato}
             disabled={pendente}
             onChange={(e) => iniciar(async () => { if (avisar(await alterarFormatoAcao(tarefaId, e.target.value), true)) router.refresh() })}
-            className="cursor-pointer rounded-full border-0 px-2 py-0.5 text-legenda font-semibold text-claro outline-none"
+            className="cursor-pointer rounded-md border-0 px-2 py-0.5 text-legenda font-semibold text-claro outline-none"
             style={{ background: corDoFormato(conteudo.formato) }}
           >
             {FORMATOS.map((f) => <option key={f} value={f} className="bg-white text-texto">{ROTULO_FORMATO[f]}</option>)}
           </select>
         ) : (
-          <span className="rounded-full px-2 py-0.5 text-legenda font-semibold text-claro" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
+          <span className="rounded-md px-2 py-0.5 text-legenda font-semibold text-claro" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
         )}
-        <span className={`rounded-full px-2 py-0.5 text-legenda font-semibold ${COR_APROVACAO[conteudo.aprovacao]}`}>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
+        <span className={`rounded-md px-2 py-0.5 text-legenda font-semibold ${COR_APROVACAO[conteudo.aprovacao]}`}>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
         <span className="ml-auto text-legenda text-texto-3">Versão {conteudo.versaoAtual}</span>
       </div>
 

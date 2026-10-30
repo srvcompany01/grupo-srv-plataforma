@@ -71,7 +71,7 @@ function Orcamento({ valor, total, desabilitado, aoSalvar }: { valor: number | n
 
 function SeloStatus({ status }: { status: string }) {
   const cor = status === 'ACTIVE' || status === 'ENABLED' ? 'bg-sucesso-fundo text-sucesso-forte' : ['DISAPPROVED', 'WITH_ISSUES'].includes(status) ? 'bg-perigo-fundo text-perigo-forte' : status === 'PENDING_REVIEW' || status === 'IN_PROCESS' ? 'bg-aviso-fundo text-aviso-forte' : 'bg-fundo text-texto-3'
-  return <span className={`rounded-full px-1.5 py-0.5 text-micro font-semibold ${cor}`}>{ROTULO_STATUS[status] ?? status}</span>
+  return <span className={`rounded-md px-1.5 py-0.5 text-micro font-semibold ${cor}`}>{ROTULO_STATUS[status] ?? status}</span>
 }
 
 function LinhaMeta({ o, clienteId, podeGerir, nivel, abertos, alternar }: { o: ObjetoMetaTela; clienteId: string; podeGerir: boolean; nivel: number; abertos: Set<string>; alternar: (id: string) => void }) {

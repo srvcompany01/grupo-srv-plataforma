@@ -139,7 +139,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'etiquetas':
         return (
           <span key={colunaId} {...marca(colunaId)} className={`flex min-w-0 flex-wrap gap-1 px-2${realce(colunaId)}`}>
-            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-full px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
+            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-md px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
           </span>
         )
       default:

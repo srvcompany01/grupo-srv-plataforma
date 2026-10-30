@@ -41,7 +41,7 @@ export function AlternadorVisao({
       className={`inline-flex items-center gap-1.5 text-rotulo font-semibold transition ${
         abas
           ? `h-9 border-b-2 px-1.5 text-corpo ${filtros.visao === visao ? 'border-texto font-semibold text-texto' : 'border-transparent font-normal text-texto-2 hover:text-texto'}`
-          : `rounded-full px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
+          : `rounded-md px-3 py-1.5 ${filtros.visao === visao ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`
       }`}
     >
       <IconeVisao visao={visao} />

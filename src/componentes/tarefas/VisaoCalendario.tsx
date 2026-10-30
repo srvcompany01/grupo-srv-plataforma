@@ -159,7 +159,7 @@ export function VisaoCalendario({
         {campos.length > 0 && (
           <Popover>
             <PopoverTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-borda bg-white px-2.5 py-1.5 text-legenda font-semibold text-texto-2 shadow-sm hover:bg-hover">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-full bg-petroleo px-1.5 text-micro text-claro">{camposVisiveis.length}</span>}
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-md bg-petroleo px-1.5 text-micro text-claro">{camposVisiveis.length}</span>}
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-0.5 p-2">
               <p className="px-2 pb-1 text-legenda font-medium text-texto-3">Mostrar nos itens</p>
@@ -267,7 +267,7 @@ export function VisaoCalendario({
               <div className="flex flex-wrap gap-2">
                 {emAtraso.slice(0, 12).map((tarefa) => (
                   <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
-                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-full border border-perigo/40 bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-md border border-perigo/40 bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
                   )}</Arrastavel>
                 ))}
                 {emAtraso.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{emAtraso.length - 12}</span>}
@@ -278,7 +278,7 @@ export function VisaoCalendario({
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
-                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-full border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-md border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
               )}</Arrastavel>
             ))}
             {semData.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{semData.length - 12}</span>}

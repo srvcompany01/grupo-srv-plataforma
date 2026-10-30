@@ -239,7 +239,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               if (!a || !b) return null
               const sel = selecao?.tipo === 'ligacao' && selecao.id === l.id
               return (
-                <button key={l.id} type="button" data-ui onPointerDown={(ev) => ev.stopPropagation()} onClick={() => setSelecao({ tipo: 'ligacao', id: l.id })} className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-white px-2 py-0.5 text-legenda font-semibold shadow-sm ${sel ? 'border-[#2563eb] text-[#2563eb]' : 'border-borda text-texto-2'}`} style={{ left: (a.x + NO_LARGURA + b.x) / 2, top: (a.y + b.y + NO_ALTURA) / 2 }} title="Clique para editar a taxa de conversão">
+                <button key={l.id} type="button" data-ui onPointerDown={(ev) => ev.stopPropagation()} onClick={() => setSelecao({ tipo: 'ligacao', id: l.id })} className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-white px-2 py-0.5 text-legenda font-semibold shadow-sm ${sel ? 'border-[#2563eb] text-[#2563eb]' : 'border-borda text-texto-2'}`} style={{ left: (a.x + NO_LARGURA + b.x) / 2, top: (a.y + b.y + NO_ALTURA) / 2 }} title="Clique para editar a taxa de conversão">
                   {numero.format(l.taxa)}% · {numero.format(calculo.fluxo[l.id] ?? 0)}
                 </button>
               )

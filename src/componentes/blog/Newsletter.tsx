@@ -27,10 +27,10 @@ export function Newsletter({ origem, compacta }: { origem: string; compacta?: bo
   return (
     <form onSubmit={enviar} className="space-y-3">
       <div className={`grid gap-2 ${compacta ? '' : 'sm:grid-cols-[1fr_1.3fr_auto]'}`}>
-        <input name="nome" placeholder="Seu nome" maxLength={80} autoComplete="given-name" className="h-12 rounded-full border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
-        <input name="email" type="email" required placeholder="Seu melhor e-mail" maxLength={200} autoComplete="email" className="h-12 rounded-full border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
+        <input name="nome" placeholder="Seu nome" maxLength={80} autoComplete="given-name" className="h-12 rounded-md border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
+        <input name="email" type="email" required placeholder="Seu melhor e-mail" maxLength={200} autoComplete="email" className="h-12 rounded-md border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
         <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
-        <button disabled={estado === 'enviando'} className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#d80d12] px-6 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a] disabled:opacity-60">
+        <button disabled={estado === 'enviando'} className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#d80d12] px-6 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a] disabled:opacity-60">
           <Mail className="h-4 w-4" /> {estado === 'enviando' ? 'Enviando…' : 'Quero receber'}
         </button>
       </div>
