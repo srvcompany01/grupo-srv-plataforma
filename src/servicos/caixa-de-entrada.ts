@@ -1,4 +1,5 @@
 import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { textoParaDescricao } from '@/dominio/descricao'
 import type { Formato } from '@/dominio/conteudo'
 import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, gerarChaveCriativo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
 import { completarTexto, configIA } from '@/ia/modelo'
@@ -8,6 +9,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import { extrairAudio } from './audio-video'
 import { baixarArquivo, dadosDoArquivo } from './google-drive'
 import * as conteudo from './conteudo'
+import * as tarefas from './tarefas'
 
 export type ItemDaCaixa = {
   id: string
@@ -129,21 +131,22 @@ export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   const { data } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).maybeSingle()
   const { error } = await sb.from('content_inbox').delete().eq('id', itemId)
   if (error) throw error
-  if (data && data.status !== 'usado') await apagarArquivos([data.r2_key]).catch(() => [])
+  if (data && data.status !== 'usado') await apagarArquivos([data.r2_key, chaveDoAudio(data.r2_key)]).catch(() => [])
 }
 
 /** Vira post: cria o post na lista de conteúdo, escreve a legenda e leva o vídeo da caixa para o post. Devolve o id do post. */
-export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; listaId: string; titulo: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string }): Promise<string> {
+export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; listaId: string; titulo: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
   const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status').eq('id', e.itemId).single()
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
   const tarefaId = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
   await conteudo.salvarTexto(sb, tarefaId, { ideia: e.ideia ?? '', objetivo: e.objetivo ?? '', legenda: e.legenda })
+  if (e.descricao) await tarefas.atualizarTarefa(sb, tarefaId, { descricao: textoParaDescricao(e.descricao) })
   const chave = gerarChaveConteudo(tarefaId, item.mime)
   await copiarArquivo(item.r2_key, chave, item.mime)
   await conteudo.registrarMidia(sb, tarefaId, { chave, tipo: 'video', nome: item.name, tamanho: Number(item.size_bytes) })
   await sb.from('content_inbox').update({ status: 'usado', post_task_id: tarefaId, updated_at: new Date().toISOString() }).eq('id', e.itemId)
-  await apagarArquivos([item.r2_key]).catch(() => [])
+  await apagarArquivos([item.r2_key, chaveDoAudio(item.r2_key)]).catch(() => [])
   return tarefaId
 }
 
@@ -160,6 +163,37 @@ export async function salvarFicha(sb: Supabase, f: Partial<Omit<FichaDeConteudo,
   const atual = await buscarFicha(sb, f.clienteId)
   const { error } = await sb.from('client_content_profiles').upsert({ client_id: f.clienteId, drive_folder_id: f.pastaDrive ?? atual.pastaDrive, tone: f.tom ?? atual.tom, hashtags: f.hashtags ?? atual.hashtags, cta: f.chamada ?? atual.chamada, notes: f.observacoes ?? atual.observacoes, updated_at: new Date().toISOString() }, { onConflict: 'client_id' })
   if (error) throw error
+}
+
+// ───────────────────────────── Áudio do vídeo ─────────────────────────────
+
+/** O áudio extraído fica ao lado do vídeo no R2 (mesma chave + .audio.mp3), sem coluna nova no banco. */
+const chaveDoAudio = (chaveDoVideo: string) => `${chaveDoVideo}.audio.mp3`
+
+/** Garante o áudio (MP3 mono, leve) do vídeo no armazenamento; extrai com o ffmpeg se ainda não existir. Devolve a chave do áudio. */
+export async function prepararAudio(sb: Supabase, itemId: string): Promise<string> {
+  const { data: item, error } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).single()
+  if (error) throw error
+  if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
+  const chave = chaveDoAudio(item.r2_key)
+  if ((await tamanhoDoArquivo(chave)) !== null) return chave
+  const audio = await extrairAudio(await urlLeitura(item.r2_key))
+  await enviarEmPartes(chave, 'audio/mpeg', new Blob([new Uint8Array(audio)]).stream())
+  return chave
+}
+
+/** Link temporário para baixar o áudio extraído (quem transcreve é a IA conectada pelo MCP, na plataforma dela). */
+export async function audioDoVideo(sb: Supabase, itemId: string): Promise<{ nome: string; url: string; mime: 'audio/mpeg'; tamanhoBytes: number }> {
+  const chave = await prepararAudio(sb, itemId)
+  const { data } = await sb.from('content_inbox').select('name').eq('id', itemId).single()
+  const base = (data?.name ?? 'video').replace(/\.[^.]+$/, '')
+  return { nome: `${base}.mp3`, url: await urlLeitura(chave, { download: `${base}.mp3` }), mime: 'audio/mpeg', tamanhoBytes: (await tamanhoDoArquivo(chave)) ?? 0 }
+}
+
+async function baixarAudio(chave: string): Promise<Buffer> {
+  const r = await fetch(await urlLeitura(chave))
+  if (!r.ok) throw new Error('Não consegui ler o áudio no armazenamento.')
+  return Buffer.from(await r.arrayBuffer())
 }
 
 // ───────────────────────────── A plataforma ouve o vídeo ─────────────────────────────
@@ -193,7 +227,7 @@ export async function descreverVideo(sb: Supabase, itemId: string, refazer = fal
   if (item.status === 'usado') throw new Error('Este vídeo já virou post e saiu da caixa.')
   const cfg = configIA()
   if (!cfg) throw new Error('A análise do vídeo precisa da IA da plataforma (IA_API_KEY) configurada na Vercel.')
-  const fala = await transcreverAudio(await extrairAudio(await urlLeitura(item.r2_key)))
+  const fala = await transcreverAudio(await baixarAudio(await prepararAudio(sb, itemId)))
   if (!fala) {
     const vazio: DescricaoDoVideo = { resumo: 'Não encontrei fala neste vídeo.', fala: '', temas: [], tom: '', ganchos: [] }
     await sb.from('content_inbox').update({ ai_summary: JSON.stringify(vazio), updated_at: new Date().toISOString() }).eq('id', itemId)

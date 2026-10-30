@@ -16,11 +16,12 @@ async function conectar(escopo: Contexto['escopo']) {
   return cliente
 }
 
+// descrever_video_caixa grava o resumo e gasta IA paga: por isso é de escrita, mesmo começando com "descrever".
 it('nomes das ferramentas são únicos e toda escrita está marcada', () => {
   const nomes = FERRAMENTAS.map((f) => f.nome)
   expect(new Set(nomes).size).toBe(nomes.length)
   for (const f of FERRAMENTAS.filter((x) => /^(criar|atualizar|definir|comentar)/.test(x.nome))) expect(f.escrita, f.nome).toBe(true)
-  for (const f of FERRAMENTAS.filter((x) => /^(listar|buscar|descrever)/.test(x.nome))) expect(f.escrita, f.nome).toBe(false)
+  for (const f of FERRAMENTAS.filter((x) => /^(listar|buscar|descrever)/.test(x.nome) && x.nome !== 'descrever_video_caixa')) expect(f.escrita, f.nome).toBe(false)
 })
 
 it('token de leitura não enxerga ferramentas de escrita', async () => {
