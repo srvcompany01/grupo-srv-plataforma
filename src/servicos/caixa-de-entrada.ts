@@ -1,4 +1,4 @@
-import { problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { Formato } from '@/dominio/conteudo'
 import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
 import { apagarDoGemini, configGemini, enviarAoGemini, gerarJsonGemini } from '@/ia/gemini'
@@ -35,9 +35,11 @@ export async function listarCaixa(sb: Supabase, f: { clienteId?: string; status?
 }
 
 /** Item novo que será enviado por quem tem o arquivo (navegador ou IA no computador): devolve a URL para enviar direto ao armazenamento. */
-export async function prepararEnvio(sb: Supabase, euId: string, e: { clienteId: string; nome: string; mime: string; tamanho: number; tipo?: TipoDoVideo; origem?: 'upload' | 'ia' }): Promise<{ id: string; urlEnvio: string }> {
+export async function prepararEnvio(sb: Supabase, euId: string, e: { clienteId: string; nome: string; mime: string; tamanho: number; tipo?: TipoDoVideo; origem?: 'upload' | 'ia'; confirmarGrande?: boolean }): Promise<{ id: string; urlEnvio: string }> {
   const problema = problemaDoVideo({ mime: e.mime, tamanho: e.tamanho })
   if (problema) throw new Error(problema)
+  const aviso = avisoDeVideoGrande(e.tamanho, e.nome)
+  if (aviso && !e.confirmarGrande) throw new Error(`${aviso} Confirme com a pessoa (confirmarVideoGrande=true) antes de enviar.`)
   const chave = gerarChaveCaixa(e.clienteId, e.mime)
   const { data, error } = await sb.from('content_inbox').insert({ client_id: e.clienteId, name: e.nome.slice(0, 255), source: e.origem ?? 'upload', r2_key: chave, mime: e.mime, size_bytes: e.tamanho, kind: e.tipo ?? 'indefinido', status: 'aguardando_envio', created_by: euId }).select('id').single()
   if (error) throw error
@@ -56,10 +58,12 @@ export async function confirmarEnvio(sb: Supabase, itemId: string): Promise<void
 }
 
 /** Cria o item "importando" para um arquivo do Drive. A cópia em si roda em `executarImportacao`. */
-export async function iniciarImportacaoDrive(sb: Supabase, euId: string, e: { clienteId: string; arquivoId: string; tipo?: TipoDoVideo }): Promise<string> {
+export async function iniciarImportacaoDrive(sb: Supabase, euId: string, e: { clienteId: string; arquivoId: string; tipo?: TipoDoVideo; confirmarGrande?: boolean }): Promise<string> {
   const arq = await dadosDoArquivo(e.arquivoId)
   const problema = problemaDoVideo({ mime: arq.mime, tamanho: arq.tamanho })
   if (problema) throw new Error(problema)
+  const aviso = avisoDeVideoGrande(arq.tamanho, arq.nome)
+  if (aviso && !e.confirmarGrande) throw new Error(`${aviso} Confirme com a pessoa (confirmarVideoGrande=true) antes de importar.`)
   const { data, error } = await sb.from('content_inbox').insert({ client_id: e.clienteId, name: arq.nome.slice(0, 255), source: 'drive', drive_file_id: arq.id, r2_key: gerarChaveCaixa(e.clienteId, arq.mime), mime: arq.mime, size_bytes: arq.tamanho, kind: e.tipo ?? 'indefinido', status: 'importando', created_by: euId }).select('id').single()
   if (error) {
     if ((error as { code?: string }).code === '23505') throw new Error('Este vídeo do Drive já está na caixa de entrada.')

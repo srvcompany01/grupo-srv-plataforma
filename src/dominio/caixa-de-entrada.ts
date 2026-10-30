@@ -1,4 +1,4 @@
-import { TAMANHO_MAXIMO } from './midias'
+import { TAMANHO_AVISO, TAMANHO_MAXIMO } from './midias'
 
 export type TipoDoVideo = 'organico' | 'anuncio' | 'indefinido'
 export type StatusDaCaixa = 'aguardando_envio' | 'importando' | 'pronto' | 'usado' | 'erro'
@@ -38,8 +38,18 @@ export function idDaPastaDoDrive(texto: string): string {
 /** Mensagem de problema para o vídeo (ou null se está tudo certo). */
 export function problemaDoVideo(v: { mime: string; tamanho: number }): string | null {
   if (!(MIME_VIDEO_CAIXA as readonly string[]).includes(v.mime)) return 'Só vídeos MP4 ou MOV entram na caixa de entrada.'
-  if (v.tamanho > TAMANHO_MAXIMO) return `Vídeo acima de 1 GB (${(v.tamanho / 1024 ** 3).toFixed(2).replace('.', ',')} GB): comprima antes de enviar. O Instagram também recusa arquivos muito grandes.`
+  if (v.tamanho > TAMANHO_MAXIMO) return `Vídeo acima de 4 GB (${(v.tamanho / 1024 ** 3).toFixed(2).replace('.', ',')} GB): é o limite de envio da plataforma.`
   return null
+}
+
+/**
+ * Aviso para vídeo acima de 1 GB (ou null). A plataforma NUNCA comprime: o arquivo é guardado exatamente como foi enviado.
+ * O risco está na Meta, que pode recusar ou recomprimir arquivos muito grandes ao publicar.
+ */
+export function avisoDeVideoGrande(tamanho: number, nome = 'Este vídeo'): string | null {
+  if (tamanho <= TAMANHO_AVISO) return null
+  const gb = (tamanho / 1024 ** 3).toFixed(2).replace('.', ',')
+  return `${nome} tem ${gb} GB (acima de 1 GB). A plataforma não comprime nem reduz a qualidade: ele é guardado exatamente como está. Mas o envio pode demorar mais e o Instagram/Meta pode recusar o arquivo ou recomprimi-lo ao publicar. Se a qualidade for importante, confira o post depois de publicado.`
 }
 
 export const formatarTamanho = (bytes: number) => (bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2).replace('.', ',')} GB` : `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`)

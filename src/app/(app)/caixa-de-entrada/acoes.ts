@@ -14,7 +14,7 @@ const atualizar = () => revalidatePath('/caixa-de-entrada')
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Algo deu errado.')
 
 /** Cria o item e devolve a URL para o navegador enviar o vídeo direto ao armazenamento. */
-export async function prepararEnvioCaixaAcao(e: { clienteId: string; nome: string; mime: string; tamanho: number; tipo: TipoDoVideo }): Promise<{ id: string; urlEnvio: string } | { erro: string }> {
+export async function prepararEnvioCaixaAcao(e: { clienteId: string; nome: string; mime: string; tamanho: number; tipo: TipoDoVideo; confirmarGrande?: boolean }): Promise<{ id: string; urlEnvio: string } | { erro: string }> {
   const eu = await exigirEquipe()
   if (!UUID.test(e.clienteId)) return { erro: 'Cliente inválido.' }
   try {
@@ -44,11 +44,11 @@ export async function buscarDriveAcao(clienteId: string, busca: string, tipo: 't
   }
 }
 
-export async function importarDriveAcao(clienteId: string, arquivoId: string, tipo: TipoDoVideo): Promise<Resultado> {
+export async function importarDriveAcao(clienteId: string, arquivoId: string, tipo: TipoDoVideo, confirmarGrande = false): Promise<Resultado> {
   const eu = await exigirEquipe()
   if (!UUID.test(clienteId)) return { erro: 'Cliente inválido.' }
   try {
-    const itemId = await caixa.iniciarImportacaoDrive(await criarClienteServidor(), eu.id, { clienteId, arquivoId, tipo: tipo === 'indefinido' ? undefined : tipo })
+    const itemId = await caixa.iniciarImportacaoDrive(await criarClienteServidor(), eu.id, { clienteId, arquivoId, tipo: tipo === 'indefinido' ? undefined : tipo, confirmarGrande })
     after(() => caixa.executarImportacao(itemId))
     atualizar()
     return { ok: 'Importando do Drive… aparece na lista quando terminar.' }

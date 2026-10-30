@@ -17,13 +17,16 @@ export const EXTENSAO_POR_TIPO: Record<string, string> = {
 }
 const TIPO_POR_EXTENSAO: Record<string, TipoMidia> = { jpg: 'imagem', png: 'imagem', webp: 'imagem', mp4: 'video', mov: 'video' }
 
-export const TAMANHO_MAXIMO = 1024 ** 3
+/** Acima disto a plataforma pede confirmação (o arquivo é guardado sem compressão, mas a Meta pode recusar ou recomprimir). */
+export const TAMANHO_AVISO = 1024 ** 3
+/** Limite de envio: o armazenamento aceita até 5 GB num único envio; sobra margem. */
+export const TAMANHO_MAXIMO = 4 * 1024 ** 3
 export const MAX_IMAGENS = 20
 
 export function validarArquivo(a: { tipoMime: string; tamanhoBytes: number }): TipoMidia {
   const tipo = TIPOS_ACEITOS[a.tipoMime]
   if (!tipo) throw new ErroRegra('tipo_invalido', 'Formato não aceito. Use JPG, PNG, WEBP, MP4 ou MOV.')
-  if (a.tamanhoBytes > TAMANHO_MAXIMO) throw new ErroRegra('arquivo_grande', 'Arquivo acima de 1 GB.')
+  if (a.tamanhoBytes > TAMANHO_MAXIMO) throw new ErroRegra('arquivo_grande', 'Arquivo acima de 4 GB.')
   return tipo
 }
 
@@ -47,7 +50,7 @@ export function validarEntrada(m: MidiaEntrada): void {
   if (!Number.isInteger(m.tamanhoBytes) || m.tamanhoBytes < 1) {
     throw new ErroRegra('midias_invalidas', 'Tamanho de arquivo inválido.')
   }
-  if (m.tamanhoBytes > TAMANHO_MAXIMO) throw new ErroRegra('arquivo_grande', 'Arquivo acima de 1 GB.')
+  if (m.tamanhoBytes > TAMANHO_MAXIMO) throw new ErroRegra('arquivo_grande', 'Arquivo acima de 4 GB.')
   if (typeof m.nomeOriginal !== 'string' || !m.nomeOriginal || m.nomeOriginal.length > 255) {
     throw new ErroRegra('midias_invalidas', 'Nome de arquivo inválido.')
   }

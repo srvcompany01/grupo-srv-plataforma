@@ -77,7 +77,7 @@ export async function prepararEnvioMidiaAcao(tarefaId: string, a: { nome: string
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
   if (!TIPOS_ACEITOS[a.mime]) return { erro: 'Formato não aceito. Use JPG, PNG, WEBP, MP4 ou MOV.' }
   if (!Number.isInteger(a.tamanho) || a.tamanho < 1) return { erro: 'Arquivo vazio.' }
-  if (a.tamanho > TAMANHO_MAXIMO) return { erro: 'Arquivo acima de 1 GB.' }
+  if (a.tamanho > TAMANHO_MAXIMO) return { erro: 'Arquivo acima de 4 GB.' }
   try {
     const sb = await criarClienteServidor()
     if (!(await conteudo.buscarConteudo(sb, tarefaId))) return { erro: 'Você não tem permissão para isso.' }

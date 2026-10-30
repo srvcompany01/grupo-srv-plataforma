@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { idDaPastaDoDrive, problemaDoVideo, tipoPelaPasta } from '@/dominio/caixa-de-entrada'
+import { avisoDeVideoGrande, idDaPastaDoDrive, problemaDoVideo, tipoPelaPasta } from '@/dominio/caixa-de-entrada'
 
 describe('tipoPelaPasta', () => {
   it('reconhece orgânico e anúncio pelo nome das pastas, sem depender de acento', () => {
@@ -27,10 +27,22 @@ describe('idDaPastaDoDrive', () => {
 })
 
 describe('problemaDoVideo', () => {
-  it('só MP4 e MOV até 1 GB', () => {
+  it('só MP4 e MOV até 4 GB', () => {
     expect(problemaDoVideo({ mime: 'video/mp4', tamanho: 300 * 1024 ** 2 })).toBeNull()
     expect(problemaDoVideo({ mime: 'video/quicktime', tamanho: 1024 ** 3 })).toBeNull()
     expect(problemaDoVideo({ mime: 'video/avi', tamanho: 1 })).toMatch(/MP4 ou MOV/)
-    expect(problemaDoVideo({ mime: 'video/mp4', tamanho: 1.5 * 1024 ** 3 })).toMatch(/acima de 1 GB/)
+    expect(problemaDoVideo({ mime: 'video/mp4', tamanho: 1.5 * 1024 ** 3 })).toBeNull()
+    expect(problemaDoVideo({ mime: 'video/mp4', tamanho: 4 * 1024 ** 3 + 1 })).toMatch(/acima de 4 GB/)
+  })
+})
+
+describe('avisoDeVideoGrande', () => {
+  it('só avisa acima de 1 GB e deixa claro que a plataforma não comprime', () => {
+    expect(avisoDeVideoGrande(1024 ** 3)).toBeNull()
+    expect(avisoDeVideoGrande(900 * 1024 ** 2)).toBeNull()
+    const aviso = avisoDeVideoGrande(1.5 * 1024 ** 3, 'Reels.mp4')
+    expect(aviso).toMatch(/Reels\.mp4 tem 1,50 GB/)
+    expect(aviso).toMatch(/não comprime/)
+    expect(aviso).toMatch(/Meta/)
   })
 })

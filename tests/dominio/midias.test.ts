@@ -31,9 +31,9 @@ describe('validarArquivo', () => {
     expect(codigoDe(() => validarArquivo({ tipoMime: 'image/gif', tamanhoBytes: 10 }))).toBe('tipo_invalido')
   })
 
-  it('aceita até 1 GB e recusa acima', () => {
-    expect(codigoDe(() => validarArquivo({ tipoMime: 'video/mp4', tamanhoBytes: 1024 ** 3 }))).toBeUndefined()
-    expect(codigoDe(() => validarArquivo({ tipoMime: 'video/mp4', tamanhoBytes: 1024 ** 3 + 1 }))).toBe('arquivo_grande')
+  it('aceita até 4 GB e recusa acima', () => {
+    expect(codigoDe(() => validarArquivo({ tipoMime: 'video/mp4', tamanhoBytes: 4 * 1024 ** 3 }))).toBeUndefined()
+    expect(codigoDe(() => validarArquivo({ tipoMime: 'video/mp4', tamanhoBytes: 4 * 1024 ** 3 + 1 }))).toBe('arquivo_grande')
   })
 })
 
@@ -75,11 +75,11 @@ describe('validarEntrada', () => {
     expect(codigoDe(() => validarEntrada(e({ chave: 'posts/p/x' })))).toBe('chave_invalida')
   })
 
-  it('recusa tamanho fora de 1 byte a 1 GB e nome vazio', () => {
+  it('recusa tamanho fora de 1 byte a 4 GB e nome vazio', () => {
     expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 0 })))).toBe('midias_invalidas')
     expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: -5 })))).toBe('midias_invalidas')
     expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 1.5 })))).toBe('midias_invalidas')
-    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 1024 ** 3 + 1 })))).toBe('arquivo_grande')
+    expect(codigoDe(() => validarEntrada(e({ tamanhoBytes: 4 * 1024 ** 3 + 1 })))).toBe('arquivo_grande')
     expect(codigoDe(() => validarEntrada(e({ nomeOriginal: '' })))).toBe('midias_invalidas')
   })
 })

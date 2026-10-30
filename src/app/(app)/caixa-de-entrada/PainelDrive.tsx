@@ -3,12 +3,14 @@
 import { useState, useTransition } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { formatarTamanho, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { avisoDeVideoGrande, formatarTamanho, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ArquivoDrive } from '@/servicos/google-drive'
 import { buscarDriveAcao, importarDriveAcao } from './acoes'
 
 /** Procura vídeos na pasta do cliente no Google Drive e copia os escolhidos para a caixa de entrada. */
 export function PainelDrive({ clienteId, temPasta, configurado, emailDaConta }: { clienteId: string; temPasta: boolean; configurado: boolean; emailDaConta: string | null }) {
+  const confirmar = useConfirmar()
   const [busca, setBusca] = useState('')
   const [tipo, setTipo] = useState<'todos' | 'organico' | 'anuncio'>('todos')
   const [achados, setAchados] = useState<ArquivoDrive[] | null>(null)
@@ -22,9 +24,13 @@ export function PainelDrive({ clienteId, temPasta, configurado, emailDaConta }: 
     if ('erro' in r) { setErro(r.erro); setAchados(null); return }
     setAchados(r.arquivos)
   })
-  const importar = (a: ArquivoDrive) => iniciar(async () => {
-    if (avisar(await importarDriveAcao(clienteId, a.id, a.tipo), true)) setEnviados((s) => new Set(s).add(a.id))
-  })
+  const importar = async (a: ArquivoDrive) => {
+    const aviso = avisoDeVideoGrande(a.tamanho, a.nome)
+    if (aviso && !(await confirmar({ titulo: 'Vídeo acima de 1 GB', descricao: aviso, confirmar: 'Importar mesmo assim' }))) return
+    iniciar(async () => {
+      if (avisar(await importarDriveAcao(clienteId, a.id, a.tipo, true), true)) setEnviados((s) => new Set(s).add(a.id))
+    })
+  }
 
   return (
     <section className="overflow-hidden rounded-lg border border-borda">

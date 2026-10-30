@@ -1,4 +1,5 @@
 import { prepararEnvioMidiaAcao, registrarMidiaAcao } from '@/app/(app)/conteudo/acoes'
+import { avisoDeVideoGrande } from '@/dominio/caixa-de-entrada'
 import { TIPOS_ACEITOS } from '@/dominio/midias'
 
 /** O Instagram só publica foto em JPEG: PNG/WEBP viram JPG no próprio navegador (fundo branco onde era transparente). */
@@ -26,6 +27,8 @@ export async function enviarMidia(tarefaId: string, original: File, aoProgresso:
   const arquivo = await paraJpeg(original)
   const tipo = TIPOS_ACEITOS[arquivo.type]
   if (!tipo) throw new Error('Formato não aceito. Use JPG, PNG, WEBP, MP4 ou MOV.')
+  const aviso = tipo === 'video' ? avisoDeVideoGrande(arquivo.size, arquivo.name) : null
+  if (aviso && !window.confirm(`${aviso}\n\nEnviar mesmo assim?`)) throw new Error('Envio cancelado.')
   const preparo = await prepararEnvioMidiaAcao(tarefaId, { nome: arquivo.name, mime: arquivo.type, tamanho: arquivo.size })
   if ('erro' in preparo) throw new Error(preparo.erro)
 

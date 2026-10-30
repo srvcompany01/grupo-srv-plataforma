@@ -1422,11 +1422,11 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'importar_video_drive',
-    descricao: 'Copia um vídeo do Google Drive (id de buscar_videos_drive) para a caixa de entrada do cliente. A cópia roda em segundo plano: devolve o id do item com status "importando"; consulte listar_caixa_de_entrada até virar "pronto" (vídeos grandes levam alguns minutos). Limite de 1 GB.',
+    descricao: 'Copia um vídeo do Google Drive (id de buscar_videos_drive) para a caixa de entrada do cliente. A cópia roda em segundo plano: devolve o id do item com status "importando"; consulte listar_caixa_de_entrada até virar "pronto" (vídeos grandes levam alguns minutos). Limite de 4 GB; acima de 1 GB a plataforma avisa que NÃO comprime mas a Meta pode recusar ou recomprimir: mostre o aviso à pessoa e só então envie confirmarVideoGrande=true.',
     escrita: true,
-    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional() },
+    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB') },
     executar: async ({ sb, userId }, a) => {
-      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.tipo })
+      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.tipo, confirmarGrande: a.confirmarVideoGrande })
       after(() => caixa.executarImportacao(itemId))
       return { itemId, status: 'importando', proximoPasso: 'Aguarde e consulte listar_caixa_de_entrada até o status ser "pronto".' }
     },
@@ -1434,11 +1434,11 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'preparar_envio_caixa',
-    descricao: 'Para enviar um vídeo que está no computador de quem usa a IA (Claude Code, Codex): cria o item na caixa e devolve uma URL de envio. Faça um PUT do arquivo nessa URL (curl -X PUT -H "Content-Type: <mime>" --upload-file <arquivo> "<urlEnvio>") e depois chame confirmar_envio_caixa. Só MP4 ou MOV, até 1 GB.',
+    descricao: 'Para enviar um vídeo que está no computador de quem usa a IA (Claude Code, Codex): cria o item na caixa e devolve uma URL de envio. Faça um PUT do arquivo nessa URL (curl -X PUT -H "Content-Type: <mime>" --upload-file <arquivo> "<urlEnvio>") e depois chame confirmar_envio_caixa. Só MP4 ou MOV, até 4 GB; acima de 1 GB peça a confirmação da pessoa (a plataforma não comprime, mas a Meta pode recusar ou recomprimir) e envie confirmarVideoGrande=true.',
     escrita: true,
-    entrada: { clienteId: id('Cliente'), nome: z.string().min(1).max(255), mime: z.enum(['video/mp4', 'video/quicktime']), tamanho: z.number().int().min(1), tipo: z.enum(['organico', 'anuncio']).optional() },
+    entrada: { clienteId: id('Cliente'), nome: z.string().min(1).max(255), mime: z.enum(['video/mp4', 'video/quicktime']), tamanho: z.number().int().min(1), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB') },
     executar: async ({ sb, userId }, a) => {
-      const r = await caixa.prepararEnvio(sb, userId, { clienteId: a.clienteId, nome: a.nome, mime: a.mime, tamanho: a.tamanho, tipo: a.tipo, origem: 'ia' })
+      const r = await caixa.prepararEnvio(sb, userId, { clienteId: a.clienteId, nome: a.nome, mime: a.mime, tamanho: a.tamanho, tipo: a.tipo, origem: 'ia', confirmarGrande: a.confirmarVideoGrande })
       return { itemId: r.id, urlEnvio: r.urlEnvio, comando: `curl -X PUT -H "Content-Type: ${a.mime}" --upload-file "<caminho do arquivo>" "${r.urlEnvio}"`, validadeDaUrl: '1 hora' }
     },
   }),

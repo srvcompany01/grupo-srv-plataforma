@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { problemaDoVideo, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { avisoDeVideoGrande, problemaDoVideo, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { confirmarEnvioCaixaAcao, prepararEnvioCaixaAcao } from './acoes'
 
 type Envio = { chave: string; nome: string; pct: number; erro?: string; pronto?: boolean }
@@ -12,6 +13,7 @@ type Envio = { chave: string; nome: string; pct: number; erro?: string; pronto?:
 /** Arrastar e soltar (ou escolher) vários vídeos: cada um vai direto para o armazenamento, com barra de progresso. */
 export function EnviarVideos({ clienteId }: { clienteId: string }) {
   const router = useRouter()
+  const confirmar = useConfirmar()
   const [envios, setEnvios] = useState<Envio[]>([])
   const [tipo, setTipo] = useState<TipoDoVideo>('indefinido')
   const [sobre, setSobre] = useState(false)
@@ -22,7 +24,7 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
   const enviarUm = async (arquivo: File, chave: string) => {
     const problema = problemaDoVideo({ mime: arquivo.type, tamanho: arquivo.size })
     if (problema) return mudar(chave, { erro: problema })
-    const prep = await prepararEnvioCaixaAcao({ clienteId, nome: arquivo.name, mime: arquivo.type, tamanho: arquivo.size, tipo })
+    const prep = await prepararEnvioCaixaAcao({ clienteId, nome: arquivo.name, mime: arquivo.type, tamanho: arquivo.size, tipo, confirmarGrande: true })
     if ('erro' in prep) return mudar(chave, { erro: prep.erro })
     try {
       await new Promise<void>((ok, falha) => {
@@ -43,7 +45,15 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
   }
 
   const iniciar = async (arquivos: FileList | File[]) => {
-    const lista = Array.from(arquivos)
+    let lista = Array.from(arquivos)
+    // Acima de 1 GB: a plataforma não comprime, mas a Meta pode recusar ou recomprimir. A pessoa precisa saber antes de enviar.
+    const grandes = lista.filter((f) => avisoDeVideoGrande(f.size))
+    if (grandes.length) {
+      const nomes = grandes.map((f) => `${f.name} (${(f.size / 1024 ** 3).toFixed(2).replace('.', ',')} GB)`).join('; ')
+      const ok = await confirmar({ titulo: grandes.length === 1 ? 'Vídeo acima de 1 GB' : `${grandes.length} vídeos acima de 1 GB`, descricao: `${nomes}. A plataforma NÃO comprime nem reduz a qualidade: o vídeo é guardado exatamente como está. Mas o envio demora mais e o Instagram/Meta pode recusar o arquivo ou recomprimi-lo ao publicar. Se a qualidade for importante, confira o post depois de publicado.`, confirmar: 'Enviar mesmo assim' })
+      if (!ok) lista = lista.filter((f) => !avisoDeVideoGrande(f.size))
+    }
+    if (!lista.length) return
     const novos = lista.map((f, i) => ({ chave: `${Date.now()}-${i}-${f.name}`, nome: f.name, pct: 0 }))
     setEnvios((a) => [...novos, ...a])
     // Um de cada vez: vídeos grandes disputam a mesma conexão.
@@ -71,7 +81,7 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
       >
         <Ic n="upload_file" s={28} style={{ color: 'var(--text-3)' }} />
         <p className="text-[14px]">Arraste os vídeos aqui ou <button type="button" onClick={() => entrada.current?.click()} className="font-semibold text-[var(--client)] hover:underline">escolha no computador</button></p>
-        <p className="text-[12px] text-texto-3">MP4 ou MOV, até 1 GB cada. Vários de uma vez.</p>
+        <p className="text-[12px] text-texto-3">MP4 ou MOV, até 4 GB cada, sem compressão (acima de 1 GB a plataforma avisa antes). Vários de uma vez.</p>
         <input ref={entrada} type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov" hidden onChange={(e) => { if (e.target.files?.length) void iniciar(e.target.files); e.target.value = '' }} />
       </div>
       {envios.length > 0 && (
