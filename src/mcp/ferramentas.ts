@@ -206,7 +206,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → audio_do_video_caixa (baixe o áudio extraído e transcreva você mesma; descrever_video_caixa é a alternativa feita pela plataforma) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → audio_do_video_caixa (baixe o áudio extraído e transcreva você mesma) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1402,7 +1402,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_caixa_de_entrada',
-    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Use o id em descrever_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Use o id em audio_do_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
     escrita: false,
     entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
     executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
@@ -1472,14 +1472,6 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
-    nome: 'descrever_video_caixa',
-    descricao: 'Alternativa a audio_do_video_caixa: a plataforma OUVE o vídeo da caixa (extrai o áudio, transcreve no Groq e o DeepSeek resume; exige GROQ_API_KEY) e devolve resumo, fala transcrita, temas, tom e ideias de abertura de legenda. Só o que é falado: não descreve a imagem. Devolve o resultado guardado (refazer=true gera de novo). Prefira audio_do_video_caixa e transcreva você mesma.',
-    escrita: true,
-    entrada: { itemId: id('Item da caixa (pronto)'), refazer: z.boolean().optional() },
-    executar: async ({ sb }, a) => caixa.descreverVideo(sb, a.itemId, a.refazer),
-  }),
-
-  definir({
     nome: 'audio_do_video_caixa',
     descricao: 'Devolve o endereço FIXO (não expira) para BAIXAR o áudio (MP3 mono, leve) extraído do vídeo da caixa. Baixe o arquivo, transcreva a fala na sua própria plataforma e escreva a legenda, as hashtags e as demais informações; depois grave tudo com criar_post_da_caixa (legenda + descricao). O áudio já é extraído sozinho quando o vídeo chega; se ainda não existir, esta ferramenta extrai na hora (pode levar de alguns segundos a poucos minutos em vídeo grande). O endereço fica valendo enquanto o vídeo estiver na caixa (some se for removido ou virar post), então pode baixar quando quiser. Só funciona com vídeo "pronto".',
     escrita: false,
@@ -1489,7 +1481,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_post_da_caixa',
-    descricao: 'Transforma um vídeo "pronto" da caixa em POST na lista de conteúdo: cria o post (rascunho), grava a legenda e leva o vídeo para o post. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa) ou o que descrever_video_caixa trouxe. descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
+    descricao: 'Transforma um vídeo "pronto" da caixa em POST na lista de conteúdo: cria o post (rascunho), grava a legenda e leva o vídeo para o post. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
     escrita: true,
     entrada: {
       itemId: id('Item da caixa'),

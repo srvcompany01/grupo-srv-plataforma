@@ -9,17 +9,15 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
-import { descreverVideoAcao, excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, urlDoVideoCaixaAcao } from './acoes'
+import { excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, urlDoVideoCaixaAcao } from './acoes'
 
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
-type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
 
 /** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
 export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaCaixa[]; mostrarCliente?: boolean }) {
   const router = useRouter()
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
-  const [vendo, setVendo] = useState<{ nome: string; d: Descricao } | null>(null)
   const [previa, setPrevia] = useState<{ nome: string; url: string } | null>(null)
   const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
   const renomear = () => {
@@ -60,7 +58,6 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
             {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
             {i.status === 'pronto' && <button type="button" disabled={pendente} title="Assistir ao vídeo" onClick={() => iniciar(async () => { const r = await urlDoVideoCaixaAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setPrevia({ nome: i.nome, url: r.url }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="play_circle" s={14} />Prévia</button>}
-            {i.status === 'pronto' && <button type="button" disabled={pendente} title="A plataforma ouve o vídeo, transcreve a fala e resume" onClick={() => iniciar(async () => { const r = await descreverVideoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setVendo({ nome: i.nome, d: r }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="auto_awesome" s={14} />Resumo</button>}
             {i.status === 'erro' && i.origem === 'drive' && <button type="button" disabled={pendente} onClick={() => iniciar(async () => void avisar(await tentarDeNovoAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}>Tentar de novo</button>}
             {i.status !== 'usado' && <button type="button" title="Excluir permanentemente" aria-label={`Excluir ${i.nome} permanentemente`} disabled={pendente} onClick={async () => { if (await confirmar({ titulo: `Excluir "${i.nome}" para sempre?`, descricao: 'O vídeo é apagado da caixa e do armazenamento. Não dá para desfazer.', confirmar: 'Excluir permanentemente', perigo: true })) iniciar(async () => void avisar(await excluirItemCaixaAcao(i.id), true)) }} className="b-icon" style={{ width: 24, height: 24, color: 'var(--red)' }}><Ic n="delete" s={16} /></button>}
           </li>
@@ -70,20 +67,6 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Prévia</DialogTitle><DialogDescription className="truncate">{previa?.nome}</DialogDescription></DialogHeader>
           {previa && <video src={previa.url} controls autoPlay playsInline preload="metadata" className="max-h-[70vh] w-full rounded bg-black" />}
-        </DialogContent>
-      </Dialog>
-      <Dialog open={!!vendo} onOpenChange={(a) => !a && setVendo(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader><DialogTitle>O que a IA ouviu no vídeo</DialogTitle><DialogDescription className="truncate">{vendo?.nome}</DialogDescription></DialogHeader>
-          {vendo && (
-            <div className="space-y-3 text-[13px]">
-              <div><p className="font-semibold">Resumo</p><p className="text-texto-2">{vendo.d.resumo || '—'}</p></div>
-              {vendo.d.fala && <div><p className="font-semibold">Fala</p><p className="whitespace-pre-wrap text-texto-2">{vendo.d.fala}</p></div>}
-              {vendo.d.temas.length > 0 && <div><p className="font-semibold">Temas</p><p className="text-texto-2">{vendo.d.temas.join(' · ')}</p></div>}
-              {vendo.d.tom && <div><p className="font-semibold">Tom</p><p className="text-texto-2">{vendo.d.tom}</p></div>}
-              {vendo.d.ganchos.length > 0 && <div><p className="font-semibold">Ideias de abertura da legenda</p><ul className="list-disc pl-5 text-texto-2">{vendo.d.ganchos.map((g) => <li key={g}>{g}</li>)}</ul></div>}
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </section>

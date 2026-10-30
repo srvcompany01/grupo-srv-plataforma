@@ -30,7 +30,7 @@ const COMUM_META: Pergunta[] = [
 export function guiaDePost(): Guia {
   return {
     objetivo: 'Publicar vídeos como posts orgânicos (Instagram, Facebook, Google Meu Negócio), agendados na Meta.',
-    antesDeComecar: ['ficha_conteudo_cliente (tom de voz, hashtags, chamada para ação)', 'listar_caixa_de_entrada ou buscar_videos_drive + importar_video_drive', 'descrever_video_caixa (a plataforma assiste ao vídeo para você)', 'A lista de conteúdo do cliente (use listar_arvore para achar o id)'],
+    antesDeComecar: ['ficha_conteudo_cliente (tom de voz, hashtags, chamada para ação)', 'listar_caixa_de_entrada ou buscar_videos_drive + importar_video_drive', 'audio_do_video_caixa (baixe o áudio extraído e transcreva para saber o que o vídeo fala)', 'A lista de conteúdo do cliente (use listar_arvore para achar o id)'],
     perguntas: [
       { campo: 'cliente', pergunta: 'De qual cliente são os vídeos?', obrigatorio: true },
       { campo: 'videos', pergunta: 'Quais vídeos postar? (todos da caixa, ou os que tiverem certo nome)', obrigatorio: true },
@@ -60,7 +60,7 @@ export function guiaDeAnuncioMeta(modo?: (typeof MODOS_META_GUIA)[number]): Guia
   const fixo = modo === 'whatsapp' ? 'O botão é sempre "Enviar mensagem no WhatsApp" (o número é o do WhatsApp ligado à Página).' : modo === 'direct' ? 'O botão é sempre "Enviar mensagem" no Direct do Instagram.' : modo === 'perfil_instagram' ? 'O botão é sempre "Ver perfil do Instagram".' : null
   return {
     objetivo: 'Subir um criativo (vídeo) da caixa de entrada ou do Google Drive como anúncio na Meta, numa campanha nova ou num conjunto que já existe.',
-    antesDeComecar: ['ficha_conteudo_cliente (tom de voz)', 'buscar_videos_drive + importar_video_drive (com paraBiblioteca=true) ou listar_caixa_de_entrada + criativo_da_caixa', 'listar_criativos_cliente (confirma o id do criativo)', 'descrever_video_caixa (a plataforma assiste ao vídeo para você escrever o texto)', 'estrutura_anuncios_cliente (se for adicionar a um conjunto que já existe)'],
+    antesDeComecar: ['ficha_conteudo_cliente (tom de voz)', 'buscar_videos_drive + importar_video_drive (com paraBiblioteca=true) ou listar_caixa_de_entrada + criativo_da_caixa', 'listar_criativos_cliente (confirma o id do criativo)', 'audio_do_video_caixa (baixe o áudio extraído e transcreva para escrever o texto)', 'estrutura_anuncios_cliente (se for adicionar a um conjunto que já existe)'],
     perguntas,
     passos: ['Perguntar tudo que estiver sem padrão e faltando', 'MOSTRAR o resumo (campanha, orçamento, público, texto, título, descrição, botão) e esperar o OK', 'criar_campanha_meta (campanha nova) ou adicionar_anuncio_meta (conjunto existente) — nasce PAUSADO', 'propor_alteracao_anuncio (ativar) — admin ou gestor aprova na aba Anúncios', 'Depois de no ar: detalhar_objeto_meta e editar_objeto_meta para ajustes'],
     avisos: [...(fixo ? [fixo] : []), 'Tudo nasce pausado; ativar e mudar orçamento exigem aprovação.', 'Só admin e gestor criam anúncios.', 'O mesmo criativo pode ser usado em vários anúncios (um por criativo e conjunto).'],

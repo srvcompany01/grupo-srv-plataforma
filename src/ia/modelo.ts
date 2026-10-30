@@ -89,18 +89,3 @@ export function achatarConversa<T extends { role: 'user' | 'assistant'; content:
   const anteriores = mensagens.slice(0, -1).map((m) => `${m.role === 'user' ? 'Pessoa' : 'Assistente'}: ${m.content}`).join('\n')
   return [{ role: 'user', content: `Conversa até aqui:\n${anteriores}\n\nPergunta atual: ${mensagens.at(-1)!.content}` }]
 }
-
-/** Uma pergunta simples ao modelo da plataforma (DeepSeek, quando configurado), sem ferramentas. Devolve o texto da resposta. */
-export async function completarTexto(config: Config, sistema: string, pergunta: string): Promise<string> {
-  const r = await fetch(`${config.baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.chave}` },
-    body: JSON.stringify({ model: config.modelos[0], messages: [{ role: 'system', content: sistema }, { role: 'user', content: pergunta }], temperature: 0.2, ...(config.desligarPensar ? { thinking: { type: 'disabled' } } : {}) }),
-    signal: AbortSignal.timeout(60_000),
-  })
-  if (r.status === 401 || r.status === 403) throw new Error('A chave da IA (IA_API_KEY) foi recusada. Confira se está correta.')
-  if (!r.ok) throw new Error(`A IA respondeu com erro (${r.status}).`)
-  const texto = comoTexto(((await r.json()) as Corpo).choices?.[0]?.message?.content)
-  if (!texto) throw new Error('A IA não devolveu resposta.')
-  return texto
-}

@@ -107,16 +107,6 @@ export async function excluirItemCaixaAcao(itemId: string): Promise<Resultado> {
   return r
 }
 
-export async function descreverVideoAcao(itemId: string): Promise<{ resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] } | { erro: string }> {
-  await exigirEquipe()
-  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
-  try {
-    return await caixa.descreverVideo(await criarClienteServidor(), itemId)
-  } catch (err) {
-    return { erro: msg(err) }
-  }
-}
-
 export async function salvarFichaAcao(e: { clienteId: string; pastaDrive: string; tom: string; hashtags: string; chamada: string; observacoes: string }): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(e.clienteId)) return { erro: 'Cliente inválido.' }

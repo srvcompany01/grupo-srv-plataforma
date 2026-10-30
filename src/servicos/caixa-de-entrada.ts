@@ -3,8 +3,6 @@ import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVid
 import { textoParaDescricao } from '@/dominio/descricao'
 import type { Formato } from '@/dominio/conteudo'
 import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, gerarChaveCriativo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
-import { completarTexto, configIA } from '@/ia/modelo'
-import { transcreverAudio } from '@/ia/transcricao'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { extrairAudio } from './audio-video'
@@ -215,66 +213,6 @@ export async function audioDoVideo(sb: Supabase, itemId: string): Promise<{ nome
   const base = (data?.name ?? 'video').replace(/\.[^.]+$/, '')
   const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
   return { nome: `${base}.mp3`, url: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, mime: 'audio/mpeg', tamanhoBytes: (await tamanhoDoArquivo(chave)) ?? 0 }
-}
-
-async function baixarAudio(chave: string): Promise<Buffer> {
-  const r = await fetch(await urlLeitura(chave))
-  if (!r.ok) throw new Error('Não consegui ler o áudio no armazenamento.')
-  return Buffer.from(await r.arrayBuffer())
-}
-
-// ───────────────────────────── A plataforma ouve o vídeo ─────────────────────────────
-
-export type DescricaoDoVideo = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
-
-const lerDescricao = (texto: string): DescricaoDoVideo | null => {
-  try {
-    const j = JSON.parse(texto.replace(/^```(?:json)?|```$/g, '').trim()) as Partial<DescricaoDoVideo>
-    if (typeof j.resumo !== 'string') return null
-    const lista = (v: unknown) => (Array.isArray(v) ? v.map(String).slice(0, 6) : [])
-    return { resumo: j.resumo.slice(0, 600), fala: String(j.fala ?? '').slice(0, 4000), temas: lista(j.temas), tom: String(j.tom ?? '').slice(0, 200), ganchos: lista(j.ganchos).slice(0, 3) }
-  } catch {
-    return null
-  }
-}
-
-/**
- * A plataforma ouve o vídeo: extrai o áudio (ffmpeg), transcreve a fala (Groq/Whisper) e o DeepSeek resume o que foi dito.
- * Devolve resumo, fala transcrita, temas, tom e ideias de abertura de legenda; só o que é falado, não o que aparece na imagem.
- * Serve para quem escreve a legenda (a IA conectada pelo MCP não consegue ouvir o vídeo). O resultado fica guardado no item.
- */
-export async function descreverVideo(sb: Supabase, itemId: string, refazer = false): Promise<DescricaoDoVideo> {
-  const { data: item, error } = await sb.from('content_inbox').select('id, name, r2_key, status, ai_summary').eq('id', itemId).single()
-  if (error) throw error
-  if (item.ai_summary && !refazer) {
-    const guardado = lerDescricao(item.ai_summary)
-    if (guardado) return guardado
-  }
-  if (item.status !== 'pronto' && item.status !== 'usado') throw new Error('O vídeo ainda não está pronto.')
-  if (item.status === 'usado') throw new Error('Este vídeo já virou post e saiu da caixa.')
-  const cfg = configIA()
-  if (!cfg) throw new Error('A análise do vídeo precisa da IA da plataforma (IA_API_KEY) configurada na Vercel.')
-  const fala = await transcreverAudio(await baixarAudio(await prepararAudio(sb, itemId)))
-  if (!fala) {
-    const vazio: DescricaoDoVideo = { resumo: 'Não encontrei fala neste vídeo.', fala: '', temas: [], tom: '', ganchos: [] }
-    await sb.from('content_inbox').update({ ai_summary: JSON.stringify(vazio), updated_at: new Date().toISOString() }).eq('id', itemId)
-    return vazio
-  }
-  const resposta = await completarTexto(
-    cfg,
-    'Você ajuda uma agência de marketing a escrever legendas de Instagram em português do Brasil. Responda SÓ com JSON, sem comentários.',
-    `Esta é a transcrição da fala do vídeo "${item.name}". Com base SÓ nela, responda neste formato:
-{"resumo": "do que o vídeo trata, em até 400 caracteres", "temas": ["até 6 temas ou palavras-chave"], "tom": "tom da fala em poucas palavras (ex.: descontraído, técnico, emocional)", "ganchos": ["até 3 primeiras frases possíveis para a legenda"]}
-Não invente nada que não esteja na transcrição.
-
-Transcrição:
-${fala.slice(0, 30_000)}`,
-  )
-  const d = lerDescricao(resposta) ?? lerDescricao(JSON.stringify({ resumo: resposta.slice(0, 400) }))
-  if (!d) throw new Error('A IA não conseguiu resumir a transcrição.')
-  const final: DescricaoDoVideo = { ...d, fala: fala.slice(0, 4000) }
-  await sb.from('content_inbox').update({ ai_summary: JSON.stringify(final), updated_at: new Date().toISOString() }).eq('id', itemId)
-  return final
 }
 
 // ───────────────────────────── Vídeo da caixa → biblioteca de criativos de anúncio ─────────────────────────────
