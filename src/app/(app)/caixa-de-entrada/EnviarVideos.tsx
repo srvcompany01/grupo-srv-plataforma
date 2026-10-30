@@ -1,0 +1,92 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
+import { Ic } from '@/componentes/app/Ic'
+import { avisar } from '@/componentes/tarefas/avisar'
+import { problemaDoVideo, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { confirmarEnvioCaixaAcao, prepararEnvioCaixaAcao } from './acoes'
+
+type Envio = { chave: string; nome: string; pct: number; erro?: string; pronto?: boolean }
+
+/** Arrastar e soltar (ou escolher) vários vídeos: cada um vai direto para o armazenamento, com barra de progresso. */
+export function EnviarVideos({ clienteId }: { clienteId: string }) {
+  const router = useRouter()
+  const [envios, setEnvios] = useState<Envio[]>([])
+  const [tipo, setTipo] = useState<TipoDoVideo>('indefinido')
+  const [sobre, setSobre] = useState(false)
+  const entrada = useRef<HTMLInputElement>(null)
+
+  const mudar = (chave: string, p: Partial<Envio>) => setEnvios((a) => a.map((e) => (e.chave === chave ? { ...e, ...p } : e)))
+
+  const enviarUm = async (arquivo: File, chave: string) => {
+    const problema = problemaDoVideo({ mime: arquivo.type, tamanho: arquivo.size })
+    if (problema) return mudar(chave, { erro: problema })
+    const prep = await prepararEnvioCaixaAcao({ clienteId, nome: arquivo.name, mime: arquivo.type, tamanho: arquivo.size, tipo })
+    if ('erro' in prep) return mudar(chave, { erro: prep.erro })
+    try {
+      await new Promise<void>((ok, falha) => {
+        const x = new XMLHttpRequest()
+        x.open('PUT', prep.urlEnvio)
+        x.setRequestHeader('Content-Type', arquivo.type)
+        x.upload.onprogress = (e) => e.lengthComputable && mudar(chave, { pct: Math.round((e.loaded / e.total) * 100) })
+        x.onload = () => (x.status >= 200 && x.status < 300 ? ok() : falha(new Error(`O armazenamento recusou o envio (${x.status}).`)))
+        x.onerror = () => falha(new Error('A conexão caiu durante o envio.'))
+        x.send(arquivo)
+      })
+      const r = await confirmarEnvioCaixaAcao(prep.id)
+      if (!avisar(r)) return mudar(chave, { erro: 'O arquivo não chegou. Tente de novo.' })
+      mudar(chave, { pct: 100, pronto: true })
+    } catch (e) {
+      mudar(chave, { erro: e instanceof Error ? e.message : 'Falha no envio.' })
+    }
+  }
+
+  const iniciar = async (arquivos: FileList | File[]) => {
+    const lista = Array.from(arquivos)
+    const novos = lista.map((f, i) => ({ chave: `${Date.now()}-${i}-${f.name}`, nome: f.name, pct: 0 }))
+    setEnvios((a) => [...novos, ...a])
+    // Um de cada vez: vídeos grandes disputam a mesma conexão.
+    for (const [i, f] of lista.entries()) await enviarUm(f, novos[i].chave)
+    router.refresh()
+  }
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-borda">
+      <div className="flex h-10 items-center gap-2 border-b border-borda-fraca px-3">
+        <h2 className="flex-1 text-[13px] font-semibold">Enviar vídeos</h2>
+        <label className="flex items-center gap-1.5 text-[12px] text-texto-2">
+          Tipo
+          <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoDoVideo)} className="h-6 rounded border border-borda bg-white px-1 text-[12px]">
+            <option value="indefinido">Sem tipo</option><option value="organico">Orgânico</option><option value="anuncio">Anúncio</option>
+          </select>
+        </label>
+      </div>
+      <div
+        onDragOver={(e) => { e.preventDefault(); setSobre(true) }}
+        onDragLeave={() => setSobre(false)}
+        onDrop={(e) => { e.preventDefault(); setSobre(false); if (e.dataTransfer.files.length) void iniciar(e.dataTransfer.files) }}
+        className="m-3 flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-8 text-center"
+        style={{ borderColor: sobre ? 'var(--focus)' : 'var(--border-strong)', background: sobre ? 'var(--sel)' : 'transparent' }}
+      >
+        <Ic n="upload_file" s={28} style={{ color: 'var(--text-3)' }} />
+        <p className="text-[14px]">Arraste os vídeos aqui ou <button type="button" onClick={() => entrada.current?.click()} className="font-semibold text-[var(--client)] hover:underline">escolha no computador</button></p>
+        <p className="text-[12px] text-texto-3">MP4 ou MOV, até 1 GB cada. Vários de uma vez.</p>
+        <input ref={entrada} type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov" hidden onChange={(e) => { if (e.target.files?.length) void iniciar(e.target.files); e.target.value = '' }} />
+      </div>
+      {envios.length > 0 && (
+        <ul className="border-t border-borda-fraca">
+          {envios.map((e) => (
+            <li key={e.chave} className="flex items-center gap-3 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
+              <Ic n={e.erro ? 'error' : e.pronto ? 'check_circle' : 'upload'} s={16} style={{ color: e.erro ? 'var(--red)' : e.pronto ? 'var(--ok)' : 'var(--text-3)' }} />
+              <span className="min-w-0 flex-1 truncate">{e.nome}</span>
+              {e.erro ? <span className="max-w-[55%] truncate text-[12px] text-[var(--red)]" title={e.erro}>{e.erro}</span> : (
+                <span className="flex w-40 items-center gap-2"><span className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--bg-active)]"><span className="block h-full bg-[var(--text)]" style={{ width: `${e.pct}%` }} /></span><span className="w-9 text-right text-[12px] tabular-nums text-texto-3">{e.pct}%</span></span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}

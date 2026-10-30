@@ -1,0 +1,66 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
+import { Ic } from '@/componentes/app/Ic'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { avisar } from '@/componentes/tarefas/avisar'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
+import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO } from '@/dominio/caixa-de-entrada'
+import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
+import { descreverVideoAcao, excluirItemCaixaAcao, tentarDeNovoAcao } from './acoes'
+
+const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
+type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
+
+/** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
+export function ListaDaCaixa({ itens }: { itens: ItemDaCaixa[] }) {
+  const router = useRouter()
+  const confirmar = useConfirmar()
+  const [pendente, iniciar] = useTransition()
+  const [vendo, setVendo] = useState<{ nome: string; d: Descricao } | null>(null)
+  const importando = itens.some((i) => i.status === 'importando')
+  useEffect(() => {
+    if (!importando) return
+    const t = setInterval(() => router.refresh(), 5000)
+    return () => clearInterval(t)
+  }, [importando, router])
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-borda">
+      <div className="flex h-10 items-center gap-2 border-b border-borda-fraca px-3"><h2 className="flex-1 text-[13px] font-semibold">Na caixa</h2><span className="text-[12px] text-texto-3">{itens.length}</span></div>
+      {itens.length === 0 && <p className="p-3 text-[13px] text-texto-3">Nenhum vídeo ainda. Envie pelo computador, importe do Drive ou peça para a IA enviar.</p>}
+      <ul>
+        {itens.map((i) => (
+          <li key={i.id} className="flex items-center gap-3 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
+            <Ic n={i.status === 'importando' ? 'sync' : i.status === 'erro' ? 'error' : i.status === 'usado' ? 'task_alt' : 'movie'} s={16} style={{ color: COR[i.status] }} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{i.nome}</span>
+              <span className="block truncate text-[12px] text-texto-3">{ROTULO_TIPO_VIDEO[i.tipo]} · {i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
+            </span>
+            <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
+            {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
+            {i.status === 'pronto' && <button type="button" disabled={pendente} title="A IA da plataforma assiste ao vídeo e resume" onClick={() => iniciar(async () => { const r = await descreverVideoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setVendo({ nome: i.nome, d: r }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="auto_awesome" s={14} />Resumo</button>}
+            {i.status === 'erro' && i.origem === 'drive' && <button type="button" disabled={pendente} onClick={() => iniciar(async () => void avisar(await tentarDeNovoAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}>Tentar de novo</button>}
+            {i.status !== 'usado' && <button type="button" aria-label={`Remover ${i.nome}`} disabled={pendente} onClick={async () => { if (await confirmar({ titulo: `Remover "${i.nome}" da caixa?`, descricao: 'O arquivo também é apagado do armazenamento.', confirmar: 'Remover', perigo: true })) iniciar(async () => void avisar(await excluirItemCaixaAcao(i.id), true)) }} className="b-icon" style={{ width: 24, height: 24 }}><Ic n="delete" s={16} /></button>}
+          </li>
+        ))}
+      </ul>
+      <Dialog open={!!vendo} onOpenChange={(a) => !a && setVendo(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>O que a IA viu no vídeo</DialogTitle><DialogDescription className="truncate">{vendo?.nome}</DialogDescription></DialogHeader>
+          {vendo && (
+            <div className="space-y-3 text-[13px]">
+              <div><p className="font-semibold">Resumo</p><p className="text-texto-2">{vendo.d.resumo || '—'}</p></div>
+              {vendo.d.fala && <div><p className="font-semibold">Fala</p><p className="whitespace-pre-wrap text-texto-2">{vendo.d.fala}</p></div>}
+              {vendo.d.temas.length > 0 && <div><p className="font-semibold">Temas</p><p className="text-texto-2">{vendo.d.temas.join(' · ')}</p></div>}
+              {vendo.d.tom && <div><p className="font-semibold">Tom</p><p className="text-texto-2">{vendo.d.tom}</p></div>}
+              {vendo.d.ganchos.length > 0 && <div><p className="font-semibold">Ideias de abertura da legenda</p><ul className="list-disc pl-5 text-texto-2">{vendo.d.ganchos.map((g) => <li key={g}>{g}</li>)}</ul></div>}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </section>
+  )
+}

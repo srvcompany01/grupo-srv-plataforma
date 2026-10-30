@@ -14,6 +14,10 @@ import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrad
 import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
 import * as modelosTarefa from '@/servicos/modelos'
+import * as caixa from '@/servicos/caixa-de-entrada'
+import { idDaPastaDoDrive } from '@/dominio/caixa-de-entrada'
+import { proximasJanelas, ranquearHorarios } from '@/dominio/horarios-postagem'
+import { after } from 'next/server'
 import * as abasDaLista from '@/servicos/visoes-lista'
 import { ehTipoDeVisao } from '@/dominio/visoes-lista'
 import * as conteudoSvc from '@/servicos/conteudo'
@@ -201,6 +205,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → descrever_video_caixa (a plataforma assiste ao vídeo) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1370,6 +1375,124 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async (ctx, a) => {
       if (!ehTipoDeVisao(a.tipo)) throw new Error('Tipo de visualização inválido.')
       return { visaoId: await abasDaLista.criarVisao(ctx.sb, ctx.userId, { listaId: a.listaId, tipo: a.tipo, privada: !!a.privada, fixada: true }) }
+    },
+  }),
+
+  definir({
+    nome: 'ficha_conteudo_cliente',
+    descricao: 'Ficha de conteúdo do cliente para escrever legendas: tom de voz, hashtags fixas, chamada para ação, observações e a pasta do Google Drive dele. LEIA antes de escrever qualquer legenda.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => caixa.buscarFicha(sb, a.clienteId),
+  }),
+
+  definir({
+    nome: 'salvar_ficha_conteudo_cliente',
+    descricao: 'Atualiza a ficha de conteúdo do cliente (só os campos enviados mudam). pastaDrive aceita o link da pasta do cliente no Google Drive ou o id dela.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), pastaDrive: z.string().max(300).optional(), tom: z.string().max(2000).optional(), hashtags: z.string().max(2000).optional(), chamada: z.string().max(500).optional(), observacoes: z.string().max(4000).optional() },
+    executar: async ({ sb }, a) => {
+      const pasta = a.pastaDrive === undefined ? undefined : a.pastaDrive.trim() === '' ? '' : idDaPastaDoDrive(a.pastaDrive)
+      if (a.pastaDrive?.trim() && !pasta) throw new Error('Não reconheci a pasta do Drive: cole o link da pasta (…/folders/…) ou o id.')
+      await caixa.salvarFicha(sb, { clienteId: a.clienteId, pastaDrive: pasta, tom: a.tom, hashtags: a.hashtags, chamada: a.chamada, observacoes: a.observacoes })
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'listar_caixa_de_entrada',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Use o id em descrever_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
+    executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
+  }),
+
+  definir({
+    nome: 'buscar_videos_drive',
+    descricao: 'Procura vídeos (MP4/MOV) na pasta do Google Drive do cliente e nas subpastas (orgânico, anúncio…), do mais novo ao mais antigo. tipo filtra pela pasta (organico ou anuncio); busca filtra pelo nome. Devolve id, nome, tamanho e caminho; use o id em importar_video_drive. O Drive do cliente precisa estar na ficha (salvar_ficha_conteudo_cliente) e compartilhado com a conta de serviço.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), tipo: z.enum(['organico', 'anuncio']).optional(), busca: z.string().max(100).optional(), limite: z.number().int().min(1).max(100).optional() },
+    executar: async ({ sb }, a) => {
+      const ficha = await caixa.buscarFicha(sb, a.clienteId)
+      if (!ficha.pastaDrive) throw new Error('Este cliente não tem a pasta do Google Drive na ficha. Use salvar_ficha_conteudo_cliente com o link da pasta.')
+      const { listarVideos } = await import('@/servicos/google-drive')
+      return listarVideos(ficha.pastaDrive, { busca: a.busca, tipo: a.tipo, limite: a.limite })
+    },
+  }),
+
+  definir({
+    nome: 'importar_video_drive',
+    descricao: 'Copia um vídeo do Google Drive (id de buscar_videos_drive) para a caixa de entrada do cliente. A cópia roda em segundo plano: devolve o id do item com status "importando"; consulte listar_caixa_de_entrada até virar "pronto" (vídeos grandes levam alguns minutos). Limite de 1 GB.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional() },
+    executar: async ({ sb, userId }, a) => {
+      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.tipo })
+      after(() => caixa.executarImportacao(itemId))
+      return { itemId, status: 'importando', proximoPasso: 'Aguarde e consulte listar_caixa_de_entrada até o status ser "pronto".' }
+    },
+  }),
+
+  definir({
+    nome: 'preparar_envio_caixa',
+    descricao: 'Para enviar um vídeo que está no computador de quem usa a IA (Claude Code, Codex): cria o item na caixa e devolve uma URL de envio. Faça um PUT do arquivo nessa URL (curl -X PUT -H "Content-Type: <mime>" --upload-file <arquivo> "<urlEnvio>") e depois chame confirmar_envio_caixa. Só MP4 ou MOV, até 1 GB.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), nome: z.string().min(1).max(255), mime: z.enum(['video/mp4', 'video/quicktime']), tamanho: z.number().int().min(1), tipo: z.enum(['organico', 'anuncio']).optional() },
+    executar: async ({ sb, userId }, a) => {
+      const r = await caixa.prepararEnvio(sb, userId, { clienteId: a.clienteId, nome: a.nome, mime: a.mime, tamanho: a.tamanho, tipo: a.tipo, origem: 'ia' })
+      return { itemId: r.id, urlEnvio: r.urlEnvio, comando: `curl -X PUT -H "Content-Type: ${a.mime}" --upload-file "<caminho do arquivo>" "${r.urlEnvio}"`, validadeDaUrl: '1 hora' }
+    },
+  }),
+
+  definir({
+    nome: 'confirmar_envio_caixa',
+    descricao: 'Depois do PUT de preparar_envio_caixa: confere que o arquivo chegou e libera o item (status "pronto").',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa') },
+    executar: async ({ sb }, a) => {
+      await caixa.confirmarEnvio(sb, a.itemId)
+      return { ok: true, status: 'pronto' }
+    },
+  }),
+
+  definir({
+    nome: 'descrever_video_caixa',
+    descricao: 'A IA da plataforma (Gemini) ASSISTE ao vídeo da caixa e devolve resumo, fala transcrita, temas, tom e ideias de abertura de legenda. Use isto para escrever a legenda, já que você não vê o vídeo. Resultado fica guardado (refazer=true gera de novo). Vídeos de até 200 MB.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), refazer: z.boolean().optional() },
+    executar: async ({ sb }, a) => caixa.descreverVideo(sb, a.itemId, a.refazer),
+  }),
+
+  definir({
+    nome: 'criar_post_da_caixa',
+    descricao: 'Transforma um vídeo "pronto" da caixa em POST na lista de conteúdo: cria o post (rascunho), grava a legenda e leva o vídeo para o post. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que descrever_video_caixa trouxe. formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
+    escrita: true,
+    entrada: {
+      itemId: id('Item da caixa'),
+      listaId: id('Lista de conteúdo onde criar o post'),
+      titulo: z.string().min(1).max(200),
+      formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
+      legenda: z.string().min(1).max(2200).describe('Legenda completa, já com hashtags'),
+      dataPrevista: data('Data planejada'),
+      ideia: z.string().max(2000).optional(),
+      objetivo: z.string().max(2000).optional(),
+    },
+    executar: async ({ sb }, a) => ({ tarefaId: await caixa.criarPostDaCaixa(sb, a), proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }),
+  }),
+
+  definir({
+    nome: 'sugerir_horarios_publicacao',
+    descricao: 'Melhores dias e horários para publicar no Instagram do cliente, calculados a partir dos posts que ele já publicou (alcance, visualizações e interações) e das datas que já estão agendadas (no máximo um post por dia, sem repetir dia ocupado). Devolve quantidade janelas {data, hora} (Belém) com o motivo de cada uma. Com pouco histórico usa horários padrão e avisa.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), quantidade: z.number().int().min(1).max(30) },
+    executar: async ({ sb }, a) => {
+      const ip = await import('@/servicos/insights-post')
+      const todos = (await conteudoSvc.listarAgendamentos(sb)).filter((p) => p.cliente?.id === a.clienteId)
+      const publicados = todos.filter((p) => p.status === 'publicado' && p.igMediaId && p.publicadoEm)
+      const m = publicados.length ? await ip.metricasDosPosts(publicados.map((p) => ({ igId: p.igMediaId!, formato: p.formato }))) : new Map()
+      const historico = publicados.flatMap((p) => { const x = m.get(p.igMediaId!); return x ? [{ publicadoEm: p.publicadoEm!, alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes }] : [] })
+      const ranking = ranquearHorarios(historico)
+      const ocupados = todos.filter((p) => p.status === 'agendado' && p.em).map((p) => p.em!)
+      return { baseadoEmDados: ranking.baseadoEmDados, postsAnalisados: ranking.totalPosts, melhoresHorarios: ranking.horarios.slice(0, 6), janelas: proximasJanelas(ranking, { agoraIso: new Date().toISOString(), quantidade: a.quantidade, ocupados }) }
     },
   }),
 

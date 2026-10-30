@@ -1424,6 +1424,18 @@ export type Database = {
           },
         ]
       }
+      client_content_profiles: {
+        Row: { client_id: string; cta: string; drive_folder_id: string; hashtags: string; notes: string; tone: string; updated_at: string }
+        Insert: { client_id: string; cta?: string; drive_folder_id?: string; hashtags?: string; notes?: string; tone?: string; updated_at?: string }
+        Update: { client_id?: string; cta?: string; drive_folder_id?: string; hashtags?: string; notes?: string; tone?: string; updated_at?: string }
+        Relationships: []
+      }
+      content_inbox: {
+        Row: { ai_summary: string; client_id: string; created_at: string; created_by: string | null; drive_file_id: string | null; error: string; id: string; kind: string; mime: string; name: string; post_task_id: string | null; r2_key: string; size_bytes: number; source: string; status: string; updated_at: string }
+        Insert: { ai_summary?: string; client_id: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime: string; name: string; post_task_id?: string | null; r2_key: string; size_bytes?: number; source: string; status?: string; updated_at?: string }
+        Update: { ai_summary?: string; client_id?: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime?: string; name?: string; post_task_id?: string | null; r2_key?: string; size_bytes?: number; source?: string; status?: string; updated_at?: string }
+        Relationships: []
+      }
       saved_filters: {
         Row: { created_at: string; id: string; list_id: string; name: string; params: string; user_id: string }
         Insert: { created_at?: string; id?: string; list_id: string; name: string; params: string; user_id?: string }

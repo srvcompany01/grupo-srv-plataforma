@@ -1,4 +1,4 @@
-import { DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { AbortMultipartUploadCommand, CompleteMultipartUploadCommand, CopyObjectCommand, CreateMultipartUploadCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client, UploadPartCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { EXTENSAO_ANEXO, normalizarMime } from '@/dominio/anexos'
 import { EXTENSAO_CAPA } from '@/dominio/clientes-galeria'
@@ -47,6 +47,13 @@ export function gerarChaveConteudo(tarefaId: string, mime: string): string {
   const ext = EXTENSAO_POR_TIPO[mime]
   if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
   return `conteudo/${tarefaId}/${crypto.randomUUID()}.${ext}`
+}
+
+/** Caixa de entrada de vídeos do cliente: `caixa/<cliente>/<uuid>.<ext>`; a extensão vem do mime já validado. */
+export function gerarChaveCaixa(clienteId: string, mime: string): string {
+  const ext = EXTENSAO_POR_TIPO[mime]
+  if (!ext) throw new Error(`Tipo sem extensão conhecida: ${mime}`)
+  return `caixa/${clienteId}/${crypto.randomUUID()}.${ext}`
 }
 
 /** Anexos do chat: `chat/<canal>/<uuid>.<ext>`; a extensão vem do mime já validado. */
@@ -143,4 +150,65 @@ export async function arquivosAntigos(prefixo: string, antes: Date): Promise<{ c
     token = r.NextContinuationToken
   } while (token)
   return lista
+}
+
+/** Tamanho do arquivo no R2, ou null se não existe. */
+export async function tamanhoDoArquivo(chave: string): Promise<number | null> {
+  if (armazenamentoLocal()) return null
+  try {
+    const r = await s3().send(new HeadObjectCommand({ Bucket: exigir('R2_BUCKET'), Key: chave }))
+    return r.ContentLength ?? 0
+  } catch {
+    return null
+  }
+}
+
+/** Copia um arquivo dentro do bucket (do lado do servidor do R2, sem baixar). Até 5 GB. */
+export async function copiarArquivo(origem: string, destino: string, tipoMime: string): Promise<void> {
+  if (armazenamentoLocal()) throw new Error('Copiar arquivos só funciona com o R2.')
+  const bucket = exigir('R2_BUCKET')
+  await s3().send(new CopyObjectCommand({ Bucket: bucket, Key: destino, CopySource: `${bucket}/${origem.split('/').map(encodeURIComponent).join('/')}`, ContentType: tipoMime, MetadataDirective: 'REPLACE' }))
+}
+
+const PARTE = 32 * 1024 * 1024
+
+/**
+ * Grava no R2 um arquivo que chega aos poucos (ex.: download do Google Drive), em partes de 32 MB, sem guardar o arquivo inteiro na memória.
+ * Se algo falhar, a gravação em partes é cancelada e nada fica no bucket.
+ */
+export async function enviarEmPartes(chave: string, tipoMime: string, corpo: ReadableStream<Uint8Array>): Promise<number> {
+  if (armazenamentoLocal()) throw new Error('Enviar em partes só funciona com o R2.')
+  const bucket = exigir('R2_BUCKET')
+  const { UploadId } = await s3().send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: chave, ContentType: tipoMime }))
+  if (!UploadId) throw new Error('O R2 não iniciou o envio.')
+  const partes: { ETag: string; PartNumber: number }[] = []
+  let total = 0
+  let atual: Uint8Array[] = []
+  let tamanhoAtual = 0
+  const enviar = async (bytes: Uint8Array) => {
+    const numero = partes.length + 1
+    const r = await s3().send(new UploadPartCommand({ Bucket: bucket, Key: chave, UploadId, PartNumber: numero, Body: bytes, ContentLength: bytes.byteLength }))
+    partes.push({ ETag: r.ETag ?? '', PartNumber: numero })
+  }
+  try {
+    const leitor = corpo.getReader()
+    for (;;) {
+      const { done, value } = await leitor.read()
+      if (done) break
+      atual.push(value)
+      tamanhoAtual += value.byteLength
+      total += value.byteLength
+      if (tamanhoAtual >= PARTE) {
+        await enviar(Buffer.concat(atual))
+        atual = []
+        tamanhoAtual = 0
+      }
+    }
+    if (tamanhoAtual > 0 || partes.length === 0) await enviar(Buffer.concat(atual))
+    await s3().send(new CompleteMultipartUploadCommand({ Bucket: bucket, Key: chave, UploadId, MultipartUpload: { Parts: partes } }))
+    return total
+  } catch (e) {
+    await s3().send(new AbortMultipartUploadCommand({ Bucket: bucket, Key: chave, UploadId })).catch(() => {})
+    throw e
+  }
 }

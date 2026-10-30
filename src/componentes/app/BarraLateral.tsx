@@ -27,6 +27,7 @@ import {
   Radar,
   Grip,
   Rocket,
+  Inbox,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -60,6 +61,7 @@ export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'chat', href: '/chat', rotulo: 'Chat', curto: 'Chat', Icone: MessagesSquare, contador: chatNaoLidas },
     { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Planejador', Icone: CalendarDays },
     { id: 'agendamentos', href: '/agendamentos', rotulo: 'Agendamentos', curto: 'Posts', Icone: CalendarClock },
+    { id: 'caixa', href: '/caixa-de-entrada', rotulo: 'Caixa de entrada', curto: 'Caixa', Icone: Inbox },
     { id: 'painel', href: '/painel-de-gestao', rotulo: 'Painel de Gestão', curto: 'Painéis', Icone: LayoutDashboard },
     { id: 'clientes', href: '/clientes', rotulo: 'Clientes', curto: 'Clientes', Icone: Users },
     { id: 'anuncios', href: '/anuncios', rotulo: 'Anúncios', curto: 'Anúncios', Icone: Megaphone },
@@ -93,13 +95,13 @@ const estaEm = (caminho: string, href: string) => caminho === href || caminho.st
 const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
 /** Todo o resto abre pelo botão "Mais", como no ClickUp. */
 const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
-  { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
+  { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['caixa', 'clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
 ]
 
 /** Nome do ícone (Material Symbols Rounded) de cada módulo, como no protótipo do redesign. */
 export const ICONE_MS: Record<string, string> = {
   home: 'home', espacos: 'grid_view', chat: 'chat_bubble', agenda: 'event_note', time: 'groups', documentos: 'description', painel: 'monitoring', quadros: 'draw', formularios: 'assignment',
-  tarefas: 'task_alt', agendamentos: 'event_available', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
+  tarefas: 'task_alt', agendamentos: 'event_available', caixa: 'move_to_inbox', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
   gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', funis: 'filter_alt', config: 'settings',
 }
 
