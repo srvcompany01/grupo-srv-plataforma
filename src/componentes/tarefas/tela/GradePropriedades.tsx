@@ -5,7 +5,8 @@ import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { formatarDuracao } from '@/dominio/formatar'
-import { PRIORIDADES, ROTULO_PRIORIDADE, type Pessoa, type Prioridade, type StatusLista } from '@/dominio/tarefas'
+import { type Pessoa, type StatusLista } from '@/dominio/tarefas'
+import { SeletorPrioridade } from '../SeletorPrioridade'
 import { botaoFantasma, campo } from '@/lib/ui'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
@@ -160,13 +161,7 @@ export function GradePropriedades({
           <SeletorResponsaveis tarefaId={t.id} atuais={t.responsaveis} equipe={equipe} />
         </Linha>
         <Linha icone={Flag} titulo="Prioridade">
-          <select value={t.prioridade} disabled={pendente} onChange={(e) => salvar({ prioridade: e.target.value as Prioridade })} className={`${campo} h-8 w-40 py-0 text-corpo`}>
-            {PRIORIDADES.map((x) => (
-              <option key={x} value={x}>
-                {ROTULO_PRIORIDADE[x]}
-              </option>
-            ))}
-          </select>
+          <SeletorPrioridade tarefaId={t.id} prioridade={t.prioridade} className="-ml-1.5" />
         </Linha>
         <Linha icone={Timer} titulo="Rastrear tempo">
           {children ?? <span className="text-texto-3">—</span>}

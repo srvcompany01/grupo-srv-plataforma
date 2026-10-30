@@ -34,7 +34,6 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
   const planas = montarArvore(tarefas.map((t) => ({ ...t, paiId: null }))).sort((a, b) => ((a.prazo ?? '9') < (b.prazo ?? '9') ? -1 : 1))
   const abertas = todas.filter((t) => !t.concluidaEm).length
   const emAtraso = todas.filter((t) => !t.concluidaEm && t.prazo && t.prazo < hoje).length
-  const ctx = { equipe, hoje, statusPorLista, mostrarLista: true }
 
   return (
     <div>

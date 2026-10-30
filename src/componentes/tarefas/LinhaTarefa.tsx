@@ -7,16 +7,16 @@ import { useState } from 'react'
 import { formatarDuracao } from '@/dominio/formatar'
 import { COLUNAS_BASE, COLUNAS_PADRAO, LIMITE_CAMPO } from '@/dominio/colunas-lista'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
-import { ROTULO_PRIORIDADE, type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
+import { type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dominio/tarefas'
 import { CelulaCampoPersonalizado } from './CamposPersonalizados'
 import { EditorVencimento, Prazo } from './EditorVencimento'
 import type { PropsGerenciarCampos } from './GerenciarCampos'
 import { NovaTarefa } from './NovaTarefa'
+import { SeletorPrioridade } from './SeletorPrioridade'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
 import { SeletorStatus } from './SeletorStatus'
 import { SeletorTagCliente, type TagCliente } from './SeletorTagCliente'
 
-const COR_PRIORIDADE = { urgente: '#d80d12', alta: '#e08a00', normal: '#1d6fe0', baixa: '#8b8b94' } as const
 
 export type Contexto = {
   equipe: Pessoa[]
@@ -111,11 +111,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'prazo':
         return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
-        return (
-          <span key={colunaId} {...marca(colunaId)} className={`flex items-center gap-1.5 px-2 text-[13px]${realce(colunaId)}`} title={ROTULO_PRIORIDADE[tarefa.prioridade]}>
-            <Ic n="flag" s={15} fill style={{ color: COR_PRIORIDADE[tarefa.prioridade] }} />{ROTULO_PRIORIDADE[tarefa.prioridade]}
-          </span>
-        )
+        return <span key={colunaId} {...marca(colunaId)} className={`px-1${realce(colunaId)}`}><SeletorPrioridade tarefaId={tarefa.id} prioridade={tarefa.prioridade} /></span>
       case 'status':
         return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
       case 'comentarios':

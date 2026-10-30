@@ -1,7 +1,8 @@
 'use client'
 
 import { useTransition } from 'react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import { Ic } from '@/componentes/app/Ic'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { iconeDoStatus } from '@/dominio/status-icone'
 import type { StatusLista } from '@/dominio/tarefas'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
@@ -33,14 +34,16 @@ export function SeletorStatus({
       >
         {comNome ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: atual?.cor ?? '#8b8b94' }} /><span>{atual?.nome ?? '—'}</span></> : <IconeStatus info={iconeDoStatus(opcoes, statusId)} cor={atual?.cor ?? '#8b8b94'} className="h-4 w-4" tracejado={false} />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="min-w-56">
+        <DropdownMenuLabel>Status</DropdownMenuLabel>
         {opcoes.map((s) => (
           <DropdownMenuItem
             key={s.id}
             onSelect={() => s.id !== statusId && iniciar(async () => void avisar(await atualizarTarefaAcao(tarefaId, { statusId: s.id })))}
           >
-            <IconeStatus info={iconeDoStatus(opcoes, s.id)} cor={s.cor} className="h-3.5 w-3.5" />
-            {s.nome}
+            <span aria-hidden="true" className="shrink-0" style={{ width: 12, height: 12, borderRadius: '50%', background: s.cor }} />
+            <span className="min-w-0 flex-1 truncate">{s.nome}</span>
+            {s.id === statusId && <Ic n="check" s={18} className="text-texto-2" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

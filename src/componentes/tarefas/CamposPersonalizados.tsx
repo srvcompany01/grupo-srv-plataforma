@@ -1,10 +1,12 @@
 'use client'
 
-import { Check, ChevronDown, ExternalLink, Save } from 'lucide-react'
+import { ChevronDown, ExternalLink, Save } from 'lucide-react'
 import { useState, useTransition, type ReactNode } from 'react'
 import { salvarValorCampo } from '@/app/(app)/acoes-campos'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { avisar } from '@/componentes/tarefas/avisar'
+import { Avatar } from '@/componentes/Avatar'
+import { OpcaoMenu, TituloMenu } from '@/componentes/ui/opcao-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { corDaOpcao, formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
 import type { Pessoa } from '@/dominio/tarefas'
@@ -40,17 +42,12 @@ function SeletorOpcoes({ definicao, valor, multiplo, compacto, pendente, onChang
         <span className={`flex min-w-0 flex-1 flex-wrap gap-1 py-1 ${compacto ? 'justify-center' : ''}`}>{atuais.length ? atuais.map((o) => <Pilula key={o} nome={o} cor={corDaOpcao(definicao.configuracao, o)} />) : <span className="text-texto-3">{compacto ? '—' : 'Sem seleção'}</span>}</span>
         <ChevronDown className={`h-3 w-3 shrink-0 text-texto-3 ${compacto ? 'absolute right-1.5' : ''}`} />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-56 space-y-1 p-2">
-        {opcoes.length === 0 && <p className="px-2 py-1 text-xs text-texto-3">Nenhuma opção configurada.</p>}
-        <button type="button" disabled={pendente} onClick={() => { onChange(null); setAberto(false) }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo text-texto-2 hover:bg-hover">
-          <span className="italic">Vazio</span>
-          {atuais.length === 0 && <Check className="ml-auto h-3.5 w-3.5 text-marca" />}
-        </button>
+      <PopoverContent align="start" className="w-64 gap-0 p-1.5">
+        <TituloMenu>{definicao.nome}</TituloMenu>
+        {opcoes.length === 0 && <p className="px-2.5 py-1 text-[13px] text-texto-3">Nenhuma opção configurada.</p>}
+        <OpcaoMenu suave rotulo="Vazio" marcado={atuais.length === 0} desabilitado={pendente} aoClicar={() => { onChange(null); setAberto(false) }} />
         {opcoes.map((opcao) => (
-          <button key={opcao} type="button" disabled={pendente} onClick={() => alternar(opcao)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-hover">
-            <Pilula nome={opcao} cor={corDaOpcao(definicao.configuracao, opcao)} />
-            {atuais.includes(opcao) && <Check className="ml-auto h-3.5 w-3.5 text-marca" />}
-          </button>
+          <OpcaoMenu key={opcao} cor={corDaOpcao(definicao.configuracao, opcao)} rotulo={opcao} marcado={atuais.includes(opcao)} desabilitado={pendente} aoClicar={() => alternar(opcao)} />
         ))}
       </PopoverContent>
     </Popover>
@@ -95,23 +92,18 @@ function CampoEditavel({ aoSalvar, definicao, equipe, compacto = false }: { aoSa
             <span className="min-w-0 flex-1 truncate text-center">{atuais.length ? itens.filter((item) => atuais.includes(item.valor)).map((item) => item.nome).join(', ') : '—'}</span>
             <ChevronDown className="absolute right-1.5 h-3 w-3 shrink-0 text-texto-3" />
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-56 space-y-1 p-2">
-            <button type="button" disabled={pendente} onClick={() => { setValor([]); salvar([]) }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo text-texto-2 hover:bg-hover">
-              <span className="italic">Vazio</span>
-              {atuais.length === 0 && <Check className="ml-auto h-3.5 w-3.5 text-marca" />}
-            </button>
-            {itens.length === 0 && <p className="px-2 py-1 text-xs text-texto-3">Nenhuma opção configurada.</p>}
+          <PopoverContent align="start" className="w-64 gap-0 p-1.5">
+            <TituloMenu>{definicao.nome}</TituloMenu>
+            <OpcaoMenu suave rotulo="Vazio" marcado={atuais.length === 0} desabilitado={pendente} aoClicar={() => { setValor([]); salvar([]) }} />
+            {itens.length === 0 && <p className="px-2.5 py-1 text-[13px] text-texto-3">Nenhuma pessoa disponível.</p>}
             {itens.map((item) => {
               const marcada = atuais.includes(item.valor)
               return (
-                <button key={item.valor} type="button" disabled={pendente} onClick={() => {
+                <OpcaoMenu key={item.valor} icone={<Avatar nome={item.nome || '?'} tamanho="h-5 w-5 text-legenda" />} rotulo={item.nome} marcado={marcada} desabilitado={pendente} aoClicar={() => {
                   const novo = marcada ? atuais.filter((id) => id !== item.valor) : [...atuais, item.valor]
                   setValor(novo)
                   salvar(novo)
-                }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-rotulo hover:bg-hover">
-                  <span className="flex h-4 w-4 items-center justify-center rounded border border-borda controle">{marcada && <Check className="h-3 w-3 text-marca" />}</span>
-                  <span className="truncate">{item.nome}</span>
-                </button>
+                }} />
               )
             })}
           </PopoverContent>
