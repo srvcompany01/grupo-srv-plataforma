@@ -196,6 +196,20 @@ export async function prepararAudiosPendentes(sb: Supabase, limite = 3): Promise
   }
 }
 
+const PARTE_AUDIO = 2_400_000 // ~10 min de áudio a 32 kbps
+
+/** O próprio áudio (em partes de ~10 min), para a IA ouvir pela conexão do MCP, sem precisar abrir endereço nenhum. */
+export async function parteDoAudio(sb: Supabase, itemId: string, parte: number): Promise<{ nome: string; parte: number; totalPartes: number; base64: string; mime: 'audio/mpeg' }> {
+  const chave = await prepararAudio(sb, itemId)
+  const r = await fetch(await urlLeitura(chave))
+  if (!r.ok) throw new Error('Não consegui ler o áudio no armazenamento.')
+  const bytes = Buffer.from(await r.arrayBuffer())
+  const totalPartes = Math.max(1, Math.ceil(bytes.length / PARTE_AUDIO))
+  if (parte < 1 || parte > totalPartes) throw new Error(`Este áudio tem ${totalPartes} parte(s); peça de 1 a ${totalPartes}.`)
+  const { data } = await sb.from('content_inbox').select('name').eq('id', itemId).single()
+  return { nome: (data?.name ?? 'video').replace(/\.[^.]+$/, ''), parte, totalPartes, base64: bytes.subarray((parte - 1) * PARTE_AUDIO, parte * PARTE_AUDIO).toString('base64'), mime: 'audio/mpeg' }
+}
+
 /** Assinatura (HMAC) do id do item: vai no link fixo do áudio e impede que alguém adivinhe o endereço de outro vídeo. */
 export const tokenDoAudio = (itemId: string) => createHmac('sha256', process.env.CRON_SECRET ?? '').update(`audio-caixa:${itemId}`).digest('hex')
 

@@ -206,7 +206,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → audio_do_video_caixa (baixe o áudio extraído e transcreva você mesma) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → ouvir_video_caixa (recebe o áudio extraído na própria resposta, em partes; sem link) ou audio_do_video_caixa (endereço para baixar) e transcreva você mesma → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1468,6 +1468,22 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await caixa.confirmarEnvio(sb, a.itemId)
       return { ok: true, status: 'pronto' }
+    },
+  }),
+
+  definir({
+    nome: 'ouvir_video_caixa',
+    descricao: 'Entrega o ÁUDIO do vídeo da caixa (extraído pelo ffmpeg) como conteúdo de áudio na própria resposta, sem link: use quando você não consegue abrir endereços. Vem em partes de ~10 minutos: peça parte=1 e, se totalPartes for maior, as seguintes. Transcreva a fala e escreva a legenda; grave com criar_post_da_caixa. Se o seu ambiente não processar áudio, use audio_do_video_caixa (endereço).',
+    escrita: false,
+    entrada: { itemId: id('Item da caixa (pronto)'), parte: z.number().int().min(1).optional().describe('Parte do áudio (começa em 1)') },
+    executar: async ({ sb }, a) => {
+      const p = await caixa.parteDoAudio(sb, a.itemId, a.parte ?? 1)
+      return {
+        __mcp: [
+          { type: 'text', text: JSON.stringify({ nome: p.nome, parte: p.parte, totalPartes: p.totalPartes, proximoPasso: p.parte < p.totalPartes ? `Peça a parte ${p.parte + 1}.` : 'Transcreva, escreva a legenda e grave com criar_post_da_caixa.' }) },
+          { type: 'audio', data: p.base64, mimeType: p.mime },
+        ],
+      }
     },
   }),
 
