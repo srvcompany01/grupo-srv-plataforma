@@ -70,6 +70,14 @@ export async function tentarDeNovoAcao(itemId: string): Promise<Resultado> {
   }
 }
 
+export async function renomearItemCaixaAcao(itemId: string, nome: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
+  const r = await tentar(async () => caixa.renomearItem(await criarClienteServidor(), itemId, nome), 'Vídeo renomeado.')
+  atualizar()
+  return r
+}
+
 export async function excluirItemCaixaAcao(itemId: string): Promise<Resultado> {
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }

@@ -9,7 +9,7 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
-import { descreverVideoAcao, excluirItemCaixaAcao, tentarDeNovoAcao } from './acoes'
+import { descreverVideoAcao, excluirItemCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao } from './acoes'
 
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
 type Descricao = { resumo: string; fala: string; temas: string[]; tom: string; ganchos: string[] }
@@ -20,6 +20,13 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
   const [vendo, setVendo] = useState<{ nome: string; d: Descricao } | null>(null)
+  const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
+  const renomear = () => {
+    if (!editando) return
+    const { id, nome } = editando
+    setEditando(null)
+    iniciar(async () => void avisar(await renomearItemCaixaAcao(id, nome), true))
+  }
   const importando = itens.some((i) => i.status === 'importando')
   useEffect(() => {
     if (!importando) return
@@ -36,7 +43,14 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
           <li key={i.id} className="flex items-center gap-3 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
             <Ic n={i.status === 'importando' ? 'sync' : i.status === 'erro' ? 'error' : i.status === 'usado' ? 'task_alt' : 'movie'} s={16} style={{ color: COR[i.status] }} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate">{i.nome}</span>
+              {editando?.id === i.id ? (
+                <input autoFocus value={editando.nome} maxLength={255} aria-label="Novo nome do vídeo" onChange={(e) => setEditando({ id: i.id, nome: e.target.value })} onBlur={renomear} onKeyDown={(e) => { if (e.key === 'Enter') renomear(); if (e.key === 'Escape') setEditando(null) }} className="h-7 w-full rounded border border-borda bg-transparent px-2 text-[13px] outline-none focus:border-[var(--client)]" />
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="truncate">{i.nome}</span>
+                  <button type="button" title="Renomear" aria-label={`Renomear ${i.nome}`} disabled={pendente} onClick={() => setEditando({ id: i.id, nome: i.nome })} className="b-icon" style={{ width: 22, height: 22, flex: 'none' }}><Ic n="edit" s={14} /></button>
+                </span>
+              )}
               <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{ROTULO_TIPO_VIDEO[i.tipo]} · {i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
             </span>
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>

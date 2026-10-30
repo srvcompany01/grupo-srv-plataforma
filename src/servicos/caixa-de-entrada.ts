@@ -103,6 +103,13 @@ export async function reiniciarImportacao(sb: Supabase, itemId: string): Promise
   if (error) throw error
 }
 
+export async function renomearItem(sb: Supabase, itemId: string, nome: string): Promise<void> {
+  const limpo = nome.trim().slice(0, 255)
+  if (!limpo) throw new Error('Dê um nome ao vídeo.')
+  const { error } = await sb.from('content_inbox').update({ name: limpo, updated_at: new Date().toISOString() }).eq('id', itemId)
+  if (error) throw error
+}
+
 export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   const { data } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).maybeSingle()
   const { error } = await sb.from('content_inbox').delete().eq('id', itemId)
