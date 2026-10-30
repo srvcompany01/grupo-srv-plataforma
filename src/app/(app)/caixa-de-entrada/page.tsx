@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import { after } from 'next/server'
 import { Ic } from '@/componentes/app/Ic'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { listarCaixa } from '@/servicos/caixa-de-entrada'
+import { listarCaixa, prepararAudiosPendentes } from '@/servicos/caixa-de-entrada'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { driveConfigurado, emailDaContaDoDrive } from '@/servicos/google-drive'
 import { AreaDeEntrada } from './AreaDeEntrada'
@@ -15,6 +16,8 @@ export default async function CaixaDeEntrada() {
   const sb = await criarClienteServidor()
   const clientes = (await listarClientes(sb).catch(() => [])).filter((c) => !c.interno && c.status !== 'encerrado')
   const itens = await listarCaixa(sb)
+  // Vídeos enviados antes da extração automática ganham o áudio aos poucos, em segundo plano.
+  after(() => prepararAudiosPendentes(sb).catch(() => {}))
   return (
     <div>
       <header className="sticky top-0 z-10 flex h-10 items-center gap-3 border-b border-borda-fraca bg-white px-3">

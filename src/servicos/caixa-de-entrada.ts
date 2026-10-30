@@ -183,6 +183,21 @@ export async function prepararAudio(sb: Supabase, itemId: string): Promise<strin
   return chave
 }
 
+/**
+ * Extrai o áudio dos vídeos prontos que ainda não têm (os enviados antes desta função). Faz poucos por vez, um depois do outro,
+ * para não sobrecarregar o servidor; a caixa chama de novo a cada visita até acabar.
+ */
+export async function prepararAudiosPendentes(sb: Supabase, limite = 3): Promise<void> {
+  const { data } = await sb.from('content_inbox').select('id, r2_key').eq('status', 'pronto').order('created_at', { ascending: false }).limit(100)
+  let feitos = 0
+  for (const v of data ?? []) {
+    if (feitos >= limite) return
+    if ((await tamanhoDoArquivo(chaveDoAudio(v.r2_key))) !== null) continue
+    await prepararAudio(sb, v.id).catch(() => {})
+    feitos++
+  }
+}
+
 /** Assinatura (HMAC) do id do item: vai no link fixo do áudio e impede que alguém adivinhe o endereço de outro vídeo. */
 export const tokenDoAudio = (itemId: string) => createHmac('sha256', process.env.CRON_SECRET ?? '').update(`audio-caixa:${itemId}`).digest('hex')
 
