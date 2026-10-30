@@ -341,6 +341,9 @@ export function editarSpecDoCriativo(spec: Record<string, unknown>, e: EdicaoTex
     if (e.link !== undefined && c.value && 'link' in c.value) c.value.link = e.link
     if (e.botao !== undefined || (e.link !== undefined && c.value)) obj.call_to_action = c
   }
+  // A Meta devolve a miniatura do vídeo (image_url) E o hash da imagem juntos, mas só aceita UM dos dois ao criar o criativo.
+  if (novo.video_data && novo.video_data.image_url && novo.video_data.image_hash) delete novo.video_data.image_hash
+  if (novo.link_data && novo.link_data.image_hash && novo.link_data.picture) delete novo.link_data.picture
   const ld = novo.link_data
   const vd = novo.video_data
   const pd = novo.photo_data

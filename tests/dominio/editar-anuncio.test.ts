@@ -36,6 +36,22 @@ describe('editarSpecDoCriativo', () => {
   })
 })
 
+describe('criativo vindo da Meta com miniatura declarada dos dois jeitos', () => {
+  it('vídeo com image_url e image_hash: mantém só a image_url (a Meta recusa os dois juntos)', () => {
+    const { spec } = editarSpecDoCriativo({ page_id: '1', video_data: { video_id: 'v', image_url: 'https://c', image_hash: 'abc', message: 'a' } }, { texto: 'b' })
+    const vd = spec.video_data as Record<string, unknown>
+    expect(vd.image_url).toBe('https://c')
+    expect('image_hash' in vd).toBe(false)
+    expect(vd.message).toBe('b')
+  })
+  it('link com image_hash e picture: mantém só o hash', () => {
+    const { spec } = editarSpecDoCriativo({ page_id: '1', link_data: { image_hash: 'h', picture: 'https://p', link: 'https://x', message: 'a' } }, { texto: 'b' })
+    const ld = spec.link_data as Record<string, unknown>
+    expect(ld.image_hash).toBe('h')
+    expect('picture' in ld).toBe(false)
+  })
+})
+
 describe('editarFaixaEtaria', () => {
   it('muda só o que foi pedido e mantém o resto do público', () => {
     const r = editarFaixaEtaria({ age_min: 18, age_max: 65, geo_locations: { countries: ['BR'] } }, 25)
