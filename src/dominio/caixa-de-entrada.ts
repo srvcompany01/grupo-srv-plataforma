@@ -10,7 +10,7 @@ export const ROTULO_STATUS_CAIXA: Record<StatusDaCaixa, string> = {
   usado: 'Já virou post',
   erro: 'Erro',
 }
-export const ROTULO_TIPO_VIDEO: Record<TipoDoVideo, string> = { organico: 'Conteúdo', anuncio: 'Criativo', indefinido: 'Sem tag' }
+export const ROTULO_TIPO_VIDEO: Record<TipoDoVideo, string> = { organico: '✍️ Conteúdo', anuncio: '💙 Criativo', indefinido: 'Sem tag' }
 
 /** Tipos de vídeo que o Instagram e a plataforma aceitam nos posts. */
 export const MIME_VIDEO_CAIXA = ['video/mp4', 'video/quicktime'] as const
