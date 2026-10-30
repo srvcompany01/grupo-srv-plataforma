@@ -1481,7 +1481,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'audio_do_video_caixa',
-    descricao: 'Devolve o link para BAIXAR o áudio (MP3 mono, leve) extraído do vídeo da caixa. Baixe o arquivo, transcreva a fala na sua própria plataforma e escreva a legenda, as hashtags e as demais informações; depois grave tudo com criar_post_da_caixa (legenda + descricao). O áudio já é extraído sozinho quando o vídeo chega; se ainda não existir, esta ferramenta extrai na hora (pode levar de alguns segundos a poucos minutos em vídeo grande). O link vale 6 horas. Só funciona com vídeo "pronto".',
+    descricao: 'Devolve o endereço FIXO (não expira) para BAIXAR o áudio (MP3 mono, leve) extraído do vídeo da caixa. Baixe o arquivo, transcreva a fala na sua própria plataforma e escreva a legenda, as hashtags e as demais informações; depois grave tudo com criar_post_da_caixa (legenda + descricao). O áudio já é extraído sozinho quando o vídeo chega; se ainda não existir, esta ferramenta extrai na hora (pode levar de alguns segundos a poucos minutos em vídeo grande). O endereço fica valendo enquanto o vídeo estiver na caixa (some se for removido ou virar post), então pode baixar quando quiser. Só funciona com vídeo "pronto".',
     escrita: false,
     entrada: { itemId: id('Item da caixa (pronto)') },
     executar: async ({ sb }, a) => ({ ...(await caixa.audioDoVideo(sb, a.itemId)), proximoPasso: 'Baixe o áudio pela url, transcreva, e use ficha_conteudo_cliente (tom, hashtags) para escrever. Grave com criar_post_da_caixa: legenda (com hashtags) e descricao (transcrição, hashtags, observações).' }),

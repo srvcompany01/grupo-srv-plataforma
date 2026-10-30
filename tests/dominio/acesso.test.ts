@@ -16,6 +16,8 @@ describe('rotaPublica', () => {
     ['/api/cron/recorrencias', true],
     ['/api/mcp', true],
     ['/api/dev-arquivos/x', true],
+    ['/api/caixa/audio/abc', true],
+    ['/api/caixa', false],
     ['/robots.txt', true],
     ['/', false],
     ['/inicio', false],

@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { textoParaDescricao } from '@/dominio/descricao'
 import type { Formato } from '@/dominio/conteudo'
@@ -168,7 +169,7 @@ export async function salvarFicha(sb: Supabase, f: Partial<Omit<FichaDeConteudo,
 // ───────────────────────────── Áudio do vídeo ─────────────────────────────
 
 /** O áudio extraído fica ao lado do vídeo no R2 (mesma chave + .audio.mp3), sem coluna nova no banco. */
-const chaveDoAudio = (chaveDoVideo: string) => `${chaveDoVideo}.audio.mp3`
+export const chaveDoAudio = (chaveDoVideo: string) => `${chaveDoVideo}.audio.mp3`
 
 /** Garante o áudio (MP3 mono, leve) do vídeo no armazenamento; extrai com o ffmpeg se ainda não existir. Devolve a chave do áudio. */
 export async function prepararAudio(sb: Supabase, itemId: string): Promise<string> {
@@ -182,12 +183,23 @@ export async function prepararAudio(sb: Supabase, itemId: string): Promise<strin
   return chave
 }
 
-/** Link temporário para baixar o áudio extraído (quem transcreve é a IA conectada pelo MCP, na plataforma dela). */
+/** Assinatura (HMAC) do id do item: vai no link fixo do áudio e impede que alguém adivinhe o endereço de outro vídeo. */
+export const tokenDoAudio = (itemId: string) => createHmac('sha256', process.env.CRON_SECRET ?? '').update(`audio-caixa:${itemId}`).digest('hex')
+
+export function tokenValido(itemId: string, token: string): boolean {
+  if (!process.env.CRON_SECRET) return false
+  const esperado = Buffer.from(tokenDoAudio(itemId))
+  const recebido = Buffer.from(token)
+  return esperado.length === recebido.length && timingSafeEqual(esperado, recebido)
+}
+
+/** Endereço fixo (sem prazo) para baixar o áudio extraído; quem transcreve é a IA conectada pelo MCP, na plataforma dela. */
 export async function audioDoVideo(sb: Supabase, itemId: string): Promise<{ nome: string; url: string; mime: 'audio/mpeg'; tamanhoBytes: number }> {
   const chave = await prepararAudio(sb, itemId)
   const { data } = await sb.from('content_inbox').select('name').eq('id', itemId).single()
   const base = (data?.name ?? 'video').replace(/\.[^.]+$/, '')
-  return { nome: `${base}.mp3`, url: await urlLeitura(chave, { download: `${base}.mp3` }), mime: 'audio/mpeg', tamanhoBytes: (await tamanhoDoArquivo(chave)) ?? 0 }
+  const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
+  return { nome: `${base}.mp3`, url: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, mime: 'audio/mpeg', tamanhoBytes: (await tamanhoDoArquivo(chave)) ?? 0 }
 }
 
 async function baixarAudio(chave: string): Promise<Buffer> {
