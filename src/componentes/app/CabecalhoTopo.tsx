@@ -43,10 +43,10 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
           </SheetContent>
         </Sheet>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 12, padding: '0 10px 0 6px', borderRadius: 8, cursor: 'pointer', minWidth: 0 }}>
-            <span style={{ width: 20, height: 20, flex: 'none', borderRadius: 5, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
+          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px 0 5px', borderRadius: 8, cursor: 'pointer', minWidth: 0 }}>
+            <span style={{ width: 18, height: 18, flex: 'none', borderRadius: 5, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
             <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>Grupo SRV</span>
-            <Ic n="expand_more" s={16} w={300} style={{ color: 'var(--text-2)' }} />
+            <Ic n="expand_more" s={14} w={300} style={{ color: 'var(--text-2)' }} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
             <div className="flex items-center gap-2.5 px-2 py-2">
