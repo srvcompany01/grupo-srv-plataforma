@@ -1,5 +1,7 @@
 'use client'
 
+import { LogoRede } from '@/componentes/redes/LogoRede'
+import { REDES } from '@/dominio/redes-sociais'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
@@ -116,6 +118,9 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
   const [abertoEm, setAbertoEm] = useState<string | null>(null)
   const aberto = abertoEm === caminho ? 'mais' : null
+  const [redesEm, setRedesEm] = useState<{ caminho: string; topo: number } | null>(null)
+  const redesAberto = redesEm?.caminho === caminho ? redesEm : null
+  const emRedes = caminho === '/redes' || caminho.startsWith('/redes/')
   const faixa = useRef<HTMLElement>(null)
   const [recolhido, setRecolhido] = useState(false)
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
@@ -125,13 +130,14 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
   const agrupados = GRUPOS_FAIXA.flatMap((g) => g.itens).map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
   const emEspacos = /^\/(espacos|listas|pastas)(\/|$)/.test(caminho)
   useEffect(() => {
-    if (!aberto) return
-    const fora = (e: MouseEvent) => { if (!faixa.current?.contains(e.target as Node)) setAbertoEm(null) }
-    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setAbertoEm(null) }
+    if (!aberto && !redesAberto) return
+    const fecha = () => { setAbertoEm(null); setRedesEm(null) }
+    const fora = (e: MouseEvent) => { if (!faixa.current?.contains(e.target as Node)) fecha() }
+    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') fecha() }
     document.addEventListener('mousedown', fora)
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
-  }, [aberto])
+  }, [aberto, redesAberto])
   useEffect(() => {
     const ouvir = () => setRecolhido((r) => !r)
     window.addEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
@@ -163,7 +169,29 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }
       <div style={{ width: 28, height: 1, flex: 'none', background: 'rgba(255,255,255,.1)', margin: '2px 0 4px' }} />
       <ListaOrdenavel className="flex flex-col items-center" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
       <div style={{ position: 'relative' }}>
-        <button type="button" onClick={() => setAbertoEm(aberto ? null : caminho)} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 44, height: 36 }}>
+        <button type="button" onClick={(e) => { setAbertoEm(null); setRedesEm(redesAberto ? null : { caminho, topo: e.currentTarget.getBoundingClientRect().top }) }} title="Redes sociais" aria-expanded={!!redesAberto} aria-haspopup="menu" className="rail-item" style={{ position: 'relative', width: 56, height: 44, flex: 'none', border: 0, borderRadius: 10, background: 'transparent', color: emRedes ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <span className="rail-tile" data-ativo={emRedes || undefined} style={{ width: 44, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="share" s={22} /></span>
+        </button>
+        {redesAberto && (
+          <div role="menu" aria-label="Redes sociais" style={{ position: 'fixed', left: 80, top: Math.max(56, Math.min(redesAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)), zIndex: 41, width: 260, padding: 4, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)', color: 'var(--text)' }}>
+            <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Redes sociais</p>
+            <Link href="/redes" role="menuitem" className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: caminho === '/redes' ? 600 : 500, background: caminho === '/redes' ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}><Ic n="grid_view" s={20} style={{ color: 'var(--text-2)' }} />Visão geral</Link>
+            <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 6px' }} />
+            {REDES.map((r) => {
+              const on = caminho === `/redes/${r.slug}`
+              return (
+                <Link key={r.slug} href={`/redes/${r.slug}`} role="menuitem" aria-current={on ? 'page' : undefined} className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: on ? 600 : 400, background: on ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}>
+                  <LogoRede slug={r.slug} tamanho={20} />
+                  <span style={{ flex: 1 }}>{r.nome}</span>
+                  {!r.conectada && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>em breve</span>}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
+      <div style={{ position: 'relative' }}>
+        <button type="button" onClick={() => { setRedesEm(null); setAbertoEm(aberto ? null : caminho) }} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 44, height: 36 }}>
           <Ic n="more_horiz" s={22} />
         </button>
         {aberto && (
