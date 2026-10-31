@@ -15,7 +15,8 @@ import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
 import * as modelosTarefa from '@/servicos/modelos'
 import * as caixa from '@/servicos/caixa-de-entrada'
-import { hashtagsDoCliente, salvarHashtagsDoCliente } from '@/servicos/hashtags-cliente'
+import { plataformaDoFormato } from '@/dominio/hashtags'
+import { hashtagsDoCliente, hashtagsDoClienteTodas, legendaComHashtags, salvarHashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { idDaPastaDoDrive } from '@/dominio/caixa-de-entrada'
 import { proximasJanelas, ranquearHorarios } from '@/dominio/horarios-postagem'
 import { guiaDeAnuncioGoogle, guiaDeAnuncioMeta, guiaDePost, MODOS_META_GUIA } from '@/dominio/guia-publicacao'
@@ -207,7 +208,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente; entram sozinhas no fim da legenda ao publicar. Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1506,10 +1507,10 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'hashtags_cliente',
-    descricao: 'Lê as hashtags fixas de um cliente numa plataforma (hoje só instagram). A plataforma as acrescenta sozinha no fim da legenda ao publicar no Instagram (as que já estão na legenda não se repetem): por isso, na legenda, escreva só as hashtags específicas do post.',
+    descricao: 'Lê as hashtags fixas cadastradas no cliente (configurações do cliente → aba Hashtags), por plataforma. Sem "plataforma", devolve todas. A plataforma do post vem do formato: reels, feed e stories = instagram. criar_post_da_caixa e atualizar_conteudo_post já acrescentam essas hashtags sozinhos no fim da legenda (depois de uma linha em branco): não as escreva na legenda.',
     escrita: false,
-    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).default('instagram') },
-    executar: async ({ sb }, a) => ({ plataforma: a.plataforma, hashtags: await hashtagsDoCliente(sb, a.clienteId, a.plataforma) }),
+    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).optional() },
+    executar: async ({ sb }, a) => (a.plataforma ? { plataforma: a.plataforma, hashtags: await hashtagsDoCliente(sb, a.clienteId, a.plataforma) } : { plataformas: await hashtagsDoClienteTodas(sb, a.clienteId) }),
   }),
 
   definir({
@@ -1542,18 +1543,20 @@ export const FERRAMENTAS: Ferramenta[] = [
       tarefaId: id('Tarefa do destino (subtarefa e existente), SÓ junto com listaId e modo').optional(),
       titulo: z.string().min(1).max(200).optional().describe('Título do post (obrigatório quando o destino é tarefa-mãe ou subtarefa nova; ignorado quando entra na tarefa que já existe)'),
       formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
-      legenda: z.string().min(1).max(2200).describe('Legenda completa. As hashtags fixas do cliente (hashtags_cliente) são acrescentadas sozinhas ao publicar no Instagram; escreva só as específicas do post'),
+      legenda: z.string().min(1).max(2200).describe('Legenda do post, SEM as hashtags fixas do cliente: a plataforma as acrescenta sozinha no fim da legenda, depois de uma linha em branco, conforme a plataforma do post (formato reels, feed e stories = Instagram; tiktok = TikTok). Escreva só hashtags específicas do post, se houver'),
       dataPrevista: data('Data planejada'),
       ideia: z.string().max(2000).optional(),
       objetivo: z.string().max(2000).optional(),
       descricao: z.string().max(50000).optional().describe('Descrição da tarefa do post: transcrição do vídeo, hashtags, observações e tudo que a equipe precisar saber'),
+      semHashtags: z.boolean().optional().describe('true = NÃO acrescentar as hashtags do cliente (só se a pessoa pediu). Por padrão elas entram sozinhas'),
     },
     executar: async ({ sb }, a) => {
       if (a.listaId || a.modo) {
         if (!a.listaId || !a.modo) throw new Error('Para indicar o destino aqui, informe listaId e modo (e tarefaId em subtarefa ou existente).')
         await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
       }
-      return { tarefaId: await caixa.criarPostDaCaixa(sb, a), proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }
+      const r = await caixa.criarPostDaCaixa(sb, a)
+      return { tarefaId: r.tarefaId, hashtagsNaLegenda: r.hashtags, proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }
     },
   }),
 
@@ -1968,13 +1971,19 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'atualizar_conteudo_post',
     descricao: 'Troca a LEGENDA (o texto que vai na publicação), a ideia e/ou o objetivo de um post de conteúdo que já existe (inclusive já agendado: a legenda é lida na hora de publicar, então a nova vale). Só envie o que muda. Não confunda com a descrição da tarefa (atualizar_tarefa), que é só anotação da equipe e NÃO é publicada. As hashtags fixas do cliente entram sozinhas ao publicar no Instagram (hashtags_cliente): escreva só as do post. Atenção: se o cliente já respondeu a aprovação (aprovado ou pedido de ajuste), a plataforma cria uma versão nova do post, que volta para "aguardando" aprovação; mostre isso à pessoa antes.',
     escrita: true,
-    entrada: { tarefaId: id('Post (id da tarefa do post)'), legenda: z.string().min(1).max(2200).optional(), ideia: z.string().max(2000).optional(), objetivo: z.string().max(2000).optional() },
+    entrada: { tarefaId: id('Post (id da tarefa do post)'), legenda: z.string().min(1).max(2200).optional().describe('Nova legenda, SEM as hashtags fixas do cliente (entram sozinhas no fim, depois de uma linha em branco)'), ideia: z.string().max(2000).optional(), objetivo: z.string().max(2000).optional(), semHashtags: z.boolean().optional().describe('true = não acrescentar as hashtags do cliente') },
     executar: async ({ sb }, a) => {
       const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
       if (!post) throw new Error('Essa tarefa não é um post de conteúdo.')
       const atual = post.versoes.find((v) => v.numero === post.versaoAtual)
-      const versao = await conteudoSvc.salvarTexto(sb, a.tarefaId, { ideia: a.ideia ?? atual?.ideia ?? '', objetivo: a.objetivo ?? atual?.objetivo ?? '', legenda: a.legenda ?? atual?.legenda ?? '' })
-      return { ok: true, versao, aviso: versao !== post.versaoAtual ? 'O post já tinha resposta do cliente: foi criada a versão ' + versao + ' e ela volta para aprovação.' : undefined }
+      let legenda = a.legenda ?? atual?.legenda ?? ''
+      let hashtags: string[] = []
+      if (a.legenda && !a.semHashtags) {
+        const { data: t } = await sb.from('tasks').select('client_id').eq('id', a.tarefaId).single()
+        if (t?.client_id) ({ legenda, hashtags } = await legendaComHashtags(sb, t.client_id, plataformaDoFormato(post.formato), a.legenda))
+      }
+      const versao = await conteudoSvc.salvarTexto(sb, a.tarefaId, { ideia: a.ideia ?? atual?.ideia ?? '', objetivo: a.objetivo ?? atual?.objetivo ?? '', legenda })
+      return { ok: true, versao, hashtagsNaLegenda: hashtags, aviso: versao !== post.versaoAtual ? 'O post já tinha resposta do cliente: foi criada a versão ' + versao + ' e ela volta para aprovação.' : undefined }
     },
   }),
 

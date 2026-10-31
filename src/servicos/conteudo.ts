@@ -129,6 +129,7 @@ export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos
   if (!alvos.length || alvos.some((a) => !(ALVOS as readonly string[]).includes(a))) return 'Escolha onde publicar (Instagram, Facebook e/ou Google Meu Negócio).'
   const [post, pub] = await Promise.all([buscarConteudo(sb, tarefaId), buscarPublicacao(sb, tarefaId)])
   if (!post || !pub) return 'Post não encontrado (ou falta a migration de publicação).'
+  if (post.formato !== 'stories' && !post.versoes[0].legenda.trim()) return 'O post está sem legenda: escreva a legenda do post (campo Legenda, ou atualizar_conteudo_post) antes de agendar. A descrição da tarefa não é publicada.'
   if (alvos.some((a) => a !== 'google') && !pub.cliente?.paginaId) return 'O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").'
   if (alvos.includes('google') && !pub.cliente?.googlePerfil) return 'O cliente não tem o perfil do Google Meu Negócio ligado (página do cliente → Google Meu Negócio).'
   if (alvos.includes('google') && post.versoes[0].legenda.length > LIMITE_TEXTO_NEGOCIO) return `No Google Meu Negócio o texto vai até ${LIMITE_TEXTO_NEGOCIO} caracteres (a legenda tem ${post.versoes[0].legenda.length}).`

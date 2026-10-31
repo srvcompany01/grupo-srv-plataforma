@@ -176,6 +176,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
     if (!paginaId && alvos.some((a) => a !== 'google')) throw new ErroMeta('O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").')
     const comUrl = await Promise.all(midias.map(async (m) => ({ ...m, url: await urlLeitura(m.chave) })))
     const legenda = versao?.caption ?? ''
+    if (p.format !== 'stories' && !legenda.trim()) throw new ErroMeta('O post está sem legenda (a descrição da tarefa não é publicada). Escreva a legenda do post e agende de novo.')
 
     if (alvos.includes('instagram') && !p.ig_media_id) {
       const conta = await graph<{ instagram_business_account?: { id: string } }>(paginaId!, { params: { fields: 'instagram_business_account' } })

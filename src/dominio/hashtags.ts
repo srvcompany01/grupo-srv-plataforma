@@ -28,3 +28,6 @@ export function comHashtagsDoCliente(legenda: string, hashtags: string[]): strin
   const base = legenda.trimEnd()
   return base ? `${base}\n\n${faltam.join(' ')}` : faltam.join(' ')
 }
+
+/** Em qual plataforma o post sai, pelo formato: tiktok → TikTok; feed, reels e stories → Instagram. */
+export const plataformaDoFormato = (formato: string): string => (formato === 'tiktok' ? 'tiktok' : 'instagram')

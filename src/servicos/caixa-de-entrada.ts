@@ -8,7 +8,8 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import { extrairAudio } from './audio-video'
 import { baixarArquivo, dadosDoArquivo } from './google-drive'
 import * as conteudo from './conteudo'
-import { hashtagsDoCliente, salvarHashtagsDoCliente } from './hashtags-cliente'
+import { plataformaDoFormato } from '@/dominio/hashtags'
+import { hashtagsDoCliente, legendaComHashtags, salvarHashtagsDoCliente } from './hashtags-cliente'
 import * as tarefas from './tarefas'
 
 export type ItemDaCaixa = {
@@ -196,7 +197,7 @@ export async function tarefasParaDestino(sb: Supabase, listaId: string): Promise
  * Com `tarefaId` usa um post que já existe (ex.: a subtarefa "Post 01" de uma lista de conteúdo, onde toda subtarefa já é um post);
  * sem ele, cria um post novo em `listaId`.
  */
-export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
+export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; semHashtags?: boolean; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<{ tarefaId: string; hashtags: string[] }> {
   const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status, dest_list_id, dest_task_id, dest_mode').eq('id', e.itemId).single()
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
@@ -223,14 +224,16 @@ export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; titulo
     if (!e.titulo) throw new Error('Informe o título do post (ele vira uma tarefa nova).')
     tarefaId = await conteudo.criarPost(sb, { listaId: item.dest_list_id, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
   }
-  await conteudo.salvarTexto(sb, tarefaId, { ideia: e.ideia ?? '', objetivo: e.objetivo ?? '', legenda: e.legenda })
+  // As hashtags do cliente para a plataforma do post entram no fim da legenda, depois de uma linha em branco.
+  const final = e.semHashtags ? { legenda: e.legenda, hashtags: [] as string[] } : await legendaComHashtags(sb, item.client_id, plataformaDoFormato(e.formato), e.legenda)
+  await conteudo.salvarTexto(sb, tarefaId, { ideia: e.ideia ?? '', objetivo: e.objetivo ?? '', legenda: final.legenda })
   if (e.descricao) await tarefas.atualizarTarefa(sb, tarefaId, { descricao: textoParaDescricao(e.descricao) })
   const chave = gerarChaveConteudo(tarefaId, item.mime)
   await copiarArquivo(item.r2_key, chave, item.mime)
   await conteudo.registrarMidia(sb, tarefaId, { chave, tipo: 'video', nome: item.name, tamanho: Number(item.size_bytes) })
   await sb.from('content_inbox').update({ status: 'usado', post_task_id: tarefaId, updated_at: new Date().toISOString() }).eq('id', e.itemId)
   await apagarArquivos([item.r2_key, chaveDoAudio(item.r2_key)]).catch(() => [])
-  return tarefaId
+  return { tarefaId, hashtags: final.hashtags }
 }
 
 // ───────────────────────────── Ficha de conteúdo do cliente ─────────────────────────────
