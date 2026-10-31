@@ -14,8 +14,12 @@ describe('opcaoDaEtapa', () => {
     expect(opcaoDaEtapa(['Publicado'], 'postado')).toBe('Publicado')
     expect(opcaoDaEtapa(['Agendada'], 'agendado')).toBe('Agendada')
   })
-  it('não confunde aprovação interna com a do cliente e devolve null se não houver', () => {
-    expect(opcaoDaEtapa(['Aprovação interna', 'Edição'], 'aprovacao_cliente')).toBeNull()
+  it('usa "Aprovação" quando não há uma opção específica do cliente, e prefere a do cliente se existir', () => {
+    expect(opcaoDaEtapa(['Ideia', 'Copy', 'Design', 'Aprovação', 'Agendado', 'Postado'], 'aprovacao_cliente')).toBe('Aprovação')
+    expect(opcaoDaEtapa(['Aprovação interna', 'Aprovação cliente'], 'aprovacao_cliente')).toBe('Aprovação cliente')
+  })
+  it('devolve null quando não há opção parecida', () => {
+    expect(opcaoDaEtapa(['Edição'], 'aprovacao_cliente')).toBeNull()
     expect(opcaoDaEtapa(['Roteiro'], 'postado')).toBeNull()
   })
 })
