@@ -7,7 +7,9 @@ import { Ic } from '@/componentes/app/Ic'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
-import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import type { EspacoParaDestino } from '@/dominio/destino-caixa'
+import { DestinoDoVideo } from './DestinoDoVideo'
+import { formatarTamanho, resumoDoDestino, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
 import { excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, textoDaTranscricaoAcao, transcreverCaixaAcao, urlDoVideoCaixaAcao } from './acoes'
 
@@ -16,11 +18,12 @@ const ROTULO_TRANSCRICAO = { nao_pedida: '📝 Transcrição: aguardando', proce
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
 
 /** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
-export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaCaixa[]; mostrarCliente?: boolean }) {
+export function ListaDaCaixa({ arvore, itens, mostrarCliente = false }: { arvore: EspacoParaDestino[]; itens: ItemDaCaixa[]; mostrarCliente?: boolean }) {
   const router = useRouter()
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
   const [previa, setPrevia] = useState<{ nome: string; url: string } | null>(null)
+  const [destinando, setDestinando] = useState<ItemDaCaixa | null>(null)
   const [lendo, setLendo] = useState<{ nome: string; texto: string } | null>(null)
   const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
   const renomear = () => {
@@ -59,6 +62,7 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
                 <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
                   <span className="rounded px-1.5" style={{ color: i.audioPronto ? 'var(--ok)' : 'var(--text-3)', background: `color-mix(in srgb, ${i.audioPronto ? 'var(--ok)' : 'var(--text-3)'} 14%, transparent)` }}>{i.audioPronto ? '🎧 Áudio extraído' : '🎧 Áudio pendente'}</span>
                   <span title={i.transcricaoErro || undefined} className="rounded px-1.5" style={{ color: COR_TRANSCRICAO[i.transcricao], background: `color-mix(in srgb, ${COR_TRANSCRICAO[i.transcricao]} 14%, transparent)` }}>{ROTULO_TRANSCRICAO[i.transcricao]}</span>
+                  <button type="button" title="Escolher para onde o vídeo vai (espaço, pasta, lista e tarefa)" onClick={() => setDestinando(i)} className="rounded px-1.5" style={{ color: i.destino ? 'var(--client)' : '#e08a00', background: `color-mix(in srgb, ${i.destino ? 'var(--client)' : '#e08a00'} 14%, transparent)` }}>{i.destino ? `📍 ${resumoDoDestino(i.destino)}` : '📍 Sem destino · escolher'}</button>
                   {i.transcricao === 'erro' && i.transcricaoErro && <span className="truncate text-[var(--red)]">{i.transcricaoErro}</span>}
                 </span>
               )}
@@ -76,6 +80,7 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
           </li>
         ))}
       </ul>
+      {destinando && <DestinoDoVideo key={destinando.id} aberto aoFechar={() => setDestinando(null)} itemId={destinando.id} nome={destinando.nome} arvore={arvore} atual={destinando.destino} />}
       <Dialog open={!!lendo} onOpenChange={(a) => !a && setLendo(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>Transcrição do áudio</DialogTitle><DialogDescription className="truncate">{lendo?.nome}</DialogDescription></DialogHeader>

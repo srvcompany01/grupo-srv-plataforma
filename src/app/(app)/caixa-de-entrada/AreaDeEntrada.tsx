@@ -5,11 +5,12 @@ import { useState } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
 import { EnviarVideos } from './EnviarVideos'
+import type { EspacoParaDestino } from '@/dominio/destino-caixa'
 import { ListaDaCaixa } from './ListaDaCaixa'
 import { PainelDrive } from './PainelDrive'
 
 /** A caixa em si: escolher de qual cliente é o material e arrastar. O Drive é a outra entrada; ficha e Drive ficam nas configurações. */
-export function AreaDeEntrada({ clientes, itens, driveConfigurado, emailDaConta }: { clientes: { id: string; nome: string }[]; itens: ItemDaCaixa[]; driveConfigurado: boolean; emailDaConta: string | null }) {
+export function AreaDeEntrada({ arvore, clientes, itens, driveConfigurado, emailDaConta }: { arvore: EspacoParaDestino[]; clientes: { id: string; nome: string }[]; itens: ItemDaCaixa[]; driveConfigurado: boolean; emailDaConta: string | null }) {
   const [clienteId, setClienteId] = useState('')
   const [aba, setAba] = useState<'computador' | 'drive'>('computador')
   const visiveis = clienteId ? itens.filter((i) => i.clienteId === clienteId) : itens
@@ -38,7 +39,7 @@ export function AreaDeEntrada({ clientes, itens, driveConfigurado, emailDaConta 
           <p className="p-4 text-[13px] text-texto-3">Escolha o cliente acima para procurar na pasta dele no Google Drive.</p>
         )}
       </section>
-      <ListaDaCaixa itens={visiveis} mostrarCliente={!clienteId} />
+      <ListaDaCaixa arvore={arvore} itens={visiveis} mostrarCliente={!clienteId} />
       <p className="text-center text-[12px] text-texto-3"><Link href="/caixa-de-entrada/configuracoes" className="inline-flex items-center gap-1 text-[var(--client)] hover:underline"><Ic n="settings" s={14} />Ficha de conteúdo e Google Drive</Link></p>
     </div>
   )

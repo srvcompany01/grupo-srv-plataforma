@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { avisoDeVideoGrande, problemaDoVideo, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { avisoDeVideoGrande, problemaDoVideo, type DestinoDoVideo, type ModoDoDestino, type StatusDaCaixa, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { textoParaDescricao } from '@/dominio/descricao'
 import type { Formato } from '@/dominio/conteudo'
 import { apagarArquivos, copiarArquivo, enviarEmPartes, gerarChaveCaixa, gerarChaveConteudo, gerarChaveCriativo, tamanhoDoArquivo, urlLeitura, urlUpload } from '@/infra/r2'
@@ -28,6 +28,8 @@ export type ItemDaCaixa = {
   /** Andamento da transcrição (Whisper). */
   transcricao: EstadoTranscricao
   transcricaoErro: string
+  /** Para onde a pessoa mandou o vídeo (null = ainda não escolheu). */
+  destino: DestinoDoVideo | null
 }
 
 export type EstadoTranscricao = 'nao_pedida' | 'processando' | 'pronta' | 'erro'
@@ -35,9 +37,9 @@ export type EstadoTranscricao = 'nao_pedida' | 'processando' | 'pronta' | 'erro'
 /** Passou deste tempo "processando" sem resposta do GitHub: conta como falha, para o item não ficar preso para sempre. */
 const PRAZO_TRANSCRICAO_MIN = 45
 
-type Linha = { audio_ready?: boolean; transcript_state?: string; transcript_error?: string; transcript_requested_at?: string | null; id: string; client_id: string; name: string; source: string; kind: string; status: string; size_bytes: number; error: string; post_task_id: string | null; created_at: string; clients: { name: string } | null }
+type Linha = { dest_list_id?: string | null; dest_task_id?: string | null; dest_mode?: string | null; dest_list?: { name: string } | null; dest_task?: { title: string } | null; audio_ready?: boolean; transcript_state?: string; transcript_error?: string; transcript_requested_at?: string | null; id: string; client_id: string; name: string; source: string; kind: string; status: string; size_bytes: number; error: string; post_task_id: string | null; created_at: string; clients: { name: string } | null }
 const COLUNAS_ANTIGAS = 'id, client_id, name, source, kind, status, size_bytes, error, post_task_id, created_at, clients(name)'
-const COLUNAS = `${COLUNAS_ANTIGAS}, audio_ready, transcript_state, transcript_error, transcript_requested_at`
+const COLUNAS = `${COLUNAS_ANTIGAS}, audio_ready, transcript_state, transcript_error, transcript_requested_at, dest_list_id, dest_task_id, dest_mode, dest_list:lists!content_inbox_dest_list_id_fkey(name), dest_task:tasks!content_inbox_dest_task_id_fkey(title)`
 function estadoDaTranscricao(l: Linha): Pick<ItemDaCaixa, 'audioPronto' | 'transcricao' | 'transcricaoErro'> {
   let transcricao = (l.transcript_state ?? 'nao_pedida') as EstadoTranscricao
   let transcricaoErro = l.transcript_error ?? ''
@@ -48,7 +50,7 @@ function estadoDaTranscricao(l: Linha): Pick<ItemDaCaixa, 'audioPronto' | 'trans
   return { audioPronto: !!l.audio_ready, transcricao, transcricaoErro }
 }
 
-const paraItem = (l: Linha): ItemDaCaixa => ({ id: l.id, clienteId: l.client_id, clienteNome: l.clients?.name ?? '', nome: l.name, origem: l.source as ItemDaCaixa['origem'], tipo: l.kind as TipoDoVideo, status: l.status as StatusDaCaixa, tamanho: Number(l.size_bytes), erro: l.error, postId: l.post_task_id, criadoEm: l.created_at, ...estadoDaTranscricao(l) })
+const paraItem = (l: Linha): ItemDaCaixa => ({ id: l.id, clienteId: l.client_id, clienteNome: l.clients?.name ?? '', nome: l.name, origem: l.source as ItemDaCaixa['origem'], tipo: l.kind as TipoDoVideo, status: l.status as StatusDaCaixa, tamanho: Number(l.size_bytes), erro: l.error, postId: l.post_task_id, criadoEm: l.created_at, ...estadoDaTranscricao(l), destino: l.dest_list_id && l.dest_mode ? { listaId: l.dest_list_id, listaNome: l.dest_list?.name ?? '', tarefaId: l.dest_task_id ?? null, tarefaTitulo: l.dest_task?.title ?? '', modo: l.dest_mode as ModoDoDestino } : null })
 
 export async function listarCaixa(sb: Supabase, f: { clienteId?: string; status?: StatusDaCaixa } = {}): Promise<ItemDaCaixa[]> {
   const buscar = async (colunas: string) => {
@@ -159,28 +161,62 @@ export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   if (data && data.status !== 'usado') await apagarArquivos([data.r2_key, chaveDoAudio(data.r2_key)]).catch(() => [])
 }
 
+/** A pessoa escolhe para onde o vídeo vai. `null` limpa a escolha. A lista precisa ser de conteúdo (é onde as subtarefas viram posts). */
+export async function definirDestino(sb: Supabase, itemId: string, d: { listaId: string; tarefaId: string | null; modo: ModoDoDestino } | null): Promise<void> {
+  if (d) {
+    const { data: lista } = await sb.from('lists').select('kind').eq('id', d.listaId).maybeSingle()
+    if (!lista) throw new Error('Lista não encontrada.')
+    if (lista.kind !== 'conteudo') throw new Error('Essa lista não é de conteúdo. Escolha uma lista de conteúdo (ou mude o tipo da lista nas configurações dela).')
+    if (d.modo !== 'mae') {
+      if (!d.tarefaId) throw new Error(d.modo === 'subtarefa' ? 'Escolha a tarefa onde a subtarefa será criada.' : 'Escolha a tarefa que vai receber o vídeo.')
+      const { data: t } = await sb.from('tasks').select('list_id').eq('id', d.tarefaId).maybeSingle()
+      if (!t || t.list_id !== d.listaId) throw new Error('Essa tarefa não está na lista escolhida.')
+      if (d.modo === 'existente' && !(await conteudo.buscarConteudo(sb, d.tarefaId))) throw new Error('Essa tarefa ainda não é um post. Escolha uma subtarefa da lista de conteúdo.')
+    }
+  }
+  const { error } = await sb.from('content_inbox').update({ dest_list_id: d?.listaId ?? null, dest_task_id: d && d.modo !== 'mae' ? d.tarefaId : null, dest_mode: d?.modo ?? null, updated_at: new Date().toISOString() }).eq('id', itemId).eq('status', 'pronto')
+  if (error) throw error
+}
+
+/** Tarefas de uma lista, para escolher onde o vídeo entra (tarefas-mãe primeiro, cada uma seguida das suas subtarefas). */
+export async function tarefasParaDestino(sb: Supabase, listaId: string): Promise<{ id: string; titulo: string; subtarefa: boolean }[]> {
+  const { data, error } = await sb.from('tasks').select('id, title, parent_task_id, position').eq('list_id', listaId).is('archived_at', null).order('position').limit(500)
+  if (error) throw error
+  const maes = (data ?? []).filter((t) => !t.parent_task_id)
+  return maes.flatMap((m) => [{ id: m.id, titulo: m.title, subtarefa: false }, ...(data ?? []).filter((t) => t.parent_task_id === m.id).map((t) => ({ id: t.id, titulo: t.title, subtarefa: true }))])
+}
+
 /**
  * Vira post: escreve a legenda e leva o vídeo da caixa para o post. Devolve o id do post.
  * Com `tarefaId` usa um post que já existe (ex.: a subtarefa "Post 01" de uma lista de conteúdo, onde toda subtarefa já é um post);
  * sem ele, cria um post novo em `listaId`.
  */
-export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; tarefaId?: string; listaId?: string; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
-  const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status').eq('id', e.itemId).single()
+export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
+  const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status, dest_list_id, dest_task_id, dest_mode').eq('id', e.itemId).single()
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
+  // O destino é escolhido pela pessoa na caixa de entrada; a IA nunca decide sozinha.
+  if (!item.dest_list_id || !item.dest_mode) throw new Error('A pessoa ainda não escolheu o destino deste vídeo. Peça para ela abrir a Caixa de entrada, clicar em "Destino" no vídeo e escolher a lista, a tarefa e se entra como tarefa-mãe ou subtarefa. Depois chame de novo.')
   let tarefaId: string
-  if (e.tarefaId) {
-    const existente = await conteudo.buscarConteudo(sb, e.tarefaId)
-    if (!existente) throw new Error('Essa tarefa não é um post de conteúdo. Use a subtarefa (ex.: "Post 01") de uma lista de conteúdo, ou omita tarefaId e informe listaId para criar um post novo.')
-    const { data: t } = await sb.from('tasks').select('client_id').eq('id', e.tarefaId).single()
-    if (t?.client_id && t.client_id !== item.client_id) throw new Error('Esse post é de outro cliente: o vídeo é de um cliente diferente do da tarefa.')
-    if (existente.versoes.find((v) => v.numero === existente.versaoAtual)?.midias.length) throw new Error('Esse post já tem mídia. Remova a mídia dele antes, ou escolha outra subtarefa.')
-    tarefaId = e.tarefaId
+  if (item.dest_mode === 'existente') {
+    if (!item.dest_task_id) throw new Error('O destino escolhido para este vídeo perdeu a tarefa (ela foi removida). Peça para a pessoa escolher o destino de novo.')
+    const existente = await conteudo.buscarConteudo(sb, item.dest_task_id)
+    if (!existente) throw new Error('A tarefa escolhida como destino não é um post de conteúdo. Peça para a pessoa escolher outro destino.')
+    if (existente.versoes.find((v) => v.numero === existente.versaoAtual)?.midias.length) throw new Error('O post escolhido como destino já tem mídia. Peça para a pessoa escolher outro destino.')
+    tarefaId = item.dest_task_id
     if (existente.formato !== e.formato) await conteudo.alterarFormato(sb, tarefaId, e.formato)
     await tarefas.atualizarTarefa(sb, tarefaId, { prazo: e.dataPrevista })
+  } else if (item.dest_mode === 'subtarefa') {
+    if (!item.dest_task_id) throw new Error('O destino escolhido para este vídeo perdeu a tarefa (ela foi removida). Peça para a pessoa escolher o destino de novo.')
+    if (!e.titulo) throw new Error('Informe o título do post (ele vira uma subtarefa nova).')
+    const { data: eu } = await sb.auth.getUser()
+    tarefaId = await tarefas.criarTarefa(sb, { listaId: item.dest_list_id, titulo: e.titulo, responsaveis: eu.user ? [eu.user.id] : [], paiId: item.dest_task_id })
+    await tarefas.definirTagCliente(sb, tarefaId, item.client_id)
+    await conteudo.alterarFormato(sb, tarefaId, e.formato)
+    await tarefas.atualizarTarefa(sb, tarefaId, { prazo: e.dataPrevista })
   } else {
-    if (!e.listaId || !e.titulo) throw new Error('Informe tarefaId (post que já existe) ou listaId e titulo (para criar um post novo).')
-    tarefaId = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
+    if (!e.titulo) throw new Error('Informe o título do post (ele vira uma tarefa nova).')
+    tarefaId = await conteudo.criarPost(sb, { listaId: item.dest_list_id, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
   }
   await conteudo.salvarTexto(sb, tarefaId, { ideia: e.ideia ?? '', objetivo: e.objetivo ?? '', legenda: e.legenda })
   if (e.descricao) await tarefas.atualizarTarefa(sb, tarefaId, { descricao: textoParaDescricao(e.descricao) })

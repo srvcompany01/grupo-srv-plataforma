@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
-import { idDaPastaDoDrive, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import { idDaPastaDoDrive, type ModoDoDestino, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
@@ -104,6 +104,26 @@ export async function textoDaTranscricaoAcao(itemId: string): Promise<{ texto: s
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
   const { data } = await (await criarClienteServidor()).from('content_inbox').select('transcript, transcript_state').eq('id', itemId).maybeSingle()
   return data?.transcript_state === 'pronta' ? { texto: data.transcript } : { erro: 'A transcrição ainda não está pronta.' }
+}
+
+/** Salva para onde o vídeo vai (a IA usa esse destino e nunca escolhe sozinha). `destino: null` limpa. */
+export async function definirDestinoCaixaAcao(itemId: string, destino: { listaId: string; tarefaId: string | null; modo: ModoDoDestino } | null): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(itemId) || (destino && (!UUID.test(destino.listaId) || (destino.tarefaId && !UUID.test(destino.tarefaId)) || !['mae', 'subtarefa', 'existente'].includes(destino.modo)))) return { erro: 'Pedido inválido.' }
+  const r = await tentar(async () => caixa.definirDestino(await criarClienteServidor(), itemId, destino), destino ? 'Destino salvo.' : 'Destino removido.')
+  atualizar()
+  return r
+}
+
+/** Tarefas da lista escolhida, para a caixa de seleção da tarefa. */
+export async function tarefasParaDestinoAcao(listaId: string): Promise<{ tarefas: { id: string; titulo: string; subtarefa: boolean }[] } | { erro: string }> {
+  await exigirEquipe()
+  if (!UUID.test(listaId)) return { erro: 'Lista inválida.' }
+  try {
+    return { tarefas: await caixa.tarefasParaDestino(await criarClienteServidor(), listaId) }
+  } catch (err) {
+    return { erro: msg(err) }
+  }
 }
 
 export async function urlDoVideoCaixaAcao(itemId: string): Promise<{ url: string } | { erro: string }> {

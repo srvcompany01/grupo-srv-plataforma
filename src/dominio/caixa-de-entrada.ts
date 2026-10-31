@@ -53,3 +53,11 @@ export function avisoDeVideoGrande(tamanho: number, nome = 'Este vídeo'): strin
 }
 
 export const formatarTamanho = (bytes: number) => (bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2).replace('.', ',')} GB` : `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`)
+
+/** Como o vídeo entra no destino: tarefa nova na lista, subtarefa nova de uma tarefa, ou dentro de uma tarefa/post que já existe. */
+export type ModoDoDestino = 'mae' | 'subtarefa' | 'existente'
+export const ROTULO_MODO_DESTINO: Record<ModoDoDestino, string> = { mae: 'Tarefa-mãe (nova, na lista)', subtarefa: 'Subtarefa (nova, dentro da tarefa)', existente: 'Dentro da tarefa que já existe' }
+export type DestinoDoVideo = { listaId: string; listaNome: string; tarefaId: string | null; tarefaTitulo: string; modo: ModoDoDestino }
+
+/** Texto curto do destino para a lista da caixa. */
+export const resumoDoDestino = (d: DestinoDoVideo) => `${d.listaNome}${d.tarefaId ? ` › ${d.tarefaTitulo}` : ''} (${d.modo === 'mae' ? 'tarefa-mãe' : d.modo === 'subtarefa' ? 'subtarefa' : 'na tarefa existente'})`

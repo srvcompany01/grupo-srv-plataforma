@@ -1403,7 +1403,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_caixa_de_entrada',
-    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Cada vídeo "pronto" traz audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Cada vídeo "pronto" traz destino (para onde a pessoa mandou; null = ainda não escolheu), audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
     escrita: false,
     entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
     executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
@@ -1522,13 +1522,11 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_post_da_caixa',
-    descricao: 'Coloca um vídeo "pronto" da caixa num POST de conteúdo e grava a legenda. Se o post JÁ EXISTE (ex.: a subtarefa "Post 01" que a pessoa ou você criou na lista de conteúdo), passe tarefaId: o vídeo, a legenda e a descrição vão para ESSA tarefa, sem criar outra. Sem tarefaId, cria um post novo (listaId e titulo). Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
+    descricao: 'Coloca um vídeo "pronto" da caixa num POST de conteúdo e grava a legenda. O DESTINO (lista, tarefa e se entra como tarefa-mãe, subtarefa ou na tarefa existente) é escolhido PELA PESSOA na Caixa de entrada (botão Destino) e vem em listar_caixa_de_entrada no campo destino: nunca escolha por conta própria. Se o vídeo estiver sem destino, esta ferramenta recusa: peça à pessoa para escolher e tente de novo. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
     escrita: true,
     entrada: {
       itemId: id('Item da caixa'),
-      tarefaId: id('Post que JÁ EXISTE onde colocar o vídeo e a legenda (ex.: a subtarefa "Post 01" de uma lista de conteúdo; em lista de conteúdo toda subtarefa já é um post). Use quando a tarefa já está criada, para não gerar uma tarefa separada').optional(),
-      listaId: id('Lista de conteúdo onde criar um post NOVO (só se não houver tarefaId)').optional(),
-      titulo: z.string().min(1).max(200).optional().describe('Título do post novo (só se não houver tarefaId)'),
+      titulo: z.string().min(1).max(200).optional().describe('Título do post (obrigatório quando o destino é tarefa-mãe ou subtarefa nova; ignorado quando entra na tarefa que já existe)'),
       formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
       legenda: z.string().min(1).max(2200).describe('Legenda completa. As hashtags fixas do cliente (hashtags_cliente) são acrescentadas sozinhas ao publicar no Instagram; escreva só as específicas do post'),
       dataPrevista: data('Data planejada'),
