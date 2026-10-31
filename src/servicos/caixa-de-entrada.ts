@@ -211,11 +211,12 @@ export async function parteDoAudio(sb: Supabase, itemId: string, parte: number):
 }
 
 /** Assinatura (HMAC) do id do item: vai no link fixo do áudio e impede que alguém adivinhe o endereço de outro vídeo. */
-export const tokenDoAudio = (itemId: string) => createHmac('sha256', process.env.CRON_SECRET ?? '').update(`audio-caixa:${itemId}`).digest('hex')
+type Finalidade = 'audio-caixa' | 'transcricao-caixa'
+export const tokenDoAudio = (itemId: string, finalidade: Finalidade = 'audio-caixa') => createHmac('sha256', process.env.CRON_SECRET ?? '').update(`${finalidade}:${itemId}`).digest('hex')
 
-export function tokenValido(itemId: string, token: string): boolean {
+export function tokenValido(itemId: string, token: string, finalidade: Finalidade = 'audio-caixa'): boolean {
   if (!process.env.CRON_SECRET) return false
-  const esperado = Buffer.from(tokenDoAudio(itemId))
+  const esperado = Buffer.from(tokenDoAudio(itemId, finalidade))
   const recebido = Buffer.from(token)
   return esperado.length === recebido.length && timingSafeEqual(esperado, recebido)
 }
@@ -227,6 +228,63 @@ export async function audioDoVideo(sb: Supabase, itemId: string): Promise<{ nome
   const base = (data?.name ?? 'video').replace(/\.[^.]+$/, '')
   const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
   return { nome: `${base}.mp3`, url: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, mime: 'audio/mpeg', tamanhoBytes: (await tamanhoDoArquivo(chave)) ?? 0 }
+}
+
+// ───────────────────────────── Transcrição (Whisper no GitHub Actions) ─────────────────────────────
+
+/** Guardada em `ai_summary` (texto) como JSON: sem coluna nova no banco. */
+export type Transcricao = { estado: 'nao_pedida' | 'processando' | 'pronta' | 'indisponivel'; texto?: string; pedidoEm?: string }
+
+const lerTranscricao = (bruto: string): Transcricao => {
+  try {
+    const j = JSON.parse(bruto) as { estado?: string; texto?: string; pedidoEm?: string }
+    if (j.estado === 'pronta' && typeof j.texto === 'string') return { estado: 'pronta', texto: j.texto }
+    if (j.estado === 'processando') return { estado: 'processando', pedidoEm: j.pedidoEm }
+  } catch {}
+  return { estado: 'nao_pedida' }
+}
+
+/** O Whisper roda num repositório do GitHub (workflow `transcrever`), de graça nos minutos do GitHub Actions. */
+export const whisperConfigurado = () => !!(process.env.WHISPER_REPO && process.env.WHISPER_GITHUB_TOKEN)
+
+/** Pede a transcrição: o GitHub baixa o áudio, transcreve e devolve o texto em /api/caixa/transcricao. */
+export async function pedirTranscricao(sb: Supabase, itemId: string): Promise<void> {
+  if (!whisperConfigurado()) throw new Error('A transcrição ainda não foi configurada (WHISPER_REPO e WHISPER_GITHUB_TOKEN na Vercel).')
+  await prepararAudio(sb, itemId)
+  const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
+  const r = await fetch(`https://api.github.com/repos/${process.env.WHISPER_REPO}/actions/workflows/transcrever.yml/dispatches`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.WHISPER_GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+    body: JSON.stringify({ ref: 'main', inputs: { audio: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, retorno: `${site}/api/caixa/transcricao/${itemId}`, token: tokenDoAudio(itemId, 'transcricao-caixa') } }),
+  })
+  if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'O GitHub recusou o token (WHISPER_GITHUB_TOKEN).' : r.status === 404 ? 'Não achei o repositório ou o workflow "transcrever" no GitHub.' : `O GitHub respondeu com erro (${r.status}).`)
+  await sb.from('content_inbox').update({ ai_summary: JSON.stringify({ estado: 'processando', pedidoEm: new Date().toISOString() }), updated_at: new Date().toISOString() }).eq('id', itemId)
+}
+
+/** Ao chegar um vídeo: extrai o áudio e, se o Whisper estiver configurado, já pede a transcrição. */
+export async function pedirTranscricaoSeConfigurado(sb: Supabase, itemId: string): Promise<void> {
+  if (whisperConfigurado()) await pedirTranscricao(sb, itemId)
+  else await prepararAudio(sb, itemId)
+}
+
+/** Chamada pelo GitHub quando termina. Usa a chave de serviço porque quem chama não tem login. */
+export async function registrarTranscricao(itemId: string, texto: string): Promise<void> {
+  const { error } = await criarClienteAdmin().from('content_inbox').update({ ai_summary: JSON.stringify({ estado: 'pronta', texto: texto.slice(0, 200_000) }), updated_at: new Date().toISOString() }).eq('id', itemId).eq('status', 'pronto')
+  if (error) throw error
+}
+
+/** O que o Codex lê: o texto, ou o andamento. Pede a transcrição sozinha se ainda ninguém pediu (refazer=true pede de novo). */
+export async function transcricaoDoVideo(sb: Supabase, itemId: string, refazer = false): Promise<Transcricao> {
+  const { data, error } = await sb.from('content_inbox').select('ai_summary, status').eq('id', itemId).single()
+  if (error) throw error
+  if (data.status !== 'pronto') throw new Error(data.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
+  const atual = lerTranscricao(data.ai_summary)
+  if (atual.estado === 'pronta' && !refazer) return atual
+  const esperaMin = atual.pedidoEm ? (Date.now() - new Date(atual.pedidoEm).getTime()) / 60_000 : Infinity
+  if (atual.estado === 'processando' && !refazer && esperaMin < 30) return atual
+  if (!whisperConfigurado()) return { estado: 'indisponivel' }
+  await pedirTranscricao(sb, itemId)
+  return { estado: 'processando', pedidoEm: new Date().toISOString() }
 }
 
 // ───────────────────────────── Vídeo da caixa → biblioteca de criativos de anúncio ─────────────────────────────

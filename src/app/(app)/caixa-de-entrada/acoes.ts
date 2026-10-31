@@ -29,7 +29,7 @@ export async function confirmarEnvioCaixaAcao(itemId: string): Promise<Resultado
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
   const r = await tentar(async () => caixa.confirmarEnvio(await criarClienteServidor(), itemId), 'Vídeo enviado.')
   // Já deixa o áudio extraído; se falhar, ele é extraído na hora em que a IA pedir.
-  if (r && !('erro' in r)) { const sb = await criarClienteServidor(); after(async () => void (await caixa.prepararAudio(sb, itemId).catch(() => {}))) }
+  if (r && !('erro' in r)) { const sb = await criarClienteServidor(); after(async () => void (await caixa.pedirTranscricaoSeConfigurado(sb, itemId).catch(() => {}))) }
   atualizar()
   return r
 }
@@ -52,7 +52,7 @@ export async function importarDriveAcao(clienteId: string, arquivoId: string, ti
   try {
     const sb = await criarClienteServidor()
     const itemId = await caixa.iniciarImportacaoDrive(sb, eu.id, { clienteId, arquivoId, tipo: tipo === 'indefinido' ? undefined : tipo, confirmarGrande })
-    after(async () => { await caixa.executarImportacao(itemId); await caixa.prepararAudio(sb, itemId).catch(() => {}) })
+    after(async () => { await caixa.executarImportacao(itemId); await caixa.pedirTranscricaoSeConfigurado(sb, itemId).catch(() => {}) })
     atualizar()
     return { ok: 'Importando do Drive… aparece na lista quando terminar.' }
   } catch (err) {
