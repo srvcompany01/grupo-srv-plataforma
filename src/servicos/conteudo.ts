@@ -1,3 +1,4 @@
+import { aplicarEtapaDoPost } from './etapa-post'
 import { chaveDeMidiaValida, type Aprovacao, type Decisao, type Formato } from '@/dominio/conteudo'
 import { validarEntrada } from '@/dominio/midias'
 import { LIMITE_TEXTO_NEGOCIO } from '@/dominio/google'
@@ -118,6 +119,8 @@ export async function buscarPublicacao(sb: Supabase, tarefaId: string): Promise<
 export async function agendarPost(sb: Supabase, tarefaId: string, a: { em: string; alvos: Alvo[]; modo: ModoPublicacao; enviarAoCliente: boolean; collabs?: string[] }): Promise<void> {
   const campos = { publish_at: a.em, publish_targets: a.alvos, publish_mode: a.modo, publish_status: 'agendado', publish_error: null, ...(a.collabs ? { collaborators: a.collabs } : {}), ...(a.enviarAoCliente ? { approval: 'aguardando' } : {}) }
   if (!dados(await sb.from('content_posts').update(campos).eq('task_id', tarefaId).select('task_id')).length) throw { code: '42501' }
+  // O campo "Etapa" acompanha: enviado ao cliente = Aprovação cliente; agendado direto = Agendado.
+  await aplicarEtapaDoPost(sb, tarefaId, a.enviarAoCliente ? 'aprovacao_cliente' : 'agendado')
 }
 
 export async function cancelarAgendamento(sb: Supabase, tarefaId: string): Promise<void> {

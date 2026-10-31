@@ -5,6 +5,7 @@ import { comHashtagsDoCliente } from '@/dominio/hashtags'
 import { urlLeitura } from '@/infra/r2'
 import type { Supabase } from '@/infra/supabase/servidor'
 import { ErroGoogle, publicarNoNegocio } from './google-agencia'
+import { aplicarEtapaDoPost } from './etapa-post'
 import { hashtagsDoCliente } from './hashtags-cliente'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Database } from '@/infra/supabase/tipos'
@@ -203,6 +204,8 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       await salvar({ gbp_post_name: r.id, gbp_link: r.link })
     }
     await salvar({ publish_status: 'publicado', published_at: new Date().toISOString(), publish_error: null, publish_lock_at: null })
+    // Publicado: o campo "Etapa" vira Postado e a tarefa (ou subtarefa) é concluída.
+    await aplicarEtapaDoPost(admin as unknown as Supabase, taskId, 'postado')
     return { status: 'publicado' }
   } catch (e) {
     console.error('Publicação Meta', taskId, e)
