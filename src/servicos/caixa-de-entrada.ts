@@ -178,12 +178,17 @@ export async function definirDestino(sb: Supabase, itemId: string, d: { listaId:
   if (error) throw error
 }
 
-/** Tarefas de uma lista, para escolher onde o vídeo entra (tarefas-mãe primeiro, cada uma seguida das suas subtarefas). */
-export async function tarefasParaDestino(sb: Supabase, listaId: string): Promise<{ id: string; titulo: string; subtarefa: boolean }[]> {
-  const { data, error } = await sb.from('tasks').select('id, title, parent_task_id, position').eq('list_id', listaId).is('archived_at', null).order('position').limit(500)
-  if (error) throw error
-  const maes = (data ?? []).filter((t) => !t.parent_task_id)
-  return maes.flatMap((m) => [{ id: m.id, titulo: m.title, subtarefa: false }, ...(data ?? []).filter((t) => t.parent_task_id === m.id).map((t) => ({ id: t.id, titulo: t.title, subtarefa: true }))])
+/** Tarefas de uma lista, para escolher onde o vídeo entra (tarefas-mãe primeiro, cada uma seguida das suas subtarefas). `post`: já é um post de conteúdo (aceita o vídeo "na tarefa que já existe"). */
+export async function tarefasParaDestino(sb: Supabase, listaId: string): Promise<{ id: string; titulo: string; subtarefa: boolean; post: boolean }[]> {
+  const [tarefasDaLista, posts] = await Promise.all([
+    sb.from('tasks').select('id, title, parent_task_id, position').eq('list_id', listaId).is('archived_at', null).order('position').limit(500),
+    sb.from('content_posts').select('task_id, tasks!inner(list_id)').eq('tasks.list_id', listaId),
+  ])
+  if (tarefasDaLista.error) throw tarefasDaLista.error
+  const ehPost = new Set((posts.data ?? []).map((p) => p.task_id))
+  const data = tarefasDaLista.data ?? []
+  const item = (t: (typeof data)[number], subtarefa: boolean) => ({ id: t.id, titulo: t.title, subtarefa, post: ehPost.has(t.id) })
+  return data.filter((t) => !t.parent_task_id).flatMap((m) => [item(m, false), ...data.filter((t) => t.parent_task_id === m.id).map((t) => item(t, true))])
 }
 
 /**

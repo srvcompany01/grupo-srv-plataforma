@@ -17,7 +17,7 @@ export function DestinoDoVideo({ aberto, aoFechar, itemId, nome, arvore, atual }
   const [listaId, setListaId] = useState(atual?.listaId ?? '')
   const [modo, setModo] = useState<ModoDoDestino>(atual?.modo ?? 'mae')
   const [tarefaId, setTarefaId] = useState(atual?.tarefaId ?? '')
-  const [tarefas, setTarefas] = useState<{ id: string; titulo: string; subtarefa: boolean }[]>([])
+  const [tarefas, setTarefas] = useState<{ id: string; titulo: string; subtarefa: boolean; post: boolean }[]>([])
   const [carregando, setCarregando] = useState(false)
   const [pendente, iniciar] = useTransition()
 
@@ -82,12 +82,12 @@ export function DestinoDoVideo({ aberto, aoFechar, itemId, nome, arvore, atual }
           {precisaTarefa && (
             <label className="block space-y-1"><span className={rotulo}>{modo === 'subtarefa' ? 'Tarefa onde criar a subtarefa' : 'Tarefa que recebe o vídeo'}</span>
               <select className={campo} value={tarefaId} disabled={!listaId || carregando} onChange={(e) => setTarefaId(e.target.value)}>
-                <option value="">{carregando ? 'Carregando…' : 'Escolha…'}</option>
-                {tarefas.filter((t) => modo === 'existente' || !t.subtarefa).map((t) => <option key={t.id} value={t.id}>{t.subtarefa ? '↳ ' : ''}{t.titulo}</option>)}
+                <option value="">{carregando ? 'Carregando…' : modo === 'existente' ? 'Escolha um post…' : 'Escolha…'}</option>
+                {tarefas.filter((t) => (modo === 'existente' ? t.post : !t.subtarefa)).map((t) => <option key={t.id} value={t.id}>{t.subtarefa ? '↳ ' : ''}{t.titulo}</option>)}
               </select>
             </label>
           )}
-          <p className="text-legenda text-texto-3">Só aparecem listas do tipo Conteúdo. A IA usa exatamente este destino quando criar o post: ela não escolhe sozinha.</p>
+          <p className="text-legenda text-texto-3">{modo === 'existente' ? 'Em "na tarefa que já existe" só aparecem posts (as subtarefas da lista de conteúdo). A tarefa-mãe não é um post: para ela use "Subtarefa". ' : ''}Só aparecem listas do tipo Conteúdo. A IA usa exatamente este destino quando criar o post: ela não escolhe sozinha.</p>
           <div className="flex items-center gap-2">
             <button type="button" disabled={pendente} onClick={salvar} className={botaoPrimario}>{pendente ? 'Salvando…' : 'Salvar destino'}</button>
             {atual && <button type="button" disabled={pendente} className="b-ghost" onClick={() => iniciar(async () => { if (avisar(await definirDestinoCaixaAcao(itemId, null), true)) aoFechar() })}>Remover destino</button>}

@@ -5,13 +5,25 @@ import { after } from 'next/server'
 import { idDaPastaDoDrive, type ModoDoDestino, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { tentar, type Resultado } from '@/servicos/acao'
+import { mensagemErro } from '@/dominio/erros-banco'
+import type { Resultado } from '@/servicos/acao'
 import * as caixa from '@/servicos/caixa-de-entrada'
 import { listarVideos, type ArquivoDrive } from '@/servicos/google-drive'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const atualizar = () => revalidatePath('/caixa-de-entrada')
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Algo deu errado.')
+
+/** Como `tentar`, mas mostra a mensagem das regras da caixa (erros comuns com texto próprio); erros do banco continuam traduzidos. */
+async function tentar(fn: () => Promise<unknown>, sucesso = 'Salvo.'): Promise<Resultado> {
+  try {
+    await fn()
+    return { ok: sucesso }
+  } catch (e) {
+    console.error(e)
+    return { erro: e instanceof Error && !('code' in e) ? e.message : mensagemErro(e) }
+  }
+}
 
 /** Cria o item e devolve a URL para o navegador enviar o vídeo direto ao armazenamento. */
 export async function prepararEnvioCaixaAcao(e: { clienteId: string; nome: string; mime: string; tamanho: number; tipo: TipoDoVideo; confirmarGrande?: boolean }): Promise<{ id: string; urlEnvio: string } | { erro: string }> {
@@ -116,7 +128,7 @@ export async function definirDestinoCaixaAcao(itemId: string, destino: { listaId
 }
 
 /** Tarefas da lista escolhida, para a caixa de seleção da tarefa. */
-export async function tarefasParaDestinoAcao(listaId: string): Promise<{ tarefas: { id: string; titulo: string; subtarefa: boolean }[] } | { erro: string }> {
+export async function tarefasParaDestinoAcao(listaId: string): Promise<{ tarefas: { id: string; titulo: string; subtarefa: boolean; post: boolean }[] } | { erro: string }> {
   await exigirEquipe()
   if (!UUID.test(listaId)) return { erro: 'Lista inválida.' }
   try {
