@@ -159,12 +159,29 @@ export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   if (data && data.status !== 'usado') await apagarArquivos([data.r2_key, chaveDoAudio(data.r2_key)]).catch(() => [])
 }
 
-/** Vira post: cria o post na lista de conteúdo, escreve a legenda e leva o vídeo da caixa para o post. Devolve o id do post. */
-export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; listaId: string; titulo: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
+/**
+ * Vira post: escreve a legenda e leva o vídeo da caixa para o post. Devolve o id do post.
+ * Com `tarefaId` usa um post que já existe (ex.: a subtarefa "Post 01" de uma lista de conteúdo, onde toda subtarefa já é um post);
+ * sem ele, cria um post novo em `listaId`.
+ */
+export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; tarefaId?: string; listaId?: string; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<string> {
   const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status').eq('id', e.itemId).single()
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
-  const tarefaId = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
+  let tarefaId: string
+  if (e.tarefaId) {
+    const existente = await conteudo.buscarConteudo(sb, e.tarefaId)
+    if (!existente) throw new Error('Essa tarefa não é um post de conteúdo. Use a subtarefa (ex.: "Post 01") de uma lista de conteúdo, ou omita tarefaId e informe listaId para criar um post novo.')
+    const { data: t } = await sb.from('tasks').select('client_id').eq('id', e.tarefaId).single()
+    if (t?.client_id && t.client_id !== item.client_id) throw new Error('Esse post é de outro cliente: o vídeo é de um cliente diferente do da tarefa.')
+    if (existente.versoes.find((v) => v.numero === existente.versaoAtual)?.midias.length) throw new Error('Esse post já tem mídia. Remova a mídia dele antes, ou escolha outra subtarefa.')
+    tarefaId = e.tarefaId
+    if (existente.formato !== e.formato) await conteudo.alterarFormato(sb, tarefaId, e.formato)
+    await tarefas.atualizarTarefa(sb, tarefaId, { prazo: e.dataPrevista })
+  } else {
+    if (!e.listaId || !e.titulo) throw new Error('Informe tarefaId (post que já existe) ou listaId e titulo (para criar um post novo).')
+    tarefaId = await conteudo.criarPost(sb, { listaId: e.listaId, clienteId: item.client_id, titulo: e.titulo, formato: e.formato, dataPrevista: e.dataPrevista })
+  }
   await conteudo.salvarTexto(sb, tarefaId, { ideia: e.ideia ?? '', objetivo: e.objetivo ?? '', legenda: e.legenda })
   if (e.descricao) await tarefas.atualizarTarefa(sb, tarefaId, { descricao: textoParaDescricao(e.descricao) })
   const chave = gerarChaveConteudo(tarefaId, item.mime)
