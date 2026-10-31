@@ -196,7 +196,7 @@ export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; titulo
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
   // O destino é escolhido pela pessoa na caixa de entrada; a IA nunca decide sozinha.
-  if (!item.dest_list_id || !item.dest_mode) throw new Error('A pessoa ainda não escolheu o destino deste vídeo. Peça para ela abrir a Caixa de entrada, clicar em "Destino" no vídeo e escolher a lista, a tarefa e se entra como tarefa-mãe ou subtarefa. Depois chame de novo.')
+  if (!item.dest_list_id || !item.dest_mode) throw new Error('Este vídeo ainda não tem destino. Pergunte à pessoa onde a tarefa deve ficar (lista e tarefa) e como criar (tarefa-mãe, subtarefa ou na tarefa existente); ela também pode escolher na Caixa de entrada (botão Destino). Depois informe listaId e modo, ou chame definir_destino_video_caixa.')
   let tarefaId: string
   if (item.dest_mode === 'existente') {
     if (!item.dest_task_id) throw new Error('O destino escolhido para este vídeo perdeu a tarefa (ela foi removida). Peça para a pessoa escolher o destino de novo.')

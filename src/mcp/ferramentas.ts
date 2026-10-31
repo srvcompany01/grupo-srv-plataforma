@@ -1521,11 +1521,25 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'definir_destino_video_caixa',
+    descricao: 'Grava para onde um vídeo da caixa vai: a lista de conteúdo e como entra: "mae" (tarefa nova na lista), "subtarefa" (subtarefa nova dentro de tarefaId) ou "existente" (dentro de tarefaId, um post que já existe, ex.: a subtarefa "Post 01"). Use SÓ com o que a pessoa pediu na conversa (onde a tarefa deve ficar e como criar); se ela não disse, pergunte. A lista precisa ser do tipo Conteúdo. Ache os ids com listar_arvore e buscar_tarefa. A pessoa também pode escolher na Caixa de entrada (botão Destino).',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), listaId: id('Lista de conteúdo'), modo: z.enum(['mae', 'subtarefa', 'existente']), tarefaId: id('Tarefa (obrigatória em subtarefa e existente)').optional() },
+    executar: async ({ sb }, a) => {
+      await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
+      return { ok: true, proximoPasso: 'Crie o post com criar_post_da_caixa.' }
+    },
+  }),
+
+  definir({
     nome: 'criar_post_da_caixa',
-    descricao: 'Coloca um vídeo "pronto" da caixa num POST de conteúdo e grava a legenda. O DESTINO (lista, tarefa e se entra como tarefa-mãe, subtarefa ou na tarefa existente) é escolhido PELA PESSOA na Caixa de entrada (botão Destino) e vem em listar_caixa_de_entrada no campo destino: nunca escolha por conta própria. Se o vídeo estiver sem destino, esta ferramenta recusa: peça à pessoa para escolher e tente de novo. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
+    descricao: 'Coloca um vídeo "pronto" da caixa num POST de conteúdo e grava a legenda. O DESTINO (lista, tarefa e se entra como tarefa-mãe, subtarefa ou na tarefa existente) é o que a PESSOA mandou: ou ela escolheu na Caixa de entrada (campo destino de listar_caixa_de_entrada), ou disse na conversa onde a tarefa deve ficar e como criar (então passe listaId, modo e tarefaId aqui, ou use definir_destino_video_caixa). Nunca escolha por conta própria: se o vídeo não tem destino e a pessoa não disse, pergunte. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
     escrita: true,
     entrada: {
       itemId: id('Item da caixa'),
+      listaId: id('Lista de conteúdo, SÓ se a pessoa disse onde criar (senão vale o destino salvo)').optional(),
+      modo: z.enum(['mae', 'subtarefa', 'existente']).optional().describe('Como entra, SÓ junto com listaId'),
+      tarefaId: id('Tarefa do destino (subtarefa e existente), SÓ junto com listaId e modo').optional(),
       titulo: z.string().min(1).max(200).optional().describe('Título do post (obrigatório quando o destino é tarefa-mãe ou subtarefa nova; ignorado quando entra na tarefa que já existe)'),
       formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
       legenda: z.string().min(1).max(2200).describe('Legenda completa. As hashtags fixas do cliente (hashtags_cliente) são acrescentadas sozinhas ao publicar no Instagram; escreva só as específicas do post'),
@@ -1534,7 +1548,13 @@ export const FERRAMENTAS: Ferramenta[] = [
       objetivo: z.string().max(2000).optional(),
       descricao: z.string().max(50000).optional().describe('Descrição da tarefa do post: transcrição do vídeo, hashtags, observações e tudo que a equipe precisar saber'),
     },
-    executar: async ({ sb }, a) => ({ tarefaId: await caixa.criarPostDaCaixa(sb, a), proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }),
+    executar: async ({ sb }, a) => {
+      if (a.listaId || a.modo) {
+        if (!a.listaId || !a.modo) throw new Error('Para indicar o destino aqui, informe listaId e modo (e tarefaId em subtarefa ou existente).')
+        await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
+      }
+      return { tarefaId: await caixa.criarPostDaCaixa(sb, a), proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }
+    },
   }),
 
   definir({
