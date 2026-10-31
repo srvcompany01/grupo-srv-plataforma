@@ -1,3 +1,4 @@
+import { hashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { notFound } from 'next/navigation'
 import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -38,6 +39,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
   // Post de conteúdo: agendamento na Meta e a Página/Instagram do cliente.
   const publicacao = conteudo ? await buscarPublicacao(sb, id) : null
   const contaMeta = publicacao?.cliente?.paginaId ? await contaDaPagina(publicacao.cliente.paginaId) : null
+  const hashtagsInstagram = publicacao?.cliente?.id ? await hashtagsDoCliente(sb, publicacao.cliente.id, 'instagram').catch(() => []) : []
   return (
     <TelaTarefa
       key={tarefa.id}
@@ -62,6 +64,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       conteudo={conteudo}
       publicacao={publicacao}
       contaMeta={contaMeta}
+      hashtagsInstagram={hashtagsInstagram}
       recorrencia={recorrencia}
     />
   )

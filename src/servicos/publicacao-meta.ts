@@ -1,8 +1,11 @@
 import 'server-only'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
 import { formatoDaMidiaPublicada, formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
+import { comHashtagsDoCliente } from '@/dominio/hashtags'
 import { urlLeitura } from '@/infra/r2'
+import type { Supabase } from '@/infra/supabase/servidor'
 import { ErroGoogle, publicarNoNegocio } from './google-agencia'
+import { hashtagsDoCliente } from './hashtags-cliente'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Database } from '@/infra/supabase/tipos'
 
@@ -128,7 +131,7 @@ type PostCompleto = {
   ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null; collaborators: string[] | null
   content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number; arquivado_em: string | null }[] }[]
   gbp_post_name: string | null
-  tasks: { clients: { meta_page_id: string | null; google_location: string | null } | null } | null
+  tasks: { clients: { id: string; meta_page_id: string | null; google_location: string | null } | null } | null
 }
 
 /**
@@ -152,7 +155,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
   try {
     const { data, error } = await admin
       .from('content_posts')
-      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position, arquivado_em)), tasks(clients(meta_page_id, google_location))')
+      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position, arquivado_em)), tasks(clients(id, meta_page_id, google_location))')
       .eq('task_id', taskId)
       .single()
     if (error) throw error
@@ -179,7 +182,9 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       const igId = conta.instagram_business_account?.id
       if (!igId) throw new ErroMeta('A Página do cliente não tem um Instagram profissional ligado (ou ele não foi atribuído ao usuário do sistema).')
       const plano = planoInstagram(p.format as Formato, midias)
-      const r = await publicarInstagram(igId, plano, comUrl, legenda, p.ig_container_id, collabs)
+      // As hashtags fixas do cliente entram sozinhas (as que já estão na legenda não se repetem).
+      const tags = p.tasks?.clients?.id ? await hashtagsDoCliente(admin as unknown as Supabase, p.tasks.clients.id, 'instagram').catch(() => []) : []
+      const r = await publicarInstagram(igId, plano, comUrl, comHashtagsDoCliente(legenda, tags), p.ig_container_id, collabs)
       if ('pendente' in r) {
         await salvar({ ig_container_id: r.pendente, publish_lock_at: null })
         return { status: 'publicando' }

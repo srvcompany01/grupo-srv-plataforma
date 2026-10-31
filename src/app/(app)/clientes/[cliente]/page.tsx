@@ -33,6 +33,8 @@ import { CamposCliente } from './CamposCliente'
 import { ExcluirCliente } from './ExcluirCliente'
 import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { relatoriosDoCliente } from '@/servicos/relatorio-compartilhado'
+import { hashtagsDoCliente } from '@/servicos/hashtags-cliente'
+import { HashtagsCliente } from './HashtagsCliente'
 import { SeletorCapa } from './SeletorCapa'
 import { SeletorLogo } from './SeletorLogo'
 
@@ -40,6 +42,7 @@ const ABAS = [
   { id: 'visao', rotulo: 'Visão geral' },
   { id: 'tarefas', rotulo: 'Tarefas' },
   { id: 'posts', rotulo: 'Posts' },
+  { id: 'hashtags', rotulo: 'Hashtags' },
   { id: 'relatorio', rotulo: 'Relatório' },
   { id: 'arquivos', rotulo: 'Arquivos' },
   { id: 'acessos', rotulo: 'Acessos' },
@@ -233,6 +236,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           )}
         </Modulo>
           </div>}
+          {aba === 'hashtags' && <HashtagsCliente clienteId={id} iniciais={{ instagram: (await hashtagsDoCliente(sb, id, 'instagram')).join(' ') }} />}
           {aba === 'posts' && (
             <Modulo icone={ListChecks} titulo="Posts" descricao="Tarefas das listas de conteúdo com a tag deste cliente" acoes={<span className="text-rotulo text-texto-3">{posts.length}</span>}>
               {posts.length === 0 ? <p className="py-6 text-center text-corpo text-texto-3">Nenhum post deste cliente ainda.</p> : (

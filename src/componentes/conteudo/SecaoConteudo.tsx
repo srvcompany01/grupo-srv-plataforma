@@ -81,7 +81,7 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
 }
 
 /** Editor do post dentro da tarefa: ideia, objetivo, legenda, mídias e o histórico de versões. */
-export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, conta, hoje }: { tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean; publicacao?: PublicacaoDoPost | null; conta?: ContaMeta; hoje: string }) {
+export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, conta, hoje, hashtagsInstagram = [] }: { tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean; publicacao?: PublicacaoDoPost | null; conta?: ContaMeta; hoje: string; hashtagsInstagram?: string[] }) {
   const router = useRouter()
   const atual = conteudo.versoes[0]
   const [ideia, setIdeia] = useState(atual.ideia)
@@ -128,7 +128,7 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
 
       <label className="block space-y-1"><span className={rotulo}>Ideia</span><textarea disabled={!podeEditar} value={ideia} onChange={(e) => setIdeia(e.target.value)} rows={2} className={campo} /></label>
       <label className="block space-y-1"><span className={rotulo}>Objetivo</span><textarea disabled={!podeEditar} value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={2} className={campo} /></label>
-      <label className="block space-y-1"><span className={rotulo}>Legenda</span><textarea disabled={!podeEditar} value={legenda} onChange={(e) => setLegenda(e.target.value)} rows={6} className={campo} /></label>
+      <label className="block space-y-1"><span className={rotulo}>Legenda</span><textarea disabled={!podeEditar} value={legenda} onChange={(e) => setLegenda(e.target.value)} rows={6} className={campo} />{hashtagsInstagram.length > 0 && <span className="block text-legenda text-texto-3">Ao publicar no Instagram, as hashtags do cliente que ainda não estão na legenda entram sozinhas no fim: {hashtagsInstagram.join(' ')}</span>}</label>
       {podeEditar && (
         <div className="flex justify-end gap-2">
           {alterado && <button type="button" className={botaoSecundario} onClick={() => { setIdeia(atual.ideia); setObjetivo(atual.objetivo); setLegenda(atual.legenda) }}>Descartar</button>}

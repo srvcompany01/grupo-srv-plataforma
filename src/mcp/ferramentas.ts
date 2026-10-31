@@ -15,6 +15,7 @@ import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
 import * as modelosTarefa from '@/servicos/modelos'
 import * as caixa from '@/servicos/caixa-de-entrada'
+import { hashtagsDoCliente, salvarHashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { idDaPastaDoDrive } from '@/dominio/caixa-de-entrada'
 import { proximasJanelas, ranquearHorarios } from '@/dominio/horarios-postagem'
 import { guiaDeAnuncioGoogle, guiaDeAnuncioMeta, guiaDePost, MODOS_META_GUIA } from '@/dominio/guia-publicacao'
@@ -206,7 +207,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente; entram sozinhas no fim da legenda ao publicar. Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1504,6 +1505,22 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'hashtags_cliente',
+    descricao: 'Lê as hashtags fixas de um cliente numa plataforma (hoje só instagram). A plataforma as acrescenta sozinha no fim da legenda ao publicar no Instagram (as que já estão na legenda não se repetem): por isso, na legenda, escreva só as hashtags específicas do post.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).default('instagram') },
+    executar: async ({ sb }, a) => ({ plataforma: a.plataforma, hashtags: await hashtagsDoCliente(sb, a.clienteId, a.plataforma) }),
+  }),
+
+  definir({
+    nome: 'definir_hashtags_cliente',
+    descricao: 'Troca as hashtags fixas de um cliente numa plataforma (hoje só instagram, até 30). Substitui a lista inteira: leia antes com hashtags_cliente e mostre o antes e o depois à pessoa. Os posts novos e os ainda não publicados passam a recebê-las.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).default('instagram'), hashtags: z.string().max(2000).describe('Hashtags separadas por espaço, vírgula ou linha') },
+    executar: async ({ sb }, a) => ({ plataforma: a.plataforma, hashtags: await salvarHashtagsDoCliente(sb, a.clienteId, a.plataforma, a.hashtags) }),
+  }),
+
+  definir({
     nome: 'criar_post_da_caixa',
     descricao: 'Transforma um vídeo "pronto" da caixa em POST na lista de conteúdo: cria o post (rascunho), grava a legenda e leva o vídeo para o post. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
     escrita: true,
@@ -1512,7 +1529,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       listaId: id('Lista de conteúdo onde criar o post'),
       titulo: z.string().min(1).max(200),
       formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
-      legenda: z.string().min(1).max(2200).describe('Legenda completa, já com hashtags'),
+      legenda: z.string().min(1).max(2200).describe('Legenda completa. As hashtags fixas do cliente (hashtags_cliente) são acrescentadas sozinhas ao publicar no Instagram; escreva só as específicas do post'),
       dataPrevista: data('Data planejada'),
       ideia: z.string().max(2000).optional(),
       objetivo: z.string().max(2000).optional(),

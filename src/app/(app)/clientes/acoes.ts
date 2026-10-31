@@ -6,6 +6,8 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import { dataDeHoje } from '@/dominio/filtros'
+import { ehPlataformaHashtags } from '@/dominio/hashtags'
+import { salvarHashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { perfisDoNegocio } from '@/servicos/google-agencia'
 import { buscarCliente, contaRepetida, definirPerfilGoogle, lerFormCliente, marcarTrabalhado, novoLinkDoCliente, ordenarGaleria } from '@/servicos/clientes-plataforma'
 
@@ -116,6 +118,15 @@ export async function vincularPerfilGoogleAcao(clienteId: string, perfilId: stri
   }
   const sb = await criarClienteServidor()
   const r = await tentar(() => definirPerfilGoogle(sb, clienteId, perfil), perfil ? 'Perfil do Google ligado.' : 'Perfil do Google desligado.')
+  revalidatePath(`/clientes/${clienteId}`)
+  return r
+}
+
+/** Hashtags fixas do cliente numa plataforma: entram sozinhas na legenda quando o post é publicado. */
+export async function salvarHashtagsClienteAcao(clienteId: string, plataforma: string, texto: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clienteId) || !ehPlataformaHashtags(plataforma)) return { erro: 'Pedido inválido.' }
+  const r = await tentar(async () => void (await salvarHashtagsDoCliente(await criarClienteServidor(), clienteId, plataforma, texto)), 'Hashtags salvas.')
   revalidatePath(`/clientes/${clienteId}`)
   return r
 }

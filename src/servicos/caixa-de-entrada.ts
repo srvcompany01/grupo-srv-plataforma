@@ -8,6 +8,7 @@ import type { Supabase } from '@/infra/supabase/servidor'
 import { extrairAudio } from './audio-video'
 import { baixarArquivo, dadosDoArquivo } from './google-drive'
 import * as conteudo from './conteudo'
+import { hashtagsDoCliente, salvarHashtagsDoCliente } from './hashtags-cliente'
 import * as tarefas from './tarefas'
 
 export type ItemDaCaixa = {
@@ -180,11 +181,13 @@ export type FichaDeConteudo = { clienteId: string; pastaDrive: string; tom: stri
 
 export async function buscarFicha(sb: Supabase, clienteId: string): Promise<FichaDeConteudo> {
   const { data } = await sb.from('client_content_profiles').select('drive_folder_id, tone, hashtags, cta, notes').eq('client_id', clienteId).maybeSingle()
-  return { clienteId, pastaDrive: data?.drive_folder_id ?? '', tom: data?.tone ?? '', hashtags: data?.hashtags ?? '', chamada: data?.cta ?? '', observacoes: data?.notes ?? '' }
+  const instagram = await hashtagsDoCliente(sb, clienteId, 'instagram') // fonte única das hashtags: a aba Hashtags do cliente
+  return { clienteId, pastaDrive: data?.drive_folder_id ?? '', tom: data?.tone ?? '', hashtags: instagram.length ? instagram.join(' ') : (data?.hashtags ?? ''), chamada: data?.cta ?? '', observacoes: data?.notes ?? '' }
 }
 
 export async function salvarFicha(sb: Supabase, f: Partial<Omit<FichaDeConteudo, 'clienteId'>> & { clienteId: string }): Promise<void> {
   const atual = await buscarFicha(sb, f.clienteId)
+  if (f.hashtags !== undefined) await salvarHashtagsDoCliente(sb, f.clienteId, 'instagram', f.hashtags)
   const { error } = await sb.from('client_content_profiles').upsert({ client_id: f.clienteId, drive_folder_id: f.pastaDrive ?? atual.pastaDrive, tone: f.tom ?? atual.tom, hashtags: f.hashtags ?? atual.hashtags, cta: f.chamada ?? atual.chamada, notes: f.observacoes ?? atual.observacoes, updated_at: new Date().toISOString() }, { onConflict: 'client_id' })
   if (error) throw error
 }
