@@ -1501,7 +1501,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao: 'Devolve o endereço FIXO (não expira) para BAIXAR o áudio (MP3 mono, leve) extraído do vídeo da caixa. Baixe o arquivo, transcreva a fala na sua própria plataforma e escreva a legenda, as hashtags e as demais informações; depois grave tudo com criar_post_da_caixa (legenda + descricao). O áudio já é extraído sozinho quando o vídeo chega; se ainda não existir, esta ferramenta extrai na hora (pode levar de alguns segundos a poucos minutos em vídeo grande). O endereço fica valendo enquanto o vídeo estiver na caixa (some se for removido ou virar post), então pode baixar quando quiser. Só funciona com vídeo "pronto".',
     escrita: false,
     entrada: { itemId: id('Item da caixa (pronto)') },
-    executar: async ({ sb }, a) => ({ ...(await caixa.audioDoVideo(sb, a.itemId)), proximoPasso: 'Baixe o áudio pela url, transcreva, e use ficha_conteudo_cliente (tom, hashtags) para escrever. Grave com criar_post_da_caixa: legenda (com hashtags) e descricao (transcrição, hashtags, observações).' }),
+    executar: async ({ sb }, a) => ({ ...(await caixa.audioDoVideo(sb, a.itemId)), proximoPasso: 'Baixe o áudio pela url, transcreva, e use ficha_conteudo_cliente (tom) para escrever. Grave com criar_post_da_caixa: legenda (o texto publicado; hashtags fixas entram sozinhas) e descricao (anotação da tarefa: transcrição e observações). Para trocar a legenda depois, use atualizar_conteudo_post.' }),
   }),
 
   definir({
@@ -1961,6 +1961,20 @@ export const FERRAMENTAS: Ferramenta[] = [
         })),
         horasPorSemana: p.semanas.map((s) => ({ semana: s.inicio, horas: horas(s.segundos) })),
       }
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_conteudo_post',
+    descricao: 'Troca a LEGENDA (o texto que vai na publicação), a ideia e/ou o objetivo de um post de conteúdo que já existe (inclusive já agendado: a legenda é lida na hora de publicar, então a nova vale). Só envie o que muda. Não confunda com a descrição da tarefa (atualizar_tarefa), que é só anotação da equipe e NÃO é publicada. As hashtags fixas do cliente entram sozinhas ao publicar no Instagram (hashtags_cliente): escreva só as do post. Atenção: se o cliente já respondeu a aprovação (aprovado ou pedido de ajuste), a plataforma cria uma versão nova do post, que volta para "aguardando" aprovação; mostre isso à pessoa antes.',
+    escrita: true,
+    entrada: { tarefaId: id('Post (id da tarefa do post)'), legenda: z.string().min(1).max(2200).optional(), ideia: z.string().max(2000).optional(), objetivo: z.string().max(2000).optional() },
+    executar: async ({ sb }, a) => {
+      const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
+      if (!post) throw new Error('Essa tarefa não é um post de conteúdo.')
+      const atual = post.versoes.find((v) => v.numero === post.versaoAtual)
+      const versao = await conteudoSvc.salvarTexto(sb, a.tarefaId, { ideia: a.ideia ?? atual?.ideia ?? '', objetivo: a.objetivo ?? atual?.objetivo ?? '', legenda: a.legenda ?? atual?.legenda ?? '' })
+      return { ok: true, versao, aviso: versao !== post.versaoAtual ? 'O post já tinha resposta do cliente: foi criada a versão ' + versao + ' e ela volta para aprovação.' : undefined }
     },
   }),
 
