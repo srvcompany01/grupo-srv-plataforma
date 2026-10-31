@@ -22,17 +22,42 @@ export type ItemDaCaixa = {
   erro: string
   postId: string | null
   criadoEm: string
+  /** O áudio já foi extraído do vídeo. */
+  audioPronto: boolean
+  /** Andamento da transcrição (Whisper). */
+  transcricao: EstadoTranscricao
+  transcricaoErro: string
 }
 
-type Linha = { id: string; client_id: string; name: string; source: string; kind: string; status: string; size_bytes: number; error: string; post_task_id: string | null; created_at: string; clients: { name: string } | null }
-const COLUNAS = 'id, client_id, name, source, kind, status, size_bytes, error, post_task_id, created_at, clients(name)'
-const paraItem = (l: Linha): ItemDaCaixa => ({ id: l.id, clienteId: l.client_id, clienteNome: l.clients?.name ?? '', nome: l.name, origem: l.source as ItemDaCaixa['origem'], tipo: l.kind as TipoDoVideo, status: l.status as StatusDaCaixa, tamanho: Number(l.size_bytes), erro: l.error, postId: l.post_task_id, criadoEm: l.created_at })
+export type EstadoTranscricao = 'nao_pedida' | 'processando' | 'pronta' | 'erro'
+
+/** Passou deste tempo "processando" sem resposta do GitHub: conta como falha, para o item não ficar preso para sempre. */
+const PRAZO_TRANSCRICAO_MIN = 45
+
+type Linha = { audio_ready?: boolean; transcript_state?: string; transcript_error?: string; transcript_requested_at?: string | null; id: string; client_id: string; name: string; source: string; kind: string; status: string; size_bytes: number; error: string; post_task_id: string | null; created_at: string; clients: { name: string } | null }
+const COLUNAS_ANTIGAS = 'id, client_id, name, source, kind, status, size_bytes, error, post_task_id, created_at, clients(name)'
+const COLUNAS = `${COLUNAS_ANTIGAS}, audio_ready, transcript_state, transcript_error, transcript_requested_at`
+function estadoDaTranscricao(l: Linha): Pick<ItemDaCaixa, 'audioPronto' | 'transcricao' | 'transcricaoErro'> {
+  let transcricao = (l.transcript_state ?? 'nao_pedida') as EstadoTranscricao
+  let transcricaoErro = l.transcript_error ?? ''
+  if (transcricao === 'processando' && l.transcript_requested_at && Date.now() - new Date(l.transcript_requested_at).getTime() > PRAZO_TRANSCRICAO_MIN * 60_000) {
+    transcricao = 'erro'
+    transcricaoErro = 'A transcrição demorou demais. Tente de novo.'
+  }
+  return { audioPronto: !!l.audio_ready, transcricao, transcricaoErro }
+}
+
+const paraItem = (l: Linha): ItemDaCaixa => ({ id: l.id, clienteId: l.client_id, clienteNome: l.clients?.name ?? '', nome: l.name, origem: l.source as ItemDaCaixa['origem'], tipo: l.kind as TipoDoVideo, status: l.status as StatusDaCaixa, tamanho: Number(l.size_bytes), erro: l.error, postId: l.post_task_id, criadoEm: l.created_at, ...estadoDaTranscricao(l) })
 
 export async function listarCaixa(sb: Supabase, f: { clienteId?: string; status?: StatusDaCaixa } = {}): Promise<ItemDaCaixa[]> {
-  let q = sb.from('content_inbox').select(COLUNAS).order('created_at', { ascending: false }).limit(200)
-  if (f.clienteId) q = q.eq('client_id', f.clienteId)
-  if (f.status) q = q.eq('status', f.status)
-  const { data, error } = await q
+  const buscar = async (colunas: string) => {
+    let q = sb.from('content_inbox').select(colunas).order('created_at', { ascending: false }).limit(200)
+    if (f.clienteId) q = q.eq('client_id', f.clienteId)
+    if (f.status) q = q.eq('status', f.status)
+    return q
+  }
+  let { data, error } = await buscar(COLUNAS)
+  if (error) ({ data, error } = await buscar(COLUNAS_ANTIGAS)) // sem a migration da transcrição, a caixa abre sem o andamento
   if (error) return [] // sem a migration, a caixa abre vazia
   return (data as unknown as Linha[]).map(paraItem)
 }
@@ -175,25 +200,12 @@ export async function prepararAudio(sb: Supabase, itemId: string): Promise<strin
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
   const chave = chaveDoAudio(item.r2_key)
-  if ((await tamanhoDoArquivo(chave)) !== null) return chave
-  const audio = await extrairAudio(await urlLeitura(item.r2_key))
-  await enviarEmPartes(chave, 'audio/mpeg', new Blob([new Uint8Array(audio)]).stream())
-  return chave
-}
-
-/**
- * Extrai o áudio dos vídeos prontos que ainda não têm (os enviados antes desta função). Faz poucos por vez, um depois do outro,
- * para não sobrecarregar o servidor; a caixa chama de novo a cada visita até acabar.
- */
-export async function prepararAudiosPendentes(sb: Supabase, limite = 3): Promise<void> {
-  const { data } = await sb.from('content_inbox').select('id, r2_key').eq('status', 'pronto').order('created_at', { ascending: false }).limit(100)
-  let feitos = 0
-  for (const v of data ?? []) {
-    if (feitos >= limite) return
-    if ((await tamanhoDoArquivo(chaveDoAudio(v.r2_key))) !== null) continue
-    await prepararAudio(sb, v.id).catch(() => {})
-    feitos++
+  if ((await tamanhoDoArquivo(chave)) === null) {
+    const audio = await extrairAudio(await urlLeitura(item.r2_key))
+    await enviarEmPartes(chave, 'audio/mpeg', new Blob([new Uint8Array(audio)]).stream())
   }
+  await sb.from('content_inbox').update({ audio_ready: true }).eq('id', itemId)
+  return chave
 }
 
 const PARTE_AUDIO = 2_400_000 // ~10 min de áudio a 32 kbps
@@ -232,33 +244,35 @@ export async function audioDoVideo(sb: Supabase, itemId: string): Promise<{ nome
 
 // ───────────────────────────── Transcrição (Whisper no GitHub Actions) ─────────────────────────────
 
-/** Guardada em `ai_summary` (texto) como JSON: sem coluna nova no banco. */
-export type Transcricao = { estado: 'nao_pedida' | 'processando' | 'pronta' | 'indisponivel'; texto?: string; pedidoEm?: string }
-
-const lerTranscricao = (bruto: string): Transcricao => {
-  try {
-    const j = JSON.parse(bruto) as { estado?: string; texto?: string; pedidoEm?: string }
-    if (j.estado === 'pronta' && typeof j.texto === 'string') return { estado: 'pronta', texto: j.texto }
-    if (j.estado === 'processando') return { estado: 'processando', pedidoEm: j.pedidoEm }
-  } catch {}
-  return { estado: 'nao_pedida' }
-}
-
 /** O Whisper roda num repositório do GitHub (workflow `transcrever`), de graça nos minutos do GitHub Actions. */
 export const whisperConfigurado = () => !!(process.env.WHISPER_REPO && process.env.WHISPER_GITHUB_TOKEN)
 
-/** Pede a transcrição: o GitHub baixa o áudio, transcreve e devolve o texto em /api/caixa/transcricao. */
-export async function pedirTranscricao(sb: Supabase, itemId: string): Promise<void> {
+const marcar = (sb: Supabase, itemId: string, campos: Record<string, unknown>) => sb.from('content_inbox').update({ ...campos, updated_at: new Date().toISOString() }).eq('id', itemId)
+
+/**
+ * Extrai o áudio e pede a transcrição ao GitHub, que baixa o áudio, transcreve e devolve o texto em /api/caixa/transcricao.
+ * `refazer`: pede de novo mesmo que já exista (ou esteja em andamento). Sem ele, quem chegou primeiro leva: dois pedidos ao mesmo tempo não duplicam.
+ */
+export async function pedirTranscricao(sb: Supabase, itemId: string, refazer = false): Promise<void> {
   if (!whisperConfigurado()) throw new Error('A transcrição ainda não foi configurada (WHISPER_REPO e WHISPER_GITHUB_TOKEN na Vercel).')
-  await prepararAudio(sb, itemId)
-  const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
-  const r = await fetch(`https://api.github.com/repos/${process.env.WHISPER_REPO}/actions/workflows/transcrever.yml/dispatches`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.WHISPER_GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
-    body: JSON.stringify({ ref: 'main', inputs: { audio: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, retorno: `${site}/api/caixa/transcricao/${itemId}`, token: tokenDoAudio(itemId, 'transcricao-caixa') } }),
-  })
-  if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'O GitHub recusou o token (WHISPER_GITHUB_TOKEN).' : r.status === 404 ? 'Não achei o repositório ou o workflow "transcrever" no GitHub.' : `O GitHub respondeu com erro (${r.status}).`)
-  await sb.from('content_inbox').update({ ai_summary: JSON.stringify({ estado: 'processando', pedidoEm: new Date().toISOString() }), updated_at: new Date().toISOString() }).eq('id', itemId)
+  let reserva = sb.from('content_inbox').update({ transcript_state: 'processando', transcript_error: '', transcript_requested_at: new Date().toISOString() }).eq('id', itemId).eq('status', 'pronto')
+  if (!refazer) reserva = reserva.in('transcript_state', ['nao_pedida', 'erro'])
+  const { data: reservado, error } = await reserva.select('id')
+  if (error) throw error
+  if (!reservado?.length) return
+  try {
+    await prepararAudio(sb, itemId)
+    const site = (process.env.APP_URL ?? 'https://app.gruposrv.com.br').replace(/\/$/, '')
+    const r = await fetch(`https://api.github.com/repos/${process.env.WHISPER_REPO}/actions/workflows/transcrever.yml/dispatches`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.WHISPER_GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+      body: JSON.stringify({ ref: 'main', inputs: { audio: `${site}/api/caixa/audio/${itemId}?t=${tokenDoAudio(itemId)}`, retorno: `${site}/api/caixa/transcricao/${itemId}`, token: tokenDoAudio(itemId, 'transcricao-caixa') } }),
+    })
+    if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'O GitHub recusou o token (WHISPER_GITHUB_TOKEN).' : r.status === 404 ? 'Não achei o repositório ou o workflow "transcrever" no GitHub.' : `O GitHub respondeu com erro (${r.status}).`)
+  } catch (e) {
+    await marcar(sb, itemId, { transcript_state: 'erro', transcript_error: (e instanceof Error ? e.message : 'Falha ao pedir a transcrição.').slice(0, 300) })
+    throw e
+  }
 }
 
 /** Ao chegar um vídeo: extrai o áudio e, se o Whisper estiver configurado, já pede a transcrição. */
@@ -267,24 +281,42 @@ export async function pedirTranscricaoSeConfigurado(sb: Supabase, itemId: string
   else await prepararAudio(sb, itemId)
 }
 
-/** Chamada pelo GitHub quando termina. Usa a chave de serviço porque quem chama não tem login. */
-export async function registrarTranscricao(itemId: string, texto: string): Promise<void> {
-  const { error } = await criarClienteAdmin().from('content_inbox').update({ ai_summary: JSON.stringify({ estado: 'pronta', texto: texto.slice(0, 200_000) }), updated_at: new Date().toISOString() }).eq('id', itemId).eq('status', 'pronto')
+/**
+ * Põe em dia os vídeos prontos que ainda não passaram pelo processo (os enviados antes, ou os que ficaram para trás): poucos por vez,
+ * para não sobrecarregar o servidor nem gastar os minutos do GitHub de uma vez. A caixa chama de novo a cada visita até acabar.
+ * Os que falharam não voltam sozinhos (botão "Tentar de novo"), para não repetir o mesmo erro sem parar.
+ */
+export async function processarPendentes(sb: Supabase, limite = 3): Promise<void> {
+  const { data, error } = await sb.from('content_inbox').select('id, audio_ready, transcript_state').eq('status', 'pronto').order('created_at', { ascending: false }).limit(100)
+  if (error) return // sem a migration
+  const pendentes = (data ?? []).filter((v) => (whisperConfigurado() ? v.transcript_state === 'nao_pedida' : !v.audio_ready)).slice(0, limite)
+  for (const v of pendentes) await pedirTranscricaoSeConfigurado(sb, v.id).catch(() => {})
+}
+
+/** Chamada pelo GitHub quando termina. Usa a chave de serviço porque quem chama não tem login. `erro` = a transcrição falhou. */
+export async function registrarTranscricao(itemId: string, r: { texto: string } | { erro: string }): Promise<void> {
+  const campos = 'texto' in r ? { transcript_state: 'pronta', transcript: r.texto.slice(0, 200_000), transcript_error: '' } : { transcript_state: 'erro', transcript_error: r.erro.slice(0, 300) }
+  const { error } = await criarClienteAdmin().from('content_inbox').update({ ...campos, updated_at: new Date().toISOString() }).eq('id', itemId).eq('status', 'pronto')
   if (error) throw error
 }
 
-/** O que o Codex lê: o texto, ou o andamento. Pede a transcrição sozinha se ainda ninguém pediu (refazer=true pede de novo). */
+export type Transcricao = { estado: EstadoTranscricao | 'indisponivel'; texto?: string; erro?: string }
+
+/** O que o Codex lê: o texto guardado, ou o andamento. Pede a transcrição sozinha se ainda ninguém pediu (refazer=true pede de novo). */
 export async function transcricaoDoVideo(sb: Supabase, itemId: string, refazer = false): Promise<Transcricao> {
-  const { data, error } = await sb.from('content_inbox').select('ai_summary, status').eq('id', itemId).single()
+  const { data, error } = await sb.from('content_inbox').select('status, transcript_state, transcript, transcript_error, transcript_requested_at').eq('id', itemId).single()
   if (error) throw error
   if (data.status !== 'pronto') throw new Error(data.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
-  const atual = lerTranscricao(data.ai_summary)
-  if (atual.estado === 'pronta' && !refazer) return atual
-  const esperaMin = atual.pedidoEm ? (Date.now() - new Date(atual.pedidoEm).getTime()) / 60_000 : Infinity
-  if (atual.estado === 'processando' && !refazer && esperaMin < 30) return atual
+  const { transcricao, transcricaoErro } = estadoDaTranscricao({ id: itemId, ...data } as unknown as Linha)
+  if (transcricao === 'pronta' && !refazer) return { estado: 'pronta', texto: data.transcript }
+  if (transcricao === 'processando' && !refazer) return { estado: 'processando' }
   if (!whisperConfigurado()) return { estado: 'indisponivel' }
-  await pedirTranscricao(sb, itemId)
-  return { estado: 'processando', pedidoEm: new Date().toISOString() }
+  if (transcricao === 'erro' && !refazer) {
+    await pedirTranscricao(sb, itemId)
+    return { estado: 'processando', erro: `A tentativa anterior falhou (${transcricaoErro}); pedi de novo.` }
+  }
+  await pedirTranscricao(sb, itemId, refazer)
+  return { estado: 'processando' }
 }
 
 // ───────────────────────────── Vídeo da caixa → biblioteca de criativos de anúncio ─────────────────────────────

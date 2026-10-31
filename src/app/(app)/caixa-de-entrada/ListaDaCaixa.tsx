@@ -9,8 +9,10 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { formatarTamanho, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
 import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
-import { excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, urlDoVideoCaixaAcao } from './acoes'
+import { excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, tentarDeNovoAcao, textoDaTranscricaoAcao, transcreverCaixaAcao, urlDoVideoCaixaAcao } from './acoes'
 
+const COR_TRANSCRICAO = { nao_pedida: 'var(--text-3)', processando: '#e08a00', pronta: 'var(--ok)', erro: 'var(--red)' } as const
+const ROTULO_TRANSCRICAO = { nao_pedida: '📝 Transcrição: aguardando', processando: '📝 Transcrevendo…', pronta: '📝 Transcrição pronta', erro: '📝 Transcrição falhou' } as const
 const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
 
 /** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
@@ -19,6 +21,7 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
   const [previa, setPrevia] = useState<{ nome: string; url: string } | null>(null)
+  const [lendo, setLendo] = useState<{ nome: string; texto: string } | null>(null)
   const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
   const renomear = () => {
     if (!editando) return
@@ -26,7 +29,8 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
     setEditando(null)
     iniciar(async () => void avisar(await renomearItemCaixaAcao(id, nome), true))
   }
-  const importando = itens.some((i) => i.status === 'importando')
+  // Atualiza sozinha enquanto algo está andando: importação do Drive ou transcrição em andamento.
+  const importando = itens.some((i) => i.status === 'importando' || (i.status === 'pronto' && i.transcricao === 'processando'))
   useEffect(() => {
     if (!importando) return
     const t = setInterval(() => router.refresh(), 5000)
@@ -51,18 +55,33 @@ export function ListaDaCaixa({ itens, mostrarCliente = false }: { itens: ItemDaC
                 </span>
               )}
               <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
+              {i.status === 'pronto' && (
+                <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="rounded px-1.5" style={{ color: i.audioPronto ? 'var(--ok)' : 'var(--text-3)', background: `color-mix(in srgb, ${i.audioPronto ? 'var(--ok)' : 'var(--text-3)'} 14%, transparent)` }}>{i.audioPronto ? '🎧 Áudio extraído' : '🎧 Áudio pendente'}</span>
+                  <span title={i.transcricaoErro || undefined} className="rounded px-1.5" style={{ color: COR_TRANSCRICAO[i.transcricao], background: `color-mix(in srgb, ${COR_TRANSCRICAO[i.transcricao]} 14%, transparent)` }}>{ROTULO_TRANSCRICAO[i.transcricao]}</span>
+                  {i.transcricao === 'erro' && i.transcricaoErro && <span className="truncate text-[var(--red)]">{i.transcricaoErro}</span>}
+                </span>
+              )}
             </span>
             <select value={i.tipo} disabled={pendente} aria-label="Tag do material" onChange={(e) => iniciar(async () => void avisar(await marcarTipoCaixaAcao(i.id, e.target.value as TipoDoVideo), true))} className="h-6 rounded border border-borda bg-transparent px-1 text-[12px]" style={i.tipo === 'indefinido' ? { color: 'var(--red)' } : undefined}>
               {(Object.keys(ROTULO_TIPO_VIDEO) as TipoDoVideo[]).filter((t) => t !== 'indefinido' || i.tipo === 'indefinido').map((t) => <option key={t} value={t}>{ROTULO_TIPO_VIDEO[t]}</option>)}
             </select>
             <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
             {i.status === 'usado' && i.postId && <Link href={`/tarefas/${i.postId}`} className="text-[12px] text-[var(--client)] hover:underline">Ver post</Link>}
+            {i.status === 'pronto' && i.transcricao === 'pronta' && <button type="button" disabled={pendente} title="Ler o texto transcrito do áudio" onClick={() => iniciar(async () => { const r = await textoDaTranscricaoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setLendo({ nome: i.nome, texto: r.texto }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="notes" s={14} />Transcrição</button>}
+            {i.status === 'pronto' && (i.transcricao === 'nao_pedida' || i.transcricao === 'erro') && <button type="button" disabled={pendente} title="Extrair o áudio e transcrever com o Whisper" onClick={() => iniciar(async () => void avisar(await transcreverCaixaAcao(i.id, true), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="graphic_eq" s={14} />{i.transcricao === 'erro' ? 'Tentar de novo' : 'Transcrever'}</button>}
             {i.status === 'pronto' && <button type="button" disabled={pendente} title="Assistir ao vídeo" onClick={() => iniciar(async () => { const r = await urlDoVideoCaixaAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setPrevia({ nome: i.nome, url: r.url }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="play_circle" s={14} />Prévia</button>}
             {i.status === 'erro' && i.origem === 'drive' && <button type="button" disabled={pendente} onClick={() => iniciar(async () => void avisar(await tentarDeNovoAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}>Tentar de novo</button>}
             {i.status !== 'usado' && <button type="button" title="Excluir permanentemente" aria-label={`Excluir ${i.nome} permanentemente`} disabled={pendente} onClick={async () => { if (await confirmar({ titulo: `Excluir "${i.nome}" para sempre?`, descricao: 'O vídeo é apagado da caixa e do armazenamento. Não dá para desfazer.', confirmar: 'Excluir permanentemente', perigo: true })) iniciar(async () => void avisar(await excluirItemCaixaAcao(i.id), true)) }} className="b-icon" style={{ width: 24, height: 24, color: 'var(--red)' }}><Ic n="delete" s={16} /></button>}
           </li>
         ))}
       </ul>
+      <Dialog open={!!lendo} onOpenChange={(a) => !a && setLendo(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Transcrição do áudio</DialogTitle><DialogDescription className="truncate">{lendo?.nome}</DialogDescription></DialogHeader>
+          <p className="whitespace-pre-wrap text-[13px] text-texto-2">{lendo?.texto || 'Não encontrei fala neste vídeo.'}</p>
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!previa} onOpenChange={(a) => !a && setPrevia(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Prévia</DialogTitle><DialogDescription className="truncate">{previa?.nome}</DialogDescription></DialogHeader>

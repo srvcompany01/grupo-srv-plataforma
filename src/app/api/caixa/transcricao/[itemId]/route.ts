@@ -5,10 +5,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ itemId:
   const { itemId } = await params
   const url = new URL(req.url)
   if (!tokenValido(itemId, url.searchParams.get('t') ?? '', 'transcricao-caixa')) return new Response('Link inválido.', { status: 403 })
-  const corpo = (await req.json().catch(() => null)) as { texto?: unknown } | null
-  if (typeof corpo?.texto !== 'string') return new Response('Corpo inválido.', { status: 400 })
+  const corpo = (await req.json().catch(() => null)) as { texto?: unknown; erro?: unknown } | null
+  const resultado = typeof corpo?.texto === 'string' ? { texto: corpo.texto.trim() } : typeof corpo?.erro === 'string' ? { erro: corpo.erro } : null
+  if (!resultado) return new Response('Corpo inválido.', { status: 400 })
   try {
-    await registrarTranscricao(itemId, corpo.texto.trim())
+    await registrarTranscricao(itemId, resultado)
     return Response.json({ ok: true })
   } catch (e) {
     console.error(e)

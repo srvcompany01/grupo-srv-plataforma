@@ -89,6 +89,23 @@ export async function marcarTipoCaixaAcao(itemId: string, tipo: TipoDoVideo): Pr
   return r
 }
 
+/** Pede (ou refaz) o áudio e a transcrição de um vídeo pronto. A transcrição chega alguns minutos depois. */
+export async function transcreverCaixaAcao(itemId: string, refazer = false): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
+  const r = await tentar(async () => caixa.pedirTranscricao(await criarClienteServidor(), itemId, refazer), 'Transcrição pedida. Chega em alguns minutos.')
+  atualizar()
+  return r
+}
+
+/** O texto transcrito, para ler na lista. */
+export async function textoDaTranscricaoAcao(itemId: string): Promise<{ texto: string } | { erro: string }> {
+  await exigirEquipe()
+  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
+  const { data } = await (await criarClienteServidor()).from('content_inbox').select('transcript, transcript_state').eq('id', itemId).maybeSingle()
+  return data?.transcript_state === 'pronta' ? { texto: data.transcript } : { erro: 'A transcrição ainda não está pronta.' }
+}
+
 export async function urlDoVideoCaixaAcao(itemId: string): Promise<{ url: string } | { erro: string }> {
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }

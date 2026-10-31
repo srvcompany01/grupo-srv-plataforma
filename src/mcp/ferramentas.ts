@@ -1402,7 +1402,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_caixa_de_entrada',
-    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Use o id em audio_do_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Cada vídeo "pronto" traz audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
     escrita: false,
     entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
     executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
@@ -1473,7 +1473,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'transcricao_video_caixa',
-    descricao: 'Devolve o TEXTO já transcrito da fala do vídeo da caixa (Whisper rodando no GitHub). Se ainda ninguém pediu, pede agora. estado "processando": aguarde alguns minutos (cerca de 1 a 2x a duração do vídeo) e chame de novo; "pronta": use o texto para escrever legenda e hashtags e grave com criar_post_da_caixa (legenda + descricao); "indisponivel": o Whisper ainda não foi configurado na plataforma. refazer=true pede a transcrição de novo.',
+    descricao: 'Devolve o TEXTO já transcrito da fala do vídeo da caixa (Whisper rodando no GitHub). A plataforma já extrai o áudio e transcreve sozinha quando o vídeo chega, e o texto fica guardado: quando estado for "pronta", a resposta é imediata. Se ainda ninguém pediu (ou a tentativa anterior falhou), pede agora. estado "processando": aguarde alguns minutos (cerca de 1 a 2x a duração do vídeo) e chame de novo; "pronta": use o texto para escrever legenda e hashtags e grave com criar_post_da_caixa (legenda + descricao); "indisponivel": o Whisper ainda não foi configurado na plataforma. refazer=true pede a transcrição de novo.',
     escrita: true,
     entrada: { itemId: id('Item da caixa (pronto)'), refazer: z.boolean().optional() },
     executar: async ({ sb }, a) => caixa.transcricaoDoVideo(sb, a.itemId, a.refazer),

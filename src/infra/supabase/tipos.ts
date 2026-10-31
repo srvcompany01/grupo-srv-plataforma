@@ -1431,9 +1431,9 @@ export type Database = {
         Relationships: []
       }
       content_inbox: {
-        Row: { ai_summary: string; client_id: string; created_at: string; created_by: string | null; drive_file_id: string | null; error: string; id: string; kind: string; mime: string; name: string; post_task_id: string | null; r2_key: string; size_bytes: number; source: string; status: string; updated_at: string }
-        Insert: { ai_summary?: string; client_id: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime: string; name: string; post_task_id?: string | null; r2_key: string; size_bytes?: number; source: string; status?: string; updated_at?: string }
-        Update: { ai_summary?: string; client_id?: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime?: string; name?: string; post_task_id?: string | null; r2_key?: string; size_bytes?: number; source?: string; status?: string; updated_at?: string }
+        Row: { ai_summary: string; audio_ready: boolean; transcript: string; transcript_error: string; transcript_requested_at: string | null; transcript_state: string; client_id: string; created_at: string; created_by: string | null; drive_file_id: string | null; error: string; id: string; kind: string; mime: string; name: string; post_task_id: string | null; r2_key: string; size_bytes: number; source: string; status: string; updated_at: string }
+        Insert: { ai_summary?: string; audio_ready?: boolean; transcript?: string; transcript_error?: string; transcript_requested_at?: string | null; transcript_state?: string; client_id: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime: string; name: string; post_task_id?: string | null; r2_key: string; size_bytes?: number; source: string; status?: string; updated_at?: string }
+        Update: { ai_summary?: string; audio_ready?: boolean; transcript?: string; transcript_error?: string; transcript_requested_at?: string | null; transcript_state?: string; client_id?: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime?: string; name?: string; post_task_id?: string | null; r2_key?: string; size_bytes?: number; source?: string; status?: string; updated_at?: string }
         Relationships: []
       }
       saved_filters: {
