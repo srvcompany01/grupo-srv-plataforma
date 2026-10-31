@@ -46,9 +46,9 @@ export function ListaDaCaixa({ arvore, itens, mostrarCliente = false }: { arvore
       {itens.length === 0 && <p className="p-3 text-[13px] text-texto-3">Nenhum vídeo ainda. Envie pelo computador, importe do Drive ou peça para a IA enviar.</p>}
       <ul>
         {itens.map((i) => (
-          <li key={i.id} className="flex items-center gap-3 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
+          <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
             <Ic n={i.status === 'importando' ? 'sync' : i.status === 'erro' ? 'error' : i.status === 'usado' ? 'task_alt' : 'movie'} s={16} style={{ color: COR[i.status] }} />
-            <span className="min-w-0 flex-1">
+            <span className="min-w-0 flex-1 basis-[calc(100%-2rem)] sm:basis-0">
               {editando?.id === i.id ? (
                 <input autoFocus value={editando.nome} maxLength={255} aria-label="Novo nome do vídeo" onChange={(e) => setEditando({ id: i.id, nome: e.target.value })} onBlur={renomear} onKeyDown={(e) => { if (e.key === 'Enter') renomear(); if (e.key === 'Escape') setEditando(null) }} className="h-7 w-full rounded border border-borda bg-transparent px-2 text-[13px] outline-none focus:border-[var(--client)]" />
               ) : (

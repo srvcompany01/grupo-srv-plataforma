@@ -119,9 +119,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           ))}
         </aside>
         <div className="min-w-0 flex-1 space-y-4 p-3">
-          <nav className="flex gap-1 border-b border-borda-fraca" aria-label="Seções do cliente">
+          <nav className="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-borda-fraca [scrollbar-width:none]" aria-label="Seções do cliente">
             {ABAS.map((a) => (
-              <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined} className={`h-9 border-b-2 px-2 text-corpo leading-9 ${aba === a.id ? 'border-texto font-semibold text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>{a.rotulo}</Link>
+              <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined} className={`h-9 shrink-0 border-b-2 px-2 text-corpo leading-9 ${aba === a.id ? 'border-texto font-semibold text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>{a.rotulo}</Link>
             ))}
           </nav>
           {aba === 'visao' && (
