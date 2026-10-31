@@ -9,7 +9,7 @@ import { dados } from './resultado'
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
-const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes,
+const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, due_time, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes,
   criador:profiles!tasks_created_by_fkey(full_name),
   time_entries(duration_seconds),
   clients(id, name, color),
@@ -64,6 +64,7 @@ type LinhaResumo = {
   status_id: string
   priority: string
   due_date: string | null
+  due_time?: string | null
   position: string
   completed_at: string | null
   list_id: string
@@ -89,6 +90,7 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     statusId: t.status_id,
     prioridade: t.priority as Prioridade,
     prazo: t.due_date,
+    horario: t.due_time?.slice(0, 5) ?? null,
     posicao: t.position,
     concluidaEm: t.completed_at,
     comentarios: t.comments?.[0]?.count ?? 0,
@@ -139,6 +141,8 @@ export type CamposTarefa = Partial<{
   prioridade: Prioridade
   inicio: string | null
   prazo: string | null
+  /** HH:MM (Belém). Limpar o prazo limpa também o horário. */
+  horario: string | null
   estimativaMin: number | null
   visivelCliente: boolean
 }>
@@ -151,6 +155,8 @@ export async function atualizarTarefa(sb: Supabase, id: string, c: CamposTarefa)
     priority: c.prioridade,
     start_date: c.inicio,
     due_date: c.prazo,
+    // Sem data não há horário.
+    due_time: c.prazo === null ? null : c.horario === undefined ? undefined : c.horario,
     estimate_minutes: c.estimativaMin,
     visible_to_client: c.visivelCliente,
   }
@@ -210,6 +216,7 @@ export type TarefaCompleta = {
   prioridade: Prioridade
   inicio: string | null
   prazo: string | null
+  horario: string | null
   estimativaMin: number | null
   visivelCliente: boolean
   concluidaEm: string | null
@@ -226,7 +233,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
   const { data: t, error } = await sb
     .from('tasks')
     .select(
-      `id, title, description, status_id, priority, start_date, due_date, estimate_minutes, visible_to_client, completed_at, parent_task_id,
+      `id, title, description, status_id, priority, start_date, due_date, due_time, estimate_minutes, visible_to_client, completed_at, parent_task_id,
        client_id, clients(name, color),
        lists(id, name, space_id, reference_month),
        task_assignees(profiles(id, full_name, avatar_url)),
@@ -251,6 +258,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     prioridade: t.priority as Prioridade,
     inicio: t.start_date,
     prazo: t.due_date,
+    horario: t.due_time?.slice(0, 5) ?? null,
     estimativaMin: t.estimate_minutes,
     visivelCliente: t.visible_to_client,
     concluidaEm: t.completed_at,

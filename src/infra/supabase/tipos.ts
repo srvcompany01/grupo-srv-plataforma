@@ -1784,6 +1784,7 @@ export type Database = {
           title: string
           updated_at: string
           visible_to_client: boolean
+          due_time: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1804,6 +1805,7 @@ export type Database = {
           title: string
           updated_at?: string
           visible_to_client?: boolean
+          due_time?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1824,6 +1826,7 @@ export type Database = {
           title?: string
           updated_at?: string
           visible_to_client?: boolean
+          due_time?: string | null
         }
         Relationships: [
           {

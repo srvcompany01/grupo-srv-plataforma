@@ -158,7 +158,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-rotulo text-texto-3">
         <span className="inline-flex items-center gap-0.5" title="Vencimento">
           <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
+          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
         {!!tarefa.comentarios && (
           <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>

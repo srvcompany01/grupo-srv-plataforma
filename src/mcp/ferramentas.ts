@@ -208,7 +208,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
-        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Vencimento das tarefas = data + horário opcional (horario HH:MM); nos posts de conteúdo, agendar_post grava o vencimento da tarefa com o mesmo dia e horário do agendamento. Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1257,6 +1257,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: t.statusId,
         prioridade: t.prioridade,
         prazo: t.prazo,
+        horario: t.horario ?? null,
         concluida: !!t.concluidaEm,
         responsaveis: t.responsaveis.map((r) => r.nome),
       })),
@@ -1278,6 +1279,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: t.statusId,
         prioridade: t.prioridade,
         prazo: t.prazo,
+        horario: t.horario ?? null,
         lista: { id: t.lista.id, nome: t.lista.nome },
         pai: t.pai,
         responsaveis: t.responsaveis.map((r) => ({ id: r.id, nome: r.nome })),
@@ -1352,6 +1354,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
+      horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').optional(),
       responsaveis: z.array(id('Id de uma pessoa')).max(10).optional(),
       clienteId: id('Tag de cliente da tarefa (id de listar_clientes)').optional(),
     },
@@ -1617,6 +1620,7 @@ export const FERRAMENTAS: Ferramenta[] = [
             titulo: z.string().min(1).max(200),
             descricao: z.string().max(50000).optional(),
             prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
+            horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').optional(),
             prioridade: z.enum(PRIORIDADES).optional(),
             clienteId: id('Tag de cliente da tarefa e das subtarefas (id de listar_clientes)').optional(),
             valoresCampos: z.record(z.string().uuid(), valorCampo).optional().describe('Objeto { idDoCampo: valor }'),
@@ -1638,7 +1642,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (a.tarefas.reduce((n, t) => n + lista(t).length, 0) > 300) throw new Error('No máximo 300 subtarefas por chamada.')
       const criadas: { tarefaId: string; titulo: string; subtarefaIds: string[] }[] = []
       for (const t of a.tarefas) {
-        const tarefaId = await criarUma(ctx, { listaId: a.listaId, titulo: t.titulo, descricao: t.descricao, prazo: t.prazo, prioridade: t.prioridade })
+        const tarefaId = await criarUma(ctx, { listaId: a.listaId, titulo: t.titulo, descricao: t.descricao, prazo: t.prazo, horario: t.horario, prioridade: t.prioridade })
         for (const [campoId, valor] of Object.entries(t.valoresCampos ?? {})) await campos.salvarValorDoCampo(ctx.sb, tarefaId, campoId, valor as Json)
         const subtarefaIds: string[] = []
         for (const s of lista(t)) subtarefaIds.push(await criarUma(ctx, { listaId: a.listaId, titulo: s.titulo, descricao: s.descricao, paiId: tarefaId }))
@@ -1651,7 +1655,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'atualizar_tarefa',
-    descricao: 'Altera título, descrição, status, prioridade, vencimento, responsáveis ou a tag de cliente de uma tarefa. A tag de cliente vale para a tarefa-mãe e todas as subtarefas (clienteId null remove). Só envie o que muda.',
+    descricao: 'Altera título, descrição, status, prioridade, vencimento (prazo + horario opcional HH:MM, hora de Belém), responsáveis ou a tag de cliente de uma tarefa. Em posts de conteúdo o vencimento já é preenchido sozinho pelo agendamento (agendar_post), com o mesmo dia e horário. A tag de cliente vale para a tarefa-mãe e todas as subtarefas (clienteId null remove). Só envie o que muda.',
     escrita: true,
     entrada: {
       tarefaId: id('Id da tarefa'),
@@ -1660,6 +1664,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').nullable().optional(),
+      horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').nullable().optional(),
       responsaveis: z.array(id('Id de uma pessoa')).min(1).max(10).optional(),
       clienteId: id('Tag de cliente (id de listar_clientes); null remove a tag').nullable().optional(),
     },
@@ -1670,6 +1675,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: a.statusId,
         prioridade: a.prioridade,
         prazo: a.prazo,
+        horario: a.horario,
       })
       if (a.responsaveis) await tarefas.definirResponsaveis(sb, a.tarefaId, a.responsaveis)
       if (a.clienteId !== undefined) await tarefas.definirTagCliente(sb, a.tarefaId, a.clienteId)
@@ -2255,10 +2261,10 @@ export const FERRAMENTAS: Ferramenta[] = [
 
 async function criarUma(
   ctx: Contexto,
-  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; prazo?: string; responsaveis?: string[] },
+  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; prazo?: string; horario?: string; responsaveis?: string[] },
 ): Promise<string> {
   const tarefaId = await tarefas.criarTarefa(ctx.sb, { listaId: a.listaId, titulo: a.titulo.trim(), responsaveis: a.responsaveis?.length ? a.responsaveis : [ctx.userId], paiId: a.paiId, statusId: a.statusId })
-  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, prazo: a.prazo }
+  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, prazo: a.prazo, horario: a.prazo ? a.horario : undefined }
   if (Object.values(extras).some((v) => v !== undefined)) await tarefas.atualizarTarefa(ctx.sb, tarefaId, extras)
   return tarefaId
 }

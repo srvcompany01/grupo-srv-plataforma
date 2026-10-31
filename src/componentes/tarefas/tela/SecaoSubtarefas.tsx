@@ -24,7 +24,7 @@ export function SecaoSubtarefas({ tarefa: t, status, euId, hoje }: { tarefa: Tar
             <Link href={`/tarefas/${s.id}`} className={`flex-1 truncate hover:underline ${s.concluidaEm ? 'text-texto-3 line-through' : ''}`}>
               {s.titulo}
             </Link>
-            <EditorVencimento tarefaId={s.id} prazo={s.prazo} concluida={!!s.concluidaEm} hoje={hoje} />
+            <EditorVencimento tarefaId={s.id} prazo={s.prazo} horario={s.horario} concluida={!!s.concluidaEm} hoje={hoje} />
           </div>
         ))}
         <NovaTarefa listaId={t.lista.id} euId={euId} paiId={t.id} />

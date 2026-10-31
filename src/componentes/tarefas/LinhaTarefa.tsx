@@ -109,7 +109,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'responsavel':
         return <span key={colunaId} {...marca(colunaId)} className={`px-2${realce(colunaId)}`}><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
       case 'prazo':
-        return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
+        return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
         return <span key={colunaId} {...marca(colunaId)} className={`px-1${realce(colunaId)}`}><SeletorPrioridade tarefaId={tarefa.id} prioridade={tarefa.prioridade} /></span>
       case 'status':

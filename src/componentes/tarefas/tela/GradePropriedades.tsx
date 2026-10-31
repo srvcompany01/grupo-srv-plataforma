@@ -1,5 +1,6 @@
 'use client'
 
+import { diaDaSemana } from '@/dominio/prazo'
 import { Calendar, Check, X, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
@@ -87,13 +88,24 @@ export function GradePropriedades({
               type="date"
               aria-label="Vencimento"
               defaultValue={t.prazo ?? ''}
-              onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null })}
+              onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null, horario: e.target.value ? (t.horario ?? null) : null })}
               className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
             />
             {t.prazo && (
-              <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <>
+                <input
+                  type="time"
+                  aria-label="Horário do vencimento (opcional)"
+                  title="Horário (opcional)"
+                  defaultValue={t.horario ?? ''}
+                  onChange={(e) => e.target.value !== (t.horario ?? '') && salvar({ prazo: t.prazo, horario: e.target.value || null })}
+                  className={`${campo} h-8 w-28 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
+                />
+                <span className={`whitespace-nowrap text-legenda ${vencida ? 'text-perigo' : 'text-texto-3'}`}>({diaDaSemana(t.prazo)})</span>
+                <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
             )}
           </span>
         </Linha>

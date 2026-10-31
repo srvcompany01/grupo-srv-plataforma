@@ -30,6 +30,8 @@ export type TarefaResumo = {
   prioridade: Prioridade
   /** YYYY-MM-DD */
   prazo: string | null
+  /** HH:MM (Belém); só existe junto com o prazo. */
+  horario?: string | null
   posicao: string
   responsaveis: Pessoa[]
   tags: { id: string; nome: string; cor: string }[]

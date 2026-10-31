@@ -1,5 +1,6 @@
 'use server'
 
+import { horarioValido } from '@/dominio/prazo'
 import { revalidatePath } from 'next/cache'
 import { normalizarMime, validarAnexo, validarAnexosComentario } from '@/dominio/anexos'
 import { extrairMencoes } from '@/dominio/mencoes'
@@ -39,6 +40,7 @@ export async function criarTarefaAcao(d: {
 
 export async function atualizarTarefaAcao(id: string, campos: tarefas.CamposTarefa): Promise<Resultado> {
   if (campos.titulo !== undefined && !campos.titulo.trim()) return { erro: 'O título não pode ficar vazio.' }
+  if (campos.horario != null && !horarioValido(campos.horario)) return { erro: 'Horário inválido. Use o formato 14:30.' }
   return executar((sb) => tarefas.atualizarTarefa(sb, id, campos))
 }
 
