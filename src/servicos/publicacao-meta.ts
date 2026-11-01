@@ -1,6 +1,6 @@
 import 'server-only'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { formatoDaMidiaPublicada, formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
+import { formatoDaMidiaPublicada, formatoPublicado, fotoParaGoogle, planoInstagram, prontoParaPublicar, validarPublicacao, type Alvo, type EstrategiaTeste, type MidiaPublicavel, type ModoPublicacao, type PlanoInstagram, type StatusPublicacao } from '@/dominio/publicacao'
 import { comHashtagsDoCliente } from '@/dominio/hashtags'
 import { urlLeitura } from '@/infra/r2'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -68,7 +68,7 @@ const parametrosDaMidia = (m: MidiaPublicavel & { url: string }): Record<string,
  * Cria e publica no Instagram. Se o vídeo ainda está processando, devolve o container para continuar na próxima
  * rodada (sem recriar). Stories: cada mídia vira um story.
  */
-async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null, collabs: string[]): Promise<{ id: string; permalink: string | null; formato: Formato } | { pendente: string }> {
+async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (MidiaPublicavel & { url: string })[], legenda: string, containerSalvo: string | null, collabs: string[], teste: EstrategiaTeste | null = null): Promise<{ id: string; permalink: string | null; formato: Formato } | { pendente: string }> {
   const publicar = async (container: string) => {
     const { id } = await graph<{ id: string }>(`${igId}/media_publish`, { metodo: 'POST', params: { creation_id: container } })
     const detalhes = await graph<{ permalink?: string; media_type?: string; media_product_type?: string }>(id, { params: { fields: 'permalink,media_type,media_product_type' } }).catch(() => ({ permalink: undefined, media_type: undefined, media_product_type: undefined }))
@@ -90,7 +90,7 @@ async function publicarInstagram(igId: string, plano: PlanoInstagram, midias: (M
     if (plano.tipo === 'IMAGE') {
       container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { image_url: midias[0].url, caption: legenda, ...collab } })).id
     } else if (plano.tipo === 'REELS') {
-      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'REELS', video_url: midias[0].url, caption: legenda, share_to_feed: 'true', ...collab } })).id
+      container = (await graph<{ id: string }>(`${igId}/media`, { metodo: 'POST', params: { media_type: 'REELS', video_url: midias[0].url, caption: legenda, share_to_feed: 'true', ...collab, ...(teste ? { trial_params: JSON.stringify({ graduation_strategy: teste }) } : {}) } })).id
     } else {
       const filhos: string[] = []
       for (const m of midias) {
@@ -132,6 +132,7 @@ type PostCompleto = {
   ig_container_id: string | null; ig_media_id: string | null; fb_post_id: string | null; collaborators: string[] | null
   content_versions: { number: number; caption: string; content_media: { kind: string; r2_key: string; original_name: string; position: number; arquivado_em: string | null }[] }[]
   gbp_post_name: string | null
+  trial_graduation: string | null
   tasks: { clients: { id: string; meta_page_id: string | null; google_location: string | null } | null } | null
 }
 
@@ -156,7 +157,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
   try {
     const { data, error } = await admin
       .from('content_posts')
-      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, content_versions(number, caption, content_media(kind, r2_key, original_name, position, arquivado_em)), tasks(clients(id, meta_page_id, google_location))')
+      .select('task_id, format, approval, current_version, publish_at, publish_targets, publish_mode, publish_status, ig_container_id, ig_media_id, fb_post_id, gbp_post_name, collaborators, trial_graduation, content_versions(number, caption, content_media(kind, r2_key, original_name, position, arquivado_em)), tasks(clients(id, meta_page_id, google_location))')
       .eq('task_id', taskId)
       .single()
     if (error) throw error
@@ -171,7 +172,8 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
     const midias: MidiaPublicavel[] = [...(versao?.content_media ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ tipo: m.kind as 'imagem' | 'video', nome: m.original_name, chave: m.r2_key }))
     const alvos = p.publish_targets as Alvo[]
     const collabs = p.collaborators ?? []
-    const invalido = validarPublicacao(p.format as Formato, alvos, midias, collabs)
+    const teste = (p.trial_graduation as EstrategiaTeste | null) ?? null
+    const invalido = validarPublicacao(p.format as Formato, alvos, midias, collabs, teste)
     if (invalido) throw new ErroMeta(invalido)
     const paginaId = p.tasks?.clients?.meta_page_id
     if (!paginaId && alvos.some((a) => a !== 'google')) throw new ErroMeta('O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").')
@@ -186,7 +188,7 @@ export async function publicarPost(taskId: string, opcoes: { forcar?: boolean } 
       const plano = planoInstagram(p.format as Formato, midias)
       // As hashtags fixas do cliente entram sozinhas (as que já estão na legenda não se repetem).
       const tags = p.tasks?.clients?.id ? await hashtagsDoCliente(admin as unknown as Supabase, p.tasks.clients.id, 'instagram').catch(() => []) : []
-      const r = await publicarInstagram(igId, plano, comUrl, comHashtagsDoCliente(legenda, tags), p.ig_container_id, collabs)
+      const r = await publicarInstagram(igId, plano, comUrl, comHashtagsDoCliente(legenda, tags), p.ig_container_id, collabs, teste)
       if ('pendente' in r) {
         await salvar({ ig_container_id: r.pendente, publish_lock_at: null })
         return { status: 'publicando' }

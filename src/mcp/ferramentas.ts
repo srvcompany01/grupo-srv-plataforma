@@ -1,3 +1,4 @@
+import { ESTRATEGIA_POR_NOME } from '@/dominio/publicacao'
 import * as z from 'zod'
 import { descricaoParaTexto, textoParaDescricao } from '@/dominio/descricao'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
@@ -2001,7 +2002,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       const [post, pub] = await Promise.all([conteudoSvc.buscarConteudo(sb, a.tarefaId), conteudoSvc.buscarPublicacao(sb, a.tarefaId)])
       if (!post || !pub) throw new Error('Post de conteúdo não encontrado (ou falta a migration de publicação).')
-      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, collab: pub.collabs, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
+      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, collab: pub.collabs, reelsDeTeste: pub.teste === 'MANUAL' ? 'manual' : pub.teste === 'SS_PERFORMANCE' ? 'automatico' : null, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
     },
   }),
 
@@ -2020,7 +2021,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'agendar_post',
-    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook (opcionalmente como Reels de teste do Instagram: reelsDeTeste). modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
     escrita: true,
     entrada: {
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
@@ -2029,18 +2030,20 @@ export const FERRAMENTAS: Ferramenta[] = [
       redes: z.array(z.enum(['instagram', 'facebook', 'google'])).min(1).describe('Onde publicar (google = Google Meu Negócio: texto + primeira foto)'),
       modo: z.enum(['aprovacao', 'direto']).optional().describe('Padrão: aprovacao'),
       collab: z.array(z.string()).max(3).optional().describe('@ do Instagram convidados para a collab (até 3)'),
+      reelsDeTeste: z.enum(['manual', 'automatico']).optional().describe('Publica como Reels de teste do Instagram (aparece primeiro só para quem não segue): manual = a pessoa libera para os seguidores pelo aplicativo; automatico = o Instagram libera sozinho se for bem. Só para formato reels, só no Instagram, sem collab. Só use se a pessoa pediu'),
     },
     executar: async ({ sb }, a) => {
       const collabs = a.collab === undefined ? undefined : lerCollabs(a.collab.join(' '))
       if (collabs && 'erro' in collabs) throw new Error(collabs.erro)
-      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, collabs)
+      const teste = a.reelsDeTeste ? ESTRATEGIA_POR_NOME[a.reelsDeTeste] : null
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, collabs, teste)
       if (problema) throw new Error(problema)
       const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
       const modo = a.modo ?? 'aprovacao'
       if (modo === 'aprovacao' && post?.aprovacao === 'ajuste') throw new Error('O cliente pediu ajuste: edite o post (nasce a versão nova) antes de reenviar.')
       const enviarAoCliente = modo === 'aprovacao' && post?.aprovacao === 'rascunho'
-      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente, collabs })
-      return { ok: true, enviadoAoCliente: enviarAoCliente }
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente, collabs, teste })
+      return { ok: true, enviadoAoCliente: enviarAoCliente, reelsDeTeste: a.reelsDeTeste ?? null }
     },
   }),
 

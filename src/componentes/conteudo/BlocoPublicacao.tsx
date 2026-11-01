@@ -8,7 +8,7 @@ import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { dataLocal, horaLocal } from '@/dominio/agenda'
 import type { Aprovacao, Formato } from '@/dominio/conteudo'
-import { ALVOS, MAX_COLLABS, ROTULO_ALVO, situacaoPublicacao, type Alvo } from '@/dominio/publicacao'
+import { ALVOS, MAX_COLLABS, ROTULO_ALVO, ROTULO_ESTRATEGIA_TESTE, situacaoPublicacao, type Alvo, type EstrategiaTeste } from '@/dominio/publicacao'
 import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { PublicacaoDoPost } from '@/servicos/conteudo'
 import { NomeCliente } from '@/componentes/NomeCliente'
@@ -28,16 +28,20 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
   const [hora, setHora] = useState(p.em ? horaLocal(p.em) : '18:00')
   const [alvos, setAlvos] = useState<Alvo[]>(p.alvos.length ? p.alvos : [...(temIg ? ['instagram' as const] : []), ...(temFb && formato !== 'stories' ? ['facebook' as const] : [])])
   const [collabs, setCollabs] = useState(p.collabs.map((c) => `@${c}`).join(' '))
-  const aceitaCollab = alvos.includes('instagram') && formato !== 'stories'
+  // Reels de teste: só Reels, só Instagram e sem collab. Marcado, a collab some; sem a marca, a estratégia é esquecida.
+  const [teste, setTeste] = useState<EstrategiaTeste | null>(p.teste)
+  const podeTeste = formato === 'reels' && alvos.length === 1 && alvos[0] === 'instagram'
+  const testeAtivo = podeTeste ? teste : null
+  const aceitaCollab = alvos.includes('instagram') && formato !== 'stories' && !testeAtivo
   const situacao = situacaoPublicacao({ status: p.status, em: p.em, modo: p.modo, aprovacao }, new Date())
   const agendado = p.status === 'agendado' || p.status === 'publicando'
   const alternar = (a: Alvo) => setAlvos((v) => (v.includes(a) ? v.filter((x) => x !== a) : [...v, a]))
 
   const rodar = (fn: () => Promise<{ ok?: string; erro?: string } | null>) => iniciar(async () => { if (avisar(await fn(), true)) router.refresh() })
-  const agendar = (modo: 'aprovacao' | 'direto') => rodar(() => agendarPostAcao(tarefaId, { data, hora, alvos, modo, collabs: aceitaCollab ? collabs : '' }))
+  const agendar = (modo: 'aprovacao' | 'direto') => rodar(() => agendarPostAcao(tarefaId, { data, hora, alvos, modo, collabs: aceitaCollab ? collabs : '', teste: testeAtivo }))
   const agora = async () => {
     if (!(await confirmar({ titulo: 'Publicar agora?', descricao: `O post sai já em ${alvos.map((a) => ROTULO_ALVO[a]).join(' e ')}, sem esperar a aprovação do cliente.`, confirmar: 'Publicar agora' }))) return
-    rodar(() => publicarAgoraAcao(tarefaId, alvos, aceitaCollab ? collabs : ''))
+    rodar(() => publicarAgoraAcao(tarefaId, alvos, aceitaCollab ? collabs : '', testeAtivo))
   }
 
   const cor = p.status === 'publicado' ? 'bg-sucesso-fundo text-sucesso-forte' : p.status === 'falhou' ? 'bg-perigo-fundo text-perigo-forte' : agendado ? 'bg-aviso-fundo text-aviso-forte' : 'bg-hover text-texto-2'
@@ -48,6 +52,7 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
         <CalendarClock className="h-4 w-4 text-texto-2" />
         <h3 className="text-corpo font-semibold">Publicação no Instagram e Facebook</h3>
         <span className={`rounded-md px-2 py-0.5 text-legenda font-semibold ${cor}`}>{situacao}</span>
+        {p.teste && <span className="rounded-md bg-hover px-2 py-0.5 text-legenda font-semibold text-texto-2" title={ROTULO_ESTRATEGIA_TESTE[p.teste]}>Reels de teste · {p.teste === 'MANUAL' ? 'manual' : 'automático'}</span>}
       </div>
 
       {p.cliente?.googlePerfil && <p className="text-legenda text-texto-2">Google Meu Negócio: <strong>perfil ligado</strong> (vai o texto e a primeira foto)</p>}
@@ -88,6 +93,23 @@ export function BlocoPublicacao({ tarefaId, p, conta, formato, aprovacao, hoje }
               </div>
             </div>
           </div>
+          {formato === 'reels' && (
+            <div className="space-y-1.5 rounded-lg border border-borda-fraca p-2.5">
+              <label className="flex items-center gap-2 text-rotulo font-semibold">
+                <input type="checkbox" checked={!!testeAtivo} disabled={!podeTeste} onChange={(e) => setTeste(e.target.checked ? (teste ?? 'MANUAL') : null)} />
+                Publicar como Reels de teste
+              </label>
+              <p className="text-legenda text-texto-3">{podeTeste ? 'O Reels aparece primeiro só para quem não te segue, para você ver como se sai antes de mostrar aos seguidores.' : 'Disponível só com o Instagram marcado e nenhuma outra rede.'}</p>
+              {testeAtivo && (
+                <div className="space-y-1 pl-6 text-rotulo">
+                  {(['MANUAL', 'SS_PERFORMANCE'] as const).map((e) => (
+                    <label key={e} className="flex items-start gap-2"><input type="radio" name={`teste-${tarefaId}`} checked={teste === e} onChange={() => setTeste(e)} className="mt-1" />{e === 'MANUAL' ? 'Manual' : 'Automática'}: {ROTULO_ESTRATEGIA_TESTE[e].replace(/^liberação (manual|automática) /, '')}</label>
+                  ))}
+                  <p className="text-legenda text-texto-3">Na liberação manual, quem libera é você, pelo aplicativo do Instagram (a Meta não deixa liberar pela plataforma).</p>
+                </div>
+              )}
+            </div>
+          )}
           {aceitaCollab && (
             <label className="block space-y-1">
               <span className={rotulo}>Collab no Instagram (opcional, até {MAX_COLLABS} perfis)</span>

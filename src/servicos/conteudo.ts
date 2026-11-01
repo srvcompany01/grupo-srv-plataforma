@@ -3,7 +3,7 @@ import { aplicarEtapaDoPost } from './etapa-post'
 import { chaveDeMidiaValida, type Aprovacao, type Decisao, type Formato } from '@/dominio/conteudo'
 import { validarEntrada } from '@/dominio/midias'
 import { LIMITE_TEXTO_NEGOCIO } from '@/dominio/google'
-import { ALVOS, validarPublicacao, type Alvo, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
+import { ALVOS, validarPublicacao, type Alvo, type EstrategiaTeste, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
 import type { TipoMidia } from '@/dominio/tipos'
 import { urlLeitura } from '@/infra/r2'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -89,13 +89,15 @@ export type PublicacaoDoPost = {
   cliente: { id: string; nome: string; paginaId: string | null; googlePerfil: string | null } | null
   /** @ convidados para a collab no Instagram. */
   collabs: string[]
+  /** Reels de teste (null = Reels normal). */
+  teste: EstrategiaTeste | null
 }
 
 /** Agendamento/publicação na Meta do post. null sem a migration de publicação (o post abre normalmente). */
 export async function buscarPublicacao(sb: Supabase, tarefaId: string): Promise<PublicacaoDoPost | null> {
   const { data, error } = await sb
     .from('content_posts')
-    .select('publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, fb_permalink, gbp_link, published_at, collaborators, tasks(due_date, clients(id, name, meta_page_id, google_location))')
+    .select('publish_at, publish_targets, publish_mode, publish_status, publish_error, ig_permalink, fb_permalink, gbp_link, published_at, collaborators, trial_graduation, tasks(due_date, clients(id, name, meta_page_id, google_location))')
     .eq('task_id', tarefaId)
     .maybeSingle()
   if (error || !data) return null
@@ -113,12 +115,13 @@ export async function buscarPublicacao(sb: Supabase, tarefaId: string): Promise<
     dataPrevista: data.tasks?.due_date ?? null,
     cliente: c ? { id: c.id, nome: c.name, paginaId: c.meta_page_id, googlePerfil: c.google_location } : null,
     collabs: data.collaborators ?? [],
+    teste: (data.trial_graduation as EstrategiaTeste | null) ?? null,
   }
 }
 
 /** Grava o agendamento (e, no modo aprovação, manda o rascunho para o cliente). A RLS confere o acesso ao post. */
-export async function agendarPost(sb: Supabase, tarefaId: string, a: { em: string; alvos: Alvo[]; modo: ModoPublicacao; enviarAoCliente: boolean; collabs?: string[] }): Promise<void> {
-  const campos = { publish_at: a.em, publish_targets: a.alvos, publish_mode: a.modo, publish_status: 'agendado', publish_error: null, ...(a.collabs ? { collaborators: a.collabs } : {}), ...(a.enviarAoCliente ? { approval: 'aguardando' } : {}) }
+export async function agendarPost(sb: Supabase, tarefaId: string, a: { em: string; alvos: Alvo[]; modo: ModoPublicacao; enviarAoCliente: boolean; collabs?: string[]; teste?: EstrategiaTeste | null }): Promise<void> {
+  const campos = { trial_graduation: a.teste ?? null, publish_at: a.em, publish_targets: a.alvos, publish_mode: a.modo, publish_status: 'agendado', publish_error: null, ...(a.collabs ? { collaborators: a.collabs } : {}), ...(a.enviarAoCliente ? { approval: 'aguardando' } : {}) }
   if (!dados(await sb.from('content_posts').update(campos).eq('task_id', tarefaId).select('task_id')).length) throw { code: '42501' }
   // O vencimento da tarefa (ou subtarefa) do post acompanha o agendamento: dia e horário de Belém.
   const { data, horario } = dataEHoraEmBelem(a.em)
@@ -132,7 +135,7 @@ export async function cancelarAgendamento(sb: Supabase, tarefaId: string): Promi
 }
 
 /** Confere se o post pode ir para as redes (alvos, mídias, formato, Página do cliente). null = pode. */
-export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos: Alvo[], collabs?: string[]): Promise<string | null> {
+export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos: Alvo[], collabs?: string[], teste: EstrategiaTeste | null = null): Promise<string | null> {
   if (!alvos.length || alvos.some((a) => !(ALVOS as readonly string[]).includes(a))) return 'Escolha onde publicar (Instagram, Facebook e/ou Google Meu Negócio).'
   const [post, pub] = await Promise.all([buscarConteudo(sb, tarefaId), buscarPublicacao(sb, tarefaId)])
   if (!post || !pub) return 'Post não encontrado (ou falta a migration de publicação).'
@@ -140,7 +143,7 @@ export async function problemaParaPublicar(sb: Supabase, tarefaId: string, alvos
   if (alvos.some((a) => a !== 'google') && !pub.cliente?.paginaId) return 'O cliente não tem a Página do Facebook no cadastro (campo "Biblioteca de anúncios do Meta").'
   if (alvos.includes('google') && !pub.cliente?.googlePerfil) return 'O cliente não tem o perfil do Google Meu Negócio ligado (página do cliente → Google Meu Negócio).'
   if (alvos.includes('google') && post.versoes[0].legenda.length > LIMITE_TEXTO_NEGOCIO) return `No Google Meu Negócio o texto vai até ${LIMITE_TEXTO_NEGOCIO} caracteres (a legenda tem ${post.versoes[0].legenda.length}).`
-  return validarPublicacao(post.formato, alvos, post.versoes[0].midias.map((m) => ({ tipo: m.tipo, nome: m.nome, chave: m.chave })), collabs ?? pub.collabs)
+  return validarPublicacao(post.formato, alvos, post.versoes[0].midias.map((m) => ({ tipo: m.tipo, nome: m.nome, chave: m.chave })), collabs ?? pub.collabs, teste)
 }
 
 export type Agendamento = {
