@@ -2007,6 +2007,27 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'publicar_post_agora',
+    descricao: 'PUBLICA JÁ um post de conteúdo (sem esperar o horário nem a aprovação do cliente). Ação irreversível e pública: use SÓ quando a pessoa pediu explicitamente para publicar agora, e confirme com ela o post, a legenda e a rede antes. reelsDeTeste (manual ou automatico) publica como Reels de teste do Instagram (só formato reels, só Instagram, sem collab). Se o vídeo ainda estiver processando no Instagram, a publicação termina sozinha em alguns minutos (status publicando). Para publicar num horário, use agendar_post.',
+    escrita: true,
+    entrada: {
+      tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
+      redes: z.array(z.enum(['instagram', 'facebook', 'google'])).min(1).describe('Onde publicar'),
+      reelsDeTeste: z.enum(['manual', 'automatico']).optional().describe('Publica como Reels de teste: manual = a pessoa libera aos seguidores pelo aplicativo; automatico = o Instagram libera sozinho se for bem'),
+    },
+    executar: async ({ sb }, a) => {
+      const teste = a.reelsDeTeste ? ESTRATEGIA_POR_NOME[a.reelsDeTeste] : null
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, undefined, teste)
+      if (problema) throw new Error(problema)
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: new Date().toISOString(), alvos: a.redes, modo: 'direto', enviarAoCliente: false, teste })
+      const { publicarPost } = await import('@/servicos/publicacao-meta')
+      const r = await publicarPost(a.tarefaId, { forcar: true })
+      if (r.status === 'falhou') throw new Error(r.erro ?? 'Não foi possível publicar.')
+      return { status: r.status, reelsDeTeste: a.reelsDeTeste ?? null, aviso: r.status === 'publicando' ? 'O vídeo ainda está processando no Instagram; a publicação termina sozinha em alguns minutos. Consulte situacao_publicacao_post.' : undefined }
+    },
+  }),
+
+  definir({
     nome: 'cancelar_agendamento_post',
     descricao: 'Tira um post da fila de publicação (agendado ou que falhou): ele volta para "não agendado", com o texto e as mídias. Post já publicado não é afetado. Para reagendar, use agendar_post.',
     escrita: true,
@@ -2021,7 +2042,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'agendar_post',
-    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook (opcionalmente como Reels de teste do Instagram: reelsDeTeste). modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook (opcionalmente como Reels de teste do Instagram: reelsDeTeste). Para publicar na hora, use publicar_post_agora. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
     escrita: true,
     entrada: {
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
