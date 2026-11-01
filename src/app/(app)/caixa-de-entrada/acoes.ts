@@ -138,6 +138,15 @@ export async function tarefasParaDestinoAcao(listaId: string): Promise<{ tarefas
   }
 }
 
+/** Devolve ao banco de vídeos um vídeo antigo marcado como "já virou post", para usar de novo. */
+export async function reutilizarCaixaAcao(itemId: string): Promise<Resultado> {
+  await exigirEquipe()
+  if (!UUID.test(itemId)) return { erro: 'Item inválido.' }
+  const r = await tentar(async () => caixa.reutilizarItem(await criarClienteServidor(), itemId), 'Vídeo de volta no banco de vídeos.')
+  atualizar()
+  return r
+}
+
 export async function urlDoVideoCaixaAcao(itemId: string): Promise<{ url: string } | { erro: string }> {
   await exigirEquipe()
   if (!UUID.test(itemId)) return { erro: 'Item inválido.' }

@@ -1408,7 +1408,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'listar_caixa_de_entrada',
-    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. Cada vídeo "pronto" traz destino (para onde a pessoa mandou; null = ainda não escolheu), audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. O banco de vídeos é reutilizável: o vídeo continua "pronto" depois de virar post ou criativo (postId = último post onde foi usado). Cada vídeo "pronto" traz destino (para onde a pessoa mandou; null = ainda não escolheu), audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
     escrita: false,
     entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
     executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
@@ -1533,6 +1533,17 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
       return { ok: true, proximoPasso: 'Crie o post com criar_post_da_caixa.' }
+    },
+  }),
+
+  definir({
+    nome: 'reutilizar_video_caixa',
+    descricao: 'Devolve ao banco de vídeos (Caixa de entrada) um vídeo que aparece como "usado" (já virou post), para usar de novo em outro post, criativo ou ferramenta. Os vídeos novos NÃO saem mais do banco ao virar post: ficam "pronto" e reutilizáveis (postId mostra o último post em que foram usados). criar_post_da_caixa, criativo_da_caixa e transcricao_video_caixa já fazem isso sozinhos com vídeo "usado"; use esta só para deixar o item pronto antes (ex.: para escolher o destino). Falha se o arquivo não existir mais (post apagado ou arquivado): aí é preciso subir o vídeo de novo.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (usado ou pronto)') },
+    executar: async ({ sb }, a) => {
+      await caixa.reutilizarItem(sb, a.itemId)
+      return { ok: true, status: 'pronto' }
     },
   }),
 

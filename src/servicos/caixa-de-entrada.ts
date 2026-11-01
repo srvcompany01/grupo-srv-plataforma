@@ -162,6 +162,27 @@ export async function excluirItem(sb: Supabase, itemId: string): Promise<void> {
   if (data && data.status !== 'usado') await apagarArquivos([data.r2_key, chaveDoAudio(data.r2_key)]).catch(() => [])
 }
 
+/**
+ * Devolve ao banco de vídeos um item marcado como "usado" (como era antes: o arquivo da caixa era apagado ao virar post).
+ * Se o arquivo da caixa ainda existe, só volta para "pronto"; se não, copia de volta a cópia que ficou no post.
+ * Daqui para a frente o vídeo nunca sai da caixa ao virar post ou criativo.
+ */
+export async function reutilizarItem(sb: Supabase, itemId: string): Promise<void> {
+  const { data: item, error } = await sb.from('content_inbox').select('id, client_id, r2_key, mime, status, post_task_id').eq('id', itemId).single()
+  if (error) throw error
+  if (item.status !== 'usado') return
+  let chave = item.r2_key
+  if ((await tamanhoDoArquivo(chave)) === null) {
+    const { data: midias } = item.post_task_id ? await sb.from('content_media').select('r2_key').eq('task_id', item.post_task_id).eq('kind', 'video').limit(1) : { data: null }
+    const origem = midias?.[0]?.r2_key
+    if (!origem || (await tamanhoDoArquivo(origem)) === null) throw new Error('O arquivo deste vídeo não existe mais (o post foi apagado ou o arquivo foi arquivado). Suba o vídeo de novo.')
+    chave = gerarChaveCaixa(item.client_id, item.mime)
+    await copiarArquivo(origem, chave, item.mime)
+  }
+  const { error: e2 } = await sb.from('content_inbox').update({ status: 'pronto', r2_key: chave, error: '', updated_at: new Date().toISOString() }).eq('id', itemId)
+  if (e2) throw e2
+}
+
 /** A pessoa escolhe para onde o vídeo vai. `null` limpa a escolha. A lista precisa ser de conteúdo (é onde as subtarefas viram posts). */
 export async function definirDestino(sb: Supabase, itemId: string, d: { listaId: string; tarefaId: string | null; modo: ModoDoDestino } | null): Promise<void> {
   if (d) {
@@ -198,9 +219,10 @@ export async function tarefasParaDestino(sb: Supabase, listaId: string): Promise
  * sem ele, cria um post novo em `listaId`.
  */
 export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; semHashtags?: boolean; titulo?: string; formato: Formato; dataPrevista: string; legenda: string; ideia?: string; objetivo?: string; descricao?: string }): Promise<{ tarefaId: string; hashtags: string[] }> {
+  await reutilizarItem(sb, e.itemId) // vídeo que já foi usado volta para o banco de vídeos e pode virar outro post
   const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status, dest_list_id, dest_task_id, dest_mode').eq('id', e.itemId).single()
   if (error) throw error
-  if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou um post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
+  if (item.status !== 'pronto') throw new Error('O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
   // O destino é escolhido pela pessoa na caixa de entrada; a IA nunca decide sozinha.
   if (!item.dest_list_id || !item.dest_mode) throw new Error('Este vídeo ainda não tem destino. Pergunte à pessoa onde a tarefa deve ficar (lista e tarefa) e como criar (tarefa-mãe, subtarefa ou na tarefa existente); ela também pode escolher na Caixa de entrada (botão Destino). Depois informe listaId e modo, ou chame definir_destino_video_caixa.')
   let tarefaId: string
@@ -231,8 +253,8 @@ export async function criarPostDaCaixa(sb: Supabase, e: { itemId: string; semHas
   const chave = gerarChaveConteudo(tarefaId, item.mime)
   await copiarArquivo(item.r2_key, chave, item.mime)
   await conteudo.registrarMidia(sb, tarefaId, { chave, tipo: 'video', nome: item.name, tamanho: Number(item.size_bytes) })
-  await sb.from('content_inbox').update({ status: 'usado', post_task_id: tarefaId, updated_at: new Date().toISOString() }).eq('id', e.itemId)
-  await apagarArquivos([item.r2_key, chaveDoAudio(item.r2_key)]).catch(() => [])
+  // O vídeo continua no banco de vídeos (o post tem a própria cópia), pronto para outro post, criativo ou ferramenta. Só limpa o destino escolhido.
+  await sb.from('content_inbox').update({ post_task_id: tarefaId, dest_list_id: null, dest_task_id: null, dest_mode: null, updated_at: new Date().toISOString() }).eq('id', e.itemId)
   return { tarefaId, hashtags: final.hashtags }
 }
 
@@ -260,6 +282,7 @@ export const chaveDoAudio = (chaveDoVideo: string) => `${chaveDoVideo}.audio.mp3
 
 /** Garante o áudio (MP3 mono, leve) do vídeo no armazenamento; extrai com o ffmpeg se ainda não existir. Devolve a chave do áudio. */
 export async function prepararAudio(sb: Supabase, itemId: string): Promise<string> {
+  await reutilizarItem(sb, itemId)
   const { data: item, error } = await sb.from('content_inbox').select('r2_key, status').eq('id', itemId).single()
   if (error) throw error
   if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
@@ -368,6 +391,7 @@ export type Transcricao = { estado: EstadoTranscricao | 'indisponivel'; texto?: 
 
 /** O que o Codex lê: o texto guardado, ou o andamento. Pede a transcrição sozinha se ainda ninguém pediu (refazer=true pede de novo). */
 export async function transcricaoDoVideo(sb: Supabase, itemId: string, refazer = false): Promise<Transcricao> {
+  await reutilizarItem(sb, itemId)
   const { data, error } = await sb.from('content_inbox').select('status, transcript_state, transcript, transcript_error, transcript_requested_at').eq('id', itemId).single()
   if (error) throw error
   if (data.status !== 'pronto') throw new Error(data.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa.' : 'O vídeo ainda não está pronto.')
@@ -390,9 +414,10 @@ export async function transcricaoDoVideo(sb: Supabase, itemId: string, refazer =
  * O vídeo continua na caixa, então ainda pode virar post. Devolve o id do criativo (use em criar_campanha_meta e adicionar_anuncio_meta).
  */
 export async function criativoDaCaixa(sb: Supabase, itemId: string, nome?: string): Promise<{ criativoId: string; nome: string }> {
+  await reutilizarItem(sb, itemId)
   const { data: item, error } = await sb.from('content_inbox').select('id, client_id, name, r2_key, mime, size_bytes, status').eq('id', itemId).single()
   if (error) throw error
-  if (item.status !== 'pronto') throw new Error(item.status === 'usado' ? 'Este vídeo já virou post e saiu da caixa. Para usar em anúncio, crie o criativo antes do post.' : 'O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
+  if (item.status !== 'pronto') throw new Error('O vídeo ainda não está pronto (aguarde o envio ou a importação terminar).')
   if ((await tamanhoDoArquivo(item.r2_key)) === null) throw new Error('O arquivo não está mais no armazenamento. Envie o vídeo de novo.')
   const chave = gerarChaveCriativo(item.client_id, item.mime)
   await copiarArquivo(item.r2_key, chave, item.mime)
