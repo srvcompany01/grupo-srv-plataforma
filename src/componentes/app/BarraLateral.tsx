@@ -27,11 +27,14 @@ import {
   TrendingUp,
   MapPin,
   Radar,
-  Grip,
-  Rocket,
   Inbox,
+  ChevronDown,
+  LayoutGrid,
+  Share2,
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
+import { Sheet, SheetContent, SheetTitle } from '@/componentes/ui/sheet'
 import { usePathname, useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
@@ -91,132 +94,111 @@ export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
 const estaEm = (caminho: string, href: string) => caminho === href || caminho.startsWith(`${href}/`)
 
 /**
- * Atalhos da barra lateral: os de uso diário ficam soltos no topo; os grupos ficam recolhidos e abrem por uma setinha.
- * Módulo novo entra no grupo certo aqui (e em atalhosDoInicio); se ficar fora de todos, aparece solto abaixo dos grupos.
+ * Barra única de navegação (a "dock"): os de uso diário ficam soltos; o resto abre pela setinha do divisor.
+ * Módulo novo entra em atalhosDoInicio e aqui, em NO_TOPO ou em GRUPOS_FAIXA.
  */
-const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
-/** Todo o resto abre pelo botão "Mais", como no ClickUp. */
-const GRUPOS_FAIXA: { id: string; rotulo: string; curto: string; Icone: IconeLucide; itens: string[] }[] = [
-  { id: 'mais', rotulo: 'Mais', curto: 'Mais', Icone: Grip, itens: ['caixa', 'clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis'] },
+const NO_TOPO = ['home', 'tarefas', 'agenda', 'chat', 'painel', 'documentos', 'quadros', 'time']
+const GRUPOS_FAIXA: { id: string; itens: string[] }[] = [
+  { id: 'mais', itens: ['agendamentos', 'reunioes', 'caixa', 'clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'formularios'] },
 ]
 
-/** Nome do ícone (Material Symbols Rounded) de cada módulo, como no protótipo do redesign. */
+/** Nome do ícone (Material Symbols Rounded) de cada módulo, usado na paleta de comandos e no painel. */
 export const ICONE_MS: Record<string, string> = {
   home: 'home', espacos: 'grid_view', chat: 'chat_bubble', agenda: 'event_note', time: 'groups', documentos: 'description', painel: 'monitoring', quadros: 'draw', formularios: 'assignment',
   tarefas: 'task_alt', agendamentos: 'event_available', caixa: 'move_to_inbox', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
   gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', funis: 'filter_alt', config: 'settings',
 }
 
-const botaoRail = { flex: 'none', border: 0, background: 'transparent', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: 6 } as const
-
 /**
- * Faixa de ícones (desktop, 64px, escura, cartão flutuante): botão de recolher o painel, os módulos (ladrilho 34×28 + rótulo de 10px; o ativo
- * ganha ladrilho vermelho), "Mais" (popover de 2 colunas) e, no pé, Convidar, tema e Configurações. Os módulos se reorganizam arrastando.
+ * Barra única de navegação. Desktop e tablet: coluna de vidro creme à esquerda (logo, cápsula com os módulos, espaços e tema).
+ * Celular: a mesma barra vira uma ilha flutuante embaixo, rolando para o lado. O botão de espaços abre a árvore (gaveta no tablet e no celular).
  */
-export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema }: Pick<PropsPainel, 'papel' | 'nome' | 'chatNaoLidas' | 'ordemInicio' | 'tema'>) {
+export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema, ...painel }: PropsPainel) {
   const caminho = usePathname()
   const atalhos = atalhosDoInicio(papel, chatNaoLidas)
-  const [abertoEm, setAbertoEm] = useState<string | null>(null)
-  const aberto = abertoEm === caminho ? 'mais' : null
   const [redesEm, setRedesEm] = useState<{ caminho: string; topo: number } | null>(null)
   const redesAberto = redesEm?.caminho === caminho ? redesEm : null
+  const [gavetaEm, setGavetaEm] = useState<string | null>(null)
+  const [forcaMais, setForcaMais] = useState<{ caminho: string; aberto: boolean } | null>(null)
   const emRedes = caminho === '/redes' || caminho.startsWith('/redes/')
-  const faixa = useRef<HTMLElement>(null)
-  const [recolhido, setRecolhido] = useState(false)
+  const dock = useRef<HTMLElement>(null)
   const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
   const porId = new Map(atalhos.map((a) => [a.id, a]))
-  porId.set('espacos', { id: 'espacos', href: '#espacos', rotulo: 'Espaços', curto: 'Espaços', Icone: Rocket })
   const soltosTopo = NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
   const agrupados = GRUPOS_FAIXA.flatMap((g) => g.itens).map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
   const emEspacos = /^\/(espacos|listas|pastas)(\/|$)/.test(caminho)
+  const emMais = agrupados.some((a) => ativoEm(a.href))
+  const maisAberto = forcaMais?.caminho === caminho ? forcaMais.aberto : emMais
   useEffect(() => {
-    if (!aberto && !redesAberto) return
-    const fecha = () => { setAbertoEm(null); setRedesEm(null) }
-    const fora = (e: MouseEvent) => { if (!faixa.current?.contains(e.target as Node)) fecha() }
+    if (!redesAberto) return
+    const fecha = () => setRedesEm(null)
+    const fora = (e: MouseEvent) => { if (!dock.current?.contains(e.target as Node)) fecha() }
     const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') fecha() }
     document.addEventListener('mousedown', fora)
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
-  }, [aberto, redesAberto])
-  useEffect(() => {
-    const ouvir = () => setRecolhido((r) => !r)
-    window.addEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
-    return () => window.removeEventListener(EVENTO_ALTERNAR_BARRA, ouvir)
-  }, [])
+  }, [redesAberto])
 
-  const item = ({ id, href, rotulo, contador }: Atalho) => {
-    const ativo = id === 'espacos' ? emEspacos : ativoEm(href)
-    const estilo = { position: 'relative', width: 56, height: 44, flex: 'none', border: 0, borderRadius: 10, background: 'transparent', color: ativo ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textDecoration: 'none' } as const
-    const conteudo = (
-      <>
-        <span className="rail-tile" data-ativo={ativo || undefined} style={{ position: 'relative', width: 44, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 120ms, box-shadow 120ms' }}>
-          <Ic n={ICONE_MS[id] ?? 'apps'} s={22} />
-          {!!contador && <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--rail)' }}>{contador > 99 ? '99+' : contador}</span>}
-        </span>
-      </>
-    )
-    return id === 'espacos' ? (
-      <button key={id} type="button" title={rotulo} onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} className="rail-item" style={estilo}>{conteudo}</button>
-    ) : (
-      <Link key={id} href={href} title={rotulo} draggable={false} aria-current={ativo ? 'page' : undefined} className="rail-item" style={estilo}>{conteudo}</Link>
+  const item = ({ id, href, rotulo, contador, Icone }: Atalho) => {
+    const ativo = ativoEm(href)
+    return (
+      <Link key={id} href={href} title={rotulo} aria-label={rotulo} draggable={false} aria-current={ativo ? 'page' : undefined} data-ativo={ativo || undefined} className="dock-item">
+        <Icone className="dock-ico" />
+        {!!contador && <span className="dock-ponto" aria-label={`${contador} não lidas`} />}
+      </Link>
     )
   }
   const config = porId.get('config')
+  const abrirEspacos = () => {
+    if (window.matchMedia('(min-width: 1024px)').matches) window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))
+    else setGavetaEm(caminho)
+  }
 
   return (
-    <nav ref={faixa} aria-label="Módulos" className="rail-nav sticky top-10 z-30 hidden h-[calc(100dvh-48px)] md:flex" style={{ width: 64, flex: 'none', background: 'var(--rail)', color: 'var(--rail-text)', borderRadius: 10, flexDirection: 'column', alignItems: 'center', padding: '6px 0 8px', gap: 4, overflowY: 'auto', scrollbarWidth: 'none' }}>
-      <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))} title={recolhido ? 'Mostrar barra lateral' : 'Recolher barra lateral'} className="rail-btn" style={{ ...botaoRail, width: 40, height: 32 }}><Ic n={recolhido ? 'left_panel_open' : 'left_panel_close'} s={18} /></button>
-      <div style={{ width: 28, height: 1, flex: 'none', background: 'rgba(255,255,255,.1)', margin: '2px 0 4px' }} />
-      <ListaOrdenavel className="flex flex-col items-center" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
-      <div style={{ position: 'relative' }}>
-        <button type="button" onClick={(e) => { setAbertoEm(null); setRedesEm(redesAberto ? null : { caminho, topo: e.currentTarget.getBoundingClientRect().top }) }} title="Redes sociais" aria-expanded={!!redesAberto} aria-haspopup="menu" className="rail-item" style={{ position: 'relative', width: 56, height: 44, flex: 'none', border: 0, borderRadius: 10, background: 'transparent', color: emRedes ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <span className="rail-tile" data-ativo={emRedes || undefined} style={{ width: 44, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="share" s={22} /></span>
-        </button>
-        {redesAberto && (
-          <div role="menu" aria-label="Redes sociais" style={{ position: 'fixed', left: 80, top: Math.max(56, Math.min(redesAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)), zIndex: 41, width: 260, padding: 4, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)', color: 'var(--text)' }}>
-            <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Redes sociais</p>
-            <Link href="/redes" role="menuitem" className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: caminho === '/redes' ? 600 : 500, background: caminho === '/redes' ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}><Ic n="grid_view" s={20} style={{ color: 'var(--text-2)' }} />Visão geral</Link>
-            <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 6px' }} />
-            {REDES.map((r) => {
-              const on = caminho === `/redes/${r.slug}`
-              return (
-                <Link key={r.slug} href={`/redes/${r.slug}`} role="menuitem" aria-current={on ? 'page' : undefined} className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: on ? 600 : 400, background: on ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}>
-                  <LogoRede slug={r.slug} tamanho={20} />
-                  <span style={{ flex: 1 }}>{r.nome}</span>
-                  {!r.conectada && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>em breve</span>}
-                </Link>
-              )
-            })}
-          </div>
+    <nav ref={dock} aria-label="Navegação" className="dock">
+      <Link href="/home" title="Home" aria-label="Home" className="dock-tile dock-logo"><Image src="/marca/simbolo.png" alt="" width={30} height={30} priority /></Link>
+      <div className="dock-pill">
+        <ListaOrdenavel className="dock-lista" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
+        <button type="button" onClick={(e) => { setRedesEm(redesAberto ? null : { caminho, topo: e.currentTarget.getBoundingClientRect().top }) }} title="Redes sociais" aria-label="Redes sociais" aria-expanded={!!redesAberto} aria-haspopup="menu" data-ativo={emRedes || undefined} className="dock-item"><Share2 className="dock-ico" /></button>
+        <button type="button" onClick={() => setForcaMais({ caminho, aberto: !maisAberto })} title={maisAberto ? 'Mostrar menos' : 'Mostrar mais módulos'} aria-label={maisAberto ? 'Mostrar menos' : 'Mostrar mais módulos'} aria-expanded={maisAberto} className="dock-sep dock-mais-btn"><ChevronDown className="dock-seta" style={{ transform: maisAberto ? 'rotate(180deg)' : undefined }} /></button>
+        <div className="dock-mais" data-aberto={maisAberto}>
+          <ListaOrdenavel className="dock-lista" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={agrupados.map((a) => ({ id: a.id, no: item(a) }))} />
+        </div>
+        {config && (
+          <>
+            <span className="dock-sep" aria-hidden="true" />
+            {item(config)}
+          </>
         )}
       </div>
-      <div style={{ position: 'relative' }}>
-        <button type="button" onClick={() => { setRedesEm(null); setAbertoEm(aberto ? null : caminho) }} title="Mais módulos" aria-expanded={!!aberto} aria-haspopup="menu" className="rail-btn" style={{ ...botaoRail, width: 44, height: 36 }}>
-          <Ic n="more_horiz" s={22} />
-        </button>
-        {aberto && (
-          <div role="menu" aria-label="Mais módulos" style={{ position: 'fixed', left: 80, bottom: 90, zIndex: 41, width: 320, padding: 4, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)', color: 'var(--text)' }}>
-            <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Mais módulos</p>
-            <ListaOrdenavel
-              className="grid grid-cols-2 gap-0.5"
-              cookie={COOKIE_ORDEM_INICIO}
-              ordemInicial={ordemInicio}
-              itens={agrupados.map(({ id, href, rotulo }) => ({
-                id,
-                no: (
-                  <Link href={href} draggable={false} role="menuitem" aria-current={ativoEm(href) ? 'page' : undefined} className="menu-item" style={{ height: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', borderRadius: 4, fontSize: 13, background: ativoEm(href) ? 'var(--bg-active)' : 'transparent', fontWeight: ativoEm(href) ? 600 : 400, color: 'var(--text)', textDecoration: 'none' }}>
-                    <Ic n={ICONE_MS[id] ?? 'apps'} s={16} style={{ color: 'var(--text-2)' }} />{rotulo}
-                  </Link>
-                ),
-              }))}
-            />
-          </div>
-        )}
+      <div className="dock-folga" />
+      <div className="dock-fim">
+        <button type="button" onClick={abrirEspacos} title="Espaços" aria-label="Espaços" data-ativo={emEspacos || undefined} className="dock-tile"><LayoutGrid className="dock-ico" /></button>
+        <AlternarTema inicial={tema} className="dock-tile" />
       </div>
-      <div style={{ flex: 1, minHeight: 8 }} />
-      {papel === 'admin' && <Link href="/config/usuarios" title="Convidar" className="rail-btn" style={{ ...botaoRail, width: 40, height: 36 }}><Ic n="person_add" s={18} /></Link>}
-      <AlternarTema inicial={tema} className="rail-btn" estilo={{ ...botaoRail, width: 40, height: 36 }} />
-      {config && <Link href={config.href} title="Configurações" className="rail-btn" style={{ ...botaoRail, width: 40, height: 36, color: ativoEm(config.href) ? '#fff' : 'inherit' }}><Ic n="settings" s={18} /></Link>}
+      {redesAberto && (
+        <div role="menu" aria-label="Redes sociais" className="dock-pop" style={{ top: Math.max(56, Math.min(redesAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)) }}>
+          <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Redes sociais</p>
+          <Link href="/redes" role="menuitem" className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: caminho === '/redes' ? 600 : 500, background: caminho === '/redes' ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}><Ic n="grid_view" s={20} style={{ color: 'var(--text-2)' }} />Visão geral</Link>
+          <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 6px' }} />
+          {REDES.map((r) => {
+            const on = caminho === `/redes/${r.slug}`
+            return (
+              <Link key={r.slug} href={`/redes/${r.slug}`} role="menuitem" aria-current={on ? 'page' : undefined} className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: on ? 600 : 400, background: on ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}>
+                <LogoRede slug={r.slug} tamanho={20} />
+                <span style={{ flex: 1 }}>{r.nome}</span>
+                {!r.conectada && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>em breve</span>}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+      <Sheet open={gavetaEm === caminho} onOpenChange={(aberta) => setGavetaEm(aberta ? caminho : null)}>
+        <SheetContent side="left" className="w-[320px] max-w-[88vw] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
+          <SheetTitle className="sr-only">Espaços</SheetTitle>
+          <PainelEspacos {...painel} papel={papel} chatNaoLidas={chatNaoLidas} ordemInicio={ordemInicio} tema={tema} />
+        </SheetContent>
+      </Sheet>
     </nav>
   )
 }
@@ -560,7 +542,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-10 z-30 hidden w-2 md:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[88px] top-10 z-30 hidden w-2 lg:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -568,9 +550,9 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-[calc(100dvh-48px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda md:flex ${
+        className={`hidden h-[calc(100dvh-48px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda lg:flex ${
           recolhida
-            ? `fixed bottom-2 left-[72px] top-10 z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            ? `fixed bottom-2 left-[88px] top-10 z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
             : 'sticky top-10 z-20 shrink-0'
         }`}
       >

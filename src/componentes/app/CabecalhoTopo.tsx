@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Suspense, useCallback, useState } from 'react'
 import { sair } from '@/app/(auth)/login/acoes'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/componentes/ui/sheet'
 import type { Aviso } from '@/servicos/avisos'
 import type { AlertaSistema } from '@/servicos/alertas-sistema'
 import { AlertasSistema } from './AlertasSistema'
@@ -13,7 +12,7 @@ import { MenuPerfil } from './MenuPerfil'
 import { AtalhosFixados } from './AtalhosFixados'
 import { AtalhosGlobais } from './AtalhosGlobais'
 import { Ic } from './Ic'
-import { PainelEspacos, type PropsPainel } from './BarraLateral'
+import type { PropsPainel } from './BarraLateral'
 import { EVENTO_ABRIR_IA } from './PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
 import { PaletaComandos } from './PaletaComandos'
@@ -24,7 +23,7 @@ type Props = { painel: PropsPainel; avisos: Aviso[]; naoLidos: number; euId: str
 
 /**
  * Barra do topo, fixa, de 40px: logo da empresa, busca central que abre a paleta ⌘K, atalhos (Minhas tarefas, Agenda) e avisos.
- * Configurações, tema e perfil ficam no pé da faixa de ícones. No celular abre o menu lateral.
+ * Configurações, tema e perfil ficam no pé da faixa de ícones. 
  */
 export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props) {
   const [paleta, setPaleta] = useState(false)
@@ -36,13 +35,6 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
   return (
     <header className="sticky top-0 z-30" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: 'var(--bg-frame)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1 1 0', minWidth: 0 }}>
-        <Sheet>
-          <SheetTrigger aria-label="Abrir menu" className="md:hidden" style={{ ...tb, width: 36, height: 36, color: 'var(--text)' }}><Ic n="menu" s={20} /></SheetTrigger>
-          <SheetContent side="left" className="w-[300px] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <PainelEspacos {...painel} comAtalhos />
-          </SheetContent>
-        </Sheet>
         <DropdownMenu>
           <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px 0 5px', borderRadius: 8, cursor: 'pointer', minWidth: 0 }}>
             <span style={{ width: 18, height: 18, flex: 'none', borderRadius: 5, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
