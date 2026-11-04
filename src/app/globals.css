@@ -519,10 +519,10 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 /* Barra única de navegação ("dock"): vidro creme, cápsula com os módulos, item ativo em preto. Desktop/tablet: coluna à esquerda; celular: ilha flutuante embaixo. */
 .dock { --dk-ink: #4a4435; --dk-ativo-bg: #141414; --dk-ativo-fg: #fff; --dk-glass: linear-gradient(165deg, rgba(255, 253, 244, .96), rgba(248, 240, 214, .88)); --dk-borda: rgba(255, 255, 255, .8); --dk-sombra: 0 12px 32px rgba(122, 92, 20, .16), 0 2px 6px rgba(122, 92, 20, .08), inset 0 1px 0 rgba(255, 255, 255, .9); }
 .app-ui[data-tema='escuro'] .dock { --dk-ink: #d8d2bf; --dk-ativo-bg: #f4efe0; --dk-ativo-fg: #161614; --dk-glass: linear-gradient(165deg, rgba(50, 47, 40, .92), rgba(30, 28, 24, .92)); --dk-borda: rgba(255, 255, 255, .1); --dk-sombra: 0 12px 32px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .06); }
-.dock { display: none; position: relative; z-index: 30; width: 64px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; color: var(--dk-ink); }
+.dock { display: none; position: relative; z-index: 30; width: 76px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 8px; padding: 10px 9px; color: var(--dk-ink); }
 @media (min-width: 768px) { .dock { display: flex; } }
 .dock-tile:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
-.dock-tile { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: transparent; color: var(--dk-ink); cursor: pointer; }
+.dock-tile { width: 100%; height: 50px; flex: none; display: flex; align-items: center; justify-content: center; border: 1px solid var(--dk-vidro-borda); border-radius: 18px; background: var(--dk-vidro); box-shadow: var(--dk-vidro-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); color: var(--dk-ink); cursor: pointer; }
 .dock-tile[data-ativo], .dock-item[data-ativo] { background: linear-gradient(135deg, rgba(255, 70, 74, .42), rgba(216, 13, 18, .28)); border: 1px solid rgba(255, 110, 114, .5); color: var(--dk-ativo-fg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 14px rgba(216, 13, 18, .3), 0 0 20px rgba(216, 13, 18, .38); -webkit-backdrop-filter: blur(10px) saturate(1.5); backdrop-filter: blur(10px) saturate(1.5); }
 .dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; overflow-y: auto; scrollbar-width: none; border-radius: 24px; border: 1px solid var(--dk-vidro-borda); background: var(--dk-vidro); box-shadow: var(--dk-vidro-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
 /* Vidro da cápsula de ícones e luz vermelha em vidro no item selecionado. */
@@ -531,7 +531,7 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 .dock-pill::-webkit-scrollbar { display: none; }
 .dock-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .dock-folga { flex: 1; min-height: 0; }
-.dock-fim { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.dock-fim { display: flex; width: 100%; flex-direction: column; gap: 8px; flex: none; }
 .dock-item { position: relative; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 120ms; }
 .dock-item:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
 .dock-ico { width: 22px; height: 22px; stroke-width: 1.5; }
