@@ -276,7 +276,7 @@ body:has(.app-ui) {
   --shadow-panel: -6px 0 20px rgba(17,17,19,.06); --skel: #ececef;
   --faixa-bg: #111113;
   /* Vidro e hachura do redesign (claro). */
-  --vidro-bg: rgba(255, 255, 255, .34); --vidro-borda: rgba(17, 17, 19, .09); --vidro-ativo: rgba(255, 255, 255, .8); --hachura: #d6d3cc;
+  --vidro-bg: rgba(255, 255, 255, .34); --vidro-borda: rgba(17, 17, 19, .09); --vidro-ativo: rgba(255, 255, 255, .8); --vidro-sombra: 0 10px 30px rgba(17, 17, 19, .10), inset 0 1px 0 rgba(255, 255, 255, .9); --hachura: #d6d3cc;
   --card-sheen: linear-gradient(transparent, transparent);
 }
 
@@ -342,12 +342,12 @@ body:has(.app-ui[data-tema='escuro']) {
   --shadow-panel: -8px 0 24px rgba(0,0,0,.4); --skel: #232326;
   --faixa-bg: #0a0a0b;
   /* Vidro e hachura do redesign (escuro). */
-  --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --hachura: #4a4a52;
+  --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --vidro-sombra: 0 10px 30px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .12); --hachura: #4a4a52;
   --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%);
 }
 
 /* Variante `dark:` do Tailwind (@custom-variant acima): mesmos valores do tema escuro, para componentes que usam `.dark`. */
-.dark { --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --hachura: #4a4a52; --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%); --client: #4d8ff0; --client-soft: #14233a; }
+.dark { --vidro-sombra: 0 10px 30px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .12); --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --vidro-sombra: 0 10px 30px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .12); --hachura: #4a4a52; --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%); --client: #4d8ff0; --client-soft: #14233a; }
 
 /* Escala do design (medidas do ClickUp): tamanhos em múltiplos de 4, raios e elevações 1–5. Usados pelos componentes novos. */
 :root {
@@ -536,34 +536,23 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro button,
 body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #111113; }
 
 /* Barra única de navegação ("dock"): vidro creme, cápsula com os módulos, item ativo em preto. Desktop/tablet: coluna à esquerda; celular: ilha flutuante embaixo. */
-.dock { --dk-ink: #4a4435; --dk-ativo-bg: #141414; --dk-ativo-fg: #fff; --dk-glass: linear-gradient(165deg, rgba(255, 253, 244, .96), rgba(248, 240, 214, .88)); --dk-borda: rgba(255, 255, 255, .8); --dk-sombra: 0 12px 32px rgba(122, 92, 20, .16), 0 2px 6px rgba(122, 92, 20, .08), inset 0 1px 0 rgba(255, 255, 255, .9); }
-.app-ui[data-tema='escuro'] .dock { --dk-ink: #d8d2bf; --dk-ativo-bg: #f4efe0; --dk-ativo-fg: #161614; --dk-glass: linear-gradient(165deg, rgba(50, 47, 40, .92), rgba(30, 28, 24, .92)); --dk-borda: rgba(255, 255, 255, .1); --dk-sombra: 0 12px 32px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .06); }
-.dock { display: none; position: relative; z-index: 30; width: 76px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 8px; padding: 10px 9px; color: var(--dk-ink); }
+/* Faixa de navegação (redesign 2026): 3 blocos de vidro de 64px (logo · módulos · avisos/perfil/tema/config), só ícones 44×44 raio 14. Ativo = ladrilho de vidro claro + ícone no acento. */
+.dock { --dk-ink: var(--rail-ic, #52525b); display: none; position: relative; z-index: 30; width: 72px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 8px; padding: 0 0 8px 8px; color: var(--dk-ink); }
+.app-ui .dock { --dk-ink: #52525b; }
+.app-ui[data-tema='escuro'] .dock { --dk-ink: #a8a8b0; }
 @media (min-width: 768px) { .dock { display: flex; } }
-.dock-tile:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
-.dock-tile { width: 100%; height: 50px; flex: none; display: flex; align-items: center; justify-content: center; border: 1px solid var(--dk-vidro-borda); border-radius: 18px; background: var(--dk-vidro); box-shadow: var(--dk-vidro-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); color: var(--dk-ink); cursor: pointer; }
-.dock-tile[data-ativo], .dock-item[data-ativo] { background: linear-gradient(135deg, rgba(255, 70, 74, .42), rgba(216, 13, 18, .28)); border: 1px solid rgba(255, 110, 114, .5); color: var(--dk-ativo-fg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 14px rgba(216, 13, 18, .3), 0 0 20px rgba(216, 13, 18, .38); -webkit-backdrop-filter: blur(10px) saturate(1.5); backdrop-filter: blur(10px) saturate(1.5); }
-.dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; overflow-y: auto; scrollbar-width: none; border-radius: 24px; border: 1px solid var(--dk-vidro-borda); background: var(--dk-vidro); box-shadow: var(--dk-vidro-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
-/* Vidro da cápsula de ícones e luz vermelha em vidro no item selecionado. */
-.dock { --dk-vidro: linear-gradient(165deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .5)); --dk-vidro-borda: rgba(255, 255, 255, .95); --dk-vidro-sombra: 0 8px 24px rgba(17, 17, 19, .1), 0 0 0 1px rgba(17, 17, 19, .06), inset 0 1px 0 rgba(255, 255, 255, .9); --dk-ativo-fg: #c40a0f; }
-.app-ui[data-tema='escuro'] .dock { --dk-vidro: linear-gradient(165deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)); --dk-vidro-borda: rgba(255, 255, 255, .14); --dk-vidro-sombra: 0 8px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .12); --dk-ativo-fg: #ffb3b5; }
+.dock-pill { width: 100%; min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border-radius: 32px; overflow-y: auto; scrollbar-width: none; background: var(--vidro-bg); border: 1px solid var(--vidro-borda); box-shadow: var(--vidro-sombra); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); }
 .dock-pill::-webkit-scrollbar { display: none; }
-.dock-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.dock-lista { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .dock-folga { flex: 1; min-height: 0; }
-.dock-fim { display: flex; width: 100%; flex-direction: column; gap: 8px; flex: none; }
-.dock-item { position: relative; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 120ms; }
-.dock-item:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
-.dock-ico { width: 22px; height: 22px; stroke-width: 1.5; }
-.dock-ponto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #e11d2e; box-shadow: 0 0 0 2px var(--bg-frame); }
-.dock-sep { flex: none; width: 24px; height: 1px; margin: 6px 0; background: color-mix(in srgb, var(--dk-ink) 22%, transparent); }
-.dock-mais-btn { height: 20px; width: 48px; margin: 4px 0; border: 0; display: flex; align-items: center; justify-content: center; position: relative; background: transparent; color: var(--dk-ink); cursor: pointer; }
-.dock-mais-btn::before { content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: color-mix(in srgb, var(--dk-ink) 22%, transparent); }
-.dock-seta { position: relative; width: 16px; height: 16px; padding: 0 2px; border-radius: 6px; background: var(--bg-frame); transition: transform 150ms; }
-.dock-mais { display: flex; flex-direction: column; align-items: center; }
-.dock-mais[data-aberto='false'] { display: none; }
 .dock-fixo { flex: none; }
+.dock-item { position: relative; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 180ms; }
+.dock-item:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); color: var(--text); }
+.dock-item[data-ativo] { background: var(--vidro-ativo); color: var(--tema-acento, #d80d12); box-shadow: 0 1px 6px rgba(17, 17, 19, .14), inset 0 1px 0 rgba(255, 255, 255, .7); }
 .dock-logo { width: 44px; height: 44px; }
-.dock-pop { position: fixed; left: 92px; z-index: 41; width: 260px; padding: 4px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--border); box-shadow: var(--shadow-pop); color: var(--text); }
+.dock-ico { width: 22px; height: 22px; stroke-width: 1.5; }
+.dock-ponto { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #d80d12; box-shadow: 0 0 0 2px var(--bg); }
+.dock-pop { position: fixed; left: 80px; z-index: 41; width: 260px; padding: 6px; border-radius: 16px; background: var(--bg-elev); border: 0; box-shadow: var(--shadow-pop); color: var(--text); }
 /* Celular: barra de baixo com rótulos e botão central da Emma (IA); "Mais" abre todos os módulos. */
 .dock-cel { display: none; }
 @media (max-width: 767px) {
@@ -737,3 +726,8 @@ button.ins-kpi:hover { border-color: var(--border-strong); }
 body:has(.app-ui) .controle { border-radius: 12px; border-color: transparent; background: var(--bg-subtle); }
 body:has(.app-ui) .controle:hover { background: var(--bg-hover); }
 .b-pill { border: 0; border-radius: 999px; background: var(--bg-subtle); }
+
+/* Topo: só a busca ⌘K centralizada (cápsula de 28px, fundo suave, sem contorno). */
+.busca-topo { flex: 0 1 360px; min-width: 160px; height: 28px; padding: 0 5px 0 10px; display: flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 14px; background: var(--bg-subtle); color: var(--text-3); cursor: text; transition: border-color 120ms; }
+.busca-topo:hover { border-color: var(--border-strong); }
+.busca-topo kbd { font: inherit; font-size: 11px; line-height: 1; padding: 3px 5px; border-radius: 8px; background: var(--bg); color: var(--text-2); }

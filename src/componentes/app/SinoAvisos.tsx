@@ -12,7 +12,7 @@ import type { Aviso } from '@/servicos/avisos'
 import { AtSign, TriangleAlert } from 'lucide-react'
 import { Ic } from './Ic'
 
-export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo' }: { avisos: Aviso[]; naoLidos: number; euId: string; /** `dock` = botão da barra de navegação (painel abre ao lado). */ variante?: 'topo' | 'dock' }) {
+export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo', ouvir = true }: { /** false = só mostra a lista (a outra cópia do sino já escuta e avisa em tempo real). */ ouvir?: boolean; avisos: Aviso[]; naoLidos: number; euId: string; /** `dock` = botão da barra de navegação (painel abre ao lado). */ variante?: 'topo' | 'dock' }) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(() => Date.now())
@@ -24,6 +24,7 @@ export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo' }: { avis
 
   // Novo aviso para esta pessoa: atualiza o layout e avisa na hora.
   useEffect(() => {
+    if (!ouvir) return
     const sb = criarClienteNavegador()
     const canal = sb
       .channel(`avisos-${euId}-${idCanal}`)
@@ -41,7 +42,7 @@ export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo' }: { avis
     return () => {
       void sb.removeChannel(canal)
     }
-  }, [euId, idCanal, router])
+  }, [euId, idCanal, router, ouvir])
 
   function abrir(a: Aviso) {
     setAberto(false)

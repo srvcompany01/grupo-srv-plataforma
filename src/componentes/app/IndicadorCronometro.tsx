@@ -20,11 +20,11 @@ export function IndicadorCronometro({ cronometro }: { cronometro: CronometroAtiv
   }, [ativo])
   if (!cronometro) return null
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-md border border-[#e2e2e4] bg-white px-2 py-1.5 text-legenda">
+    <div className="mb-2 flex h-8 items-center gap-2 rounded-xl bg-[var(--red-soft)] px-2 text-legenda">
       <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-perigo" />
       <Link href={`/tarefas/${cronometro.tarefaId}`} className="min-w-0 flex-1" title={cronometro.tarefaTitulo}>
-        <span className="block truncate font-medium text-[#292a2d]">{cronometro.tarefaTitulo || 'Tarefa'}</span>
-        <span className="font-mono tabular-nums text-[#65676b]">{formatarRelogio(segundosDecorridos(cronometro.inicio, agora))}</span>
+        <span className="block truncate font-medium text-[var(--red)]">{cronometro.tarefaTitulo || 'Tarefa'}</span>
+        <span className="font-mono tabular-nums text-[var(--red)]">{formatarRelogio(segundosDecorridos(cronometro.inicio, agora))}</span>
       </Link>
       <button
         disabled={pendente}

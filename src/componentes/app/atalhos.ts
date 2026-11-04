@@ -68,9 +68,10 @@ export const estaEm = (caminho: string, href: string) => caminho === href || cam
  * Barra única de navegação (a "dock"): os de uso diário ficam soltos; o resto abre pela setinha do divisor.
  * Módulo novo entra em atalhosDoInicio e aqui, em NO_TOPO ou em GRUPOS_FAIXA.
  */
-export const NO_TOPO = ['home', 'tarefas', 'agenda', 'chat', 'painel', 'documentos', 'quadros', 'time']
+export const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
+/** "Mais" (popover de 2 colunas): os módulos do documento e, no fim, os que a plataforma já tinha (nada some). */
 export const GRUPOS_FAIXA: { id: string; itens: string[] }[] = [
-  { id: 'mais', itens: ['agendamentos', 'reunioes', 'caixa', 'clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'formularios'] },
+  { id: 'mais', itens: ['clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'tarefas', 'agendamentos', 'reunioes', 'caixa'] },
 ]
 
 /** Nome do ícone (Material Symbols Rounded) de cada módulo, usado na paleta de comandos e no painel. */

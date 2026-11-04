@@ -379,7 +379,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[76px] top-10 z-30 hidden w-2 lg:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[72px] top-10 z-30 hidden w-2 lg:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -389,7 +389,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
         className={`hidden w-[var(--lat-w)] overflow-hidden lg:flex ${
           recolhida
-            ? `fixed bottom-2 left-[84px] top-12 z-40 h-auto rounded-[28px] bg-[var(--bg-elev)] shadow-[var(--shadow-pop)] transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            ? `fixed bottom-2 left-[80px] top-12 z-40 h-auto rounded-[28px] bg-[var(--bg-elev)] shadow-[var(--shadow-pop)] transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
             : 'relative z-20 h-full shrink-0'
         }`}
       >

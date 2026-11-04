@@ -5,10 +5,10 @@ it('lê modo e largura da barra com fallback seguro', async () => {
   expect(lerModoLateral('recolhida')).toBe('recolhida')
   expect(lerModoLateral('qualquer')).toBe('fixa')
   expect(lerModoLateral(undefined)).toBe('fixa')
-  expect(lerLarguraLateral(undefined)).toBe(240)
-  expect(lerLarguraLateral('abc')).toBe(240)
-  expect(lerLarguraLateral('9999')).toBe(440)
-  expect(limitarLargura(10)).toBe(208)
+  expect(lerLarguraLateral(undefined)).toBe(256)
+  expect(lerLarguraLateral('abc')).toBe(256)
+  expect(lerLarguraLateral('9999')).toBe(420)
+  expect(limitarLargura(10)).toBe(200)
 })
 
 it('lembra quais espaços e pastas estão recolhidos', async () => {
