@@ -521,17 +521,19 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 .app-ui[data-tema='escuro'] .dock { --dk-ink: #d8d2bf; --dk-ativo-bg: #f4efe0; --dk-ativo-fg: #161614; --dk-glass: linear-gradient(165deg, rgba(50, 47, 40, .92), rgba(30, 28, 24, .92)); --dk-borda: rgba(255, 255, 255, .1); --dk-sombra: 0 12px 32px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .06); }
 .dock { display: none; position: relative; z-index: 30; width: 64px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; color: var(--dk-ink); }
 @media (min-width: 768px) { .dock { display: flex; } }
-.dock-tile:hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
+.dock-tile:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
 .dock-tile { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: transparent; color: var(--dk-ink); cursor: pointer; }
-.dock-tile[data-ativo] { background: var(--dk-ativo-bg); color: var(--dk-ativo-fg); }
-.dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; overflow-y: auto; scrollbar-width: none; }
+.dock-tile[data-ativo], .dock-item[data-ativo] { background: linear-gradient(135deg, rgba(255, 70, 74, .42), rgba(216, 13, 18, .28)); border: 1px solid rgba(255, 110, 114, .5); color: var(--dk-ativo-fg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 14px rgba(216, 13, 18, .3), 0 0 20px rgba(216, 13, 18, .38); -webkit-backdrop-filter: blur(10px) saturate(1.5); backdrop-filter: blur(10px) saturate(1.5); }
+.dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; overflow-y: auto; scrollbar-width: none; border-radius: 24px; border: 1px solid var(--dk-vidro-borda); background: var(--dk-vidro); box-shadow: var(--dk-vidro-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
+/* Vidro da cápsula de ícones e luz vermelha em vidro no item selecionado. */
+.dock { --dk-vidro: linear-gradient(165deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .5)); --dk-vidro-borda: rgba(255, 255, 255, .95); --dk-vidro-sombra: 0 8px 24px rgba(17, 17, 19, .1), 0 0 0 1px rgba(17, 17, 19, .06), inset 0 1px 0 rgba(255, 255, 255, .9); --dk-ativo-fg: #c40a0f; }
+.app-ui[data-tema='escuro'] .dock { --dk-vidro: linear-gradient(165deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)); --dk-vidro-borda: rgba(255, 255, 255, .14); --dk-vidro-sombra: 0 8px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .12); --dk-ativo-fg: #ffb3b5; }
 .dock-pill::-webkit-scrollbar { display: none; }
 .dock-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .dock-folga { flex: 1; min-height: 0; }
 .dock-fim { display: flex; flex-direction: column; gap: 6px; flex: none; }
 .dock-item { position: relative; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 120ms; }
-.dock-item:hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
-.dock-item[data-ativo] { background: var(--dk-ativo-bg); color: var(--dk-ativo-fg); box-shadow: 0 6px 14px rgba(0, 0, 0, .28); }
+.dock-item:not([data-ativo]):hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
 .dock-ico { width: 22px; height: 22px; stroke-width: 1.5; }
 .dock-ponto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #e11d2e; box-shadow: 0 0 0 2px var(--bg-frame); }
 .dock-sep { flex: none; width: 24px; height: 1px; margin: 6px 0; background: color-mix(in srgb, var(--dk-ink) 22%, transparent); }
