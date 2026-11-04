@@ -1,133 +1,137 @@
 'use client'
 
-import { ExternalLink } from 'lucide-react'
-import { useState } from 'react'
-import { CartaoMetrica, type Metrica } from './Metricas'
+import { useState, type ReactNode } from 'react'
+import { Ic } from '@/componentes/app/Ic'
+import { CartaoMetrica, ChipDelta, type Metrica } from './Metricas'
 
-export type PostLista = { id: string; titulo: string; formato: string; engajamento: string; valor: string; link: string; imagem: string | null }
+export type PostLista = { id: string; titulo: string; formato: string; engajamento: number | null; alcance: number; link: string }
 export type Interacao = { nome: string; valor: number }
 
 const inteiro = new Intl.NumberFormat('pt-BR')
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
-const diaCurto = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const diaMes = (d: string) => `${Number(d.slice(8, 10))} ${MESES[Number(d.slice(5, 7)) - 1]}`
 
-/** Linha vermelha com área suave e o dia sob o mouse destacado num balão; passo de rótulos por quantidade de dias. */
-function Evolucao({ dias, valores, nome }: { dias: string[]; valores: number[]; nome: string }) {
-  const [sobre, setSobre] = useState<number | null>(null)
-  if (dias.length < 2) return <p className="py-8 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>Sem dados por dia no período.</p>
-  const L = 640
-  const A = 230
-  const M = { cima: 30, baixo: 24, esq: 52, dir: 10 }
-  const w = L - M.esq - M.dir
-  const h = A - M.cima - M.baixo
-  const menor = Math.min(...valores)
-  const maior = Math.max(...valores)
-  const base = Math.max(0, menor - (maior - menor) * 0.15)
-  const topo = maior + (maior - menor) * 0.05 || 1
-  const x = (i: number) => M.esq + (i / (dias.length - 1)) * w
-  const y = (v: number) => M.cima + h - ((v - base) / (topo - base || 1)) * h
-  const pts = valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')
-  const passo = Math.max(1, Math.round(dias.length / 5))
-  const cx = sobre !== null ? Math.min(Math.max(x(sobre), M.esq + 38), L - M.dir - 38) : 0
+const Secao = ({ children }: { children: ReactNode }) => <section className="ins-secao">{children}</section>
+
+/** Barras hachuradas com a bolinha vazada no topo; a barra do pico fica sólida em vermelho, com o valor num balão escuro. Mais de 31 dias viram 12 grupos. */
+function Barras({ dias, valores }: { dias: string[]; valores: number[] }) {
+  if (dias.length < 1) return <p className="py-8 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>Sem dados por dia no período.</p>
+  const grupos = dias.length > 31 ? 12 : dias.length
+  const passo = Math.ceil(dias.length / grupos)
+  const barras = Array.from({ length: grupos }, (_, g) => {
+    const ini = g * passo
+    const fatia = valores.slice(ini, ini + passo)
+    return { rotulo: diaMes(dias[ini]), valor: fatia.reduce((a, b) => a + b, 0) }
+  })
+  const maior = Math.max(1, ...barras.map((b) => b.valor))
+  const pico = barras.findIndex((b) => b.valor === maior)
+  const grade = [1, 0.75, 0.5, 0.25, 0]
   return (
-    <svg viewBox={`0 0 ${L} ${A}`} className="h-auto w-full" role="img" aria-label={`Evolução: ${nome}`} onMouseLeave={() => setSobre(null)}>
-      {[0, 0.25, 0.5, 0.75, 1].map((f) => {
-        const v = base + (topo - base) * f
-        return (
-          <g key={f}>
-            <line x1={M.esq} x2={L - M.dir} y1={y(v)} y2={y(v)} stroke="var(--ins-borda)" strokeDasharray="2 4" />
-            <text x={M.esq - 8} y={y(v) + 3} textAnchor="end" fontSize={10} fill="var(--ins-suave)">{inteiro.format(Math.round(v))}</text>
-          </g>
-        )
-      })}
-      {dias.map((d, i) => i % passo === 0 ? <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="var(--ins-suave)">{diaMes(d)}</text> : null)}
-      <polygon points={`${x(0)},${M.cima + h} ${pts} ${x(dias.length - 1)},${M.cima + h}`} fill="#d80d12" fillOpacity={0.1} />
-      <polyline points={pts} fill="none" stroke="#d80d12" strokeWidth={1.8} strokeLinejoin="round" />
-      {sobre !== null && (
-        <g pointerEvents="none">
-          <line x1={x(sobre)} x2={x(sobre)} y1={M.cima} y2={M.cima + h} stroke="#d80d12" strokeOpacity={0.35} strokeDasharray="3 3" />
-          <circle cx={x(sobre)} cy={y(valores[sobre])} r={3.5} fill="#fff" stroke="#d80d12" strokeWidth={1.8} />
-          <rect x={cx - 38} y={y(valores[sobre]) - 30} width={76} height={20} rx={5} fill="var(--ins-tinta)" />
-          <text x={cx} y={y(valores[sobre]) - 16} textAnchor="middle" fontSize={10.5} fontWeight={600} fill="var(--bg)">{diaCurto(dias[sobre])} · {numero.format(valores[sobre])}</text>
-        </g>
-      )}
-      {valores.map((_, i) => <rect key={dias[i]} x={x(i) - w / dias.length / 2} y={M.cima} width={w / dias.length} height={h} fill="transparent" onMouseEnter={() => setSobre(i)} />)}
-    </svg>
+    <div>
+      <div className="flex gap-2.5 px-1 pt-5">
+        <div className="relative flex-none" style={{ width: 48, height: 210 }}>
+          {grade.map((f) => <span key={f} className="absolute right-0 -translate-y-1/2 text-[11px] tabular-nums" style={{ top: `${(1 - f) * 100}%`, color: 'var(--ins-suave)' }}>{numero.format(maior * f)}</span>)}
+        </div>
+        <div className="flex min-w-0 flex-1 items-end" style={{ height: 210, gap: barras.length > 20 ? 4 : 8, paddingTop: 30 }}>
+          {barras.map((b, i) => (
+            <div key={i} className="relative flex h-full min-w-0 flex-1 items-end justify-center" title={`${b.rotulo}: ${inteiro.format(b.valor)}`}>
+              <div className="relative w-full" style={{ height: `${Math.max(4, (b.valor / maior) * 100)}%`, borderRadius: '10px 10px 4px 4px', background: i === pico ? 'linear-gradient(180deg, #e8262b, #d80d12)' : 'repeating-linear-gradient(135deg, var(--hachura) 0 2px, transparent 2px 6px)' }}>
+                <span className="absolute left-1/2 -ml-[5px] block h-2.5 w-2.5 rounded-full" style={{ top: -5, background: 'var(--bg)', border: `2px solid ${i === pico ? '#d80d12' : 'var(--text-3)'}` }} />
+                {i === pico && b.valor > 0 && <span className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 text-[11px] font-semibold tabular-nums" style={{ top: -34, height: 22, display: 'flex', alignItems: 'center', background: 'var(--primary)', color: 'var(--on-primary)' }}>{inteiro.format(b.valor)}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex px-1 pb-4 pt-1.5" style={{ paddingLeft: 58, gap: barras.length > 20 ? 4 : 8 }}>
+        {barras.map((b, i) => <span key={i} className="min-w-0 flex-1 truncate text-center text-[11px]" style={{ color: 'var(--ins-suave)' }}>{barras.length > 16 && i % 2 ? '' : b.rotulo}</span>)}
+      </div>
+    </div>
   )
 }
 
+type Ordem = { col: 'titulo' | 'alcance' | 'engajamento'; asc: boolean }
+
 /**
- * Corpo do Instagram no padrão de referência: cartões de métricas (clique escolhe a métrica do gráfico),
- * evolução em linha vermelha, "como as pessoas interagem" e a lista de posts de melhor desempenho.
+ * Corpo do Instagram no padrão do Claude Design: cartões de métrica (o clique escolhe a métrica do gráfico), evolução em barras
+ * hachuradas, "como as pessoas interagem" e a tabela de posts de melhor desempenho (colunas ordenáveis).
  */
-export function PainelInstagram({ metricas, dias, interacoes, totalInteracoes, posts }: { metricas: Metrica[]; dias: string[]; interacoes: Interacao[]; totalInteracoes: number; posts: PostLista[] }) {
+export function PainelInstagram({ saude, metricas, dias, interacoes, totalInteracoes, posts }: { saude: ReactNode; metricas: Metrica[]; dias: string[]; interacoes: Interacao[]; totalInteracoes: number; posts: PostLista[] }) {
   const comSerie = metricas.filter((m) => m.serie && m.serie.length === dias.length)
   const [id, setId] = useState(comSerie[0]?.id ?? '')
+  const [ordem, setOrdem] = useState<Ordem>({ col: 'alcance', asc: false })
   const atual = comSerie.find((m) => m.id === id) ?? comSerie[0]
   const maior = Math.max(1, ...interacoes.map((i) => i.valor))
+  const ordenados = [...posts].sort((a, b) => {
+    const va = ordem.col === 'titulo' ? a.titulo.toLowerCase() : ordem.col === 'alcance' ? a.alcance : (a.engajamento ?? -1)
+    const vb = ordem.col === 'titulo' ? b.titulo.toLowerCase() : ordem.col === 'alcance' ? b.alcance : (b.engajamento ?? -1)
+    return (va < vb ? -1 : va > vb ? 1 : 0) * (ordem.asc ? 1 : -1)
+  })
+  const ordenar = (col: Ordem['col']) => setOrdem((o) => ({ col, asc: o.col === col ? !o.asc : col === 'titulo' }))
+  const cab = (col: Ordem['col'], rotulo: string) => <button type="button" onClick={() => ordenar(col)} className="flex items-center gap-0.5 text-left">{rotulo}<Ic n="unfold_more" s={13} /></button>
+  const total = atual?.serie?.reduce((a, b) => a + b, 0) ?? 0
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="ins-faixa">
+        {saude}
         {metricas.map((m) => {
           const clicavel = !!m.serie && m.serie.length === dias.length
-          return <CartaoMetrica key={m.id} m={m} ativo={atual?.id === m.id} aoEscolher={clicavel ? () => setId(m.id) : undefined} />
+          return <CartaoMetrica key={m.id} m={m} dias={dias.length} ativo={atual?.id === m.id} aoEscolher={clicavel ? () => setId(m.id) : undefined} />
         })}
       </div>
       <div className="ins-principal">
-        <section>
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <div>
-              <h3 className="ins-titulo">Evolução{atual ? ` · ${atual.rotulo}` : ''}</h3>
-              <p className="ins-sub">Últimos {dias.length} dias · uma métrica por vez</p>
+        <Secao>
+          <div className="flex items-start gap-2 px-[18px] pt-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>{atual ? `${atual.rotulo} · evolução` : 'Evolução'}</p>
+              {atual && (
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-[30px] font-semibold leading-none tabular-nums">{inteiro.format(total)}</span>
+                  {atual.delta !== undefined && <ChipDelta delta={atual.delta} />}
+                  {atual.delta !== undefined && <span className="text-[12px]" style={{ color: 'var(--ins-suave)' }}>vs. últimos {dias.length} dias</span>}
+                </p>
+              )}
             </div>
-            <p className="ins-sub">Escolha a métrica nos cartões acima</p>
+            <Ic n="info" s={15} style={{ color: 'var(--ins-suave)' }} />
           </div>
-          {atual?.serie ? <Evolucao dias={dias} valores={atual.serie} nome={atual.rotulo} /> : <p className="py-8 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>A Meta não entrega nenhuma métrica por dia para esta conta no período.</p>}
-        </section>
-        <aside className="flex flex-col gap-6">
-          <section>
-            <div className="mb-3 flex items-baseline justify-between gap-2">
-              <div>
-                <h3 className="ins-titulo">Como as pessoas interagem</h3>
-                <p className="ins-sub">Soma dos últimos {dias.length} dias</p>
-              </div>
-              <p className="ins-titulo tabular-nums">{inteiro.format(totalInteracoes)}</p>
+          {atual?.serie ? <Barras dias={dias} valores={atual.serie} /> : <p className="px-4 py-10 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>A Meta não entrega nenhuma métrica por dia para esta conta no período.</p>}
+          <p className="px-[18px] pb-3 text-[12px]" style={{ color: 'var(--ins-suave)' }}>Escolha a métrica nos cartões acima.</p>
+        </Secao>
+        <div className="flex min-w-0 flex-col gap-3">
+          <Secao>
+            <div className="flex h-12 items-center gap-2 px-[18px] pt-2">
+              <div className="flex-1 leading-tight"><b className="text-[13px] font-semibold">Como as pessoas interagem</b><p className="text-[12px]" style={{ color: 'var(--ins-suave)' }}>Soma dos últimos {dias.length} dias</p></div>
+              <b className="text-[13px] tabular-nums">{inteiro.format(totalInteracoes)}</b>
             </div>
-            <ul className="flex flex-col gap-3.5">
+            <ul className="flex flex-col gap-3 px-[18px] pb-4 pt-3">
               {interacoes.map((i) => (
                 <li key={i.nome}>
-                  <p className="mb-1 flex items-center justify-between text-[12.5px]"><span>{i.nome}</span><span className="tabular-nums font-semibold">{inteiro.format(i.valor)}</span></p>
-                  <div className="ins-trilho"><span style={{ width: `${Math.max(2, (i.valor / maior) * 100)}%`, background: i.valor === maior ? '#d80d12' : 'var(--ins-tinta)' }} /></div>
+                  <p className="mb-1 flex text-[12px]"><span className="flex-1" style={{ color: 'var(--text-2)' }}>{i.nome}</span><b className="font-semibold tabular-nums">{inteiro.format(i.valor)}</b></p>
+                  <div className="ins-trilho"><span style={{ width: `${Math.max(2, (i.valor / maior) * 100)}%`, background: 'linear-gradient(90deg, #e08a00, #d80d12)' }} /></div>
                 </li>
               ))}
             </ul>
-          </section>
+          </Secao>
           {posts.length > 0 && (
-            <section>
-              <h3 className="ins-titulo mb-1">Posts de melhor desempenho</h3>
-              <ul>
-                {posts.map((p) => (
-                  <li key={p.id} className="ins-linha-post">
-                    <a href={p.link} target="_blank" rel="noreferrer" className="flex min-w-0 flex-1 items-center gap-2.5">
-                      {p.imagem && (
-                        // eslint-disable-next-line @next/next/no-img-element -- imagem do CDN do Instagram (URL que expira)
-                        <img src={p.imagem} alt="" className="h-9 w-9 flex-none rounded-md object-cover" loading="lazy" />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-medium">{p.titulo}</span>
-                        <span className="block truncate text-[11.5px]" style={{ color: 'var(--ins-suave)' }}>{p.formato} · {p.engajamento} engaj.</span>
-                      </span>
-                      <span className="text-[13px] font-semibold tabular-nums">{p.valor}</span>
-                      <ExternalLink className="h-3 w-3 flex-none" style={{ color: 'var(--ins-suave)' }} />
-                    </a>
-                  </li>
+            <Secao>
+              <div className="flex h-[52px] items-center px-[18px]"><span className="flex-1 text-[14px] font-semibold">Posts de melhor desempenho</span><span className="text-[12px]" style={{ color: 'var(--ins-suave)' }}>{dias.length} dias</span></div>
+              <div className="mx-2 mb-2 overflow-hidden rounded-2xl" style={{ background: 'var(--bg)' }}>
+                <div className="ins-tab-post h-[34px] px-3.5 text-[11px] font-medium" style={{ color: 'var(--ins-suave)' }}>{cab('titulo', 'Post')}{cab('alcance', 'Alcance')}{cab('engajamento', 'Engajamento')}</div>
+                {ordenados.map((p) => (
+                  <a key={p.id} href={p.link} target="_blank" rel="noreferrer" className="ins-tab-post ins-linha-post min-h-12 px-3.5 py-1.5 text-[13px]">
+                    <span className="flex min-w-0 flex-col pr-2 leading-snug"><span className="truncate">{p.titulo}</span><span className="text-[12px]" style={{ color: 'var(--ins-suave)' }}>{p.formato}</span></span>
+                    <b className="font-semibold tabular-nums">{numero.format(p.alcance)}</b>
+                    <span className="flex items-center gap-1.5">
+                      <span className="ins-saude ins-saude-fina" style={{ ['--nota' as string]: `${Math.min(100, (p.engajamento ?? 0) * 11)}%` }} />
+                      <span className="w-9 text-right text-[12px] tabular-nums">{p.engajamento === null ? '—' : `${p.engajamento.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}</span>
+                    </span>
+                  </a>
                 ))}
-              </ul>
-            </section>
+              </div>
+            </Secao>
           )}
-        </aside>
+        </div>
       </div>
     </div>
   )

@@ -46,21 +46,15 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
 
   return (
     <div className="ins">
-      <div className="ins-centro">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md border" style={{ borderColor: 'var(--ins-borda)' }}><Share2 className="h-4 w-4" strokeWidth={1.7} /></span>
-          <div>
-            <h1 className="flex flex-wrap items-center gap-2" style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.2 }}>Visão geral de Insights <span className="ins-pilula"><i />{periodo.atalho === 'hoje' ? 'dados de hoje, ao vivo' : 'atualiza a cada hora'}</span></h1>
-            <p className="ins-sub">Redes sociais orgânicas · {escolhido ? escolhido.nome : 'todos os clientes'} · {rotuloPeriodo(periodo)}</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <SeletorCliente social base={aba === 'geral' ? '/insights' : `/insights?aba=${aba}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
-          {aba === 'geral' && <SeletorPeriodo social base={escolhido ? `/insights?cliente=${escolhido.id}` : '/insights'} periodo={periodo} hoje={hoje} />}
-        </div>
-      </div>
-
+      <header className="ins-topo">
+        <Share2 className="h-4 w-4 flex-none" style={{ color: 'var(--text-2)' }} strokeWidth={1.7} />
+        <h1 className="text-[14px] font-semibold">Insights</h1>
+        <SeletorCliente social base={aba === 'geral' ? '/insights' : `/insights?aba=${aba}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
+        <span className="flex-1" />
+        <span className="hidden whitespace-nowrap text-[12px] xl:inline" style={{ color: 'var(--ins-suave)' }}>{periodo.atalho === 'hoje' ? 'dados de hoje, ao vivo' : 'atualiza a cada hora'}</span>
+        {aba === 'geral' && <SeletorPeriodo social base={escolhido ? `/insights?cliente=${escolhido.id}` : '/insights'} periodo={periodo} hoje={hoje} />}
+      </header>
+      <div className="ins-corpo">
       <nav className="flex flex-wrap gap-2" aria-label="Abas de insights">
         {([['geral', 'Métricas', null], ['organico', 'Comentários orgânicos', resumo?.organico], ['anuncios', 'Comentários de anúncios', resumo?.anuncio]] as const).map(([a, rotulo, n]) => (
           <Link key={a} href={linkAba(a)} aria-current={aba === a ? 'page' : undefined} className="ins-aba">
@@ -146,13 +140,14 @@ async function Panorama({ clientes, periodo }: { clientes: Cliente[]; periodo: P
     <CartaoSocial titulo="Panorama do Instagram" sub={`Todos os clientes com Instagram ligado · ${rotuloPeriodo(periodo)}`}>
       <div className="space-y-4">
         <GradeMetricas
+          dias={diasDoPeriodo(periodo).length}
           itens={[
-            { id: 'seguidores', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), icone: 'users', cor: '#d98a00', extra: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))} no período` : undefined },
-            { id: 'alcance', rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: 'radar', cor: '#4f46e5', extra: 'inclui anúncios' },
-            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: 'eye', cor: '#9333ea' },
-            { id: 'interacoes', rotulo: 'Interações', valor: numero.format(soma('interacoes')), icone: 'pointer', cor: '#16a34a' },
-            { id: 'posts', rotulo: 'Posts', valor: String(posts), icone: 'layout', cor: '#f59e0b' },
-            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, icone: 'check', cor: ok.length < linhas.length ? '#e5484d' : '#16a34a', extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : 'todos respondendo' },
+            { id: 'seguidores', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), icone: 'person_add', cor: '#e08a00', extra: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))} no período` : undefined },
+            { id: 'alcance', rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: 'donut_large', cor: '#1d6fe0', extra: 'inclui anúncios' },
+            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: 'visibility', cor: '#7c3aed' },
+            { id: 'interacoes', rotulo: 'Interações', valor: numero.format(soma('interacoes')), icone: 'touch_app', cor: '#16a34a' },
+            { id: 'posts', rotulo: 'Posts', valor: String(posts), icone: 'photo_library', cor: '#8b5cf6' },
+            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, icone: 'account_circle', cor: ok.length < linhas.length ? '#e5484d' : '#16a34a', extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : 'todos respondendo' },
           ]}
         />
         {linhas.length === 0 ? (

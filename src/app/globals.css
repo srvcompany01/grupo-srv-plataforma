@@ -731,3 +731,38 @@ body:has(.app-ui) .controle:hover { background: var(--bg-hover); }
 .busca-topo { flex: 0 1 360px; min-width: 160px; height: 28px; padding: 0 5px 0 10px; display: flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 14px; background: var(--bg-subtle); color: var(--text-3); cursor: text; transition: border-color 120ms; }
 .busca-topo:hover { border-color: var(--border-strong); }
 .busca-topo kbd { font: inherit; font-size: 11px; line-height: 1; padding: 3px 5px; border-radius: 8px; background: var(--bg); color: var(--text-2); }
+
+/* Insights no padrão do protótipo do Claude Design (seção 3): cabeçalho de 40px, pílulas de 56px, cartões de raio 24, barras hachuradas, tabela de posts. */
+.ins-topo { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 16px; }
+.ins-corpo { padding: 12px 20px 48px; display: flex; flex-direction: column; gap: 12px; }
+.ins-select { height: 26px; width: auto; max-width: 220px; padding: 0 6px 0 8px; border: 0; border-radius: 12px; background: var(--bg-subtle); color: var(--client); font-size: 13px; font-weight: 700; }
+.ins-seg { padding: 2px; border: 0; border-radius: 12px; background: var(--bg-active); gap: 0; }
+.ins-seg > button, .ins-seg > a { height: 22px; padding: 0 8px; border-radius: 8px; font-size: 12px; color: var(--text); }
+.ins-seg > [aria-pressed='true'], .ins-seg > [data-on] { background: var(--bg); color: var(--text); font-weight: 600; }
+.ins-redes { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.ins-rede { flex: none; height: 56px; gap: 10px; padding: 0 20px 0 12px; border: 1px solid transparent; border-radius: 999px; background: var(--bg-subtle); font-size: 13px; }
+.ins-rede[data-ativa] { border-color: transparent; background: var(--bg-active); box-shadow: none; }
+.ins-rede-logo { display: inline-flex; width: 32px; height: 32px; flex: none; overflow: hidden; border-radius: 50%; }
+.ins-faixa { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.ins-kpi { gap: 8px; padding: 16px 18px 12px; border: 1px solid transparent; border-radius: 24px; background: var(--card-sheen), var(--bg-subtle); }
+button.ins-kpi:hover { border-color: var(--border-strong); }
+.ins-kpi[data-ativo] { border-color: var(--text); }
+.ins-kpi-topo { gap: 8px; }
+.ins-rot { font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-2); }
+.ins-val { font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: 0; }
+.ins-delta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ins-suave); }
+.ins-chip { height: 20px; padding: 0 6px; border-radius: 8px; gap: 2px; background: var(--ok-soft); color: var(--ok); }
+.ins-chip[data-tom='ruim'] { background: var(--red-soft); color: var(--red); }
+.ins-spark { width: 100%; height: 36px; margin: 0; }
+.ins-spark-vazio { display: block; height: 36px; border-bottom: 2px solid; }
+.ins-saude { flex: 1; height: 8px; border-radius: 4px; background: repeating-linear-gradient(90deg, transparent 0 3px, var(--bg-subtle) 3px 5px), linear-gradient(90deg, #d80d12, #e08a00 50%, #16a34a); -webkit-mask-image: linear-gradient(90deg, #000 var(--nota), rgba(0, 0, 0, .18) var(--nota)); mask-image: linear-gradient(90deg, #000 var(--nota), rgba(0, 0, 0, .18) var(--nota)); }
+.ins-saude-fina { height: 6px; border-radius: 3px; }
+.ins-secao { min-width: 0; border-radius: 24px; background: var(--card-sheen), var(--bg-subtle); overflow: hidden; }
+.ins-principal { gap: 12px; padding-top: 0; }
+@media (min-width: 1100px) { .ins-principal { grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); } }
+.ins-trilho { height: 8px; border-radius: 4px; background: var(--bg-active); }
+.ins-trilho > span { border-radius: 4px; }
+.ins-tab-post { display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px; align-items: center; }
+.ins-linha-post { padding-top: 6px; padding-bottom: 6px; border-bottom: 0; color: inherit; text-decoration: none; background: var(--bg); }
+.ins-linha-post:hover { background: var(--bg-hover); }
+.ins-card { border-color: transparent; border-radius: 24px; background: var(--bg-subtle); }

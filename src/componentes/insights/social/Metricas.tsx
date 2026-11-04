@@ -1,55 +1,56 @@
 'use client'
 
-import { Activity, Eye, Heart, LayoutGrid, Link2, MousePointerClick, Radar, TrendingDown, TrendingUp, UserCheck, Users } from 'lucide-react'
-import type { ComponentType, ReactNode } from 'react'
-
-const ICONES: Record<string, ComponentType<{ className?: string; strokeWidth?: number }>> = { users: Users, radar: Radar, heart: Heart, pointer: MousePointerClick, eye: Eye, trending: TrendingUp, link: Link2, layout: LayoutGrid, check: UserCheck, activity: Activity }
-export type IconeMetrica = keyof typeof ICONES
+import { Ic } from '@/componentes/app/Ic'
+import type { ReactNode } from 'react'
 
 export type Metrica = {
   id: string
   rotulo: string
   valor: string
-  icone: IconeMetrica
+  /** Nome do ícone (Material Symbols Rounded). */
+  icone: string
   cor: string
   /** Variação contra o período anterior, em %. undefined = sem base de comparação. */
   delta?: number
-  /** Um valor por dia; com ele o cartão ganha o mini-gráfico e pode ser escolhido para o gráfico grande. */
+  /** Um valor por dia; com ele o cartão ganha a linha e pode ser escolhido para o gráfico grande. */
   serie?: number[]
   extra?: string
 }
 
 const pct = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
-/** Caminho em linhas retas (como nos gráficos de referência: linha fina e nervosa, sem suavizar). */
-export function Sparkline({ valores }: { valores: number[] }) {
-  if (valores.length < 2 || !valores.some((v) => v > 0)) return null
-  const W = 100
-  const H = 30
+/** Chip de variação: seta de tendência, valor e cor (verde sobe, vermelho desce). */
+export function ChipDelta({ delta }: { delta: number }) {
+  return <span className="ins-chip" data-tom={delta < 0 ? 'ruim' : 'bom'}><Ic n={delta < 0 ? 'trending_down' : 'trending_up'} s={12} />{pct(delta)}</span>
+}
+
+/** Linha fina do cartão, na cor da métrica (reta, como no protótipo). */
+export function Sparkline({ valores, cor }: { valores: number[]; cor: string }) {
+  if (valores.length < 2 || !valores.some((v) => v > 0)) return <span className="ins-spark-vazio" style={{ borderColor: cor }} />
+  const W = 120
+  const H = 36
   const menor = Math.min(...valores)
   const faixa = Math.max(...valores) - menor || 1
-  const pts = valores.map((v, i) => `${(i / (valores.length - 1)) * W},${H - 3 - ((v - menor) / faixa) * (H - 8)}`)
+  const pts = valores.map((v, i) => `${((i / (valores.length - 1)) * W).toFixed(1)},${(H - 3 - ((v - menor) / faixa) * (H - 6)).toFixed(1)}`)
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="ins-spark" aria-hidden="true">
-      <polyline points={pts.join(' ')} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <polyline points={pts.join(' ')} fill="none" stroke={cor} strokeWidth={1.8} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   )
 }
 
-/** Cartão de métrica: ícone colorido, rótulo em maiúsculas, variação em chip, valor e mini-gráfico. Clicável quando tem série. */
-export function CartaoMetrica({ m, ativo, aoEscolher }: { m: Metrica; ativo?: boolean; aoEscolher?: () => void }) {
-  const Icone = ICONES[m.icone] ?? Activity
-  const Seta = m.delta !== undefined && m.delta < 0 ? TrendingDown : TrendingUp
+/** Cartão de métrica: ícone colorido (24px, raio 8), rótulo, valor grande, chip de variação "vs. últimos N dias" e linha. Clicável quando tem série. */
+export function CartaoMetrica({ m, dias, ativo, aoEscolher }: { m: Metrica; dias: number; ativo?: boolean; aoEscolher?: () => void }) {
   const corpo = (
     <>
       <span className="ins-kpi-topo">
-        <span className="ins-ico" style={{ background: m.cor }}><Icone className="h-3.5 w-3.5" strokeWidth={2} /></span>
+        <span className="ins-ico" style={{ background: m.cor }}><Ic n={m.icone} s={14} fill /></span>
         <span className="ins-rot">{m.rotulo}</span>
-        {m.delta !== undefined && <span className="ins-chip" data-tom={m.delta < 0 ? 'ruim' : 'bom'}><Seta className="h-3 w-3" strokeWidth={2.2} />{pct(m.delta)}</span>}
+        <Ic n="info" s={15} style={{ color: 'var(--ins-suave)' }} />
       </span>
       <span className="ins-val">{m.valor}</span>
-      {m.extra && <span className="ins-ext">{m.extra}</span>}
-      {m.serie && <span style={{ color: m.id === 'seguidores' ? '#d98a00' : 'var(--ins-tinta)' }}><Sparkline valores={m.serie} /></span>}
+      {m.delta !== undefined ? <span className="ins-delta"><ChipDelta delta={m.delta} /><span>vs. últimos {dias} dias</span></span> : m.extra ? <span className="ins-ext">{m.extra}</span> : null}
+      {m.serie ? <Sparkline valores={m.serie} cor={m.cor} /> : null}
     </>
   )
   return aoEscolher ? (
@@ -59,6 +60,23 @@ export function CartaoMetrica({ m, ativo, aoEscolher }: { m: Metrica; ativo?: bo
   )
 }
 
-export function GradeMetricas({ itens, children }: { itens: Metrica[]; children?: ReactNode }) {
-  return <div className="ins-faixa">{itens.map((m) => <CartaoMetrica key={m.id} m={m} />)}{children}</div>
+const ROTULO_SAUDE = { bom: 'Bom', atencao: 'Atenção', ruim: 'Ruim', neutro: 'Info' } as const
+
+/** "Saúde da conta": nota de 0 a 100 com barra segmentada em degradê vermelho → âmbar → verde e o selo do tom. */
+export function CartaoSaude({ nota, tom, dias }: { nota: number | null; tom: keyof typeof ROTULO_SAUDE; dias: number }) {
+  return (
+    <div className="ins-kpi" title="Média de engajamento, alcance por post, frequência de posts e crescimento de seguidores">
+      <span className="ins-kpi-topo"><span className="ins-rot" style={{ fontSize: 13, textTransform: 'none', letterSpacing: 0, fontWeight: 400, color: 'var(--text-2)' }}>Saúde da conta</span><Ic n="info" s={15} style={{ color: 'var(--ins-suave)' }} /></span>
+      <span className="ins-val">{nota ?? '—'}</span>
+      <span className="ins-delta"><span>últimos {dias} dias</span></span>
+      <span className="mt-1 flex items-center gap-2">
+        <span className="ins-saude" style={{ ['--nota' as string]: `${nota ?? 0}%` }} />
+        {nota !== null && <span className="ins-selo" data-tom={tom === 'bom' ? undefined : tom}>{ROTULO_SAUDE[tom]}</span>}
+      </span>
+    </div>
+  )
+}
+
+export function GradeMetricas({ itens, dias, children }: { itens: Metrica[]; dias: number; children?: ReactNode }) {
+  return <div className="ins-faixa">{children}{itens.map((m) => <CartaoMetrica key={m.id} m={m} dias={dias} />)}</div>
 }

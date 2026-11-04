@@ -248,3 +248,19 @@ export function separarSeguidores(a: { ganhos: number; perdidos: number; pagos: 
     pctPagos: pagos === null || !a.ganhos ? null : Math.min(100, (pagos / a.ganhos) * 100),
   }
 }
+
+/**
+ * Saúde da conta (0 a 100): média de quatro sinais que a plataforma já classifica em bom/atenção/ruim — engajamento dos posts,
+ * alcance por post sobre a base, frequência de posts e crescimento de seguidores (bom = 100, atenção = 65, ruim = 30).
+ * Sinal sem dado (neutro) fica fora da média. Sem nenhum sinal, não há nota.
+ */
+export function saudeDaConta(ig: Pick<ResumoInstagram, 'posts' | 'seguidores' | 'novosSeguidores'>, diasNoPeriodo: number): { nota: number; tom: Tom } | null {
+  const o = metricasOrganicas(ig)
+  const eng = engajamentoOrganico(ig)
+  const porSemana = (ig.posts.length / Math.max(1, diasNoPeriodo)) * 7
+  const tons: Tom[] = [eng === null ? 'neutro' : tomEngajamento(eng), o.posts ? tomAlcanceBase(o.alcance / o.posts, ig.seguidores) : 'neutro', tomFrequencia(porSemana), tomVariacao(ig.novosSeguidores)]
+  const pontos = tons.flatMap((t) => (t === 'bom' ? [100] : t === 'atencao' ? [65] : t === 'ruim' ? [30] : []))
+  if (!pontos.length) return null
+  const nota = Math.round(pontos.reduce((a, b) => a + b, 0) / pontos.length)
+  return { nota, tom: nota >= 75 ? 'bom' : nota >= 50 ? 'atencao' : 'ruim' }
+}
