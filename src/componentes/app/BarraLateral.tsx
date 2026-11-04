@@ -31,6 +31,8 @@ import {
   ChevronDown,
   LayoutGrid,
   Share2,
+  Sparkles,
+  Menu,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -45,6 +47,8 @@ import { Ic } from './Ic'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
+import { EVENTO_ABRIR_IA } from './PainelIA'
+import { papelPodeUsarIA } from '@/ia/acesso'
 import { DestinosMover, LinhaNavegacao, type DestinoMover, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
@@ -155,6 +159,8 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema, 
   }
 
   return (
+    <>
+    <DockCelular atalhos={atalhos} ativoEm={ativoEm} caminho={caminho} papel={papel} tema={tema} aoEspacos={() => setGavetaEm(caminho)} />
     <nav ref={dock} aria-label="Navegação" className="dock">
       <Link href="/home" title="Home" aria-label="Home" className="dock-tile dock-logo"><Image src="/marca/simbolo.png" alt="" width={30} height={30} priority /></Link>
       <div className="dock-pill">
@@ -197,6 +203,51 @@ export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema, 
         <SheetContent side="left" className="w-[320px] max-w-[88vw] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
           <SheetTitle className="sr-only">Espaços</SheetTitle>
           <PainelEspacos {...painel} papel={papel} chatNaoLidas={chatNaoLidas} ordemInicio={ordemInicio} tema={tema} />
+        </SheetContent>
+      </Sheet>
+    </nav>
+    </>
+  )
+}
+
+const NA_BARRA_CEL = ['home', 'tarefas', 'chat']
+
+/** Barra de baixo do celular: Home, Tarefas, botão central da Emma (IA), Chat e Mais (todos os módulos, redes, espaços e tema). */
+function DockCelular({ atalhos, ativoEm, caminho, papel, tema, aoEspacos }: { atalhos: Atalho[]; ativoEm: (href: string) => boolean; caminho: string; papel: string; tema: ModoTema; aoEspacos: () => void }) {
+  const [maisEm, setMaisEm] = useState<string | null>(null)
+  const porId = new Map(atalhos.map((a) => [a.id, a]))
+  const fixos = NA_BARRA_CEL.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
+  const comIA = papelPodeUsarIA(papel)
+  const botao = ({ id, href, curto, contador, Icone }: Atalho) => {
+    const ativo = ativoEm(href)
+    return (
+      <Link key={id} href={href} aria-current={ativo ? 'page' : undefined} data-ativo={ativo || undefined} className="dock-cel-item">
+        <span className="dock-cel-ico"><Icone className="dock-ico" />{!!contador && <span className="dock-ponto" aria-label={`${contador} não lidas`} />}</span>
+        {curto}
+      </Link>
+    )
+  }
+  const [home, tarefas, chat] = fixos
+  return (
+    <nav aria-label="Navegação" className="dock-cel">
+      {home && botao(home)}
+      {tarefas && botao(tarefas)}
+      {comIA && <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} aria-label="Abrir a Emma, assistente" title="Emma, a assistente" className="dock-cel-centro"><Sparkles size={26} strokeWidth={1.6} /></button>}
+      {chat && botao(chat)}
+      <button type="button" onClick={() => setMaisEm(caminho)} aria-label="Mais" className="dock-cel-item" aria-haspopup="dialog">
+        <span className="dock-cel-ico"><Menu className="dock-ico" /></span>Mais
+      </button>
+      <Sheet open={maisEm === caminho} onOpenChange={(aberta) => setMaisEm(aberta ? caminho : null)}>
+        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl border-t border-lat-borda bg-lat-bg p-4 pb-8 text-lat-fg">
+          <SheetTitle className="mb-3 text-base font-semibold">Todos os módulos</SheetTitle>
+          <div className="dock-cel-grade">
+            {atalhos.map(({ id, href, rotulo, Icone }) => (
+              <Link key={id} href={href} data-ativo={ativoEm(href) || undefined}><Icone className="dock-ico" />{rotulo}</Link>
+            ))}
+            <Link href="/redes" data-ativo={caminho.startsWith('/redes') || undefined}><Share2 className="dock-ico" />Redes sociais</Link>
+            <button type="button" onClick={aoEspacos}><LayoutGrid className="dock-ico" />Espaços</button>
+            <AlternarTema inicial={tema} comRotulo />
+          </div>
         </SheetContent>
       </Sheet>
     </nav>
