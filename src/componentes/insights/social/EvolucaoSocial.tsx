@@ -1,58 +1,79 @@
 'use client'
 
 import { useState } from 'react'
-import { caminhoSuave } from './Social'
 
 type Metrica = { id: string; nome: string; valores: number[] }
 
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+const inteiro = new Intl.NumberFormat('pt-BR')
 const diaCurto = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
 
-/** "Evolução": uma métrica por vez (seletor), área suave em laranja e o pico do período destacado numa etiqueta. */
+/**
+ * Gráfico de barras hachuradas com uma bolinha vazada no topo; a barra em foco (a de maior valor ou a que está sob o mouse)
+ * fica sólida em verde com um balão do valor. Uma métrica por vez, escolhida no seletor.
+ */
 export function EvolucaoSocial({ dias, metricas }: { dias: string[]; metricas: Metrica[] }) {
   const [id, setId] = useState(metricas[0]?.id ?? '')
+  const [sobre, setSobre] = useState<number | null>(null)
   const m = metricas.find((x) => x.id === id) ?? metricas[0]
-  if (!m || dias.length < 2) return <p className="py-8 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>Sem dados por dia no período.</p>
+  if (!m || dias.length < 1) return <p className="py-8 text-center text-[13px]" style={{ color: 'var(--ins-suave)' }}>Sem dados por dia no período.</p>
   const L = 640
-  const A = 210
-  const M = { cima: 26, baixo: 24, esq: 44, dir: 10 }
+  const A = 240
+  const M = { cima: 34, baixo: 26, esq: 44, dir: 8 }
   const w = L - M.esq - M.dir
   const h = A - M.cima - M.baixo
   const maior = Math.max(1, ...m.valores)
-  const x = (i: number) => M.esq + (i / (dias.length - 1)) * w
+  const n = dias.length
+  const passoX = w / n
+  const largura = Math.max(3, passoX - Math.min(6, passoX * 0.3))
+  const cx = (i: number) => M.esq + passoX * i + passoX / 2
   const y = (v: number) => M.cima + h - (v / maior) * h
-  const pts = m.valores.map((v, i): [number, number] => [x(i), y(v)])
-  const linha = caminhoSuave(pts)
   const pico = m.valores.indexOf(Math.max(...m.valores))
-  const passo = Math.max(1, Math.ceil(dias.length / 7))
+  const foco = sobre ?? (m.valores[pico] > 0 ? pico : null)
+  const passo = Math.max(1, Math.ceil(n / 8))
+  const soma = m.valores.reduce((s, v) => s + v, 0)
   return (
     <div>
-      <div className="mb-2 flex items-center justify-end gap-2">
-        <span className="text-[10.5px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ins-suave)' }}>Métrica</span>
-        <select value={m.id} onChange={(e) => setId(e.target.value)} className="ins-select" style={{ height: 32 }} aria-label="Métrica do gráfico">
-          {metricas.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
-        </select>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="ins-grande">{inteiro.format(soma)}</p>
+          <p className="ins-sub">soma dos dias no período</p>
+        </div>
+        <label className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ins-suave)' }}>
+          Métrica
+          <select value={m.id} onChange={(e) => setId(e.target.value)} className="ins-select" aria-label="Métrica do gráfico">
+            {metricas.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          </select>
+        </label>
       </div>
-      <svg viewBox={`0 0 ${L} ${A}`} className="h-auto w-full" role="img" aria-label={`Evolução: ${m.nome}`}>
-        <defs><linearGradient id="evo-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ef6a1a" stopOpacity={0.3} /><stop offset="100%" stopColor="#ef6a1a" stopOpacity={0} /></linearGradient></defs>
+      <svg viewBox={`0 0 ${L} ${A}`} className="h-auto w-full" role="img" aria-label={`Gráfico: ${m.nome} por dia`} onMouseLeave={() => setSobre(null)}>
+        <defs>
+          <pattern id="evo-hach" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--ins-hach-a)" /><line x1="0" y1="0" x2="0" y2="6" stroke="var(--ins-hach-b)" strokeWidth="2.2" /></pattern>
+        </defs>
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
-            <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="var(--ins-borda)" strokeDasharray="3 5" />
+            <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="var(--ins-borda)" strokeDasharray="2 4" />
             <text x={M.esq - 8} y={y(maior * f) + 3} textAnchor="end" fontSize={10} fill="var(--ins-suave)">{numero.format(maior * f)}</text>
           </g>
         ))}
-        {dias.map((d, i) => i % passo === 0 && <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="var(--ins-suave)">{diaCurto(d)}</text>)}
-        <path d={`${linha} L${x(dias.length - 1)},${M.cima + h} L${x(0)},${M.cima + h} Z`} fill="url(#evo-area)" />
-        <path d={linha} fill="none" stroke="#ef6a1a" strokeWidth={2.2} strokeLinecap="round" />
-        {m.valores[pico] > 0 && (
-          <g>
-            <line x1={x(pico)} x2={x(pico)} y1={y(m.valores[pico]) + 4} y2={M.cima + h} stroke="#ef6a1a" strokeOpacity={0.35} strokeDasharray="3 4" />
-            <circle cx={x(pico)} cy={y(m.valores[pico])} r={4} fill="#fff" stroke="#ef6a1a" strokeWidth={2} />
-            <rect x={Math.min(Math.max(x(pico) - 26, M.esq), L - M.dir - 52)} y={y(m.valores[pico]) - 24} width={52} height={18} rx={9} fill="#ef6a1a" />
-            <text x={Math.min(Math.max(x(pico), M.esq + 26), L - M.dir - 26)} y={y(m.valores[pico]) - 11.5} textAnchor="middle" fontSize={10.5} fontWeight={700} fill="#fff">{numero.format(m.valores[pico])}</text>
+        {dias.map((d, i) => i % passo === 0 && <text key={d} x={cx(i)} y={A - 8} textAnchor="middle" fontSize={10} fill="var(--ins-suave)">{diaCurto(d)}</text>)}
+        {m.valores.map((v, i) => {
+          const noFoco = foco === i
+          const topo = y(v)
+          return (
+            <g key={dias[i]} onMouseEnter={() => setSobre(i)}>
+              <rect x={cx(i) - passoX / 2} y={M.cima} width={passoX} height={h} fill="transparent" />
+              <rect x={cx(i) - largura / 2} y={topo} width={largura} height={Math.max(2, M.cima + h - topo)} rx={2} fill={noFoco ? 'var(--ins-acc)' : 'url(#evo-hach)'} />
+              {!noFoco && n <= 31 && v > 0 && <circle cx={cx(i)} cy={topo - 1} r={3} fill="var(--bg)" stroke="var(--ins-suave)" strokeWidth={1.2} />}
+            </g>
+          )
+        })}
+        {foco !== null && (
+          <g pointerEvents="none">
+            <rect x={Math.min(Math.max(cx(foco) - 30, M.esq), L - M.dir - 60)} y={y(m.valores[foco]) - 28} width={60} height={20} rx={4} fill="var(--ins-tinta)" />
+            <text x={Math.min(Math.max(cx(foco), M.esq + 30), L - M.dir - 30)} y={y(m.valores[foco]) - 14.5} textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--bg)">{numero.format(m.valores[foco])}</text>
           </g>
         )}
-        {m.valores.map((v, i) => <rect key={dias[i]} x={x(i) - w / dias.length / 2} y={M.cima} width={w / dias.length} height={h} fill="transparent"><title>{`${diaCurto(dias[i])}: ${numero.format(v)}`}</title></rect>)}
       </svg>
     </div>
   )

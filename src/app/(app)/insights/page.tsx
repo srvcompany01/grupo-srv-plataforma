@@ -1,18 +1,18 @@
-import { Eye, Heart, LayoutGrid, MapPin, MessageCircle, Radar, Share2, UserCheck, Users } from 'lucide-react'
+import { MapPin, MessageCircle, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
-import { BlocoAnalise } from '@/componentes/insights/BlocoAnalise'
 import { AtualizarComentarios, ListaComentarios } from '@/componentes/insights/ComentariosRedes'
 import { InstagramSocial } from '@/componentes/insights/social/InstagramSocial'
-import { CartaoSocial, GradeKpis } from '@/componentes/insights/social/Social'
+import { CartaoSocial, FaixaKpis } from '@/componentes/insights/social/Social'
+import type { Explicacao } from '@/componentes/insights/social/ComoCalculamos'
 import { LogoRede } from '@/componentes/redes/LogoRede'
 import type { SlugRede } from '@/dominio/redes-sociais'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
-import { analisarOrganico, engajamento, type ResumoInstagram } from '@/dominio/insights'
+import { engajamento, type ResumoInstagram } from '@/dominio/insights'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { seguidoresPagosNoPeriodo } from '@/servicos/meta-anuncios'
 import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
@@ -26,6 +26,7 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 // O botão "Atualizar agora" dos comentários lê a Meta de todos os clientes.
 export const maxDuration = 300
 
+const ex = (formula: string): Explicacao => ({ formula, fonte: 'API do Instagram (Meta)', atualizado: 'a cada hora' })
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
@@ -55,13 +56,14 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
   const linkAba = (a: string, f?: string) => `/insights?${[a !== 'geral' ? `aba=${a}` : '', escolhido ? `cliente=${escolhido.id}` : '', f && f !== 'todos' ? `filtro=${f}` : ''].filter(Boolean).join('&')}`.replace(/\?$/, '')
 
   return (
-    <div className="page-shell ins" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="ins">
+      <div className="ins-centro">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: 'var(--ins-acc-suave)', color: 'var(--ins-acc)' }}><Share2 className="h-5 w-5" strokeWidth={1.7} /></span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-md border" style={{ borderColor: 'var(--ins-borda)' }}><Share2 className="h-4 w-4" strokeWidth={1.7} /></span>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 400, letterSpacing: '-.02em', lineHeight: 1.1 }}>Insights</h1>
-            <p className="ins-sub">Redes sociais orgânicas · todos os clientes</p>
+            <h1 className="flex flex-wrap items-center gap-2" style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.2 }}>Visão geral de Insights <span className="ins-pilula"><i />{periodo.atalho === 'hoje' ? 'dados de hoje, ao vivo' : 'atualiza a cada hora'}</span></h1>
+            <p className="ins-sub">Redes sociais orgânicas · {escolhido ? escolhido.nome : 'todos os clientes'} · {rotuloPeriodo(periodo)}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -75,7 +77,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
           <Link key={a} href={linkAba(a)} aria-current={aba === a ? 'page' : undefined} className="ins-aba">
             {a !== 'geral' && <MessageCircle className="h-3.5 w-3.5" />}{rotulo}
             {n && n.alertas > 0 && <span className="rounded-md bg-perigo px-1.5 text-micro font-bold text-claro" title="Negativos ou agressivos sem decisão">{n.alertas}</span>}
-            {n && n.semResposta > 0 && <span className="rounded-md px-1.5 text-micro font-semibold" style={{ background: 'rgba(0,0,0,.1)' }} title="Sem resposta">{n.semResposta}</span>}
+            {n && n.semResposta > 0 && <span className="rounded-md px-1.5 text-micro font-semibold" style={{ background: 'var(--bg-active)' }} title="Sem resposta">{n.semResposta}</span>}
           </Link>
         ))}
       </nav>
@@ -83,7 +85,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
       <div className="flex flex-wrap gap-2">
         {PLATAFORMAS.map((p) => (
           <span key={p.nome} className="ins-rede" data-ativa={p.ativa || undefined} data-breve={!p.ativa || undefined}>
-            {p.slug ? <LogoRede slug={p.slug} tamanho={26} /> : <span className="h-[26px] w-[26px] rounded-md" style={{ background: p.cor }} aria-hidden />}
+            {p.slug ? <LogoRede slug={p.slug} tamanho={24} /> : <span className="h-[24px] w-[24px] rounded" style={{ background: p.cor }} aria-hidden />}
             <span><span className="font-semibold">{p.nome}</span><small>{p.situacao}</small></span>
           </span>
         ))}
@@ -120,6 +122,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
           <Panorama clientes={clientes} periodo={periodo} />
         </Suspense>
       )}
+      </div>
     </div>
   )
 }
@@ -142,12 +145,6 @@ async function DetalheInstagram({ cliente, periodo }: { cliente: Cliente; period
     <>
       <InstagramSocial ig={ig} dias={dias} rotuloPeriodo={rotuloPeriodo(periodo)} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
       {periodo.atalho === 'hoje' && <p className="ins-sub">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}
-      <CartaoSocial titulo="Insights e recomendações" sub="O que os números mostram e o que fazer no orgânico">
-        <div className="space-y-2">
-          <BlocoAnalise analise={analisarOrganico(ig, dias.length)} />
-          <p className="ins-sub">Para cruzar com o tráfego pago, veja o relatório na <Link href={`/clientes/${cliente.id}`} className="font-semibold hover:underline" style={{ color: 'var(--ins-acc)' }}>página do cliente</Link>.</p>
-        </div>
-      </CartaoSocial>
     </>
   )
 }
@@ -163,14 +160,14 @@ async function Panorama({ clientes, periodo }: { clientes: Cliente[]; periodo: P
   return (
     <CartaoSocial titulo="Panorama do Instagram" sub={`Todos os clientes com Instagram ligado · ${rotuloPeriodo(periodo)}`}>
       <div className="space-y-4">
-        <GradeKpis
+        <FaixaKpis
           itens={[
-            { id: 'seg', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), chip: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))}` : undefined, tom: soma('novosSeguidores') > 0 ? 'bom' : soma('novosSeguidores') < 0 ? 'ruim' : undefined, extra: 'saldo no período', icone: Users, cor: '#ef6a1a' },
-            { id: 'alc', rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: Radar, cor: '#2a78d6' },
-            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: Eye, cor: '#6250d6' },
-            { id: 'int', rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: 'alcance da conta inclui anúncios', icone: Heart, cor: '#d6336c' },
-            { id: 'posts', rotulo: 'Posts', valor: String(posts), icone: LayoutGrid, cor: '#eda100' },
-            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : undefined, tom: ok.length < linhas.length ? 'ruim' : undefined, icone: UserCheck, cor: '#1d9a5b' },
+            { id: 'seg', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), chip: soma('novosSeguidores') ? { valor: `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))}`, sentido: soma('novosSeguidores') > 0 ? 'sobe' : 'desce', tom: soma('novosSeguidores') > 0 ? 'bom' : 'ruim', texto: ' no período' } : undefined, explicacao: ex('soma dos seguidores de cada cliente com Instagram ligado'), foco: true },
+            { id: 'alc', rotulo: 'Alcance', valor: numero.format(soma('alcance')), extra: 'inclui anúncios', explicacao: ex('soma do alcance da conta de cada cliente') },
+            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), explicacao: ex('soma das visualizações de cada conta no período') },
+            { id: 'int', rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: 'alcance da conta inclui anúncios', explicacao: ex('soma das interações de cada conta no período') },
+            { id: 'posts', rotulo: 'Posts', valor: String(posts), explicacao: ex('posts publicados no período, de todos os clientes') },
+            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : 'todos respondendo', explicacao: ex('clientes com a Página do Facebook ligada que responderam à consulta') },
           ]}
         />
         {linhas.length === 0 ? (
