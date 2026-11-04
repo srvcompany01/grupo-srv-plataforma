@@ -40,6 +40,8 @@ export type ResumoInstagram = {
   cliquesPerfil: number
   /** Alcance orgânico + pago da conta por dia (o Instagram não separa no total da conta). */
   alcancePorDia: { dia: string; valor: number }[]
+  /** Séries diárias da conta que a Meta entregou (alcance, visualizações, contas engajadas, novos seguidores). Métrica sem série aqui = a Meta não entrega por dia. */
+  seriesPorDia?: Record<string, { dia: string; valor: number }[]>
   posts: PostIG[]
 }
 

@@ -58,8 +58,8 @@ async function movimentoSeguidores(igId: string, j: { since: number; until: numb
   }
 }
 
-async function alcanceDiario(igId: string, j: { since: number; until: number }, cacheSeg: number): Promise<{ dia: string; valor: number }[]> {
-  const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: 'reach', period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg })
+async function serieDiaria(igId: string, j: { since: number; until: number }, metrica: string, cacheSeg: number): Promise<{ dia: string; valor: number }[]> {
+  const r = await graph<{ data: Valor[] }>(`${igId}/insights`, { params: { metric: metrica, period: 'day', since: String(j.since), until: String(j.until) }, cacheSeg })
   // end_time = fim do dia (fuso da Meta): o dia medido é o anterior.
   return (r.data[0]?.values ?? []).map((v) => ({ dia: new Date(Date.parse(v.end_time) - DIA * 1000).toISOString().slice(0, 10), valor: v.value }))
 }
@@ -112,6 +112,15 @@ async function comNumeros(m: MidiaBruta, cacheSeg: number): Promise<PostIG> {
   }
 }
 
+/** Séries por dia de métricas que nem toda conta/versão da API entrega: a que for recusada simplesmente fica de fora. */
+const METRICAS_DIARIAS: [string, string][] = [['visualizacoes', 'views'], ['contasEngajadas', 'accounts_engaged'], ['novosSeguidores', 'follower_count']]
+async function seriesExtras(igId: string, js: { since: number; until: number }[], cacheSeg: number) {
+  const partes = await Promise.all(METRICAS_DIARIAS.map(async ([chave, metrica]) => {
+    try { return [chave, (await Promise.all(js.map((j) => serieDiaria(igId, j, metrica, cacheSeg)))).flat()] as const } catch { return null }
+  }))
+  return Object.fromEntries(partes.filter((p): p is NonNullable<typeof p> => !!p && p[1].length > 0))
+}
+
 const soma = (xs: Record<string, number>[], k: string) => xs.reduce((s, x) => s + (x[k] ?? 0), 0)
 
 /**
@@ -132,11 +141,12 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
     const igId = conta.instagram.id
     const js = janelas(periodo.de, periodo.ate)
     const cacheSeg = cacheDoPeriodo(periodo)
-    const [perfil, tot, saldos, diario, brutos] = await Promise.all([
+    const [perfil, tot, saldos, diario, extras, brutos] = await Promise.all([
       graph<{ username: string; followers_count?: number }>(igId, { params: { fields: 'username,followers_count' }, cacheSeg }),
       Promise.all(js.map((j) => totais(igId, j, cacheSeg))),
       Promise.all(js.map((j) => movimentoSeguidores(igId, j, cacheSeg))),
-      detalhado ? Promise.all(js.map((j) => alcanceDiario(igId, j, cacheSeg))) : Promise.resolve([]),
+      detalhado ? Promise.all(js.map((j) => serieDiaria(igId, j, 'reach', cacheSeg))) : Promise.resolve([]),
+      detalhado ? seriesExtras(igId, js, cacheSeg) : Promise.resolve(undefined),
       postsDoPeriodo(igId, periodo.de, periodo.ate, cacheSeg),
     ])
     const posts = detalhado
@@ -158,6 +168,7 @@ export async function instagramDoCliente(paginaId: string, periodo: Pick<Periodo
       seguidoresGanhos: saldos.reduce((s, x) => s + x.ganhos, 0),
       seguidoresPerdidos: saldos.reduce((s, x) => s + x.perdidos, 0),
       alcancePorDia: diario.flat().filter((d) => d.dia >= periodo.de && d.dia <= periodo.ate),
+      seriesPorDia: extras && Object.fromEntries(Object.entries(extras).map(([k, v]) => [k, v.filter((d) => d.dia >= periodo.de && d.dia <= periodo.ate)])),
       posts,
     }
   } catch (e) {

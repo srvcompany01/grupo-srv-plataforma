@@ -5,13 +5,14 @@ import { GoogleNegocio } from '@/componentes/anuncios/GoogleNegocio'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { AtualizarComentarios, ListaComentarios } from '@/componentes/insights/ComentariosRedes'
 import { InstagramSocial } from '@/componentes/insights/social/InstagramSocial'
-import { CartaoSocial, FaixaKpis } from '@/componentes/insights/social/Social'
-import type { Explicacao } from '@/componentes/insights/social/ComoCalculamos'
+import { CartaoSocial } from '@/componentes/insights/social/Cartao'
+import { GradeMetricas } from '@/componentes/insights/social/Metricas'
 import { RedesFaixa } from '@/componentes/insights/social/RedesFaixa'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
 import { engajamento, type ResumoInstagram } from '@/dominio/insights'
+import { somarDias } from '@/dominio/agenda'
 import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { seguidoresPagosNoPeriodo } from '@/servicos/meta-anuncios'
 import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
@@ -25,7 +26,6 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 // O botão "Atualizar agora" dos comentários lê a Meta de todos os clientes.
 export const maxDuration = 300
 
-const ex = (formula: string): Explicacao => ({ formula, fonte: 'API do Instagram (Meta)', atualizado: 'a cada hora' })
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
@@ -120,11 +120,13 @@ function Carregando({ titulo }: { titulo: string }) {
 async function DetalheInstagram({ cliente, periodo }: { cliente: Cliente; periodo: PeriodoAnuncios }) {
   const [ig, cliquesLinkBio, seguidoresPagos] = await Promise.all([instagramDoCliente(cliente.metaPaginaId!, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, cliente.id, periodo.de, periodo.ate)), seguidoresPagosNoPeriodo(cliente.metaContaId, periodo)])
   const dias = diasDoPeriodo(periodo)
+  const fimAnterior = somarDias(periodo.de, -1)
+  const anterior = 'erro' in ig ? null : await instagramDoCliente(cliente.metaPaginaId!, { de: somarDias(fimAnterior, -(dias.length - 1)), ate: fimAnterior }, false)
   if ('erro' in ig) return <><RedesFaixa /><CartaoSocial titulo={`Instagram de ${cliente.nome}`}><p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p></CartaoSocial></>
   return (
     <>
       <RedesFaixa seguidoresInstagram={`${numero.format(ig.seguidores)} seguidores`} />
-      <InstagramSocial ig={ig} dias={dias} rotuloPeriodo={rotuloPeriodo(periodo)} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
+      <InstagramSocial ig={ig} anterior={anterior && !('erro' in anterior) ? anterior : null} dias={dias} rotuloPeriodo={rotuloPeriodo(periodo)} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
       {periodo.atalho === 'hoje' && <p className="ins-sub">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}
     </>
   )
@@ -143,14 +145,14 @@ async function Panorama({ clientes, periodo }: { clientes: Cliente[]; periodo: P
     <RedesFaixa seguidoresInstagram={`${numero.format(soma('seguidores'))} seguidores`} />
     <CartaoSocial titulo="Panorama do Instagram" sub={`Todos os clientes com Instagram ligado · ${rotuloPeriodo(periodo)}`}>
       <div className="space-y-4">
-        <FaixaKpis
+        <GradeMetricas
           itens={[
-            { id: 'seg', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), chip: soma('novosSeguidores') ? { valor: `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))}`, sentido: soma('novosSeguidores') > 0 ? 'sobe' : 'desce', tom: soma('novosSeguidores') > 0 ? 'bom' : 'ruim', texto: ' no período' } : undefined, explicacao: ex('soma dos seguidores de cada cliente com Instagram ligado'), foco: true },
-            { id: 'alc', rotulo: 'Alcance', valor: numero.format(soma('alcance')), extra: 'inclui anúncios', explicacao: ex('soma do alcance da conta de cada cliente') },
-            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), explicacao: ex('soma das visualizações de cada conta no período') },
-            { id: 'int', rotulo: 'Interações', valor: numero.format(soma('interacoes')), extra: 'alcance da conta inclui anúncios', explicacao: ex('soma das interações de cada conta no período') },
-            { id: 'posts', rotulo: 'Posts', valor: String(posts), explicacao: ex('posts publicados no período, de todos os clientes') },
-            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : 'todos respondendo', explicacao: ex('clientes com a Página do Facebook ligada que responderam à consulta') },
+            { id: 'seguidores', rotulo: 'Seguidores somados', valor: numero.format(soma('seguidores')), icone: 'users', cor: '#d98a00', extra: soma('novosSeguidores') ? `${soma('novosSeguidores') > 0 ? '+' : ''}${numero.format(soma('novosSeguidores'))} no período` : undefined },
+            { id: 'alcance', rotulo: 'Alcance', valor: numero.format(soma('alcance')), icone: 'radar', cor: '#4f46e5', extra: 'inclui anúncios' },
+            { id: 'views', rotulo: 'Visualizações', valor: numero.format(soma('visualizacoes')), icone: 'eye', cor: '#9333ea' },
+            { id: 'interacoes', rotulo: 'Interações', valor: numero.format(soma('interacoes')), icone: 'pointer', cor: '#16a34a' },
+            { id: 'posts', rotulo: 'Posts', valor: String(posts), icone: 'layout', cor: '#f59e0b' },
+            { id: 'perfis', rotulo: 'Perfis', valor: `${ok.length} de ${linhas.length}`, icone: 'check', cor: ok.length < linhas.length ? '#e5484d' : '#16a34a', extra: ok.length < linhas.length ? `${linhas.length - ok.length} com erro` : 'todos respondendo' },
           ]}
         />
         {linhas.length === 0 ? (

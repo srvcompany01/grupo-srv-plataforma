@@ -1,7 +1,7 @@
 import { Lightbulb, Target } from 'lucide-react'
 import type { Analise, Tom } from '@/dominio/insights'
 import { ORDEM_TOM } from '../tom'
-import { CartaoSocial } from './Social'
+import { CartaoSocial } from './Cartao'
 
 const IMPACTO: Record<Tom, string> = { ruim: 'Crítico', atencao: 'Atenção', bom: 'Positivo', neutro: 'Info' }
 
