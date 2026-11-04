@@ -255,7 +255,7 @@ body:has(.app-ui) {
   --linha-lista: #efeff1;
   color-scheme: light;
   /* Sistema de design do redesign (tokens.css do handoff). Componentes novos leem estes nomes. */
-  --bg: #ffffff; --bg-frame: #efeff1; --bg-subtle: #f7f7f8; --bg-hover: #f0f0f2; --bg-active: #e8e8eb; --bg-elev: #ffffff;
+  --bg: #ffffff; --bg-frame: #ffffff; --bg-subtle: #f7f7f8; --bg-hover: #f0f0f2; --bg-active: #e8e8eb; --bg-elev: #ffffff;
   --border-soft: #efeff1; --border-strong: #d1d1d6;
   --text: #18181b; --text-2: #52525b; --text-3: #83838c;
   --on-primary: #ffffff; --primary-hover: #2a2a2e;
@@ -318,7 +318,7 @@ body:has(.app-ui[data-tema='escuro']) {
   --input: rgba(255, 255, 255, 0.22);
   --linha-lista: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
-  --bg: #161618; --bg-frame: #0c0c0e; --bg-subtle: #111113; --bg-hover: #202023; --bg-active: #28282c; --bg-elev: #1c1c1f;
+  --bg: #161618; --bg-frame: #161618; --bg-subtle: #111113; --bg-hover: #202023; --bg-active: #28282c; --bg-elev: #1c1c1f;
   --border-soft: #212124; --border-strong: #3b3b41;
   --text: #ededef; --text-2: #a8a8b0; --text-3: #7a7a83;
   --on-primary: #111113; --primary-hover: #dcdce0;

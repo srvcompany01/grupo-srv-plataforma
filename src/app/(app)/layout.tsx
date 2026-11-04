@@ -36,7 +36,7 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
         <CabecalhoTopo painel={painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} alertas={alertas} />
         <div className="flex min-h-0 flex-1 max-md:pb-24">
           {/* Barra lateral única: ícones à esquerda e o painel de espaços ao lado, sem moldura; só uma linha separa do conteúdo. */}
-          <div className="sticky top-10 h-[calc(100dvh-40px)] shrink-0 max-md:contents md:flex md:border-r md:border-borda" style={{ background: 'var(--bg-frame)' }}>
+          <div className="sticky top-10 h-[calc(100dvh-40px)] shrink-0 max-md:contents md:flex" style={{ background: 'var(--bg-frame)' }}>
             <FaixaAtalhos {...painel} />
             <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />
           </div>
