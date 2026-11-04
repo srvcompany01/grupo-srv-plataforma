@@ -112,7 +112,7 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-[272px] shrink-0 flex-col rounded-lg bg-[var(--bg-subtle)] p-2 transition ${isOver ? 'bg-[var(--sel)]' : ''}`}>
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-[272px] shrink-0 flex-col rounded-2xl bg-[var(--bg-subtle)] p-2 transition ${isOver ? 'bg-[var(--sel)]' : ''}`}>
       <header className="mb-1 flex h-8 items-center gap-2 px-1">
         <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>
@@ -138,7 +138,7 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2 rounded-lg border border-borda bg-[var(--bg)] p-2.5 text-corpo transition hover:border-borda-forte focus-within:border-[var(--focus)]">
+    <div className="space-y-2 rounded-2xl bg-[var(--bg)] p-2.5 text-corpo transition focus-within:ring-2 focus-within:ring-[var(--focus-ring)]">
       <div className="flex flex-wrap items-center gap-1.5">
         <SeloPrioridade prioridade={tarefa.prioridade} />
         {ctx.mostrarLista && <span className="max-w-full truncate rounded bg-[var(--bg-active)] px-1.5 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}

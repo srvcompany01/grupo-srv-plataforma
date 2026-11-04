@@ -728,3 +728,12 @@ button.ins-kpi:hover { border-color: var(--border-strong); }
 .aba-pilula:hover { color: var(--text); }
 .aba-pilula[data-ativa] { background: var(--bg); color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(17, 17, 19, .14); }
 .aba-add { border-radius: 999px !important; height: 32px; }
+
+/* Redesign 2026 (seção 3): cartões em raio 24 sobre fundo suave e sem contorno; divisórias fracas somem; botões em pílula suave; relatórios em raio 24. */
+.app-ui :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, label, [role='button'], [role='dialog'], [role='menu'], .controle, [data-slot], .ins-card) { border-color: transparent; background: var(--bg-subtle); border-radius: 24px; box-shadow: none; }
+.app-ui .border-borda-fraca { border-color: transparent; }
+.relatorio :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, [role='button'], .controle) { border-radius: 24px; }
+.relatorio .numero { border-radius: 20px; padding: 1rem 1.125rem; }
+body:has(.app-ui) .controle { border-radius: 12px; border-color: transparent; background: var(--bg-subtle); }
+body:has(.app-ui) .controle:hover { background: var(--bg-hover); }
+.b-pill { border: 0; border-radius: 999px; background: var(--bg-subtle); }

@@ -1,5 +1,6 @@
 'use client'
 
+import { ChipCliente } from '@/componentes/NomeCliente'
 import { Check, ChevronLeft, Settings2, Tag } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTagCliente, definirTagClienteDaTarefa } from '@/app/(app)/acoes-tags-clientes'
@@ -11,18 +12,9 @@ export type TagCliente = { id: string; nome: string; cor: string }
 
 const COR_HEX = /^#[0-9a-f]{6}$/i
 
-function Chip({ tag, compacto = false }: { tag: TagCliente; compacto?: boolean }) {
-  // Visual do redesign (linhas da Lista): fundo azul-claro, nome azul em negrito, 18px de altura.
-  if (compacto) return <span style={{ height: 18, display: 'inline-flex', alignItems: 'center', padding: '0 6px', borderRadius: 4, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{tag.nome}</span>
-  return (
-    <span
-      className="inline-flex max-w-40 items-center gap-1 rounded-md border px-1.5 py-0.5 text-legenda font-bold"
-      style={{ color: tag.cor, borderColor: `${tag.cor}55`, backgroundColor: `${tag.cor}14` }}
-    >
-      <Tag className="h-3 w-3 shrink-0" />
-      <span className="truncate">{tag.nome}</span>
-    </span>
-  )
+function Chip({ tag }: { tag: TagCliente; compacto?: boolean }) {
+  // Redesign 2026: cliente = bolinha (iniciais sobre a cor da tag) + pílula com o nome em negrito azul.
+  return <ChipCliente nome={tag.nome} cor={COR_HEX.test(tag.cor) ? tag.cor : undefined} />
 }
 
 /** Tag de cliente da tarefa (opcional). Alterar em qualquer linha atualiza a mãe e todas as subtarefas. */

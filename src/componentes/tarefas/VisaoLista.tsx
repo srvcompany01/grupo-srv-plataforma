@@ -386,7 +386,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   return (
     <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="area-lista space-y-2">
       {faixa && !selecionadas.size && (
-        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
+        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
           <span className="rounded-md bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
@@ -403,7 +403,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       )}
       {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
-        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-lg bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
+        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-2xl bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
           <span className="text-corpo font-semibold">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
           <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-corpo font-semibold !text-[#ff8084] transition hover:bg-white/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
