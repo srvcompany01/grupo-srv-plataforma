@@ -443,8 +443,8 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
   return (
     <Recolhidos.Provider value={recolhimento}>
     <DestinosMover.Provider value={destinos}>
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col" style={{ background: 'var(--bg-subtle)', color: 'var(--text)' }}>
-      <div className="flex shrink-0 items-center" style={{ height: 40, gap: 2, padding: '0 6px 0 14px', borderBottom: '1px solid var(--border-soft)' }}>
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col" style={{ color: 'var(--text)' }}>
+      <div className="flex shrink-0 items-center" style={{ height: 40, gap: 2, padding: '0 6px 0 8px' }}>
         <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>Início</span>
         {papel === 'admin' && (
           <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', marginRight: 2 }}>
@@ -504,7 +504,7 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
         <Link href="/chat" className="hover-bg flex h-7 shrink-0 items-center gap-2 rounded px-2 text-[13px] text-texto-3"><Ic n="add" s={16} />Adicionar canal</Link>
       </div>
 
-      <div className="flex shrink-0 flex-col" style={{ borderTop: '1px solid var(--border)', padding: 6, gap: 2 }}>
+      <div className="flex shrink-0 flex-col" style={{ padding: 6, gap: 2 }}>
         <IndicadorCronometro cronometro={cronometro} />
         {!comAtalhos && (
           <>
@@ -593,7 +593,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[88px] top-10 z-30 hidden w-2 lg:block" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="fixed bottom-0 left-[64px] top-10 z-30 hidden w-2 lg:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
@@ -601,10 +601,10 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
-        className={`hidden h-[calc(100dvh-48px)] w-[var(--lat-w)] overflow-hidden rounded-[10px] border border-lat-borda lg:flex ${
+        className={`hidden w-[var(--lat-w)] overflow-hidden lg:flex ${
           recolhida
-            ? `fixed bottom-2 left-[88px] top-10 z-40 h-auto shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
-            : 'sticky top-10 z-20 shrink-0'
+            ? `fixed bottom-2 left-[68px] top-12 z-40 h-auto rounded-[10px] border border-lat-borda bg-[var(--bg-elev)] shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            : 'relative z-20 h-full shrink-0'
         }`}
       >
         <PainelEspacos

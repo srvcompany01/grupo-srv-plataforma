@@ -34,10 +34,13 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,300..500,0..1,0&display=block" />
       <div className="flex min-w-0 flex-1 flex-col">
         <CabecalhoTopo painel={painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} alertas={alertas} />
-        <div className="flex min-h-0 flex-1 gap-2 pb-2 max-md:pb-24 md:px-2">
-          <FaixaAtalhos {...painel} />
-          <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />
-          <main className="min-w-0 flex-1 bg-white md:overflow-clip md:rounded-[10px] md:border md:border-borda">{children}</main>
+        <div className="flex min-h-0 flex-1 max-md:pb-24">
+          {/* Barra lateral única: ícones à esquerda e o painel de espaços ao lado, sem moldura; só uma linha separa do conteúdo. */}
+          <div className="sticky top-10 h-[calc(100dvh-40px)] shrink-0 max-md:contents md:flex md:border-r md:border-borda" style={{ background: 'var(--bg-frame)' }}>
+            <FaixaAtalhos {...painel} />
+            <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />
+          </div>
+          <main className="min-w-0 flex-1 bg-white">{children}</main>
         </div>
       </div>
       {painelTarefa}

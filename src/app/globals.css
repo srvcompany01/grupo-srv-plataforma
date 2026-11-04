@@ -519,27 +519,25 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 /* Barra única de navegação ("dock"): vidro creme, cápsula com os módulos, item ativo em preto. Desktop/tablet: coluna à esquerda; celular: ilha flutuante embaixo. */
 .dock { --dk-ink: #4a4435; --dk-ativo-bg: #141414; --dk-ativo-fg: #fff; --dk-glass: linear-gradient(165deg, rgba(255, 253, 244, .96), rgba(248, 240, 214, .88)); --dk-borda: rgba(255, 255, 255, .8); --dk-sombra: 0 12px 32px rgba(122, 92, 20, .16), 0 2px 6px rgba(122, 92, 20, .08), inset 0 1px 0 rgba(255, 255, 255, .9); }
 .app-ui[data-tema='escuro'] .dock { --dk-ink: #d8d2bf; --dk-ativo-bg: #f4efe0; --dk-ativo-fg: #161614; --dk-glass: linear-gradient(165deg, rgba(50, 47, 40, .92), rgba(30, 28, 24, .92)); --dk-borda: rgba(255, 255, 255, .1); --dk-sombra: 0 12px 32px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .06); }
-.dock { display: none; position: sticky; top: 40px; z-index: 30; width: 72px; height: calc(100dvh - 48px); flex: none; flex-direction: column; align-items: center; gap: 10px; color: var(--dk-ink); }
+.dock { display: none; position: relative; z-index: 30; width: 64px; height: 100%; flex: none; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; color: var(--dk-ink); }
 @media (min-width: 768px) { .dock { display: flex; } }
-.dock-tile, .dock-pill { background: var(--dk-glass); border: 1px solid var(--dk-borda); box-shadow: var(--dk-sombra); -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3); }
-.dock-tile { width: 56px; height: 56px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 18px; color: var(--dk-ink); cursor: pointer; }
+.dock-tile:hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
+.dock-tile { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: transparent; color: var(--dk-ink); cursor: pointer; }
 .dock-tile[data-ativo] { background: var(--dk-ativo-bg); color: var(--dk-ativo-fg); }
-.dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px; border-radius: 28px; overflow-y: auto; scrollbar-width: none; }
+.dock-pill { min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; overflow-y: auto; scrollbar-width: none; }
 .dock-pill::-webkit-scrollbar { display: none; }
 .dock-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .dock-folga { flex: 1; min-height: 0; }
-.dock-fim { display: flex; flex-direction: column; gap: 10px; flex: none; }
-.dock-item { position: relative; width: 48px; height: 48px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 120ms; }
+.dock-fim { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.dock-item { position: relative; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: transparent; color: var(--dk-ink); cursor: pointer; text-decoration: none; transition: background 120ms, color 120ms, box-shadow 120ms; }
 .dock-item:hover { background: color-mix(in srgb, var(--dk-ink) 10%, transparent); }
 .dock-item[data-ativo] { background: var(--dk-ativo-bg); color: var(--dk-ativo-fg); box-shadow: 0 6px 14px rgba(0, 0, 0, .28); }
 .dock-ico { width: 22px; height: 22px; stroke-width: 1.5; }
-.dock-ponto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #e11d2e; box-shadow: 0 0 0 2px #fbf5e0; }
-.app-ui[data-tema='escuro'] .dock-ponto { box-shadow: 0 0 0 2px #2c2a25; }
+.dock-ponto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #e11d2e; box-shadow: 0 0 0 2px var(--bg-frame); }
 .dock-sep { flex: none; width: 24px; height: 1px; margin: 6px 0; background: color-mix(in srgb, var(--dk-ink) 22%, transparent); }
 .dock-mais-btn { height: 20px; width: 48px; margin: 4px 0; border: 0; display: flex; align-items: center; justify-content: center; position: relative; background: transparent; color: var(--dk-ink); cursor: pointer; }
 .dock-mais-btn::before { content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: color-mix(in srgb, var(--dk-ink) 22%, transparent); }
-.dock-seta { position: relative; width: 16px; height: 16px; padding: 0 2px; border-radius: 6px; background: #fbf5e0; transition: transform 150ms; }
-.app-ui[data-tema='escuro'] .dock-seta { background: #2c2a25; }
+.dock-seta { position: relative; width: 16px; height: 16px; padding: 0 2px; border-radius: 6px; background: var(--bg-frame); transition: transform 150ms; }
 .dock-mais { display: flex; flex-direction: column; align-items: center; }
 .dock-mais[data-aberto='false'] { display: none; }
 .dock-pop { position: fixed; left: 92px; z-index: 41; width: 260px; padding: 4px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--border); box-shadow: var(--shadow-pop); color: var(--text); }
