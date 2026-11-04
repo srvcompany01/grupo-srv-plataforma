@@ -584,8 +584,8 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 .hover-bg:hover { background: var(--bg-hover) !important; color: var(--text); }
 
 /* Botões do redesign (medidas do protótipo): 28px, raio 6, 13px. */
-.b-out, .b-ghost, .b-icon, .b-pri { display: inline-flex; align-items: center; flex: none; white-space: nowrap; font-size: 13px; cursor: pointer; transition: background 120ms, color 120ms, border-color 120ms; height: 28px; border-radius: 6px; }
-.b-out { gap: 6px; padding: 0 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.b-out, .b-ghost, .b-icon, .b-pri { display: inline-flex; align-items: center; flex: none; white-space: nowrap; font-size: 13px; cursor: pointer; transition: background 120ms, color 120ms, border-color 120ms; height: 28px; border-radius: 12px; }
+.b-out { gap: 6px; padding: 0 10px; border: 0; background: var(--bg-subtle); color: var(--text); }
 .b-out:hover { background: var(--bg-hover); }
 .b-ghost { gap: 6px; padding: 0 8px; border: 0; background: transparent; color: var(--text-2); }
 .b-ghost:hover { background: var(--bg-hover); color: var(--text); }
@@ -720,3 +720,11 @@ button.ins-kpi:hover { border-color: var(--border-strong); }
   .app-ui .b-icon, .app-ui .b-ghost, .app-ui .b-out { min-height: 32px; }
   .app-ui .b-icon { min-width: 32px; }
 }
+
+/* Redesign 2026: abas da lista em pílula segmentada (container suave, aba ativa branca com sombra leve). */
+.aba-barra { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; color: var(--text-2); }
+.aba-trilho { display: flex; align-items: center; gap: 2px; padding: 4px; flex: none; border-radius: 999px; background: var(--bg-subtle); }
+.aba-pilula { height: 32px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 12px 0 8px; border-radius: 999px; font-size: 13px; white-space: nowrap; color: var(--text-2); text-decoration: none; transition: background 120ms, color 120ms; }
+.aba-pilula:hover { color: var(--text); }
+.aba-pilula[data-ativa] { background: var(--bg); color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(17, 17, 19, .14); }
+.aba-add { border-radius: 999px !important; height: 32px; }

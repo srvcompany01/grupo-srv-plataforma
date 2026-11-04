@@ -99,18 +99,18 @@ export function AbasDaLista({ listaId, caminho, visoes, atualId, euId, podeGerir
 
   return (
     <>
-      <nav role="tablist" aria-label="Visualizações da lista" className="flex min-w-0 items-stretch overflow-x-auto [scrollbar-width:none]" style={{ height: 36, gap: 4, padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--text-2)' }}>
-        <Link href={`/listas/${listaId}/canal`} className="hover:text-[var(--text)]" style={{ height: 36, display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px', fontSize: 13, whiteSpace: 'nowrap', color: 'inherit' }}><IconeVisao visao="canal" />Canal</Link>
-        <div aria-hidden="true" style={{ width: 1, height: 16, background: 'var(--border)', margin: '10px 4px', flex: 'none' }} />
+      <nav role="tablist" aria-label="Visualizações da lista" className="aba-barra">
+        <div className="aba-trilho">
+        <Link href={`/listas/${listaId}/canal`} className="aba-pilula"><IconeVisao visao="canal" />Canal</Link>
         {fixadas.map((v) => tab(v, false))}
         <DndContext id={idDnd} sensors={sensores} collisionDetection={closestCenter} onDragEnd={soltar}>
           <SortableContext items={naoFixadas.map((v) => v.id)} strategy={horizontalListSortingStrategy}>
             {naoFixadas.map((v) => tab(v, true))}
           </SortableContext>
         </DndContext>
-        <div aria-hidden="true" style={{ width: 1, height: 16, background: 'var(--border)', margin: '10px 4px', flex: 'none' }} />
+        </div>
         <Popover open={catalogo} onOpenChange={setCatalogo}>
-          <PopoverTrigger className="b-ghost self-center" style={{ color: 'var(--text-3)', padding: '0 8px' }}><Ic n="add" s={15} /> Visualização</PopoverTrigger>
+          <PopoverTrigger className="b-ghost aba-add self-center" style={{ color: 'var(--text-3)', padding: '0 12px' }}><Ic n="add" s={15} /> Visualização</PopoverTrigger>
           <PopoverContent align="start" className="w-[min(640px,calc(100vw-24px))] gap-0 overflow-hidden p-0">
             <div className="p-3 pb-2">
               <div className="relative">
@@ -153,8 +153,8 @@ function AbaItem({ v, arrastavel, ativa, href, pode, total, acabouDeArrastar, ao
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: v.id, disabled: !arrastavel })
   return (
-    <div ref={setNodeRef} {...(arrastavel ? attributes : {})} {...(arrastavel ? listeners : {})} tabIndex={-1} style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1, borderBottom: `2px solid ${ativa ? 'var(--text)' : 'transparent'}`, height: 36, cursor: arrastavel ? 'grab' : 'default' }} className="flex shrink-0 items-stretch">
-      <Link href={href} scroll={false} role="tab" aria-selected={ativa} aria-current={ativa ? 'page' : undefined} draggable={false} onClickCapture={(e) => { if (acabouDeArrastar.current) { e.preventDefault(); e.stopPropagation() } }} className="hover:text-[var(--text)]" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px 0 6px', fontSize: 13, whiteSpace: 'nowrap', fontWeight: ativa ? 600 : 400, color: ativa ? 'var(--text)' : 'inherit' }}>
+    <div ref={setNodeRef} {...(arrastavel ? attributes : {})} {...(arrastavel ? listeners : {})} tabIndex={-1} style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1, cursor: arrastavel ? 'grab' : 'default' }} data-ativa={ativa || undefined} className="aba-pilula">
+      <Link href={href} scroll={false} role="tab" aria-selected={ativa} aria-current={ativa ? 'page' : undefined} draggable={false} onClickCapture={(e) => { if (acabouDeArrastar.current) { e.preventDefault(); e.stopPropagation() } }} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'inherit', fontWeight: 'inherit' }}>
         <IconeVisao visao={v.tipo} />{v.nome}
         {v.fixada && <Ic n="push_pin" s={12} style={{ color: 'var(--text-3)' }} />}
         {v.privada && <Ic n="lock" s={12} style={{ color: 'var(--text-3)' }} />}

@@ -124,7 +124,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
 
   return (
     <div className="flex min-h-full flex-col bg-[var(--bg)]">
-      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-2 bg-[var(--bg)]" style={{ height: 40, padding: '0 10px 0 12px', borderBottom: '1px solid var(--border-soft)' }}>
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-2 bg-[var(--bg)]" style={{ height: 40, padding: '0 10px 0 12px' }}>
         <nav aria-label="Localização da lista" className="flex min-w-0 flex-1 items-center overflow-hidden" style={{ gap: 2, flexBasis: 160 }}>
           {lista.espaco.id ? (
             <Link href={`/espacos/${lista.espaco.id}`} className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
@@ -152,7 +152,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
           <div className="hidden items-center gap-1 xl:flex">
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
-            <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 6px' }} />
+            
             {lista.podeGerir && <ListaConteudoToggle listaId={id} ligado={tipo === 'conteudo'} />}
           </div>
         </div>
@@ -171,7 +171,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
         </div>
       </div>
       )}
-      <main className="min-h-0 flex-1 p-0" style={{ borderTop: '1px solid var(--border-soft)' }}>
+      <main className="min-h-0 flex-1 p-0">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
         {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}
