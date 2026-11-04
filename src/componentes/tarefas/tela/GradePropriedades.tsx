@@ -157,7 +157,7 @@ export function GradePropriedades({
                         if (avisar(await criarEtiquetaAcao(t.id, espacoId, novaTag, '#7b68ee'))) setNovaTag('')
                       })
                     }}
-                    className="border-t border-borda pt-1"
+                    className=" pt-1"
                   >
                     <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" className="w-full px-1.5 py-1 text-corpo outline-none" />
                   </form>

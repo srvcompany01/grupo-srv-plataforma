@@ -442,7 +442,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid h-7 items-center border-b border-borda bg-[var(--bg)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+              <div className="grid h-7 items-center rounded-lg bg-[var(--bg-subtle)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
                 <span className="flex justify-center"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="ck" /></span><span /><span />
                 <CabecalhoColuna colunaId="nome" className="pl-0.5" {...propsRedimensionamento}>Nome</CabecalhoColuna>
                 {colunas.map((colunaId) => {

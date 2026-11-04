@@ -132,7 +132,7 @@ export function VisaoCalendario({
 
   return (
     <section className="area-lista overflow-hidden bg-white">
-      <div className="flex min-h-9 flex-wrap items-center justify-between gap-3 border-b border-borda-fraca bg-white px-3 py-1">
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-3  bg-white px-3 py-1">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-texto-3" />
           <div>
@@ -141,7 +141,7 @@ export function VisaoCalendario({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="O que mostrar no calendário" className="controle flex items-center gap-0.5 rounded-md border border-borda bg-white p-0.5">
+        <div role="group" aria-label="O que mostrar no calendário" className="controle flex items-center gap-0.5 rounded-xl  bg-white p-0.5">
           {NIVEIS.map((n) => (
             <Link
               key={n.valor}
@@ -150,7 +150,7 @@ export function VisaoCalendario({
               scroll={false}
               title={n.dica}
               aria-pressed={niveis === n.valor}
-              className={`rounded-md px-2.5 py-1 text-legenda font-semibold transition ${niveis === n.valor ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`}
+              className={`rounded-xl px-2.5 py-1 text-legenda font-semibold transition ${niveis === n.valor ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover hover:text-texto'}`}
             >
               {n.rotulo}
             </Link>
@@ -158,8 +158,8 @@ export function VisaoCalendario({
         </div>
         {campos.length > 0 && (
           <Popover>
-            <PopoverTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-borda bg-white px-2.5 py-1.5 text-legenda font-semibold text-texto-2 shadow-sm hover:bg-hover">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-md bg-petroleo px-1.5 text-micro text-claro">{camposVisiveis.length}</span>}
+            <PopoverTrigger className="inline-flex items-center gap-1.5 rounded-xl  bg-white px-2.5 py-1.5 text-legenda font-semibold text-texto-2 shadow-sm hover:bg-hover">
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Campos{camposVisiveis.length > 0 && <span className="rounded-xl bg-petroleo px-1.5 text-micro text-claro">{camposVisiveis.length}</span>}
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-0.5 p-2">
               <p className="px-2 pb-1 text-legenda font-medium text-texto-3">Mostrar nos itens</p>
@@ -167,7 +167,7 @@ export function VisaoCalendario({
                 const marcado = filtros.campos.includes(c.id)
                 const novos = marcado ? filtros.campos.filter((id) => id !== c.id) : [...filtros.campos, c.id]
                 return (
-                  <Link key={c.id} href={enderecoDaVisao(caminho, { ...filtros, campos: novos })} replace scroll={false} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-rotulo hover:bg-hover">
+                  <Link key={c.id} href={enderecoDaVisao(caminho, { ...filtros, campos: novos })} replace scroll={false} className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-rotulo hover:bg-hover">
                     <span className={`flex h-4 w-4 items-center justify-center rounded border text-micro ${marcado ? 'border-petroleo bg-petroleo text-claro' : 'border-borda'}`}>{marcado && '✓'}</span>
                     <span className="truncate">{c.nome}</span>
                   </Link>
@@ -176,16 +176,16 @@ export function VisaoCalendario({
             </PopoverContent>
           </Popover>
         )}
-        <div className="controle flex items-center gap-1 rounded-md border border-borda bg-white p-0.5">
-          <button type="button" aria-label="Mês anterior" onClick={() => setAnoMes(moverMes(anoMes, -1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></button>
-          <button type="button" onClick={() => setAnoMes(hoje.slice(0, 7))} className="rounded-md px-2.5 py-1 text-legenda font-semibold text-texto-2 hover:bg-hover">Hoje</button>
-          <button type="button" aria-label="Próximo mês" onClick={() => setAnoMes(moverMes(anoMes, 1))} className="rounded-md p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></button>
+        <div className="controle flex items-center gap-1 rounded-xl  bg-white p-0.5">
+          <button type="button" aria-label="Mês anterior" onClick={() => setAnoMes(moverMes(anoMes, -1))} className="rounded-xl p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></button>
+          <button type="button" onClick={() => setAnoMes(hoje.slice(0, 7))} className="rounded-xl px-2.5 py-1 text-legenda font-semibold text-texto-2 hover:bg-hover">Hoje</button>
+          <button type="button" aria-label="Próximo mês" onClick={() => setAnoMes(moverMes(anoMes, 1))} className="rounded-xl p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></button>
         </div>
         </div>
       </div>
 
       {niveis === 'ambas' && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-borda bg-fundo/40 px-4 py-1.5 text-legenda text-texto-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1  bg-fundo/40 px-4 py-1.5 text-legenda text-texto-2">
           <span className="inline-flex items-center gap-1.5"><PackageCheck className="h-3.5 w-3.5 text-petroleo" /> Tarefa-mãe (entrega)</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-texto-3" /> Subtarefa</span>
         </div>
@@ -193,7 +193,7 @@ export function VisaoCalendario({
       <DndContext sensors={sensores} onDragEnd={soltar}>
       <div className="overflow-x-auto">
         <div className="min-w-[820px]">
-          <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-borda bg-[var(--bg-subtle)]">
+          <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))]  bg-[var(--bg-subtle)]">
             <div className="px-1 py-2 text-center text-legenda font-medium text-texto-3" title="Semana do ano">Sem</div>
             {DIAS.map((dia) => <div key={dia} className="px-2 py-2 text-center text-legenda font-medium text-texto-3">{dia}</div>)}
           </div>
@@ -203,11 +203,11 @@ export function VisaoCalendario({
               return (
                 <Fragment key={dia.iso}>
                 {indice % 7 === 0 && (
-                  <div className="flex items-start justify-center border-b border-r border-borda bg-fundo/70 pt-2" title={`Semana ${numeroDaSemana(dia.iso)} do ano`}>
-                    <span className="rounded-md bg-white px-1 py-0.5 text-legenda font-bold text-texto-2 ring-1 ring-borda">S{numeroDaSemana(dia.iso)}</span>
+                  <div className="flex items-start justify-center border-b  bg-fundo/70 pt-2" title={`Semana ${numeroDaSemana(dia.iso)} do ano`}>
+                    <span className="rounded-xl bg-white px-1 py-0.5 text-legenda font-bold text-texto-2 ring-1 ring-borda">S{numeroDaSemana(dia.iso)}</span>
                   </div>
                 )}
-                <Dia key={dia.iso} iso={dia.iso} className={`min-h-[104px] border-b border-r border-borda-fraca p-1 ${dia.atual ? 'bg-white' : 'bg-[var(--bg-subtle)]'}`}>
+                <Dia key={dia.iso} iso={dia.iso} className={`min-h-[104px] border-b  p-1 ${dia.atual ? 'bg-white' : 'bg-[var(--bg-subtle)]'}`}>
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full text-legenda font-semibold ${dia.iso === hoje ? 'bg-[#d80d12] text-white' : dia.atual ? 'text-texto-2' : 'text-texto-3/60'}`}>{dia.dia}</span>
                   <div className="mt-1 space-y-1">
                     {(diasAbertos.has(dia.iso) ? itens : itens.slice(0, 4)).map((tarefa) => {
@@ -231,7 +231,7 @@ export function VisaoCalendario({
                           href={`/tarefas/${tarefa.id}`}
                           scroll={false}
                           title={sub ? `${tarefa.titulo} · subtarefa de ${tituloPai.get(tarefa.paiId ?? '') ?? 'tarefa-mãe'}` : `${tarefa.titulo} · tarefa-mãe (entrega)`}
-                          className={`flex min-h-[22px] flex-col gap-1 rounded border border-borda border-l-[3px] bg-[var(--bg)] px-1.5 py-0.5 text-[12px] transition hover:bg-hover ${
+                          className={`flex min-h-[22px] flex-col gap-1 rounded  border-l-[3px] bg-[var(--bg)] px-1.5 py-0.5 text-[12px] transition hover:bg-hover ${
                             sub ? 'font-normal' : 'font-semibold'
                           } ${tarefa.concluidaEm ? 'text-texto-3 line-through' : 'text-texto'}`}
                           style={{ borderLeftColor: coresStatus[tarefa.statusId] ?? '#87909e' }}
@@ -260,14 +260,14 @@ export function VisaoCalendario({
       </div>
 
       {(semData.length > 0 || emAtraso.length > 0) && (
-        <div className="border-t border-borda bg-fundo/50 px-4 py-3">
+        <div className=" bg-fundo/50 px-4 py-3">
           {emAtraso.length > 0 && (
             <div className="mb-3">
               <p className="mb-2 text-legenda font-medium text-perigo">Em atraso · {emAtraso.length} <span className="font-medium text-texto-3">(arraste para um dia)</span></p>
               <div className="flex flex-wrap gap-2">
                 {emAtraso.slice(0, 12).map((tarefa) => (
                   <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
-                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-md border border-perigo/40 bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-xl border border-perigo/40 bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
                   )}</Arrastavel>
                 ))}
                 {emAtraso.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{emAtraso.length - 12}</span>}
@@ -278,7 +278,7 @@ export function VisaoCalendario({
           <div className="flex flex-wrap gap-2">
             {semData.slice(0, 12).map((tarefa) => (
               <Arrastavel key={tarefa.id} id={tarefa.id}>{() => (
-                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-md border border-borda bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
+                <Link draggable={false} href={`/tarefas/${tarefa.id}`} scroll={false} className="controle block rounded-xl  bg-white px-2.5 py-1 text-legenda font-medium text-texto-2 hover:border-marca-clara hover:text-marca-escura">{tarefa.titulo}</Link>
               )}</Arrastavel>
             ))}
             {semData.length > 12 && <span className="px-2 py-1 text-legenda text-texto-3">+{semData.length - 12}</span>}

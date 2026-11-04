@@ -41,7 +41,7 @@ export function SecaoRecorrencia({ tarefaId, prazo, hoje, regra }: { tarefaId: s
         <button type="button" className={botaoFantasma} onClick={() => setAberto((a) => !a)}>{regra ? 'Editar' : 'Repetir…'}</button>
       </div>
       {aberto && (
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-borda p-3 text-corpo">
+        <div className="flex flex-wrap items-end gap-3 rounded-xl  p-3 text-corpo">
           <label className="space-y-1">
             <span className="block text-texto-2">A cada</span>
             <span className="flex items-center gap-1.5">

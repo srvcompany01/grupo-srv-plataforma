@@ -64,7 +64,7 @@ export function TelaTarefa(p: PropsTela) {
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
     <div className="@container flex h-full min-h-0 w-full flex-col bg-white">
-      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0 border-b border-borda px-3 pt-2 @4xl:hidden">
+      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0  px-3 pt-2 @4xl:hidden">
         <TabsList>
           <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
           <TabsTrigger value="atividade">Atividade</TabsTrigger>
@@ -85,7 +85,7 @@ export function TelaTarefa(p: PropsTela) {
           <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
-        <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden @4xl:flex'}`}>
+        <aside className={`min-h-0 flex-col overflow-hidden  bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden @4xl:flex'}`}>
           <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<CaixaComentario tarefaId={t.id} pessoas={p.pessoas} />} />
         </aside>
       </div>

@@ -20,7 +20,7 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
         {anexos
           .filter((a) => a.tipo === 'arquivo' && a.mime.startsWith('image/'))
           .map((a) => (
-            <button key={a.id} type="button" onClick={() => setAmpliado(a)} aria-label={`Ampliar ${a.nome}`} className="overflow-hidden rounded-md border border-borda">
+            <button key={a.id} type="button" onClick={() => setAmpliado(a)} aria-label={`Ampliar ${a.nome}`} className="overflow-hidden rounded-md ">
               {/* URL assinada do R2: next/image exigiria configurar o domínio. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={a.url} alt={a.nome} className="h-[120px] w-auto max-w-[200px] object-cover" />
@@ -44,7 +44,7 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
         }
         if (a.mime.startsWith('image/')) return null
         return (
-          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer" className="controle flex items-center gap-2 rounded-md border border-borda bg-white px-2 py-1.5 text-rotulo hover:bg-hover">
+          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer" className="controle flex items-center gap-2 rounded-md  bg-white px-2 py-1.5 text-rotulo hover:bg-hover">
             <FileText className="h-4 w-4 shrink-0 text-texto-3" />
             <span className="min-w-0 flex-1 truncate">{a.nome}</span>
             <span className="shrink-0 text-texto-3">{tamanhoLegivel(a.tamanho)}</span>

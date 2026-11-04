@@ -17,7 +17,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   return (
-    <div className="flex gap-2 rounded-lg border border-borda bg-white p-3">
+    <div className="flex gap-2 rounded-xl  bg-white p-3">
       <Avatar nome={c.autorNome || '?'} tamanho="h-7 w-7 text-legenda" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-rotulo">
@@ -28,7 +28,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
         </div>
         {editando ? (
           <div className="mt-1 space-y-1">
-            <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={3} className="w-full rounded-md border border-borda p-2 text-corpo" />
+            <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={3} className="w-full rounded-md  p-2 text-corpo" />
             <div className="flex gap-1">
               <button
                 disabled={pendente}

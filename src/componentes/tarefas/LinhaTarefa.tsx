@@ -144,7 +144,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} className={`group grid h-8 items-center border-b border-[var(--border-soft)] text-[13px] transition-colors ${selecionada ? 'bg-[var(--sel)]' : 'hover:bg-[var(--bg-hover)]'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div data-linha={tarefa.id} className={`group grid h-8 items-center rounded-lg text-[13px] transition-colors ${selecionada ? 'bg-[var(--sel)]' : 'hover:bg-[var(--bg-hover)]'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div className="flex justify-center">
           <input
             type="checkbox"
@@ -202,7 +202,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         <button
           type="button"
           onClick={() => setCriandoSubtarefa(true)}
-          className="flex min-h-8 w-full items-center gap-2 border-t border-[var(--border-soft)] py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto"
+          className="flex min-h-8 w-full items-center gap-2 rounded-lg py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto"
           style={{ paddingLeft: 50 + nivel * 18 }}
         >
           <CornerDownRight className="h-3.5 w-3.5" /> Adicionar subtarefa
