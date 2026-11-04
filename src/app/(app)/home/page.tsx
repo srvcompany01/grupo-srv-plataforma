@@ -2,7 +2,7 @@ import { ArrowRight, ChevronRight, PartyPopper, TriangleAlert } from 'lucide-rea
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { Ic } from '@/componentes/app/Ic'
-import { NomeCliente } from '@/componentes/NomeCliente'
+import { ChipCliente, NomeCliente } from '@/componentes/NomeCliente'
 import { dataLocal, gradeDoMes, horaLocal, ocorrencias, somarDias, type Ocorrencia } from '@/dominio/agenda'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
 import { feriadosDoAno, feriadosEntre } from '@/dominio/feriados'
@@ -89,10 +89,10 @@ export default async function Home() {
   }
   const reunioesHoje = eventos.filter((e) => dataLocal(e.inicio) === hoje)
   const blocos = [
-    { rotulo: 'Minhas tarefas abertas', valor: pendentes.length, meta: `${paraHoje} para hoje`, href: '/inicio', vermelho: false },
-    { rotulo: 'Em atraso', valor: atrasadas, meta: `${atrasadasDaOperacao} na operação`, href: '/inicio', vermelho: atrasadas > 0 },
-    { rotulo: 'Aguardando aprovação', valor: aguardando.length, meta: 'em todos os clientes', href: '/painel-de-gestao', vermelho: false },
-    { rotulo: 'Reuniões hoje', valor: reunioesHoje.length, meta: reunioesHoje[0] ? `próxima às ${horaLocal(reunioesHoje[0].inicio)}` : 'nenhuma agendada', href: '/reunioes', vermelho: false },
+    { rotulo: 'Minhas tarefas abertas', valor: pendentes.length, meta: `${paraHoje} para hoje`, href: '/inicio', vermelho: false, icone: 'task_alt', cor: '#1d6fe0' },
+    { rotulo: 'Em atraso', valor: atrasadas, meta: `${atrasadasDaOperacao} na operação`, href: '/inicio', vermelho: atrasadas > 0, icone: 'schedule', cor: '#d80d12' },
+    { rotulo: 'Aguardando aprovação', valor: aguardando.length, meta: 'em todos os clientes', href: '/painel-de-gestao', vermelho: false, icone: 'fact_check', cor: '#8b5cf6' },
+    { rotulo: 'Reuniões hoje', valor: reunioesHoje.length, meta: reunioesHoje[0] ? `próxima às ${horaLocal(reunioesHoje[0].inicio)}` : 'nenhuma agendada', href: '/reunioes', vermelho: false, icone: 'videocam', cor: '#0d9488' },
   ]
   const cab = 'sticky top-0 z-10 flex h-10 items-center justify-between border-b border-borda-fraca bg-white px-3'
 
@@ -107,8 +107,8 @@ export default async function Home() {
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
           {blocos.map((b) => (
-            <Link key={b.rotulo} href={b.href} className="rounded-lg border border-borda px-3 py-2.5 transition-colors hover:border-borda-forte">
-              <p className="text-rotulo text-texto-2">{b.rotulo}</p>
+            <Link key={b.rotulo} href={b.href} className="flex flex-col gap-1.5 rounded-3xl bg-[var(--bg-subtle)] px-4 py-3.5 transition-colors hover:bg-[var(--bg-hover)]">
+              <p className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full text-white" style={{ background: b.cor }}><Ic n={b.icone} s={14} fill /></span><span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">{b.rotulo}</span></p>
               <p className={`text-xl font-semibold tabular-nums ${b.vermelho ? 'text-[var(--red)]' : ''}`}>{b.valor}</p>
               <p className="text-rotulo text-texto-3">{b.meta}</p>
             </Link>
@@ -118,13 +118,13 @@ export default async function Home() {
         {atencao.length > 0 && (
           <ul className="flex flex-wrap gap-2">
             {atencao.map((a, i) => (
-              <li key={i}><Link href={a.href} className="inline-flex h-7 items-center gap-1.5 rounded-md border border-borda px-2.5 text-rotulo text-texto-2 transition-colors hover:bg-hover"><TriangleAlert className="h-3.5 w-3.5 text-[var(--red)]" />{a.texto}</Link></li>
+              <li key={i}><Link href={a.href} className="inline-flex h-7 items-center gap-1.5 rounded-xl bg-[var(--bg-subtle)] px-2.5 text-rotulo text-texto-2 transition-colors hover:bg-hover"><TriangleAlert className="h-3.5 w-3.5 text-[var(--red)]" />{a.texto}</Link></li>
             ))}
           </ul>
         )}
 
         <div className="grid gap-4 lg:grid-cols-[1.7fr_minmax(300px,1fr)]">
-          <section className="min-w-0 rounded-lg border border-borda">
+          <section className="min-w-0 rounded-3xl bg-[var(--bg-subtle)] overflow-hidden">
             <div className="flex h-10 items-center justify-between px-3">
               <h2 className="text-corpo font-semibold">Panorama dos clientes</h2>
               <Link href="/clientes" className="inline-flex h-6 items-center rounded px-2 text-rotulo text-texto-2 hover:bg-hover">Ver Clientes</Link>
@@ -162,7 +162,7 @@ export default async function Home() {
           </section>
 
           <div className="flex min-w-0 flex-col gap-4">
-            <section className="rounded-lg border border-borda">
+            <section className="rounded-3xl bg-[var(--bg-subtle)] overflow-hidden">
               <div className="flex h-10 items-center justify-between px-3">
                 <h2 className="text-corpo font-semibold">Agenda de hoje</h2>
                 <Link href="/agenda" aria-label="Abrir a agenda" className="flex h-6 w-6 items-center justify-center rounded text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
@@ -181,7 +181,7 @@ export default async function Home() {
               )}
             </section>
 
-            <section className="rounded-lg border border-borda">
+            <section className="rounded-3xl bg-[var(--bg-subtle)] overflow-hidden">
               <div className="flex h-10 items-center justify-between px-3">
                 <h2 className="text-corpo font-semibold">Minhas tarefas</h2>
                 <Link href="/inicio" aria-label="Ver todas as tarefas" className="flex h-6 w-6 items-center justify-center rounded text-texto-2 hover:bg-hover"><ArrowRight className="h-4 w-4" /></Link>
@@ -197,7 +197,7 @@ export default async function Home() {
                         <Link href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-2 border-t border-borda-fraca px-3 transition-colors hover:bg-hover">
                           <span className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[var(--border-strong)]" />
                           <span className="min-w-0 flex-1 truncate text-corpo">{t.titulo}</span>
-                          <NomeCliente nome={t.clienteNome} className="shrink-0 text-rotulo" />
+                          <ChipCliente nome={t.clienteNome} />
                           <span className={`w-14 shrink-0 text-right text-rotulo ${atrasada ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo === hoje ? 'Hoje' : t.prazo ? formatar(t.prazo, { day: '2-digit', month: 'short' }) : ''}</span>
                         </Link>
                       </li>
@@ -213,7 +213,7 @@ export default async function Home() {
           <ResumoMes clientes={ativos} mes={mes} hoje={hoje} />
         </Suspense>
 
-        <section className="rounded-lg border border-borda p-3" aria-label="Calendário do mês">
+        <section className="rounded-3xl bg-[var(--bg-subtle)] p-4" aria-label="Calendário do mês">
           <div className="grid gap-4 sm:grid-cols-[minmax(0,320px)_1fr]">
             <div>
               <p className="mb-1 text-center text-corpo font-semibold capitalize">{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>
