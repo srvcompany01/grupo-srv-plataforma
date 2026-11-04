@@ -7,10 +7,11 @@ import { useState } from 'react'
 import { consultaPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
 import { botaoPrimario, campo } from '@/lib/ui'
 
-const chip = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
+const chipPadrao = (ativo: boolean) => `rounded-md px-2.5 py-1 text-rotulo font-semibold ${ativo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`
 
 /** Período dos resultados: hoje, 7 e 30 dias ou datas escolhidas. */
-export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo: PeriodoAnuncios; hoje: string }) {
+export function SeletorPeriodo({ base, periodo, hoje, social = false }: { base: string; periodo: PeriodoAnuncios; hoje: string; /** Visual da página Social (Insights). */ social?: boolean }) {
+  const chip = (ativo: boolean) => (social ? '' : chipPadrao(ativo))
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [de, setDe] = useState(periodo.de)
@@ -27,10 +28,10 @@ export function SeletorPeriodo({ base, periodo, hoje }: { base: string; periodo:
   }
   return (
     <div className="relative flex flex-wrap items-center gap-1">
-      <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período dos resultados">
+      <nav className={social ? 'ins-seg' : 'flex gap-0.5 rounded-lg bg-fundo p-0.5'} aria-label="Período dos resultados">
         <button type="button" onClick={selecionarHoje} aria-pressed={periodo.atalho === 'hoje'} title={periodo.atalho === 'hoje' ? 'Atualizar dados de hoje' : 'Ver dados de hoje'} className={chip(periodo.atalho === 'hoje')}>Hoje</button>
-        {([7, 30] as const).map((d) => <Link key={d} href={url({ de: '', ate: '', atalho: d })} scroll={false} className={chip(periodo.atalho === d)}>{d} dias</Link>)}
-        <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-haspopup="dialog" className={`${chip(!periodo.atalho)} inline-flex items-center gap-1`}>
+        {([7, 30] as const).map((d) => <Link key={d} href={url({ de: '', ate: '', atalho: d })} scroll={false} className={chip(periodo.atalho === d)} data-on={periodo.atalho === d || undefined}>{d} dias</Link>)}
+        <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-haspopup="dialog" data-on={!periodo.atalho || undefined} className={`${chip(!periodo.atalho)} inline-flex items-center gap-1`}>
           <CalendarRange className="h-3.5 w-3.5" /> {periodo.atalho ? 'Personalizado' : rotuloPeriodo(periodo)}
         </button>
       </nav>
