@@ -31,12 +31,12 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
   const abrirPaleta = useCallback(() => setPaleta(true), [])
   const abrirAjuda = useCallback(() => setAjuda(true), [])
 
-  const tb = { width: 28, height: 28, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: 'var(--text-2)', cursor: 'pointer' } as const
+  const TB = 'tb flex items-center justify-center gap-1.5'
   return (
     <header className="sticky top-0 z-30" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: 'var(--bg-frame)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1 1 0', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 0', minWidth: 0 }}>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className="empresa-pill" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px 0 5px', borderRadius: 8, cursor: 'pointer', minWidth: 0 }}>
+          <DropdownMenuTrigger aria-label="Espaço de trabalho Grupo SRV" className={`${TB} min-w-0`} style={{ padding: '0 8px 0 6px', color: 'var(--text)' }}>
             <span style={{ width: 18, height: 18, flex: 'none', borderRadius: 5, background: '#d80d12', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '-.02em' }}>S</span>
             <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>Grupo SRV</span>
             <Ic n="expand_more" s={14} w={300} style={{ color: 'var(--text-2)' }} />
@@ -54,26 +54,26 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
             <form action={sair}><button className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-corpo outline-none hover:bg-hover" style={{ color: 'var(--red)' }}><Ic n="logout" s={16} /> Sair</button></form>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/agenda" title="Agenda" aria-label="Agenda" className="hidden sm:flex hover-bg" style={tb}><Ic n="calendar_today" s={19} w={300} /></Link>
+        <Link href="/agenda" title="Agenda" aria-label="Agenda" className={`hidden sm:flex ${TB}`}><Ic n="calendar_today" s={18} w={300} /></Link>
         <div className="hidden sm:block"><AlertasSistema alertas={alertas} /></div>
         <Suspense fallback={null}><AtalhosFixados /></Suspense>
       </div>
 
-      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden sm:flex" style={{ flex: '0 1 360px', minWidth: 160, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'center', gap: 8, padding: '0 5px 0 10px', color: 'var(--text-3)', cursor: 'text' }}>
+      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="tb hidden items-center gap-2 sm:flex" style={{ flex: '0 1 360px', minWidth: 160, padding: '0 6px 0 12px', color: 'var(--text-3)', cursor: 'text' }}>
         <Ic n="search" s={16} />
         <span style={{ flex: 1, textAlign: 'left', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Buscar tarefas, clientes, documentos…</span>
         <span style={{ fontSize: 11, lineHeight: 1, padding: '3px 5px', border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-2)' }}>⌘K</span>
       </button>
 
-      <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, minWidth: 0 }}>
-        <button type="button" onClick={abrirPaleta} aria-label="Buscar" className="sm:hidden" style={{ ...tb, width: 36, height: 36 }}><Ic n="search" s={19} /></button>
+      <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        <button type="button" onClick={abrirPaleta} aria-label="Buscar" className={`sm:hidden ${TB}`}><Ic n="search" s={19} /></button>
         {papelPodeUsarIA(painel.papel) && (
-          <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} title="Assistente IA (⌘J)" className="hidden xl:flex hover-bg" style={{ height: 28, flex: 'none', whiteSpace: 'nowrap', alignItems: 'center', gap: 6, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text)', fontSize: 13, cursor: 'pointer', marginRight: 4 }}>
+          <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} title="Assistente IA (⌘J)" className="tb hidden items-center gap-1.5 xl:flex" style={{ padding: '0 12px', color: 'var(--text)' }}>
             Assistente IA<Ic n="auto_awesome" s={15} style={{ color: '#d80d12' }} />
           </button>
         )}
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Criar" title="Criar" style={{ height: 28, display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px 0 6px', border: 0, borderRadius: 6, background: 'var(--primary)', color: 'var(--on-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginRight: 4 }}><Ic n="add" s={16} />Criar</DropdownMenuTrigger>
+          <DropdownMenuTrigger aria-label="Criar" title="Criar" className={`${TB} tb-pri`} style={{ padding: '0 12px 0 8px' }}><Ic n="add" s={16} />Criar</DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem asChild><Link href="/inicio"><Ic n="task_alt" s={16} /> Tarefa <span className="ml-auto text-rotulo text-texto-3">T</span></Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/agendamentos"><Ic n="photo_library" s={16} /> Post <span className="ml-auto text-rotulo text-texto-3">P</span></Link></DropdownMenuItem>
@@ -82,11 +82,11 @@ export function CabecalhoTopo({ painel, avisos, naoLidos, euId, alertas }: Props
             <DropdownMenuItem asChild><Link href="/quadros"><Ic n="draw" s={16} /> Quadro</Link></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/inicio" title="Minhas tarefas" aria-label="Minhas tarefas" className="hidden md:flex hover-bg" style={tb}><Ic n="task_alt" s={17} /></Link>
-        <Link href="/reunioes" title="Reuniões" aria-label="Reuniões" className="hidden md:flex hover-bg" style={tb}><Ic n="videocam" s={17} /></Link>
-        <Link href="/documentos" title="Documentos" aria-label="Documentos" className="hidden md:flex hover-bg" style={tb}><Ic n="description" s={17} /></Link>
+        <Link href="/inicio" title="Minhas tarefas" aria-label="Minhas tarefas" className={`hidden md:flex ${TB}`}><Ic n="task_alt" s={17} /></Link>
+        <Link href="/reunioes" title="Reuniões" aria-label="Reuniões" className={`hidden md:flex ${TB}`}><Ic n="videocam" s={17} /></Link>
+        <Link href="/documentos" title="Documentos" aria-label="Documentos" className={`hidden md:flex ${TB}`}><Ic n="description" s={17} /></Link>
         <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} />
-        <MenuPerfil nome={painel.nome} papel={painel.papel} className="hover-bg" estilo={{ ...tb, padding: 0 }} />
+        <MenuPerfil nome={painel.nome} papel={painel.papel} className={TB} estilo={{ padding: 0 }} />
       </div>
 
       <AtalhosGlobais aoAbrirPaleta={abrirPaleta} aoAbrirAjuda={abrirAjuda} />

@@ -50,16 +50,16 @@ export function AtalhosFixados() {
     if (nome) gravar([...itens, { nome, href: atual }])
   }
   return (
-    <nav aria-label="Atalhos fixados" className="hidden md:flex" style={{ flex: '1 1 0', minWidth: 0, alignItems: 'center', gap: 2, marginLeft: 6, overflowX: 'auto', scrollbarWidth: 'none', color: 'var(--text-2)' }}>
+    <nav aria-label="Atalhos fixados" className="hidden md:flex" style={{ flex: '1 1 0', minWidth: 0, alignItems: 'center', gap: 6, marginLeft: 6, overflowX: 'auto', scrollbarWidth: 'none', color: 'var(--text-2)' }}>
       {itens.map((i) => (
         <span key={i.href} className="group/f" style={{ position: 'relative', display: 'flex', flex: 'none' }}>
-          <Link href={i.href} className="hover-bg" style={{ height: 26, display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', borderRadius: 6, color: i.href === atual ? 'var(--text)' : 'inherit', fontSize: 13, whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: i.href === atual ? 600 : 400 }}>
-            <Ic n={i.icone ?? 'bookmark'} s={15} style={{ color: 'var(--text-3)' }} />{i.nome}
+          <Link href={i.href} data-ativo={i.href === atual || undefined} className="tb flex items-center gap-1.5">
+            <Ic n={i.icone ?? 'bookmark'} s={15} />{i.nome}
           </Link>
           <button type="button" aria-label={`Remover atalho ${i.nome}`} onClick={() => gravar(itens.filter((x) => x.href !== i.href))} className="hidden group-hover/f:flex" style={{ position: 'absolute', right: -2, top: -2, width: 14, height: 14, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 0, background: 'var(--bg-active)', color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="close" s={10} /></button>
         </span>
       ))}
-      <button type="button" onClick={fixar} aria-label="Fixar visualização" title="Fixar visualização" className="hover-bg" style={{ width: 26, height: 26, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderRadius: 6, background: 'transparent', color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="add" s={15} /></button>
+      <button type="button" onClick={fixar} aria-label="Fixar visualização" title="Fixar visualização" className="tb flex items-center justify-center"><Ic n="add" s={15} /></button>
     </nav>
   )
 }

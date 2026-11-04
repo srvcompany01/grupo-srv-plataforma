@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popove
 import { rotuloContagem, tempoRelativo } from '@/dominio/formatar'
 import { criarClienteNavegador } from '@/infra/supabase/navegador'
 import type { Aviso } from '@/servicos/avisos'
+import { AtSign, TriangleAlert } from 'lucide-react'
 import { Ic } from './Ic'
 
 export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLidos: number; euId: string }) {
@@ -16,6 +17,8 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(() => Date.now())
   const [pendente, iniciar] = useTransition()
+  const [soNovos, setSoNovos] = useState(false)
+  const lista = soNovos ? avisos.filter((a) => !a.lido) : avisos
   const idCanal = useId()
   const selo = rotuloContagem(naoLidos)
 
@@ -56,35 +59,34 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="hover-bg" style={{ position: 'relative', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 6, color: 'var(--text-2)', cursor: 'pointer' }}>
-        <Ic n="notifications" s={17} />
-        {selo && <span style={{ position: 'absolute', top: 5, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#d80d12', boxShadow: '0 0 0 2px var(--bg-frame)' }} />}
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="tb flex items-center justify-center" style={{ padding: 0 }}>
+        <Ic n="notifications" s={18} />
+        {selo && <span className="tb-ponto" />}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 gap-0 p-0">
-        <p className="border-b border-borda px-3 py-2 text-corpo font-semibold">Avisos</p>
-        {avisos.length === 0 ? (
-          <p className="px-3 py-4 text-rotulo text-texto-3">Nenhum aviso por enquanto.</p>
+      <PopoverContent align="end" className="painel-alerta">
+        <div className="pa-topo">
+          <p className="pa-titulo">Alertas</p>
+          <div className="pa-seg" role="tablist">
+            <button type="button" role="tab" aria-selected={!soNovos} data-on={!soNovos || undefined} onClick={() => setSoNovos(false)}>Todos</button>
+            <button type="button" role="tab" aria-selected={soNovos} data-on={soNovos || undefined} onClick={() => setSoNovos(true)}>Não lidos</button>
+          </div>
+        </div>
+        {lista.length === 0 ? (
+          <p className="pa-vazio">{soNovos ? 'Nenhum aviso novo.' : 'Nenhum aviso por enquanto.'}</p>
         ) : (
-          <ul className="max-h-80 divide-y divide-borda overflow-y-auto">
-            {avisos.map((a) => (
-              <li key={a.id}>
-                <button disabled={pendente} onClick={() => abrir(a)} className={`block w-full px-3 py-2 text-left text-rotulo hover:bg-hover ${a.lido ? 'text-texto-2' : 'font-bold text-texto'}`}>
-                  <span className="block">
-                    {a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}
-                  </span>
-                  <span className="block text-legenda font-normal text-texto-3">{tempoRelativo(a.criadoEm, agora)}</span>
-                </button>
-              </li>
+          <div className="pa-lista">
+            {lista.map((a) => (
+              <button key={a.id} type="button" disabled={pendente} onClick={() => abrir(a)} data-nova={!a.lido || undefined} className="pa-item">
+                <span className="pa-ico" data-erro={a.mensagem ? true : undefined}>{a.mensagem ? <TriangleAlert size={18} strokeWidth={1.6} /> : <AtSign size={18} strokeWidth={1.6} />}</span>
+                <span className="pa-corpo">
+                  <span className="pa-t block">{a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}</span>
+                </span>
+                <span className="pa-lado">{!a.lido && <span className="pa-ponto" />}{tempoRelativo(a.criadoEm, agora)}</span>
+              </button>
             ))}
-          </ul>
+          </div>
         )}
-        <button
-          disabled={pendente || naoLidos === 0}
-          onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))}
-          className="border-t border-borda px-3 py-2 text-left text-rotulo font-medium text-marca hover:bg-hover disabled:opacity-40"
-        >
-          Marcar todos como lidos
-        </button>
+        <button type="button" disabled={pendente || naoLidos === 0} onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))} className="pa-rodape">Marcar todos como lidos</button>
       </PopoverContent>
     </Popover>
   )
