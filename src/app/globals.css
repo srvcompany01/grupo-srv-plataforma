@@ -634,10 +634,13 @@ button.rounded-full:not([role="switch"]):not([data-redondo]), a.rounded-full:not
 .ins-aba { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--ins-borda); border-radius: 6px; background: var(--bg); color: var(--text-2); font-size: 13px; text-decoration: none; white-space: nowrap; }
 .ins-aba:hover { background: var(--bg-hover); color: var(--text); }
 .ins-aba[aria-current='page'] { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 600; }
-.ins-rede { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border: 1px solid var(--ins-borda); border-radius: 6px; background: var(--bg); font-size: 12.5px; line-height: 1.2; }
-.ins-rede[data-ativa] { border-color: var(--ins-acc); box-shadow: inset 0 -2px 0 var(--ins-acc); }
-.ins-rede[data-breve] { opacity: .55; border-style: dashed; }
-.ins-rede small { display: block; font-size: 10.5px; color: var(--ins-suave); }
+.ins-redes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.ins-rede { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 7px 18px 7px 8px; border: 1px solid var(--ins-borda); border-radius: 16px; background: var(--bg); font-size: 13px; line-height: 1.25; }
+.ins-rede-logo { display: inline-flex; width: 32px; height: 32px; flex: none; overflow: hidden; border-radius: 50%; }
+.ins-rede-logo > svg { border-radius: 0 !important; width: 100%; height: 100%; }
+.ins-rede[data-ativa] { border-color: var(--ins-acc); background: var(--ins-acc-fundo); }
+.ins-rede[data-breve] { opacity: .6; }
+.ins-rede small { display: block; font-size: 11px; color: var(--ins-suave); }
 .ins-seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--ins-borda); border-radius: 6px; background: var(--bg); }
 .ins-seg > button, .ins-seg > a { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: var(--ins-suave); font-size: 12.5px; text-decoration: none; cursor: pointer; }
 .ins-seg > [aria-pressed='true'], .ins-seg > [data-on] { background: var(--text); color: var(--bg); font-weight: 600; }

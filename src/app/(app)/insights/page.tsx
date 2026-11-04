@@ -7,8 +7,7 @@ import { AtualizarComentarios, ListaComentarios } from '@/componentes/insights/C
 import { InstagramSocial } from '@/componentes/insights/social/InstagramSocial'
 import { CartaoSocial, FaixaKpis } from '@/componentes/insights/social/Social'
 import type { Explicacao } from '@/componentes/insights/social/ComoCalculamos'
-import { LogoRede } from '@/componentes/redes/LogoRede'
-import type { SlugRede } from '@/dominio/redes-sociais'
+import { RedesFaixa } from '@/componentes/insights/social/RedesFaixa'
 import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
 import { Modulo } from '@/componentes/Modulo'
 import { dataDeHoje } from '@/dominio/filtros'
@@ -29,16 +28,6 @@ export const maxDuration = 300
 const ex = (formula: string): Explicacao => ({ formula, fonte: 'API do Instagram (Meta)', atualizado: 'a cada hora' })
 const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
-
-/** Plataformas orgânicas: as que já funcionam e as que vêm aí. */
-const PLATAFORMAS: { nome: string; situacao: string; ativa: boolean; slug?: SlugRede; cor: string }[] = [
-  { nome: 'Instagram', situacao: 'Ativo', ativa: true, slug: 'instagram', cor: '#e1306c' },
-  { nome: 'Google Meu Negócio', situacao: 'Aguardando o Google', ativa: false, slug: 'gmn', cor: '#1a73e8' },
-  { nome: 'TikTok', situacao: 'Em breve', ativa: false, slug: 'tiktok', cor: '#111111' },
-  { nome: 'YouTube', situacao: 'Em breve', ativa: false, slug: 'youtube', cor: '#ff0033' },
-  { nome: 'Facebook (Página)', situacao: 'Em breve', ativa: false, cor: '#0866ff' },
-  { nome: 'LinkedIn', situacao: 'Em breve', ativa: false, slug: 'linkedin', cor: '#0a66c2' },
-]
 
 /** Insights orgânicos: panorama de todos os clientes ou, com ?cliente=, o detalhe de um (com recomendações). */
 export default async function Insights({ searchParams }: PageProps<'/insights'>) {
@@ -82,15 +71,6 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         ))}
       </nav>
 
-      <div className="flex flex-wrap gap-2">
-        {PLATAFORMAS.map((p) => (
-          <span key={p.nome} className="ins-rede" data-ativa={p.ativa || undefined} data-breve={!p.ativa || undefined}>
-            {p.slug ? <LogoRede slug={p.slug} tamanho={24} /> : <span className="h-[24px] w-[24px] rounded" style={{ background: p.cor }} aria-hidden />}
-            <span><span className="font-semibold">{p.nome}</span><small>{p.situacao}</small></span>
-          </span>
-        ))}
-      </div>
-
       {aba !== 'geral' ? (
         <CartaoSocial
           titulo={aba === 'organico' ? 'Comentários nos posts' : 'Comentários nos anúncios'}
@@ -110,7 +90,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         </CartaoSocial>
       ) : escolhido ? (
         <>
-          <Suspense fallback={<Carregando titulo={`Instagram de ${escolhido.nome}`} />}>
+          <Suspense fallback={<><RedesFaixa /><Carregando titulo={`Instagram de ${escolhido.nome}`} /></>}>
             <DetalheInstagram cliente={escolhido} periodo={periodo} />
           </Suspense>
           <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando…</p></Modulo>}>
@@ -118,7 +98,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
           </Suspense>
         </>
       ) : (
-        <Suspense fallback={<Carregando titulo="Panorama do Instagram" />}>
+        <Suspense fallback={<><RedesFaixa /><Carregando titulo="Panorama do Instagram" /></>}>
           <Panorama clientes={clientes} periodo={periodo} />
         </Suspense>
       )}
@@ -140,9 +120,10 @@ function Carregando({ titulo }: { titulo: string }) {
 async function DetalheInstagram({ cliente, periodo }: { cliente: Cliente; periodo: PeriodoAnuncios }) {
   const [ig, cliquesLinkBio, seguidoresPagos] = await Promise.all([instagramDoCliente(cliente.metaPaginaId!, periodo, true), criarClienteServidor().then((sb) => cliquesLinkBioNoPeriodo(sb, cliente.id, periodo.de, periodo.ate)), seguidoresPagosNoPeriodo(cliente.metaContaId, periodo)])
   const dias = diasDoPeriodo(periodo)
-  if ('erro' in ig) return <CartaoSocial titulo={`Instagram de ${cliente.nome}`}><p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p></CartaoSocial>
+  if ('erro' in ig) return <><RedesFaixa /><CartaoSocial titulo={`Instagram de ${cliente.nome}`}><p className="rounded-xl border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{ig.erro}</p></CartaoSocial></>
   return (
     <>
+      <RedesFaixa seguidoresInstagram={`${numero.format(ig.seguidores)} seguidores`} />
       <InstagramSocial ig={ig} dias={dias} rotuloPeriodo={rotuloPeriodo(periodo)} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
       {periodo.atalho === 'hoje' && <p className="ins-sub">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}
     </>
@@ -158,6 +139,8 @@ async function Panorama({ clientes, periodo }: { clientes: Cliente[]; periodo: P
   const maiorAlcance = Math.max(1, ...ok.map((l) => l.ig.alcance))
   const q = consultaPeriodo(periodo)
   return (
+    <>
+    <RedesFaixa seguidoresInstagram={`${numero.format(soma('seguidores'))} seguidores`} />
     <CartaoSocial titulo="Panorama do Instagram" sub={`Todos os clientes com Instagram ligado · ${rotuloPeriodo(periodo)}`}>
       <div className="space-y-4">
         <FaixaKpis
@@ -219,5 +202,6 @@ async function Panorama({ clientes, periodo }: { clientes: Cliente[]; periodo: P
         <p className="text-legenda text-texto-3">{periodo.atalho === 'hoje' ? 'Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.' : 'Dados do Instagram pela API do Meta, atualizados a cada hora.'} Clique no cliente (ou escolha no seletor) para ver os posts, o melhor formato e as recomendações.</p>
       </div>
     </CartaoSocial>
+    </>
   )
 }
