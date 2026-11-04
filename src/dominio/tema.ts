@@ -26,6 +26,7 @@ export const TEMA_PADRAO: Tema = { acao: '#111111', acento: '#d80d12', fundo: '#
 
 export const PREDEFINICOES: { nome: string; tema: Tema }[] = [
   { nome: 'SRV', tema: TEMA_PADRAO },
+  { nome: 'SRV 2026', tema: { acao: '#111113', acento: '#d80d12', fundo: '#ffffff', superficie: '#ffffff' } },
   { nome: 'Neutro azul', tema: { acao: '#111111', acento: '#3b5bdb', fundo: '#ffffff', superficie: '#ffffff' } },
   { nome: 'Reddit', tema: { acao: '#d93900', acento: '#d93900', fundo: '#f6f9fb', superficie: '#ffffff' } },
   { nome: 'Floresta', tema: { acao: '#0f7a5c', acento: '#0f7a5c', fundo: '#f4f8f6', superficie: '#ffffff' } },

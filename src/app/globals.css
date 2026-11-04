@@ -76,6 +76,16 @@
   --color-borda-forte: var(--c-borda-forte);
   --color-borda-fraca: var(--border-soft, var(--c-borda));
   --color-fundo: var(--tema-fundo);
+  /* Redesign 2026: superfícies suaves derivadas do fundo do tema, nome do cliente e escala de raios/vidro. */
+  --color-suave: color-mix(in oklab, var(--tema-fundo), #261b19 4%);
+  --color-suave-hover: color-mix(in oklab, var(--tema-fundo), #261b19 7%);
+  --color-suave-ativo: color-mix(in oklab, var(--tema-fundo), #261b19 11%);
+  --color-cliente: var(--client);
+  --color-cliente-fundo: var(--client-soft);
+  --radius-cartao: 24px;
+  --radius-bloco: 32px;
+  --radius-pilula: 999px;
+  --shadow-vidro: 0 10px 30px rgba(17, 17, 19, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --color-hover: color-mix(in oklab, var(--tema-fundo), var(--c-texto) 4%);
   --color-trilho: var(--c-trilho);
 
@@ -265,6 +275,9 @@ body:has(.app-ui) {
   --shadow-pop: 0 8px 24px rgba(17,17,19,.10), 0 1px 3px rgba(17,17,19,.06);
   --shadow-panel: -6px 0 20px rgba(17,17,19,.06); --skel: #ececef;
   --faixa-bg: #111113;
+  /* Vidro e hachura do redesign (claro). */
+  --vidro-bg: rgba(255, 255, 255, .34); --vidro-borda: rgba(17, 17, 19, .09); --vidro-ativo: rgba(255, 255, 255, .8); --hachura: #d6d3cc;
+  --card-sheen: linear-gradient(transparent, transparent);
 }
 
 /* Área logada, tema escuro (botão sol/lua): ação em vermelho SRV com texto branco, superfícies em camadas (#0E0E10 / #18181B / #232327). */
@@ -328,7 +341,13 @@ body:has(.app-ui[data-tema='escuro']) {
   --shadow-pop: 0 10px 28px rgba(0,0,0,.55), 0 0 0 1px #2a2a2e;
   --shadow-panel: -8px 0 24px rgba(0,0,0,.4); --skel: #232326;
   --faixa-bg: #0a0a0b;
+  /* Vidro e hachura do redesign (escuro). */
+  --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --hachura: #4a4a52;
+  --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%);
 }
+
+/* Variante `dark:` do Tailwind (@custom-variant acima): mesmos valores do tema escuro, para componentes que usam `.dark`. */
+.dark { --vidro-bg: rgba(40, 40, 46, .38); --vidro-borda: rgba(255, 255, 255, .12); --vidro-ativo: rgba(255, 255, 255, .16); --hachura: #4a4a52; --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%); --client: #4d8ff0; --client-soft: #14233a; }
 
 /* Escala do design (medidas do ClickUp): tamanhos em múltiplos de 4, raios e elevações 1–5. Usados pelos componentes novos. */
 :root {

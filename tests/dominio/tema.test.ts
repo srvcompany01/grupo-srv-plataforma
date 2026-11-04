@@ -32,3 +32,9 @@ it('cai no padrão quando o valor salvo é inválido', () => {
 it('temas escuros salvos antes caem no padrão claro (não passam na validação)', () => {
   expect(lerTema({ acao: '#d93900', acento: '#ff4500', fundo: '#0e1113', superficie: '#181c1f' })).toEqual(TEMA_PADRAO)
 })
+
+it('predefinição SRV 2026 existe e o azul do cliente passa no contraste AA nos dois temas', () => {
+  expect(PREDEFINICOES.map((p) => p.nome)).toContain('SRV 2026')
+  expect(contraste('#1d6fe0', '#ffffff')).toBeGreaterThanOrEqual(4.5)
+  expect(contraste('#4d8ff0', '#161618')).toBeGreaterThanOrEqual(4.5)
+})
