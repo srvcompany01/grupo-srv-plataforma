@@ -12,7 +12,7 @@ import type { Aviso } from '@/servicos/avisos'
 import { AtSign, TriangleAlert } from 'lucide-react'
 import { Ic } from './Ic'
 
-export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLidos: number; euId: string }) {
+export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo' }: { avisos: Aviso[]; naoLidos: number; euId: string; /** `dock` = botão da barra de navegação (painel abre ao lado). */ variante?: 'topo' | 'dock' }) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(() => Date.now())
@@ -59,11 +59,11 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="tb flex items-center justify-center" style={{ padding: 0 }}>
-        <Ic n="notifications" s={18} />
-        {selo && <span className="tb-ponto" />}
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className={variante === 'dock' ? 'dock-item' : 'tb flex items-center justify-center'} style={variante === 'dock' ? undefined : { padding: 0 }}>
+        <Ic n="notifications" s={variante === 'dock' ? 22 : 18} />
+        {selo && <span className={variante === 'dock' ? 'dock-ponto' : 'tb-ponto'} />}
       </PopoverTrigger>
-      <PopoverContent align="end" className="painel-alerta">
+      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align={variante === 'dock' ? 'end' : 'end'} className="painel-alerta">
         <div className="pa-topo">
           <p className="pa-titulo">Alertas</p>
           <div className="pa-seg" role="tablist">

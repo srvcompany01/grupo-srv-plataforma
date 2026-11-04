@@ -561,6 +561,8 @@ body:has(.app-ui[data-tema='escuro']) .bg-petroleo.text-claro svg { color: #1111
 .dock-seta { position: relative; width: 16px; height: 16px; padding: 0 2px; border-radius: 6px; background: var(--bg-frame); transition: transform 150ms; }
 .dock-mais { display: flex; flex-direction: column; align-items: center; }
 .dock-mais[data-aberto='false'] { display: none; }
+.dock-fixo { flex: none; }
+.dock-logo { width: 44px; height: 44px; }
 .dock-pop { position: fixed; left: 92px; z-index: 41; width: 260px; padding: 4px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--border); box-shadow: var(--shadow-pop); color: var(--text); }
 /* Celular: barra de baixo com rótulos e botão central da Emma (IA); "Mais" abre todos os módulos. */
 .dock-cel { display: none; }

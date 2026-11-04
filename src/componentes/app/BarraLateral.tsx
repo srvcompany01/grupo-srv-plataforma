@@ -1,54 +1,20 @@
 'use client'
 
-import { LogoRede } from '@/componentes/redes/LogoRede'
-import { REDES } from '@/dominio/redes-sociais'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import {
-  Briefcase,
-  CalendarClock,
-  CalendarDays,
-  CheckSquare,
-  ClipboardList,
-  FileText,
-  ChartNoAxesCombined,
-  Filter,
-  LayoutDashboard,
-  Megaphone,
-  MessagesSquare,
-  Mic,
-  Newspaper,
-  House,
-  PenTool,
-  Settings,
-  Users,
-  UsersRound,
-  Wallet,
-  TrendingUp,
-  MapPin,
-  Radar,
-  Inbox,
-  ChevronDown,
-  LayoutGrid,
-  Share2,
-  Sparkles,
-  Menu,
-} from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { Sheet, SheetContent, SheetTitle } from '@/componentes/ui/sheet'
 import { usePathname, useRouter } from 'next/navigation'
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ComponentType, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { moverItemNavegacao } from '@/app/(app)/acoes-navegacao'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { IndicadorCronometro } from './IndicadorCronometro'
-import { AlternarTema } from './AlternarTema'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Ic } from './Ic'
+import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
-import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { MenuPerfil } from './MenuPerfil'
-import { EVENTO_ABRIR_IA } from './PainelIA'
-import { papelPodeUsarIA } from '@/ia/acesso'
+import { ICONE_MS, atalhosDoInicio, estaEm, type Atalho } from './atalhos'
+import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { DestinosMover, LinhaNavegacao, type DestinoMover, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
 import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
@@ -58,202 +24,6 @@ import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKI
 
 type Opcao = { id: string; nome: string }
 export type PropsPainel = { navegacao: Navegacao; /** Canais do chat (seção Canais do painel). */ canais?: { id: string; nome: string; naoLidas: number; privado: boolean }[]; /** Listas com a estrela da pessoa (seção Favoritos). */ favoritas?: { id: string; nome: string }[]; papel: string; /** Nome de quem está logado (perfil no pé da faixa de ícones). */ nome: string; /** Tema escolhido (claro é o padrão). */ tema: ModoTema; cronometro: CronometroAtivo | null; /** Espaços e pastas recolhidos (vem do cookie, para não piscar). */ fechados?: string[]; /** Ordem dos atalhos de Início escolhida pela pessoa (vem do cookie). */ ordemInicio?: string[]; /** Mensagens do chat ainda não lidas. */ chatNaoLidas?: number }
-type IconeLucide = ComponentType<{ className?: string }>
-
-type Atalho = { id: string; href: string; rotulo: string; curto: string; Icone: IconeLucide; contador?: number }
-
-/** Atalhos dos módulos: na faixa de ícones (desktop) e no topo do menu (celular). `curto` = rótulo da faixa. */
-export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
-  return [
-    { id: 'home', href: '/home', rotulo: 'Home', curto: 'Início', Icone: House },
-    { id: 'tarefas', href: '/inicio', rotulo: 'Minhas tarefas', curto: 'Tarefas', Icone: CheckSquare },
-    { id: 'chat', href: '/chat', rotulo: 'Chat', curto: 'Chat', Icone: MessagesSquare, contador: chatNaoLidas },
-    { id: 'agenda', href: '/agenda', rotulo: 'Agenda', curto: 'Planejador', Icone: CalendarDays },
-    { id: 'agendamentos', href: '/agendamentos', rotulo: 'Agendamentos', curto: 'Posts', Icone: CalendarClock },
-    { id: 'caixa', href: '/caixa-de-entrada', rotulo: 'Caixa de entrada', curto: 'Caixa', Icone: Inbox },
-    { id: 'painel', href: '/painel-de-gestao', rotulo: 'Painel de Gestão', curto: 'Painéis', Icone: LayoutDashboard },
-    { id: 'clientes', href: '/clientes', rotulo: 'Clientes', curto: 'Clientes', Icone: Users },
-    { id: 'anuncios', href: '/anuncios', rotulo: 'Anúncios', curto: 'Anúncios', Icone: Megaphone },
-    { id: 'insights', href: '/insights', rotulo: 'Insights', curto: 'Insights', Icone: ChartNoAxesCombined },
-    { id: 'gmn', href: '/gmn', rotulo: 'Google Meu Negócio', curto: 'GMN', Icone: MapPin },
-    { id: 'biolytics', href: '/biolytics', rotulo: 'Biolytics', curto: 'Biolytics', Icone: Radar },
-    { id: 'performance', href: '/performance', rotulo: 'Performance', curto: 'Perform.', Icone: TrendingUp },
-    { id: 'projetos', href: '/projetos', rotulo: 'Projetos', curto: 'Projetos', Icone: Briefcase },
-    { id: 'reunioes', href: '/reunioes', rotulo: 'Reuniões', curto: 'Reuniões', Icone: Mic },
-    { id: 'time', href: '/time', rotulo: 'Time', curto: 'Equipes', Icone: UsersRound },
-    { id: 'blog', href: '/editor-blog', rotulo: 'Blog', curto: 'Blog', Icone: Newspaper },
-    { id: 'documentos', href: '/documentos', rotulo: 'Documentos', curto: 'Docum.', Icone: FileText },
-    { id: 'quadros', href: '/quadros', rotulo: 'Quadros', curto: 'Quadros', Icone: PenTool },
-    { id: 'funis', href: '/funis', rotulo: 'Funis', curto: 'Funis', Icone: Filter },
-    ...(papel === 'admin'
-      ? [
-          { id: 'financeiro', href: '/financeiro', rotulo: 'Financeiro', curto: 'Financeiro', Icone: Wallet },
-          { id: 'formularios', href: '/config/formularios', rotulo: 'Formulários', curto: 'Formulár.', Icone: ClipboardList },
-          { id: 'config', href: '/config', rotulo: 'Configurações', curto: 'Config.', Icone: Settings },
-        ]
-      : []),
-  ]
-}
-
-const estaEm = (caminho: string, href: string) => caminho === href || caminho.startsWith(`${href}/`)
-
-/**
- * Barra única de navegação (a "dock"): os de uso diário ficam soltos; o resto abre pela setinha do divisor.
- * Módulo novo entra em atalhosDoInicio e aqui, em NO_TOPO ou em GRUPOS_FAIXA.
- */
-const NO_TOPO = ['home', 'tarefas', 'agenda', 'chat', 'painel', 'documentos', 'quadros', 'time']
-const GRUPOS_FAIXA: { id: string; itens: string[] }[] = [
-  { id: 'mais', itens: ['agendamentos', 'reunioes', 'caixa', 'clientes', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'formularios'] },
-]
-
-/** Nome do ícone (Material Symbols Rounded) de cada módulo, usado na paleta de comandos e no painel. */
-export const ICONE_MS: Record<string, string> = {
-  home: 'home', espacos: 'grid_view', chat: 'chat_bubble', agenda: 'event_note', time: 'groups', documentos: 'description', painel: 'monitoring', quadros: 'draw', formularios: 'assignment',
-  tarefas: 'task_alt', agendamentos: 'event_available', caixa: 'move_to_inbox', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
-  gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', funis: 'filter_alt', config: 'settings',
-}
-
-/**
- * Barra única de navegação. Desktop e tablet: coluna de vidro creme à esquerda (logo, cápsula com os módulos, espaços e tema).
- * Celular: a mesma barra vira uma ilha flutuante embaixo, rolando para o lado. O botão de espaços abre a árvore (gaveta no tablet e no celular).
- */
-export function FaixaAtalhos({ papel, chatNaoLidas = 0, ordemInicio = [], tema, ...painel }: PropsPainel) {
-  const caminho = usePathname()
-  const atalhos = atalhosDoInicio(papel, chatNaoLidas)
-  const [redesEm, setRedesEm] = useState<{ caminho: string; topo: number } | null>(null)
-  const redesAberto = redesEm?.caminho === caminho ? redesEm : null
-  const [gavetaEm, setGavetaEm] = useState<string | null>(null)
-  const [forcaMais, setForcaMais] = useState<{ caminho: string; aberto: boolean } | null>(null)
-  const emRedes = caminho === '/redes' || caminho.startsWith('/redes/')
-  const dock = useRef<HTMLElement>(null)
-  const ativoEm = (href: string) => estaEm(caminho, href) && !atalhos.some((a) => a.href !== href && a.href.startsWith(`${href}/`) && estaEm(caminho, a.href))
-  const porId = new Map(atalhos.map((a) => [a.id, a]))
-  const soltosTopo = NO_TOPO.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-  const agrupados = GRUPOS_FAIXA.flatMap((g) => g.itens).map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-  const emEspacos = /^\/(espacos|listas|pastas)(\/|$)/.test(caminho)
-  const emMais = agrupados.some((a) => ativoEm(a.href))
-  const maisAberto = forcaMais?.caminho === caminho ? forcaMais.aberto : emMais
-  useEffect(() => {
-    if (!redesAberto) return
-    const fecha = () => setRedesEm(null)
-    const fora = (e: MouseEvent) => { if (!dock.current?.contains(e.target as Node)) fecha() }
-    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') fecha() }
-    document.addEventListener('mousedown', fora)
-    document.addEventListener('keydown', esc)
-    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
-  }, [redesAberto])
-
-  const item = ({ id, href, rotulo, contador, Icone }: Atalho) => {
-    const ativo = ativoEm(href)
-    return (
-      <Link key={id} href={href} title={rotulo} aria-label={rotulo} draggable={false} aria-current={ativo ? 'page' : undefined} data-ativo={ativo || undefined} className="dock-item">
-        <Icone className="dock-ico" />
-        {!!contador && <span className="dock-ponto" aria-label={`${contador} não lidas`} />}
-      </Link>
-    )
-  }
-  const config = porId.get('config')
-  const abrirEspacos = () => {
-    if (window.matchMedia('(min-width: 1024px)').matches) window.dispatchEvent(new Event(EVENTO_ALTERNAR_BARRA))
-    else setGavetaEm(caminho)
-  }
-
-  return (
-    <>
-    <DockCelular atalhos={atalhos} ativoEm={ativoEm} caminho={caminho} papel={papel} tema={tema} aoEspacos={() => setGavetaEm(caminho)} />
-    <nav ref={dock} aria-label="Navegação" className="dock">
-      <Link href="/home" title="Home" aria-label="Home" className="dock-tile dock-logo"><Image src="/marca/simbolo.png" alt="" width={30} height={30} priority /></Link>
-      <div className="dock-pill">
-        <ListaOrdenavel className="dock-lista" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
-        <button type="button" onClick={(e) => { setRedesEm(redesAberto ? null : { caminho, topo: e.currentTarget.getBoundingClientRect().top }) }} title="Redes sociais" aria-label="Redes sociais" aria-expanded={!!redesAberto} aria-haspopup="menu" data-ativo={emRedes || undefined} className="dock-item"><Share2 className="dock-ico" /></button>
-        <button type="button" onClick={() => setForcaMais({ caminho, aberto: !maisAberto })} title={maisAberto ? 'Mostrar menos' : 'Mostrar mais módulos'} aria-label={maisAberto ? 'Mostrar menos' : 'Mostrar mais módulos'} aria-expanded={maisAberto} className="dock-sep dock-mais-btn"><ChevronDown className="dock-seta" style={{ transform: maisAberto ? 'rotate(180deg)' : undefined }} /></button>
-        <div className="dock-mais" data-aberto={maisAberto}>
-          <ListaOrdenavel className="dock-lista" cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={agrupados.map((a) => ({ id: a.id, no: item(a) }))} />
-        </div>
-        {config && (
-          <>
-            <span className="dock-sep" aria-hidden="true" />
-            {item(config)}
-          </>
-        )}
-      </div>
-      <div className="dock-folga" />
-      <div className="dock-fim">
-        <button type="button" onClick={abrirEspacos} title="Espaços" aria-label="Espaços" data-ativo={emEspacos || undefined} className="dock-tile"><LayoutGrid className="dock-ico" /></button>
-        <AlternarTema inicial={tema} className="dock-tile" />
-      </div>
-      {redesAberto && (
-        <div role="menu" aria-label="Redes sociais" className="dock-pop" style={{ top: Math.max(56, Math.min(redesAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)) }}>
-          <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Redes sociais</p>
-          <Link href="/redes" role="menuitem" className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: caminho === '/redes' ? 600 : 500, background: caminho === '/redes' ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}><Ic n="grid_view" s={20} style={{ color: 'var(--text-2)' }} />Visão geral</Link>
-          <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 6px' }} />
-          {REDES.map((r) => {
-            const on = caminho === `/redes/${r.slug}`
-            return (
-              <Link key={r.slug} href={`/redes/${r.slug}`} role="menuitem" aria-current={on ? 'page' : undefined} className="menu-item" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: on ? 600 : 400, background: on ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}>
-                <LogoRede slug={r.slug} tamanho={20} />
-                <span style={{ flex: 1 }}>{r.nome}</span>
-                {!r.conectada && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>em breve</span>}
-              </Link>
-            )
-          })}
-        </div>
-      )}
-      <Sheet open={gavetaEm === caminho} onOpenChange={(aberta) => setGavetaEm(aberta ? caminho : null)}>
-        <SheetContent side="left" className="w-[320px] max-w-[88vw] border-r border-lat-borda bg-lat-bg p-0 text-lat-fg">
-          <SheetTitle className="sr-only">Espaços</SheetTitle>
-          <PainelEspacos {...painel} papel={papel} chatNaoLidas={chatNaoLidas} ordemInicio={ordemInicio} tema={tema} />
-        </SheetContent>
-      </Sheet>
-    </nav>
-    </>
-  )
-}
-
-const NA_BARRA_CEL = ['home', 'tarefas', 'chat']
-
-/** Barra de baixo do celular: Home, Tarefas, botão central da Emma (IA), Chat e Mais (todos os módulos, redes, espaços e tema). */
-function DockCelular({ atalhos, ativoEm, caminho, papel, tema, aoEspacos }: { atalhos: Atalho[]; ativoEm: (href: string) => boolean; caminho: string; papel: string; tema: ModoTema; aoEspacos: () => void }) {
-  const [maisEm, setMaisEm] = useState<string | null>(null)
-  const porId = new Map(atalhos.map((a) => [a.id, a]))
-  const fixos = NA_BARRA_CEL.map((id) => porId.get(id)).filter((a): a is Atalho => !!a)
-  const comIA = papelPodeUsarIA(papel)
-  const botao = ({ id, href, curto, contador, Icone }: Atalho) => {
-    const ativo = ativoEm(href)
-    return (
-      <Link key={id} href={href} aria-current={ativo ? 'page' : undefined} data-ativo={ativo || undefined} className="dock-cel-item">
-        <span className="dock-cel-ico"><Icone className="dock-ico" />{!!contador && <span className="dock-ponto" aria-label={`${contador} não lidas`} />}</span>
-        {curto}
-      </Link>
-    )
-  }
-  const [home, tarefas, chat] = fixos
-  return (
-    <nav aria-label="Navegação" className="dock-cel">
-      {home && botao(home)}
-      {tarefas && botao(tarefas)}
-      {comIA && <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} aria-label="Abrir a Emma, assistente" title="Emma, a assistente" className="dock-cel-centro"><Sparkles size={26} strokeWidth={1.6} /></button>}
-      {chat && botao(chat)}
-      <button type="button" onClick={() => setMaisEm(caminho)} aria-label="Mais" className="dock-cel-item" aria-haspopup="dialog">
-        <span className="dock-cel-ico"><Menu className="dock-ico" /></span>Mais
-      </button>
-      <Sheet open={maisEm === caminho} onOpenChange={(aberta) => setMaisEm(aberta ? caminho : null)}>
-        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl border-t border-lat-borda bg-lat-bg p-4 pb-8 text-lat-fg">
-          <SheetTitle className="mb-3 text-base font-semibold">Todos os módulos</SheetTitle>
-          <div className="dock-cel-grade">
-            {atalhos.map(({ id, href, rotulo, Icone }) => (
-              <Link key={id} href={href} data-ativo={ativoEm(href) || undefined}><Icone className="dock-ico" />{rotulo}</Link>
-            ))}
-            <Link href="/redes" data-ativo={caminho.startsWith('/redes') || undefined}><Share2 className="dock-ico" />Redes sociais</Link>
-            <button type="button" onClick={aoEspacos}><LayoutGrid className="dock-ico" />Espaços</button>
-            <AlternarTema inicial={tema} comRotulo />
-          </div>
-        </SheetContent>
-      </Sheet>
-    </nav>
-  )
-}
-
 /** Quais espaços e pastas estão recolhidos. A escolha fica gravada no navegador e vale na próxima visita. */
 const Recolhidos = createContext<{ fechado: (id: string) => boolean; alternar: (id: string) => void; admin: boolean }>({ fechado: () => false, alternar: () => {}, admin: false })
 
@@ -446,12 +216,17 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col" style={{ color: 'var(--text)' }}>
       <div className="flex shrink-0 items-center" style={{ height: 40, gap: 2, padding: '0 6px 0 8px' }}>
         <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>Início</span>
-        {papel === 'admin' && (
-          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', marginRight: 2 }}>
-            <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" title="Criar" className="hover-bg" style={{ width: 26, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: '5px 0 0 5px', color: 'var(--text)', cursor: 'pointer' }}><Ic n="add" s={16} /></button>} />
-            <Link href="/config/espacos" title="Opções de criação" className="hover-bg" style={{ width: 18, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid var(--border)', borderRadius: '0 5px 5px 0', color: 'var(--text-2)' }}><Ic n="expand_more" s={14} /></Link>
-          </div>
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger title="Criar" aria-label="Criar" className="hover-bg" style={{ height: 26, display: 'flex', alignItems: 'center', gap: 2, padding: '0 6px 0 8px', marginRight: 2, border: 0, borderRadius: 12, background: 'var(--bg-subtle)', color: 'var(--text)', cursor: 'pointer' }}><Ic n="add" s={16} /><Ic n="expand_more" s={14} style={{ color: 'var(--text-2)' }} /></DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem asChild><Link href="/inicio"><Ic n="task_alt" s={16} /> Tarefa</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/agendamentos"><Ic n="add_photo_alternate" s={16} /> Post</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/documentos"><Ic n="description" s={16} /> Documento</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/reunioes"><Ic n="videocam" s={16} /> Reunião</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/quadros"><Ic n="draw" s={16} /> Quadro</Link></DropdownMenuItem>
+            {papel === 'admin' && <DropdownMenuItem asChild><Link href="/config/espacos"><Ic n="format_list_bulleted" s={16} /> Espaço, pasta ou lista</Link></DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
         {acaoTopo}
       </div>
       <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${movendo ? 'pointer-events-none opacity-70' : ''}`} style={{ padding: '6px 6px 12px', gap: 1 }}>
@@ -564,6 +339,17 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
       setAberta(false)
     }, 250)
   }
+  // Desafixada: o painel aparece ao passar o mouse na faixa de ícones e some ao sair.
+  useEffect(() => {
+    if (!recolhida) return
+    const faixa = document.querySelector('.dock')
+    if (!faixa) return
+    const entrar = () => abrir()
+    const sair = () => fecharComAtraso()
+    faixa.addEventListener('mouseenter', entrar)
+    faixa.addEventListener('mouseleave', sair)
+    return () => { faixa.removeEventListener('mouseenter', entrar); faixa.removeEventListener('mouseleave', sair) }
+  })
   const aplicarLargura = (valor: number) => {
     const nova = limitarLargura(valor)
     setLargura(nova)
@@ -603,22 +389,16 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
         className={`hidden w-[var(--lat-w)] overflow-hidden lg:flex ${
           recolhida
-            ? `fixed bottom-2 left-[84px] top-12 z-40 h-auto rounded-[10px] border border-lat-borda bg-[var(--bg-elev)] shadow-flutuante transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
+            ? `fixed bottom-2 left-[84px] top-12 z-40 h-auto rounded-[28px] bg-[var(--bg-elev)] shadow-[var(--shadow-pop)] transition-[translate,opacity] duration-200 ${aberta ? 'translate-x-0' : 'pointer-events-none -translate-x-full opacity-0'}`
             : 'relative z-20 h-full shrink-0'
         }`}
       >
         <PainelEspacos
           {...props}
           acaoTopo={
-            recolhida ? (
-              <button type="button" onClick={() => trocarModo('fixa')} aria-label="Fixar barra lateral" title="Fixar barra lateral" className="hover-bg" style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-2)', cursor: 'pointer' }}>
-                <Ic n="push_pin" s={16} />
-              </button>
-            ) : (
-              <button type="button" onClick={() => trocarModo('recolhida')} aria-label="Recolher barra lateral" title="Recolher barra lateral" className="hover-bg" style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-2)', cursor: 'pointer' }}>
-                <Ic n="left_panel_close" s={16} />
-              </button>
-            )
+            <button type="button" onClick={() => trocarModo(recolhida ? 'fixa' : 'recolhida')} aria-pressed={!recolhida} aria-label={recolhida ? 'Fixar barra lateral' : 'Desafixar barra lateral'} title={recolhida ? 'Fixar barra lateral' : 'Desafixar (recolhe sozinha e aparece ao passar o mouse na faixa)'} className="hover-bg" style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: recolhida ? 'transparent' : 'var(--bg-active)', borderRadius: 8, color: recolhida ? 'var(--text-2)' : 'var(--text)', cursor: 'pointer' }}>
+              <Ic n="push_pin" s={16} fill={!recolhida} />
+            </button>
           }
         />
         {!recolhida && (
