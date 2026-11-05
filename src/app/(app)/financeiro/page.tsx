@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { AcoesLancamento } from '@/componentes/financeiro/AcoesLancamento'
 import { LancamentoDialog } from '@/componentes/financeiro/LancamentoDialog'
-import { ABAS_FINANCEIRO, ROTULO_ABA_FINANCEIRO, filtrarLancamentos, formatarReais, lerAbaFinanceiro, lerMes, limitesDoMes, mesVizinho, resumir, serieMensal } from '@/dominio/financeiro'
+import { ABAS_FINANCEIRO, CATEGORIAS_DIRETAS, ROTULO_ABA_FINANCEIRO, calcularMargens, filtrarLancamentos, formatarReais, lerAbaFinanceiro, lerMes, limitesDoMes, margensPorCliente, mesVizinho, resumir, serieDeMargem, serieMensal } from '@/dominio/financeiro'
 import { dataDeHoje } from '@/dominio/filtros'
 import { exigirAdmin } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
@@ -12,6 +12,7 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 
 const textoParam = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 const nomeMes = (mes: string) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${mes}-01T00:00:00Z`))
+const pct = (n: number | null) => (n === null ? '—' : `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`)
 const dia = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/')
 
 function Cartao({ rotulo, valor, tom, detalhe }: { rotulo: string; valor: number; tom?: 'bom' | 'ruim'; detalhe?: string }) {
@@ -20,6 +21,19 @@ function Cartao({ rotulo, valor, tom, detalhe }: { rotulo: string; valor: number
       <p className="text-legenda font-medium text-texto-3">{rotulo}</p>
       <p className={`mt-1 text-xl font-bold tabular-nums ${tom === 'bom' ? 'text-sucesso' : tom === 'ruim' ? 'text-perigo' : 'text-texto'}`}>{formatarReais(valor)}</p>
       {detalhe && <p className="mt-0.5 text-legenda text-texto-3">{detalhe}</p>}
+    </div>
+  )
+}
+
+function CartaoMargem({ rotulo, margem, lucro, base, anterior, ajuda }: { rotulo: string; margem: number | null; lucro: number; base: string; anterior: number | null; ajuda: string }) {
+  const dif = margem !== null && anterior !== null ? margem - anterior : null
+  const tom = margem === null ? 'text-texto' : margem >= 0 ? 'text-sucesso' : 'text-perigo'
+  return (
+    <div className="rounded-lg border border-borda p-3" title={ajuda}>
+      <p className="text-legenda font-medium text-texto-3">{rotulo}</p>
+      <p className={`mt-1 text-3xl font-bold tabular-nums ${tom}`}>{pct(margem)}</p>
+      <p className="mt-0.5 text-rotulo tabular-nums text-texto-2">{base}: <b className={lucro >= 0 ? 'text-sucesso' : 'text-perigo'}>{formatarReais(lucro)}</b></p>
+      {dif !== null && <p className="mt-0.5 text-legenda text-texto-3">{dif >= 0 ? '▲' : '▼'} {Math.abs(dif).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} p.p. vs. mês anterior</p>}
     </div>
   )
 }
@@ -38,6 +52,10 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
     listarClientes(sb),
   ])
   const resumo = resumir(lancamentos)
+  const margens = calcularMargens(lancamentos)
+  const margensAnterior = calcularMargens(historico.filter((l) => l.data.startsWith(mesVizinho(mes, -1))))
+  const porCliente = margensPorCliente(lancamentos)
+  const serieMargem = serieDeMargem(historico, mes)
   const serie = serieMensal(historico, mes)
   const maior = Math.max(1, ...serie.flatMap((m) => [m.entradas, m.despesas]))
   const maiorCategoria = Math.max(1, ...resumo.porCategoria.map((c) => c.centavos))
@@ -68,6 +86,14 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
           <Cartao rotulo="A receber / pagar" valor={resumo.aReceber - resumo.aPagar} detalhe={`${formatarReais(resumo.aReceber)} / ${formatarReais(resumo.aPagar)}`} />
         </section>
 
+        <section className="space-y-2" aria-label="Margem de lucro">
+          <div className="grid gap-3 md:grid-cols-2">
+            <CartaoMargem rotulo="Margem líquida" margem={margens.margemLiquida} lucro={margens.lucro} base="lucro" anterior={margensAnterior.margemLiquida} ajuda="(entradas − todas as despesas, impostos inclusos) ÷ entradas, pelo que está lançado: recebido e a receber, pago e a pagar" />
+            <CartaoMargem rotulo="Margem de contribuição" margem={margens.margemContribuicao} lucro={margens.contribuicao} base="sobra antes dos custos fixos" anterior={margensAnterior.margemContribuicao} ajuda={`(entradas − ${CATEGORIAS_DIRETAS.join(', ').toLowerCase()}) ÷ entradas`} />
+          </div>
+          <p className="text-legenda text-texto-3">Calculada pelo que está lançado no mês, já recebido/pago ou ainda por receber/pagar. Receita: {formatarReais(margens.receita)} · Despesas: {formatarReais(margens.despesas)}. A contribuição desconta só {CATEGORIAS_DIRETAS.join(', ').toLowerCase()}.</p>
+        </section>
+
         <section className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-lg border border-borda p-3">
             <h2 className="mb-2 text-rotulo font-semibold text-texto">Últimos 6 meses</h2>
@@ -79,6 +105,7 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
                     <span className="w-3 rounded-t bg-perigo" style={{ height: `${(m.despesas / maior) * 100}%` }} />
                   </div>
                   <span className={`truncate text-center text-micro capitalize ${m.mes === mes ? 'font-bold text-texto' : 'text-texto-3'}`}>{nomeMes(m.mes).split(' ')[0].slice(0, 3)}</span>
+                  <span className={`truncate text-center text-micro tabular-nums ${(serieMargem.find((x) => x.mes === m.mes)?.margemLiquida ?? 0) < 0 ? 'text-perigo' : 'text-texto-3'}`}>{pct(serieMargem.find((x) => x.mes === m.mes)?.margemLiquida ?? null)}</span>
                 </Link>
               ))}
             </div>
@@ -100,6 +127,29 @@ export default async function PaginaFinanceiro({ searchParams }: PageProps<'/fin
             )}
           </div>
         </section>
+
+        {porCliente.length > 0 && (
+          <section className="rounded-lg border border-borda p-3">
+            <h2 className="mb-2 text-rotulo font-semibold text-texto">Margem por cliente</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-rotulo">
+                <thead className="text-legenda font-medium text-texto-3"><tr><th className="py-1.5 pr-3">Cliente</th><th className="py-1.5 pr-3 text-right">Entradas</th><th className="py-1.5 pr-3 text-right">Despesas</th><th className="py-1.5 pr-3 text-right">Lucro</th><th className="py-1.5 text-right">Margem</th></tr></thead>
+                <tbody>
+                  {porCliente.map((c) => (
+                    <tr key={c.clienteId ?? 'geral'}>
+                      <td className="py-1.5 pr-3">{c.clienteId ? <NomeCliente nome={c.clienteNome} /> : <span className="text-texto-2">{c.clienteNome}</span>}</td>
+                      <td className="py-1.5 pr-3 text-right tabular-nums">{formatarReais(c.margens.receita)}</td>
+                      <td className="py-1.5 pr-3 text-right tabular-nums">{formatarReais(c.margens.despesas)}</td>
+                      <td className={`py-1.5 pr-3 text-right font-semibold tabular-nums ${c.margens.lucro >= 0 ? 'text-sucesso' : 'text-perigo'}`}>{formatarReais(c.margens.lucro)}</td>
+                      <td className="py-1.5 text-right tabular-nums">{pct(c.margens.margemLiquida)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-1 text-legenda text-texto-3">Só o que foi lançado com o cliente; custos sem cliente (escritório, ferramentas…) ficam na linha &quot;custos gerais&quot;.</p>
+          </section>
+        )}
 
         <section>
           <nav className="mb-2 flex gap-0.5 border-b border-borda" aria-label="Filtro de lançamentos">

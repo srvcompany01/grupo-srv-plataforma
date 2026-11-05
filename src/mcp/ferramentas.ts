@@ -51,7 +51,7 @@ import { arvoreDePaginas } from '@/dominio/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
 import * as financeiro from '@/servicos/financeiro'
 import * as telas from '@/servicos/telas'
-import { CATEGORIAS, TIPOS_LANCAMENTO, lerMes, limitesDoMes, resumir } from '@/dominio/financeiro'
+import { CATEGORIAS, TIPOS_LANCAMENTO, calcularMargens, lerMes, limitesDoMes, margensPorCliente, resumir } from '@/dominio/financeiro'
 import { calcularFunil, lerDadosFunil } from '@/dominio/funil'
 import type { NoEspaco, NoPasta, ItemLista } from '@/dominio/arvore-espacos'
 
@@ -214,7 +214,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
-        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
+        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro (que traz também a margem de lucro do mês: líquida e de contribuição, pelo que está lançado, pago ou não, sem separar mensalidade de projeto e avulso; a de contribuição desconta só tráfego pago, freelancers e equipe; impostos entram na líquida); criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
@@ -1870,15 +1870,21 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'resumir_financeiro',
-    descricao: 'Resumo do mês: entradas e despesas PAGAS, saldo (só o que foi pago), a receber, a pagar, previsto (pago + pendente) e, por categoria, previsto, pago e pendente. Só o admin tem acesso. Valores em reais.',
+    descricao: 'Resumo do mês: entradas e despesas PAGAS, saldo (só o que foi pago), a receber, a pagar, previsto (pago + pendente) e, por categoria, previsto, pago e pendente. Traz também a margem de lucro do mês (margemLiquidaPct e margemContribuicaoPct, em %; receita e despesas contam o que foi pago e o que ainda vai ser recebido/pago; a contribuição desconta só tráfego pago, freelancers e equipe) e a margem por cliente. Só o admin tem acesso. Valores em reais.',
     escrita: false,
     entrada: { mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Mês (AAAA-MM); padrão: o mês atual') },
     executar: async ({ sb }, a) => {
       const mes = lerMes(a.mes, dataDeHoje(new Date()))
       const { de, ate } = limitesDoMes(mes)
-      const r = resumir(await financeiro.listarLancamentos(sb, de, ate))
+      const lancs = await financeiro.listarLancamentos(sb, de, ate)
+      const r = resumir(lancs)
       const reais = (c: number) => c / 100
-      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, previsto: reais(c.centavos), pago: reais(c.pagos), pendente: reais(c.pendentes) })) }
+      const margemEmReais = (itens?: typeof lancs, pronta?: ReturnType<typeof calcularMargens>) => {
+        const x = pronta ?? calcularMargens(itens ?? [])
+        const arred = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10)
+        return { receita: reais(x.receita), despesas: reais(x.despesas), lucro: reais(x.lucro), margemLiquidaPct: arred(x.margemLiquida), despesasDiretas: reais(x.diretas), contribuicao: reais(x.contribuicao), margemContribuicaoPct: arred(x.margemContribuicao) }
+      }
+      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), margem: margemEmReais(lancs), margemPorCliente: margensPorCliente(lancs).map((c) => ({ cliente: c.clienteNome, ...margemEmReais(undefined, c.margens) })), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, previsto: reais(c.centavos), pago: reais(c.pagos), pendente: reais(c.pendentes) })) }
     },
   }),
 

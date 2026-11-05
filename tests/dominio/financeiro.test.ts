@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filtrarLancamentos, lerMes, lerReais, limitesDoMes, mesVizinho, repetirMensal, resumir, serieMensal, type Lancamento } from '@/dominio/financeiro'
+import { calcularMargens, margensPorCliente, serieDeMargem, filtrarLancamentos, lerMes, lerReais, limitesDoMes, mesVizinho, repetirMensal, resumir, serieMensal, type Lancamento } from '@/dominio/financeiro'
 
 const l = (p: Partial<Lancamento>): Lancamento => ({ id: 'x', tipo: 'entrada', categoria: 'Mensalidade', descricao: '', centavos: 100, data: '2026-10-05', pago: true, clienteId: null, clienteNome: null, ...p })
 
@@ -70,4 +70,42 @@ it('filtrarLancamentos', () => {
   expect(filtrarLancamentos(itens, 'despesas')).toHaveLength(1)
   expect(filtrarLancamentos(itens, 'pendentes')).toHaveLength(1)
   expect(filtrarLancamentos(itens, 'todos')).toHaveLength(2)
+})
+
+describe('margem de lucro', () => {
+  const l = (tipo: 'entrada' | 'saida', categoria: string, centavos: number, pago = true, clienteId: string | null = null, data = '2026-10-10'): Lancamento => ({ id: Math.random().toString(), tipo, categoria, descricao: '', centavos, data, pago, clienteId, clienteNome: clienteId })
+
+  it('conta o que já foi pago e o que ainda vai entrar ou sair, tudo junto', () => {
+    const m = calcularMargens([l('entrada', 'Mensalidade', 10000, true), l('entrada', 'Projeto', 5000, false), l('saida', 'Equipe', 4000, true), l('saida', 'Impostos', 1000, false), l('saida', 'Escritório', 2000, false)])
+    expect(m.receita).toBe(15000)
+    expect(m.despesas).toBe(7000)
+    expect(m.lucro).toBe(8000)
+    expect(m.margemLiquida).toBeCloseTo(53.33, 1)
+  })
+
+  it('margem de contribuição só desconta tráfego pago, freelancers e equipe', () => {
+    const m = calcularMargens([l('entrada', 'Mensalidade', 10000), l('saida', 'Tráfego pago', 1000), l('saida', 'Freelancers', 1000), l('saida', 'Equipe', 2000), l('saida', 'Impostos', 1000), l('saida', 'Escritório', 500)])
+    expect(m.diretas).toBe(4000)
+    expect(m.contribuicao).toBe(6000)
+    expect(m.margemContribuicao).toBe(60)
+    expect(m.margemLiquida).toBeCloseTo(45, 5)
+  })
+
+  it('sem receita não há percentual', () => {
+    const m = calcularMargens([l('saida', 'Equipe', 500)])
+    expect(m.margemLiquida).toBeNull()
+    expect(m.lucro).toBe(-500)
+  })
+
+  it('separa por cliente e deixa os custos gerais numa linha própria', () => {
+    const r = margensPorCliente([l('entrada', 'Mensalidade', 1000, true, 'a'), l('saida', 'Equipe', 200, true, 'a'), l('entrada', 'Mensalidade', 500, true, 'b'), l('saida', 'Escritório', 300)])
+    expect(r.map((x) => x.clienteId)).toEqual(['a', 'b', null])
+    expect(r[0].margens.margemLiquida).toBe(80)
+    expect(r[2].clienteNome).toMatch(/custos gerais/)
+  })
+
+  it('série de margem por mês', () => {
+    const s = serieDeMargem([l('entrada', 'Mensalidade', 1000, true, null, '2026-09-05'), l('saida', 'Equipe', 500, true, null, '2026-09-06'), l('entrada', 'Mensalidade', 2000, true, null, '2026-10-05')], '2026-10', 2)
+    expect(s.map((m) => [m.mes, m.margemLiquida])).toEqual([['2026-09', 50], ['2026-10', 100]])
+  })
 })
