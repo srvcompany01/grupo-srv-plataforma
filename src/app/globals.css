@@ -766,3 +766,57 @@ button.ins-kpi:hover { border-color: var(--border-strong); }
 .ins-linha-post { padding-top: 6px; padding-bottom: 6px; border-bottom: 0; color: inherit; text-decoration: none; background: var(--bg); }
 .ins-linha-post:hover { background: var(--bg-hover); }
 .ins-card { border-color: transparent; border-radius: 24px; background: var(--bg-subtle); }
+
+/* ─── Aba Anúncios em "bento" (referência ACRU): fundo cinza, cartões brancos, hachura que ganha cor no destaque ─── */
+.anu { --anu-verde: #8cc63f; --anu-amarelo: #e9e14b; --anu-laranja: #f5a35c; --anu-azul: #5b8def; --anu-roxo: #a78bfa; --anu-trilho: #ececee; --anu-hach: #e2e2e6; --anu-bom: #4f9a17; --anu-ruim: #e07a2e; min-height: 100%; padding: 16px; border-radius: 28px; background: var(--bg-subtle); }
+.app-ui[data-tema='escuro'] .anu, .dark .anu { --anu-verde: #9bd657; --anu-amarelo: #e6dc55; --anu-laranja: #f2a160; --anu-trilho: #26262a; --anu-hach: #2f2f34; --anu-bom: #9bd657; --anu-ruim: #f2a160; }
+.anu-grade { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) { .anu-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); } .anu-grade > * { grid-column: span 6; } .anu-grade > .anu-m3 { grid-column: span 3; } }
+@media (min-width: 1280px) {
+  .anu-grade { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .anu-grade > * { grid-column: span 12; }
+  .anu-grade > .anu-x6 { grid-column: span 6; } .anu-grade > .anu-x5 { grid-column: span 5; } .anu-grade > .anu-x4 { grid-column: span 4; } .anu-grade > .anu-x3 { grid-column: span 3; } .anu-grade > .anu-x9 { grid-column: span 9; } .anu-grade > .anu-x7 { grid-column: span 7; } .anu-grade > .anu-x8 { grid-column: span 8; }
+  .anu-grade > .anu-alto { grid-row: span 3; }
+}
+.anu-card { min-width: 0; padding: 18px; border-radius: 20px; background: var(--bg); box-shadow: 0 1px 2px rgba(17, 17, 19, .04); scroll-margin-top: 16px; }
+.anu-card-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; margin-bottom: 14px; }
+.anu-titulo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.anu-sub { font-size: 11.5px; color: var(--text-3); }
+.anu-bom { color: var(--anu-bom); font-weight: 600; } .anu-ruim { color: var(--anu-ruim); font-weight: 600; }
+.anu-num { font-size: 26px; font-weight: 600; letter-spacing: -.03em; line-height: 1.15; color: var(--text); font-variant-numeric: tabular-nums; }
+.anu-hero { font-size: 34px; font-weight: 600; letter-spacing: -.035em; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.anu-kpi { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; } .anu-kpi + .anu-kpi { border-top: 1px dashed var(--border-soft); }
+.anu-vazio { padding: 24px 0; text-align: center; font-size: 12px; color: var(--text-3); }
+.anu-legenda { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--text-2); } .anu-legenda > span { display: inline-flex; align-items: center; gap: 5px; } .anu-legenda i { width: 9px; height: 9px; border-radius: 3px; }
+/* Hachura: listras diagonais claras sobre a cor (ou cinza, em repouso). */
+.anu-seg, .anu-segmentos > span, .anu-trilho > span, .anu-prog > span { background-color: var(--c); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .28) 0 3px, transparent 3px 7px); }
+.anu-barras { position: relative; height: 230px; padding-right: 44px; }
+.anu-barras-grade { position: absolute; inset: 0 0 22px 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.anu-barras-grade > span { position: relative; border-top: 1px dashed var(--border-soft); } .anu-barras-grade i { position: absolute; right: 0; top: -7px; font-size: 10px; font-style: normal; color: var(--text-3); }
+.anu-barras-cols { position: relative; display: flex; height: 100%; gap: clamp(2px, .6vw, 10px); }
+.anu-col { flex: 1; min-width: 0; display: flex; flex-direction: column; outline: none; }
+.anu-col-trilho { position: relative; flex: 1; display: flex; align-items: flex-end; border-radius: 10px; background: color-mix(in oklab, var(--anu-trilho), transparent 40%); }
+.anu-col-pilha { width: 100%; display: flex; flex-direction: column-reverse; gap: 2px; overflow: hidden; border-radius: 10px; transition: height .3s; }
+.anu-seg { min-height: 2px; --c-repouso: var(--anu-hach); background-color: var(--anu-hach); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .5) 0 3px, transparent 3px 7px); transition: background-color .15s; }
+.anu-col[data-pico] .anu-seg, .anu-col:hover .anu-seg, .anu-col:focus-visible .anu-seg { background-color: var(--c); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .28) 0 3px, transparent 3px 7px); }
+.anu-barras-cols:hover .anu-col[data-pico]:not(:hover) .anu-seg { background-color: var(--anu-hach); }
+.anu-col > small { height: 22px; padding-top: 6px; overflow: visible; white-space: nowrap; text-align: center; font-size: 10.5px; color: var(--text-3); }
+.anu-dica { position: absolute; left: calc(100% + 6px); top: 6px; z-index: 5; display: none; min-width: 140px; padding: 8px 10px; border-radius: 12px; background: var(--bg-elev); box-shadow: var(--shadow-pop); font-size: 11.5px; color: var(--text); pointer-events: none; }
+.anu-dica b { display: block; margin-bottom: 4px; font-weight: 600; } .anu-dica span { display: flex; align-items: center; gap: 6px; white-space: nowrap; } .anu-dica span i { width: 8px; height: 8px; border-radius: 2px; } .anu-dica em { margin-left: auto; padding-left: 10px; font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; }
+.anu-col:hover .anu-dica, .anu-col:focus-visible .anu-dica, .anu-barras-cols:not(:hover) .anu-col[data-pico] .anu-dica { display: block; }
+.anu-col[data-lado='esq'] .anu-dica { left: auto; right: calc(100% + 6px); }
+.anu-segmentos { display: flex; gap: 3px; height: 26px; } .anu-segmentos > span { min-width: 6px; border-radius: 6px; }
+.anu-lista-pct { display: grid; gap: 6px; } .anu-lista-pct li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); } .anu-lista-pct i { width: 10px; height: 10px; flex: none; border-radius: 3px; } .anu-lista-pct em { margin-left: auto; font-style: normal; color: var(--text-3); font-variant-numeric: tabular-nums; } .anu-lista-pct b { width: 38px; text-align: right; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.anu-trilho { height: 30px; overflow: hidden; border-radius: 8px; background: var(--anu-trilho); } .anu-trilho > span { display: block; height: 100%; border-radius: 8px; }
+.anu-medidor { position: relative; } .anu-medidor svg { display: block; width: 100%; max-width: 260px; margin: 0 auto; }
+.anu-medidor-centro { position: absolute; left: 0; right: 0; top: 52%; display: flex; flex-direction: column; align-items: center; } .anu-medidor-centro b { font-size: 26px; font-weight: 600; letter-spacing: -.03em; color: var(--text); } .anu-medidor-centro span { font-size: 11px; color: var(--text-3); }
+.anu-progressos { display: grid; gap: 12px; } .anu-progressos li { display: flex; align-items: center; gap: 10px; }
+.anu-prog-ic { display: flex; width: 34px; height: 34px; flex: none; align-items: center; justify-content: center; border-radius: 10px; background: var(--bg-subtle); color: var(--text-2); }
+.anu-prog { height: 10px; margin-top: 5px; overflow: hidden; border-radius: 4px; background: var(--anu-trilho); } .anu-prog > span { display: block; height: 100%; border-radius: 4px; }
+.anu-atalho { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); text-decoration: none; } .anu-atalho > span { display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 14px; background: var(--bg-subtle); color: var(--text); transition: background .15s; } .anu-atalho:hover > span { background: var(--bg-active); }
+.anu-dica-card { position: relative; overflow: hidden; } .anu-dica-card::after { content: ''; position: absolute; right: 14px; bottom: 14px; width: 92px; height: 70px; opacity: .9; background: linear-gradient(var(--anu-verde), var(--anu-verde)) 0 100% / 28px 22px, linear-gradient(var(--anu-amarelo), var(--anu-amarelo)) 32px 100% / 28px 22px, linear-gradient(var(--anu-verde), var(--anu-verde)) 32px 74% / 28px 22px, linear-gradient(var(--anu-amarelo), var(--anu-amarelo)) 64px 100% / 28px 22px, linear-gradient(var(--anu-laranja), var(--anu-laranja)) 64px 74% / 28px 22px, linear-gradient(var(--anu-verde), var(--anu-verde)) 64px 48% / 28px 22px; background-repeat: no-repeat; mask: repeating-linear-gradient(135deg, #000 0 3px, rgba(0, 0, 0, .55) 3px 7px); }
+.anu-hist { display: grid; gap: 2px; } .anu-hist li { display: flex; align-items: center; gap: 10px; padding: 7px 0; } .anu-hist-ic { display: flex; width: 32px; height: 32px; flex: none; align-items: center; justify-content: center; border-radius: 10px; font-size: 11px; font-weight: 700; color: #fff; }
+/* Módulos já existentes (Controle, Criativos, Anúncios ativos, Google, Conexão) viram cartões brancos dentro do fundo cinza. */
+.app-ui .anu section.border.border-borda.bg-white { border-color: transparent; border-radius: 20px; background: var(--bg); box-shadow: 0 1px 2px rgba(17, 17, 19, .04); }
+.app-ui .anu section.border.border-borda.bg-white > header { padding: 14px 18px 6px; } .app-ui .anu section.border.border-borda.bg-white > div { padding: 8px 18px 18px; }
+.app-ui .anu .anu-card .border.border-borda.bg-white, .app-ui .anu section.border.border-borda.bg-white .border.border-borda.bg-white { border-color: transparent; background: var(--bg-subtle); border-radius: 16px; }

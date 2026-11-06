@@ -83,10 +83,9 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
  * Anúncios ativos da conta do cliente com os resultados do período, puxados da API de Marketing do Meta.
  * `mostrarGasto` só para a equipe (o cliente vê resultados, não o investimento). `seletor` troca o período.
  */
-export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode }) {
+export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor, incorporado = false }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode; /** Dentro de outro módulo: sem o cartão próprio, só um subtítulo. */ incorporado?: boolean }) {
   const [r, conta] = await Promise.all([anunciosAtivos(contaId, periodo), mostrarGasto ? nomeDaConta(contaId) : Promise.resolve(null)])
-  return (
-    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+  const corpo = (
       <div className="@container space-y-3">
       {'erro' in r ? (
         <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
@@ -104,8 +103,10 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
         </>
       )}
       </div>
-    </Modulo>
   )
+  const sub = `${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram`
+  if (incorporado) return <div className="space-y-3"><h3 className="text-corpo font-semibold text-texto">Anúncios ativos <span className="text-legenda font-normal text-texto-3">{sub}</span></h3>{corpo}</div>
+  return <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${sub} · ${rotuloPeriodo(periodo)}`} acoes={seletor}>{corpo}</Modulo>
 }
 
 function Resumo({ anuncios, mostrarGasto }: { anuncios: AnuncioAvaliado[]; mostrarGasto: boolean }) {
