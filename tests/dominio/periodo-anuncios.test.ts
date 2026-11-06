@@ -31,3 +31,12 @@ describe('período dos anúncios', () => {
     expect(rotuloPeriodo(lerPeriodo({ de: '2025-12-20', ate: '2026-01-05' }, hoje))).toBe('20/12/2025 a 05/01/2026')
   })
 })
+
+describe('ontem e esta semana', () => {
+  it('ontem é só o dia anterior; semana vai da segunda até hoje', () => {
+    const h = '2026-10-22' // quinta
+    expect(lerPeriodo({ dias: 'ontem' }, h)).toEqual({ de: '2026-10-21', ate: '2026-10-21', atalho: 'ontem' })
+    expect(lerPeriodo({ dias: 'semana' }, h)).toEqual({ de: '2026-10-19', ate: h, atalho: 'semana' })
+    expect(consultaPeriodo(lerPeriodo({ dias: 'semana' }, h))).toBe('dias=semana')
+  })
+})
