@@ -36,6 +36,9 @@ import { EnviarRelatorio } from '@/componentes/relatorios/EnviarRelatorio'
 import { relatoriosDoCliente } from '@/servicos/relatorio-compartilhado'
 import { hashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { HashtagsCliente } from './HashtagsCliente'
+import { QuadroEstrategia } from '@/componentes/estrategia/Quadros'
+import { METODOS, preenchimento } from '@/dominio/estrategia'
+import { estrategiaDoCliente } from '@/servicos/estrategia'
 import { SeletorCapa } from './SeletorCapa'
 import { SeletorLogo } from './SeletorLogo'
 
@@ -43,6 +46,7 @@ const ABAS = [
   { id: 'visao', rotulo: 'Visão geral' },
   { id: 'tarefas', rotulo: 'Tarefas' },
   { id: 'posts', rotulo: 'Posts' },
+  { id: 'estrategia', rotulo: 'Estratégia' },
   { id: 'hashtags', rotulo: 'Hashtags' },
   { id: 'relatorio', rotulo: 'Relatório' },
   { id: 'arquivos', rotulo: 'Arquivos' },
@@ -237,6 +241,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           )}
         </Modulo>
           </div>}
+          {aba === 'estrategia' && <EstrategiaDoCliente clienteId={id} />}
           {aba === 'hashtags' && <HashtagsCliente clienteId={id} iniciais={{ instagram: (await hashtagsDoCliente(sb, id, 'instagram')).join(' ') }} />}
           {aba === 'posts' && (
             <Modulo icone={ListChecks} titulo="Posts" descricao="Tarefas das listas de conteúdo com a tag deste cliente" acoes={<span className="text-rotulo text-texto-3">{posts.length}</span>}>
@@ -362,6 +367,35 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+/** Tudo o que foi construído na aba Estratégia, reunido e só para leitura (edita-se lá). */
+async function EstrategiaDoCliente({ clienteId }: { clienteId: string }) {
+  const est = await estrategiaDoCliente(await criarClienteServidor(), clienteId)
+  return (
+    <div className="max-w-[1300px] space-y-6">
+      <nav className="flex flex-wrap gap-2" aria-label="Seções da estratégia">
+        {METODOS.map((m) => (
+          <a key={m.id} href={`#est-${m.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--bg-subtle)] px-3 text-rotulo font-semibold hover:bg-[var(--bg-active)]">
+            <Ic n={m.icone} s={15} /> {m.curto} <span className="tabular-nums text-texto-3">{Math.round(preenchimento(m.id, est[m.id]) * 100)}%</span>
+          </a>
+        ))}
+      </nav>
+      {METODOS.map((m) => (
+        <section key={m.id} id={`est-${m.id}`} className="scroll-mt-12 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="flex items-center gap-2 text-destaque font-bold"><Ic n={m.icone} s={18} /> {m.rotulo}</h3>
+            <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`} className="text-rotulo font-semibold text-[var(--accent)] hover:underline">Editar</Link>
+          </div>
+          {preenchimento(m.id, est[m.id]) > 0 || est[m.id].marcados.length ? (
+            <QuadroEstrategia metodo={m.id} clienteId={clienteId} inicial={est[m.id]} leitura />
+          ) : (
+            <p className="rounded-2xl bg-[var(--bg-subtle)] px-4 py-6 text-center text-corpo text-texto-3">Ainda não preenchido. <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`} className="font-semibold text-texto underline">Começar</Link></p>
+          )}
+        </section>
+      ))}
     </div>
   )
 }

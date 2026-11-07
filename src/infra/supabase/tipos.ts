@@ -1436,6 +1436,12 @@ export type Database = {
         Update: { client_id?: string; hashtags?: string; platform?: string; updated_at?: string }
         Relationships: []
       }
+      client_strategy: {
+        Row: { client_id: string; method: string; data: Json; updated_at: string; updated_by: string | null }
+        Insert: { client_id: string; method: string; data?: Json; updated_at?: string; updated_by?: string | null }
+        Update: { client_id?: string; method?: string; data?: Json; updated_at?: string; updated_by?: string | null }
+        Relationships: []
+      }
       content_inbox: {
         Row: { dest_list_id: string | null; dest_mode: string | null; dest_task_id: string | null; ai_summary: string; audio_ready: boolean; transcript: string; transcript_error: string; transcript_requested_at: string | null; transcript_state: string; client_id: string; created_at: string; created_by: string | null; drive_file_id: string | null; error: string; id: string; kind: string; mime: string; name: string; post_task_id: string | null; r2_key: string; size_bytes: number; source: string; status: string; updated_at: string }
         Insert: { dest_list_id?: string | null; dest_mode?: string | null; dest_task_id?: string | null; ai_summary?: string; audio_ready?: boolean; transcript?: string; transcript_error?: string; transcript_requested_at?: string | null; transcript_state?: string; client_id: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime: string; name: string; post_task_id?: string | null; r2_key: string; size_bytes?: number; source: string; status?: string; updated_at?: string }

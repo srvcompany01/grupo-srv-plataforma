@@ -33,6 +33,8 @@ import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { totalLeads } from '@/dominio/performance'
 import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato, separarSeguidores } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
+import { CAMPOS, METODOS, chavesInvalidas, preenchimento, type Metodo } from '@/dominio/estrategia'
+import * as estrategia from '@/servicos/estrategia'
 
 /** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
 const periodoDaIA = (a: { dias?: 7 | 30; de?: string; ate?: string }) => lerPeriodo({ dias: String(a.dias ?? 7), de: a.de, ate: a.ate }, dataDeHoje(new Date()))
@@ -210,6 +212,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
         'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Vencimento das tarefas = data + horário opcional (horario HH:MM); nos posts de conteúdo, agendar_post grava o vencimento da tarefa com o mesmo dia e horário do agendamento. Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Estratégia do cliente (aba Estratégia e aba Estratégia na página do cliente): 5 métodos por cliente — publico (persona, mapa de empatia, dores/problemas/desafios/medos/desejos/objeções, jobs to be done, nível de consciência de Schwartz, gatilhos, canais, linguagem), jornada (Descoberta → Atração → Consideração → Ação → Apologia: como acontece, como influenciar, conversão entre etapas e checklists simples/complexo), posicionamento (big idea, círculo dourado, declaração de posicionamento, proposta de valor, slogan, manifesto, arquétipos, tom de voz em 4 escalas 0–4, valores, somos/não somos, pilares, mensagens, universo de palavras), receita (Arquitetura de Receita/bowtie: Consciência, Educação, Seleção, Compromisso, Onboarding, Impacto, Expansão com volume, conversão, tempo e ações, mais ticket, CAC, LTV, churn, receita e meta) e swot (forças, fraquezas, oportunidades, ameaças e a matriz cruzada TOWS). estrategia_cliente lê tudo com o rótulo de cada chave; salvar_estrategia_cliente altera só as chaves enviadas (texto ou lista vazia apaga). Use a estratégia (público, tom de voz, palavras) ao escrever conteúdo e anúncios do cliente.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
@@ -1382,6 +1385,46 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async (ctx, a) => {
       if (!ehTipoDeVisao(a.tipo)) throw new Error('Tipo de visualização inválido.')
       return { visaoId: await abasDaLista.criarVisao(ctx.sb, ctx.userId, { listaId: a.listaId, tipo: a.tipo, privada: !!a.privada, fixada: true }) }
+    },
+  }),
+
+  definir({
+    nome: 'estrategia_cliente',
+    descricao: 'Estratégia do cliente (aba Estratégia): estudo de público, jornada de compra, posicionamento e marca, arquitetura de receita e SWOT. Devolve, por método, o % preenchido e cada campo com chave, rótulo, tipo (texto ou lista) e valor (vazio = ainda não preenchido), mais os itens marcados (checklist da jornada "nivel.etapa:texto", arquétipos "arq.<id>"). metodo filtra um só. Use as chaves em salvar_estrategia_cliente.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), metodo: z.enum(['publico', 'jornada', 'posicionamento', 'receita', 'swot']).optional() },
+    executar: async ({ sb }, a) => {
+      const est = await estrategia.estrategiaDoCliente(sb, a.clienteId)
+      return METODOS.filter((m) => !a.metodo || m.id === a.metodo).map((m) => ({
+        metodo: m.id,
+        rotulo: m.rotulo,
+        preenchido: `${Math.round(preenchimento(m.id, est[m.id]) * 100)}%`,
+        campos: CAMPOS[m.id].map((c) => ({ chave: c.chave, rotulo: c.rotulo, tipo: c.tipo, ...(c.ajuda ? { ajuda: c.ajuda } : {}), valor: c.tipo === 'texto' ? (est[m.id].textos[c.chave] ?? '') : (est[m.id].listas[c.chave] ?? []) })),
+        marcados: est[m.id].marcados,
+      }))
+    },
+  }),
+
+  definir({
+    nome: 'salvar_estrategia_cliente',
+    descricao: 'Preenche a estratégia do cliente num método (publico, jornada, posicionamento, receita, swot). Só as chaves enviadas mudam: textos {chave: "texto"} e listas {chave: ["item", …]} (a lista enviada substitui a anterior; texto "" ou lista [] apaga). Chaves: as de estrategia_cliente. marcados substitui a lista inteira de itens marcados (checklist da jornada, ex.: "simples.descoberta:<texto do item>"; arquétipos "arq.heroi", até 2, o primeiro é o principal). Tom de voz: "0" a "4". consciencia: inconsciente, problema, solucao, produto ou total. Mostre à pessoa o que vai gravar antes, se ela não pediu para gravar direto.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente'),
+      metodo: z.enum(['publico', 'jornada', 'posicionamento', 'receita', 'swot']),
+      textos: z.record(z.string(), z.string().max(4000)).optional(),
+      listas: z.record(z.string(), z.array(z.string().max(500)).max(60)).optional(),
+      marcados: z.array(z.string().max(600)).max(400).optional(),
+    },
+    executar: async ({ sb }, a) => {
+      const metodo = a.metodo as Metodo
+      const invalidas = chavesInvalidas(metodo, [...Object.keys(a.textos ?? {}), ...Object.keys(a.listas ?? {})])
+      if (invalidas.length) throw new Error(`Chaves que não existem em "${metodo}": ${invalidas.join(', ')}. Veja as chaves em estrategia_cliente.`)
+      const tipos = new Map(CAMPOS[metodo].map((c) => [c.chave, c.tipo]))
+      const trocadas = [...Object.keys(a.textos ?? {}).filter((k) => tipos.get(k) !== 'texto'), ...Object.keys(a.listas ?? {}).filter((k) => tipos.get(k) !== 'lista')]
+      if (trocadas.length) throw new Error(`Tipo errado (texto em vez de lista ou o contrário): ${trocadas.join(', ')}.`)
+      const novo = await estrategia.alterarEstrategia(sb, a.clienteId, metodo, { textos: a.textos, listas: a.listas, marcados: a.marcados })
+      return { ok: true, preenchido: `${Math.round(preenchimento(metodo, novo) * 100)}%` }
     },
   }),
 
