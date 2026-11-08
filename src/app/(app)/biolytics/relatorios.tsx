@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowRight, Eye, Link2, MousePointerClick, Sparkles, Star, Target, Users, type LucideIcon } from 'lucide-react'
+import { Eye, Link2, MousePointerClick, Sparkles, Star, Target, Users } from 'lucide-react'
 import Link from 'next/link'
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { FunilConversao } from '@/componentes/FunilConversao'
 import { BlocoAnalise, Numeros } from '@/componentes/insights/BlocoAnalise'
 import { GraficoDiario } from '@/componentes/insights/GraficoDiario'
 import { Modulo } from '@/componentes/Modulo'
@@ -16,40 +17,6 @@ const q = (periodo: PeriodoAnuncios) => (consultaPeriodo(periodo) ? `&${consulta
 export const hrefBiolytics = (aba: string, c: Cliente, periodo: PeriodoAnuncios) => `/biolytics?aba=${aba}&cliente=${c.id}${q(periodo)}`
 
 export const Vazio = ({ children }: { children: ReactNode }) => <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
-
-/** Etapa do funil: cada número e, entre eles, a seta com a taxa de conversão de uma etapa para a próxima. */
-type Etapa = { rotulo: string; valor: number; extra?: string; icone: LucideIcon; cor: string }
-
-function Funil({ etapas }: { etapas: Etapa[] }) {
-  return (
-    <div className="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:gap-0">
-      {etapas.map((e, i) => {
-        const Icone = e.icone
-        const anterior = etapas[i - 1]
-        const taxa = anterior && anterior.valor > 0 ? pct((e.valor / anterior.valor) * 100) : '—'
-        return (
-          <Fragment key={e.rotulo}>
-            {anterior && (
-              <div className="flex shrink-0 flex-row items-center justify-center gap-1.5 py-0.5 md:w-20 md:flex-col md:gap-0.5 md:py-0" aria-label={`Conversão de ${anterior.rotulo} para ${e.rotulo}: ${taxa}`}>
-                <span className="text-rotulo font-bold tabular-nums text-texto">{taxa}</span>
-                <ArrowDown className="h-5 w-5 text-texto-3 md:hidden" aria-hidden />
-                <ArrowRight className="hidden h-5 w-5 text-texto-3 md:block" aria-hidden />
-              </div>
-            )}
-            <div className="min-w-0 flex-1 rounded-lg border border-borda bg-white p-3">
-              <div className="flex items-center gap-1.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ background: `${e.cor}1f`, color: e.cor }}><Icone className="h-3.5 w-3.5" /></span>
-                <p className="truncate text-micro text-texto-3">{e.rotulo}</p>
-              </div>
-              <p className="mt-1 text-destaque font-bold tabular-nums text-texto">{n(e.valor)}</p>
-              {e.extra && <p className="text-micro text-texto-3">{e.extra}</p>}
-            </div>
-          </Fragment>
-        )
-      })}
-    </div>
-  )
-}
 
 /** Sem cliente escolhido: todos os clientes lado a lado. */
 export function VisaoTodos({ linhas, periodo }: { linhas: { c: Cliente; r: ResumoBio | null }[]; periodo: PeriodoAnuncios }) {
@@ -94,11 +61,11 @@ export function GeralCliente({ c, periodo, r, ativos }: { c: Cliente; periodo: P
     <>
       {r && (
         <Modulo icone={Link2} titulo="Visão geral" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
-          <Funil etapas={[
-            { rotulo: 'Cliques no link da bio', valor: r.cliques, extra: 'tocaram no link do perfil', icone: MousePointerClick, cor: '#1baf7a' },
-            { rotulo: 'Visualizações', valor: r.visualizacoes, extra: 'a página abriu', icone: Eye, cor: '#2a78d6' },
-            { rotulo: 'Abriram o quiz', valor: r.quiz.iniciaram, extra: 'tocaram no WhatsApp', icone: Target, cor: '#6250d6' },
-            { rotulo: 'Leads orgânicos', valor: r.leadsOrganicos, extra: 'quiz concluído', icone: Users, cor: '#eb6834' },
+          <FunilConversao principal="lead orgânico" etapas={[
+            { rotulo: 'Cliques no link da bio', valor: r.cliques, extra: 'tocaram no link do perfil' },
+            { rotulo: 'Visualizações', valor: r.visualizacoes, extra: 'a página abriu' },
+            { rotulo: 'Abriram o quiz', valor: r.quiz.iniciaram, extra: 'tocaram no WhatsApp' },
+            { rotulo: 'Leads orgânicos', valor: r.leadsOrganicos, extra: 'quiz concluído' },
           ]} />
         </Modulo>
       )}
@@ -137,6 +104,11 @@ export function RelatorioBio({ c, periodo, r }: { c: Cliente; periodo: PeriodoAn
             { rotulo: 'Visualizações da página', valor: n(r.visualizacoes), extra: r.cliques ? `${pct((r.visualizacoes / r.cliques) * 100)} dos cliques abriram${r.pessoas ? ` · ${n(r.pessoas)} pessoas distintas por dia` : ''}` : undefined, icone: Eye, cor: '#2a78d6' },
             { rotulo: 'Toques nos botões', valor: n(r.toques), extra: r.visualizacoes ? `${n(r.toques / r.visualizacoes)} por visualização` : undefined, icone: Target, cor: '#6250d6' },
             { rotulo: 'Botão mais tocado', valor: r.toques ? r.botoes[0].rotulo : '—', extra: r.toques ? `${n(r.botoes[0].toques)} toques` : undefined, icone: Star, cor: '#eda100' },
+          ]} />
+          <FunilConversao principal="toque num botão" etapas={[
+            { rotulo: 'Cliques no link da bio', valor: r.cliques, extra: 'tocaram no link do perfil' },
+            { rotulo: 'Visualizações da página', valor: r.visualizacoes, extra: 'a página abriu' },
+            { rotulo: 'Toques nos botões', valor: r.toques, extra: 'tocaram num botão da página' },
           ]} />
           <GraficoDiario titulo="Cliques, visualizações e toques por dia" dias={dias} series={[{ nome: 'Cliques', valores: dias.map((d) => porDia.get(d)?.cliques ?? 0) }, { nome: 'Visualizações', valores: dias.map((d) => porDia.get(d)?.visualizacoes ?? 0) }, { nome: 'Toques', valores: dias.map((d) => porDia.get(d)?.toques ?? 0) }]} formato={(v) => n(Math.round(v))} />
         </div>
@@ -181,6 +153,11 @@ export function RelatorioQuiz({ c, periodo, r }: { c: Cliente; periodo: PeriodoA
             { rotulo: 'Leads orgânicos', valor: n(concluiram), extra: 'responderam e abriram o WhatsApp', icone: Users, cor: '#eb6834' },
             { rotulo: 'Abriram o quiz', valor: n(iniciaram), extra: r.visualizacoes ? `${pct((iniciaram / r.visualizacoes) * 100)} das visualizações da página` : undefined, icone: MousePointerClick, cor: '#6250d6' },
             { rotulo: 'Conclusão', valor: iniciaram ? pct((concluiram / iniciaram) * 100) : '—', extra: iniciaram ? `${n(iniciaram - concluiram)} desistiram no meio` : undefined, icone: Target, cor: '#1baf7a' },
+          ]} />
+          <FunilConversao principal="lead orgânico" etapas={[
+            { rotulo: 'Visualizações da página', valor: r.visualizacoes, extra: 'a página da bio abriu' },
+            { rotulo: 'Abriram o quiz', valor: iniciaram, extra: 'tocaram no WhatsApp' },
+            { rotulo: 'Concluíram (leads)', valor: concluiram, extra: 'responderam e abriram o WhatsApp' },
           ]} />
           <GraficoDiario titulo="Leads orgânicos por dia" dias={dias} series={[{ nome: 'Leads', valores: dias.map((d) => porDia.get(d)?.leads ?? 0) }]} formato={(v) => n(Math.round(v))} />
         </div>

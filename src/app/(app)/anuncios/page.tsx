@@ -6,6 +6,7 @@ import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
 import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { BlocoAnalise } from '@/componentes/insights/BlocoAnalise'
+import { FunilConversao } from '@/componentes/FunilConversao'
 import { BarraSegmentada, BarrasDiarias, COR, Cartao, Kpi, Legenda, Medidor, Progressos, Trilho, Variacao, corDaVez } from '@/componentes/anuncios/Bento'
 import { ORDEM_TOM } from '@/componentes/insights/tom'
 import { somarDias } from '@/dominio/agenda'
@@ -267,6 +268,31 @@ async function VisaoCliente({ cliente, periodo, googleConectado }: { cliente: Cl
           vazio="Nenhuma campanha gastou neste período."
           itens={campanhas.slice(0, 5).map((c, i) => ({ id: c.id, nome: c.nome, valor: c.gasto, max: campanhas[0].gasto, direita: reais.format(c.gasto), cor: corDaVez(i), obs: `${c.canal} · ${c.leads ? `${numero.format(c.leads)} ${c.canal === 'Google' ? 'conversões' : 'leads'} · ${reais.format(c.gasto / c.leads)} cada` : 'sem leads'}` }))}
         />
+      </Cartao>
+
+      <Cartao titulo="Funil dos anúncios" sub="Do anúncio visto até a conversa ou o lead, com a conversão de cada etapa (Meta: soma dos anúncios do período)">
+        <div className={`grid gap-6 ${d.pago.google ? 'xl:grid-cols-[3fr_2fr]' : ''}`}>
+          <div>
+            <h3 className="anu-titulo mb-2">Meta</h3>
+            {anuncios.length ? (
+              <FunilConversao principal="lead ou mensagem" etapas={[
+                { rotulo: 'Impressões', valor: anuncios.reduce((s, a) => s + a.impressoes, 0), extra: 'vezes que os anúncios apareceram' },
+                { rotulo: 'Alcance', valor: anuncios.reduce((s, a) => s + a.alcance, 0), extra: 'pessoas que viram' },
+                { rotulo: 'Cliques no link', valor: anuncios.reduce((s, a) => s + a.cliquesLink, 0), extra: 'foram para o WhatsApp, site ou formulário' },
+                { rotulo: 'Leads e mensagens', valor: leadsMeta, extra: 'conversas iniciadas e formulários' },
+              ]} />
+            ) : <p className="anu-vazio">Sem anúncios da Meta no período.</p>}
+          </div>
+          {d.pago.google && (
+            <div>
+              <h3 className="anu-titulo mb-2">Google Ads</h3>
+              <FunilConversao principal="conversão" etapas={[
+                { rotulo: 'Cliques', valor: d.pago.google.cliques, extra: 'entraram no site' },
+                { rotulo: 'Conversões', valor: d.pago.google.conversoes, extra: 'ligações, formulários, WhatsApp' },
+              ]} />
+            </div>
+          )}
+        </div>
       </Cartao>
     </>
   )

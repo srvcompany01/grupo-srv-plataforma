@@ -22,6 +22,7 @@ import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
 import { listarComentarios, resumoComentarios, type FiltroComentarios } from '@/servicos/comentarios-redes'
 import { instagramDoCliente } from '@/servicos/insights-instagram'
 import { NomeCliente } from '@/componentes/NomeCliente'
+import { FunilOrganico } from '@/componentes/FunilConversao'
 
 // O botão "Atualizar agora" dos comentários lê a Meta de todos os clientes.
 export const maxDuration = 300
@@ -121,6 +122,9 @@ async function DetalheInstagram({ cliente, periodo }: { cliente: Cliente; period
     <>
       <RedesFaixa seguidoresInstagram={`${numero.format(ig.seguidores)} seguidores`} />
       <InstagramSocial ig={ig} anterior={anterior && !('erro' in anterior) ? anterior : null} dias={dias} rotuloPeriodo={rotuloPeriodo(periodo)} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
+      <CartaoSocial titulo="Funil do orgânico" sub={`Do conteúdo visto até o clique no link · ${rotuloPeriodo(periodo)}`}>
+        <FunilOrganico ig={ig} cliquesLinkBio={cliquesLinkBio} />
+      </CartaoSocial>
       {periodo.atalho === 'hoje' && <p className="ins-sub">Dados consultados agora no Instagram; a própria Meta pode levar alguns minutos para consolidar o dia.</p>}
     </>
   )
