@@ -13,6 +13,19 @@ const nextConfig: NextConfig = {
   },
   // www.gruposrv.com.br é do site público: enquanto não houver uma página inicial, a raiz mostra a calculadora (como antes de o app assumir o domínio).
   // O app (app.gruposrv.com.br) não é afetado. Troque o destino quando existir a página inicial.
+  // Cabeçalhos de segurança em todas as respostas: nada de abrir o app dentro de iframe de outro site,
+  // nem de o navegador adivinhar o tipo de um arquivo.
+  async headers() {
+    return [{
+      source: '/:caminho*',
+      headers: [
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      ],
+    }]
+  },
   async redirects() {
     return [
       { source: '/', has: [{ type: 'host', value: 'www.gruposrv.com.br' }], destination: '/calculadora', permanent: false },

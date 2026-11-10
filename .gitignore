@@ -42,3 +42,7 @@ next-env.d.ts
 .dados/
 
 !.env.example
+
+# sobras locais (cópia do repositório e capturas do navegador)
+/grupo-srv-plataforma/
+/.playwright-mcp/

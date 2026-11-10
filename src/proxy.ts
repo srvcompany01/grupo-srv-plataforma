@@ -2,8 +2,18 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { rotaPublica } from '@/dominio/acesso'
 import { caminhoInternoDaBio, hostEhDaBio } from '@/dominio/bio'
+import { limiteDaRota, permitir } from '@/dominio/limite'
 import { opcoesRealtime } from '@/infra/supabase/realtime'
 import { COOKIE_SESSAO, sessaoValida } from '@/infra/sessao'
+
+// Rotas públicas que gravam (leads, newsletter, eventos do blog, visitas e quiz da bio): limite de pedidos por IP.
+function excedeu(req: NextRequest, caminho: string): boolean {
+  const limite = limiteDaRota(req.method, caminho)
+  if (!limite) return false
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'sem-ip'
+  return !permitir(`${limite.grupo}|${ip}`, limite.max, Date.now())
+}
+const muitosPedidos = () => new NextResponse(null, { status: 429, headers: { 'Retry-After': '60' } })
 
 // Checagem otimista: renova a sessão do Supabase e manda quem não está logado para /login.
 // Papel (equipe × cliente) é decidido nas páginas (exigirEquipe/exigirCliente); a garantia é a RLS.
@@ -14,10 +24,13 @@ export async function proxy(req: NextRequest) {
   if (hostEhDaBio(req.headers.get('host'), process.env.BIO_DOMINIO)) {
     const interno = caminhoInternoDaBio(caminho)
     if (!interno) return new NextResponse(null, { status: 404 })
+    if (excedeu(req, interno)) return muitosPedidos()
     const destino = req.nextUrl.clone()
     destino.pathname = interno
     return NextResponse.rewrite(destino)
   }
+
+  if (excedeu(req, caminho)) return muitosPedidos()
 
   // App antigo de aprovação (até a Fase 1b): senha única em cookie próprio.
   if (caminho === '/admin' || caminho.startsWith('/admin/')) {
