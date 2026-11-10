@@ -978,3 +978,22 @@ li:hover > .est-x, .est-x:focus-visible { opacity: 1; }
 .funil-final b { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: #16a34a; font-variant-numeric: tabular-nums; }
 .funil-final small { font-size: 12px; color: var(--text-2); }
 @media (max-width: 560px) { .funil-etapas li { grid-template-columns: 1fr 64px; } .funil-rotulo { grid-column: 1 / -1; margin-top: 6px; } .funil-faixa { height: 38px; } }
+
+/*
+ * Pele 2026-11 (limpeza visual): chão cinza com cartões brancos soltos, sem contorno. O que era "fundo suave" (--bg-subtle)
+ * vira o cartão; dentro de um cartão, --bg-subtle e --bg-hover passam a ser os tons internos (chips, controles, hover).
+ * Cores por variável para o tema escuro seguir a mesma lógica.
+ */
+.app-ui { --chao: #eeeef1; --cartao: #ffffff; --cartao-suave: #f3f3f5; --cartao-hover: #eaeaee; --bg-frame: var(--chao); }
+.app-ui[data-tema='escuro'] { --chao: #0e0e10; --cartao: #18181b; --cartao-suave: #232327; --cartao-hover: #2a2a2e; }
+.app-ui main, .app-ui main .home-ui, .app-ui main .relatorio { background: var(--chao); }
+.app-ui main { --bg-subtle: var(--cartao); --bg-hover: color-mix(in oklab, var(--cartao), var(--chao) 45%); }
+.app-ui main :is(.rounded-3xl, .rounded-2xl, .rounded-xl)[class*="bg-[var(--bg-subtle)]"],
+.app-ui main .cartao-grupo,
+.app-ui main :is(.surface-card, .border.border-borda.bg-white):not(input, select, textarea, button, summary, label, [role='button'], [role='dialog'], [role='menu'], .controle, [data-slot], .ins-card) { background: var(--cartao); --bg-subtle: var(--cartao-suave); --bg-hover: var(--cartao-hover); }
+.app-ui main .cartao-grupo { border-radius: 20px; padding: 6px 14px 10px; }
+/* Quadro (kanban): coluna tingida com a cor do status, cartões brancos. */
+.app-ui main .kanban-coluna { background: color-mix(in oklab, var(--kanban-cor, var(--text-3)) 14%, var(--cartao)); --bg: var(--cartao); }
+.app-ui main .kanban-coluna[data-sobre] { background: var(--sel); }
+/* Título da página maior e mais leve: a hierarquia vem do tamanho. */
+.app-ui .page-title { font-size: 1.625rem; font-weight: 500; letter-spacing: -0.025em; }

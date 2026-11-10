@@ -57,7 +57,7 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
       ) : (
         <div style={{ maxWidth: 1200, padding: '4px 16px 80px', overflowX: 'auto' }}>
           {GRUPOS.map((g) => ({ ...g, tarefas: planas.filter((t) => grupoDePrazo(t.prazo, t.concluidaEm, hoje) === g.id) })).filter((g) => g.tarefas.length).map((g) => (
-            <details key={g.id} open style={{ marginTop: 10 }}>
+            <details key={g.id} open className="cartao-grupo" style={{ marginTop: 10 }}>
               <summary style={{ height: 32, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', listStyle: 'none' }}>
                 <Ic n="expand_more" s={16} style={{ color: 'var(--text-3)' }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: g.id === 'atrasadas' ? 'var(--red)' : undefined }}>{g.nome}</span>
