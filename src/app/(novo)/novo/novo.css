@@ -1,0 +1,65 @@
+/*
+ * Design novo (2026-11), construído do zero ao lado do antigo: tudo sob .nv, sem herdar nada de .app-ui.
+ * Chão cinza, cartões brancos soltos de canto 20, uma cor de destaque (vermelho SRV) + preto, controles em pílula,
+ * hierarquia pelo tamanho. As telas novas moram em /novo/… até substituírem as antigas.
+ */
+.nv { --chao: #eeeef1; --cartao: #ffffff; --suave: #f3f3f5; --linha: #ececf0; --tinta: #18181b; --tinta-2: #52525b; --tinta-3: #6b6b74; --srv: #d80d12; --srv-suave: #fdeceb; --srv-forte: #b3090d; --cliente: #1d6fe0; --ok: #14633a; --ok-suave: #e3f4ea;
+  min-height: 100dvh; display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; background: var(--chao); color: var(--tinta); font-size: 14px; line-height: 1.45; }
+.nv a { color: inherit; text-decoration: none; }
+.nv :is(a, button):focus-visible { outline: 2px solid var(--cliente); outline-offset: 2px; }
+
+.nv-lado { flex: 1 1 208px; max-width: 232px; align-self: flex-start; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; padding: 20px 12px; border-radius: 24px; background: var(--cartao); }
+.nv-marca { display: flex; align-items: center; gap: 10px; padding: 0 10px 16px; font-size: 15px; font-weight: 600; }
+.nv-marca i { width: 32px; height: 32px; border-radius: 10px; background: var(--srv); color: #fff; font-size: 12px; font-weight: 700; line-height: 32px; text-align: center; font-style: normal; }
+.nv-item { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 999px; font-weight: 500; color: #3f3f46; }
+.nv-item:hover { background: var(--suave); }
+.nv-item[aria-current='page'] { background: var(--tinta); color: #fff; font-weight: 600; }
+.nv-item svg { width: 18px; height: 18px; flex: none; }
+.nv-secao { padding: 16px 12px 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); }
+
+.nv-conteudo { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 12px 8px; }
+.nv-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.nv-titulo { margin: 0 8px 0 0; font-size: 34px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; }
+.nv-sub { font-size: 13px; color: var(--tinta-3); }
+.nv-esp { flex: 1; }
+
+.nv-pilulas { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--cartao); }
+.nv-pilula { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; font-weight: 500; color: #3f3f46; white-space: nowrap; }
+.nv-pilula:hover { background: var(--suave); }
+.nv-pilula[aria-current='true'] { background: var(--tinta); color: #fff; font-weight: 600; }
+.nv-pilulas.clientes .nv-pilula[aria-current='true'] { background: var(--cliente); }
+.nv-botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 999px; background: var(--srv); color: #fff !important; font-weight: 600; }
+.nv-botao.claro { background: var(--cartao); color: var(--tinta) !important; }
+
+.nv-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.nv-grade.larga { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.nv-cartao { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 20px; background: var(--cartao); min-width: 0; }
+.nv-cartao.escuro { background: var(--tinta); color: #fff; }
+.nv-cartao.escuro .nv-rotulo { color: #d4d4d8; }
+.nv-cartao h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.nv-kpi { gap: 10px; padding: 20px; }
+.nv-rotulo { font-size: 12px; color: var(--tinta-3); }
+.nv-numero { font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.nv-cliente { font-weight: 700; color: var(--cliente); }
+.nv-chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: var(--suave); font-size: 12px; font-weight: 600; color: #3f3f46; white-space: nowrap; }
+.nv-vazio { padding: 24px 0; text-align: center; color: var(--tinta-3); }
+.nv-aviso { padding: 12px 16px; border-radius: 14px; background: var(--srv-suave); color: #7a0a0d; font-size: 13px; }
+
+.nv-funil { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; gap: 12px; align-items: center; }
+.nv-funil b { font-size: 13px; font-weight: 500; }
+.nv-funil span { display: flex; justify-content: center; }
+.nv-funil i { display: flex; align-items: center; justify-content: center; height: 44px; min-width: 64px; border-radius: 999px; font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; }
+.nv-funil em { font-style: normal; font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+
+.nv-linha { display: flex; align-items: center; gap: 12px; min-height: 64px; border-top: 1px solid var(--linha); }
+.nv-linha > div { flex: 1; min-width: 0; }
+.nv-linha strong { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-linha > b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nv-dica { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
+.nv-dica > i { width: 40px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--srv-suave); color: var(--srv-forte); }
+.nv-dica > div { flex: 1 1 280px; min-width: 0; }
+.nv-dica p { margin: 4px 0 0; color: var(--tinta-2); }
+.nv-osso { min-height: 120px; border-radius: 20px; background: var(--cartao); animation: nv-pulso 1.4s ease-in-out infinite; }
+@keyframes nv-pulso { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .nv-osso { animation: none; } }
+@media (max-width: 640px) { .nv-lado { max-width: none; position: static; } .nv-titulo { font-size: 28px; } }
