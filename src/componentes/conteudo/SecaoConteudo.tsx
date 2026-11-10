@@ -44,7 +44,7 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
           <div key={m.id} className="group relative overflow-hidden rounded-lg border border-borda bg-hover">
             {m.tipo === 'imagem' ? (
               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-              <img src={m.url} alt={m.nome} className="aspect-square w-full object-cover" />
+              <img loading="lazy" decoding="async" src={m.url} alt={m.nome} className="aspect-square w-full object-cover" />
             ) : (
               <video src={m.url} controls className="aspect-square w-full bg-black object-cover" />
             )}

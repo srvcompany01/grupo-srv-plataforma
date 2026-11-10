@@ -23,7 +23,7 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
             <button key={a.id} type="button" onClick={() => setAmpliado(a)} aria-label={`Ampliar ${a.nome}`} className="overflow-hidden rounded-md ">
               {/* URL assinada do R2: next/image exigiria configurar o domínio. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={a.url} alt={a.nome} className="h-[120px] w-auto max-w-[200px] object-cover" />
+              <img loading="lazy" decoding="async" src={a.url} alt={a.nome} className="h-[120px] w-auto max-w-[200px] object-cover" />
             </button>
           ))}
       </div>

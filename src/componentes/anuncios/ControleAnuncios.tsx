@@ -86,7 +86,7 @@ function LinhaMeta({ o, clienteId, podeGerir, nivel, abertos, alternar }: { o: O
               <button type="button" onClick={() => alternar(o.id)} aria-expanded={aberto} aria-label={aberto ? 'Recolher' : 'Expandir'} className="rounded p-0.5 text-texto-3 hover:bg-hover"><ChevronRight className={`h-3.5 w-3.5 transition-transform ${aberto ? 'rotate-90' : ''}`} /></button>
             ) : <span className="w-4.5" />}
             {/* eslint-disable-next-line @next/next/no-img-element -- miniatura da Meta */}
-            {o.miniatura && <img src={o.miniatura} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}
+            {o.miniatura && <img loading="lazy" decoding="async" src={o.miniatura} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}
             <div className="min-w-0">
               <p className={`truncate ${nivel === 0 ? 'font-semibold' : ''}`} title={o.nome}>{o.nome}</p>
               <p className="flex items-center gap-1.5 text-micro text-texto-3">
@@ -245,7 +245,7 @@ export function Criativos({ clienteId, criativos }: { clienteId: string; criativ
             <li key={c.id} className={`overflow-hidden rounded-lg border border-borda bg-white ${pendente ? 'opacity-60' : ''}`}>
               <div className="flex aspect-square items-center justify-center bg-fundo">
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2 */}
-                {c.tipo === 'imagem' ? <img src={c.url} alt={c.nome} className="h-full w-full object-cover" /> : <video src={c.url} className="h-full w-full object-cover" muted preload="metadata" />}
+                {c.tipo === 'imagem' ? <img loading="lazy" decoding="async" src={c.url} alt={c.nome} className="h-full w-full object-cover" /> : <video src={c.url} className="h-full w-full object-cover" muted preload="metadata" />}
               </div>
               <div className="flex items-center gap-1 px-2 py-1.5">
                 {c.tipo === 'video' && <Film className="h-3.5 w-3.5 shrink-0 text-texto-3" aria-label="Vídeo" />}

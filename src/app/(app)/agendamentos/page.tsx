@@ -44,7 +44,7 @@ function Linha({ a, agora, soHora, hoje, x }: { a: Agendamento; agora: Date; soH
       <Link href={`/tarefas/${a.id}`} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-fundo">
         {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img src={a.capa.url} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={a.capa.url} alt="" className="h-full w-full object-cover" />
         ))}
       </Link>
       <div className="min-w-0 flex-1">
@@ -101,7 +101,7 @@ function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string;
                     <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-fundo">
                       {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
                         // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-                        <img src={a.capa.url} alt="" className="h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={a.capa.url} alt="" className="h-full w-full object-cover" />
                       ))}
                     </span>
                     <span className="min-w-0 flex-1">
