@@ -7,7 +7,9 @@ import { METODOS, ehMetodo, preenchimento, type Metodo } from '@/dominio/estrate
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarClientes } from '@/servicos/clientes-plataforma'
-import { estrategiaDoCliente, estrategiasDeTodos } from '@/servicos/estrategia'
+import { dataDeHoje } from '@/dominio/filtros'
+import { estrategiaDoCliente, estrategiasDeTodos, numerosReaisDoCliente } from '@/servicos/estrategia'
+import type { Cliente as ClienteDaPlataforma } from '@/servicos/clientes-plataforma'
 
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
 const pct = (n: number) => `${Math.round(n * 100)}%`
@@ -33,13 +35,16 @@ export default async function Estrategia({ searchParams }: PageProps<'/estrategi
         <SeletorCliente base={`/estrategia?secao=${secao}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo="" />
       </div>
 
-      {escolhido ? <Cliente clienteId={escolhido.id} secao={secao} link={link} /> : <Panorama clientes={clientes} link={link} />}
+      {escolhido ? <Cliente cliente={escolhido} secao={secao} link={link} /> : <Panorama clientes={clientes} link={link} />}
     </div>
   )
 }
 
-async function Cliente({ clienteId, secao, link }: { clienteId: string; secao: Metodo; link: (m: Metodo) => string }) {
-  const est = await estrategiaDoCliente(await criarClienteServidor(), clienteId)
+async function Cliente({ cliente, secao, link }: { cliente: ClienteDaPlataforma; secao: Metodo; link: (m: Metodo) => string }) {
+  const sb = await criarClienteServidor()
+  const clienteId = cliente.id
+  // Só a Arquitetura de Receita usa os números reais (último mês fechado de anúncios e resultado).
+  const [est, reais] = await Promise.all([estrategiaDoCliente(sb, clienteId), secao === 'receita' ? numerosReaisDoCliente(sb, cliente, dataDeHoje(new Date())) : null])
   return (
     <>
       <nav className="flex gap-1 overflow-x-auto border-b border-borda [scrollbar-width:none]" aria-label="Seções da estratégia">
@@ -50,7 +55,7 @@ async function Cliente({ clienteId, secao, link }: { clienteId: string; secao: M
           </Link>
         ))}
       </nav>
-      <QuadroEstrategia metodo={secao} clienteId={clienteId} inicial={est[secao]} />
+      <QuadroEstrategia metodo={secao} clienteId={clienteId} inicial={est[secao]} reais={reais} />
     </>
   )
 }

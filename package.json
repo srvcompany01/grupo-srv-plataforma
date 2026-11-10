@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "e2e": "playwright test",
     "typecheck": "next typegen && tsc --noEmit",
     "db:push": "[ -n \"$SUPABASE_DB_URL\" ] || { set -a; . ./.env.local; set +a; } && supabase db push --db-url \"$SUPABASE_DB_URL\" --yes",
     "tipos": "[ -n \"$SUPABASE_PROJECT_ID\" ] || { set -a; . ./.env.local; set +a; }; supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/infra/supabase/tipos.ts",
@@ -58,6 +59,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

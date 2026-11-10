@@ -38,3 +38,19 @@ describe('estratégia do cliente', () => {
     expect(numero('abc')).toBeNull()
   })
 })
+
+describe('textosDosNumerosReais', () => {
+  it('preenche só o que dá para calcular, em formato que numero() lê de volta', async () => {
+    const { textosDosNumerosReais, numero } = await import('@/dominio/estrategia')
+    const mapa = (n: Parameters<typeof textosDosNumerosReais>[0]) => Object.fromEntries(textosDosNumerosReais(n).map((i) => [i.chave, i.valor]))
+    const cheio = mapa({ mes: '2026-10', impressoes: 344709, leads: 219, vendas: 12, investido: 3600, faturamento: 30000 })
+    expect(cheio['volume.consciencia']).toBe('344.709')
+    expect(cheio['conversao.consciencia']).toBe('0,064%')
+    expect(cheio['volume.educacao']).toBe('219')
+    expect(numero(cheio['num.cac'])).toBe(300)
+    expect(numero(cheio['num.ticket'])).toBe(2500)
+    expect(numero(cheio['volume.consciencia'])).toBe(344709)
+    const semVenda = mapa({ mes: '2026-10', impressoes: null, leads: 5, vendas: null, investido: 100, faturamento: null })
+    expect(Object.keys(semVenda)).toEqual(['volume.educacao'])
+  })
+})

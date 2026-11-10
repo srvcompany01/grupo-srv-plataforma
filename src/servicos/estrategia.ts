@@ -1,6 +1,8 @@
-import { METODOS, VAZIO, mesclar, normalizar, type DadosEstrategia, type Metodo } from '@/dominio/estrategia'
+import { METODOS, VAZIO, mesclar, normalizar, type DadosEstrategia, type Metodo, type NumerosReais } from '@/dominio/estrategia'
+import { intervaloDoMes, mesAnterior } from '@/dominio/performance'
 import type { Json } from '@/infra/supabase/tipos'
 import type { Supabase } from '@/infra/supabase/servidor'
+import type { Cliente } from './clientes-plataforma'
 
 export type EstrategiaDoCliente = Record<Metodo, DadosEstrategia>
 
@@ -37,4 +39,22 @@ export async function alterarEstrategia(sb: Supabase, clienteId: string, metodo:
   const novo = mesclar(atual, parcial)
   await salvarEstrategia(sb, clienteId, metodo, novo)
   return novo
+}
+
+/** Números reais do último mês fechado (anúncios + resultado lançado em Performance), para a Arquitetura de Receita. null = sem dados. */
+export async function numerosReaisDoCliente(sb: Supabase, c: Cliente, hoje: string): Promise<NumerosReais | null> {
+  try {
+    const mes = mesAnterior(hoje.slice(0, 7))
+    const [{ historicoDoCliente, investido, leadsPagos }, { situacaoGoogle }, { totaisDoPeriodoMeta }] = await Promise.all([import('./performance'), import('./google-agencia'), import('./meta-anuncios')])
+    const [h, totais] = await Promise.all([
+      historicoDoCliente(sb, c, [mes], hoje, (await situacaoGoogle()).conectado),
+      c.metaContaId ? totaisDoPeriodoMeta(c.metaContaId, intervaloDoMes(mes, hoje)) : null,
+    ])
+    const m = h.meses[0]
+    if (!m) return null
+    const n = { mes, impressoes: totais && !('erro' in totais) ? totais.impressoes : null, leads: leadsPagos(m) + m.leadsOrganicos, vendas: m.vendas, investido: investido(m), faturamento: m.faturamento }
+    return n.leads || n.investido || n.vendas ? n : null
+  } catch {
+    return null
+  }
 }

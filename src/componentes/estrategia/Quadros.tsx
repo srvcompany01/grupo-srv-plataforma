@@ -4,17 +4,19 @@ import { Check, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import {
   ARQUETIPOS, CAMPOS_ETAPA_RECEITA, CIRCULO, CONSCIENCIA, DECLARACAO, EMPATIA, ETAPAS_JORNADA, ETAPAS_RECEITA, JTBD, NUMEROS_RECEITA, PERSONA, PROBLEMAS, SWOT, TOM, TOWS,
-  idDoCheck, numero, type DadosEstrategia, type Metodo, type NivelChecklist,
+  idDoCheck, numero, textosDosNumerosReais, type DadosEstrategia, type Metodo, type NivelChecklist, type NumerosReais,
 } from '@/dominio/estrategia'
+import { rotuloMesLongo } from '@/dominio/performance'
+import { Button } from '@/componentes/ui/button'
 import { Editor, Escala, Lista, Texto, useEstrategia, useMarcados } from './edicao'
 
 /** O quadro visual de um método, editável (aba Estratégia) ou só leitura (página do cliente). */
-export function QuadroEstrategia({ metodo, clienteId, inicial, leitura = false }: { metodo: Metodo; clienteId: string; inicial: DadosEstrategia; leitura?: boolean }) {
+export function QuadroEstrategia({ metodo, clienteId, inicial, leitura = false, reais = null }: { metodo: Metodo; clienteId: string; inicial: DadosEstrategia; leitura?: boolean; /** Números reais do último mês (só a receita usa). */ reais?: NumerosReais | null }) {
   const Quadro = { publico: Publico, jornada: Jornada, posicionamento: Posicionamento, receita: Receita, swot: Swot }[metodo]
   return (
     <Editor key={`${clienteId}-${metodo}`} clienteId={clienteId} metodo={metodo} inicial={inicial} leitura={leitura}>
       <div className="est">
-        <Quadro />
+        {metodo === 'receita' ? <Receita reais={reais} /> : <Quadro />}
       </div>
     </Editor>
   )
@@ -367,8 +369,9 @@ function Gravata({ ativa, escolher }: { ativa: string; escolher: (id: string) =>
   )
 }
 
-function Receita() {
-  const { d, leitura } = useEstrategia()
+function Receita({ reais = null }: { reais?: NumerosReais | null }) {
+  const { d, leitura, mudar } = useEstrategia()
+  const reaisItens = reais ? textosDosNumerosReais(reais) : []
   const [ativa, setAtiva] = useState<string>(ETAPAS_RECEITA[0].id)
   const e = ETAPAS_RECEITA.find((x) => x.id === ativa)!
   const ltv = numero(d.textos['num.ltv'])
@@ -378,6 +381,15 @@ function Receita() {
   const rec = numero(d.textos['num.recorrente'])
   return (
     <>
+      {!leitura && reais && reaisItens.length > 0 && (
+        <Bloco titulo={`Números reais de ${rotuloMesLongo(reais.mes)}`} sub="Vêm dos anúncios (Meta e Google), do link da bio e do resultado lançado em Performance. O botão copia estes valores para os campos da gravata e substitui o que estiver neles.">
+          <div className="est-fichas">
+            {reaisItens.map((i) => <div key={i.chave} className="est-rotulado"><span>{i.rotulo}</span><p className="py-1 text-[15px] font-semibold tabular-nums">{i.valor}</p></div>)}
+          </div>
+          <Button type="button" size="sm" className="mt-1" onClick={() => mudar((x) => ({ ...x, textos: { ...x.textos, ...Object.fromEntries(reaisItens.map((i) => [i.chave, i.valor])) } }))}>Preencher a gravata com estes números</Button>
+        </Bloco>
+      )}
+
       <Bloco titulo="Gravata-borboleta da receita" sub="Revenue Architecture (Winning by Design): a receita não acaba na venda. Clique numa etapa para preencher volume, conversão, tempo e ações.">
         <div className="overflow-x-auto"><div className="min-w-[640px]"><Gravata ativa={ativa} escolher={setAtiva} /></div></div>
         {!leitura && (

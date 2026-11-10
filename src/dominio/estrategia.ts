@@ -222,6 +222,26 @@ export function numero(t: string | undefined): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+/** Números reais de um mês (anúncios e resultado lançado em Performance) para preencher a gravata. */
+export type NumerosReais = { mes: string; impressoes: number | null; leads: number; vendas: number | null; investido: number; faturamento: number | null }
+
+const inteiro = (n: number) => Math.round(n).toLocaleString('pt-BR')
+const dinheiro = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** O que os números reais preenchem na receita: volume de Consciência, Educação e Compromisso, conversões entre elas, CAC e ticket. Só entra o que dá para calcular. */
+export function textosDosNumerosReais(n: NumerosReais): { chave: string; rotulo: string; valor: string }[] {
+  const taxa = (de: number | null, para: number | null) => (de && para !== null ? `${((para / de) * 100).toLocaleString('pt-BR', { maximumSignificantDigits: 2 })}%` : null)
+  const itens: { chave: string; rotulo: string; valor: string | null }[] = [
+    { chave: 'volume.consciencia', rotulo: 'Consciência · impressões dos anúncios', valor: n.impressoes ? inteiro(n.impressoes) : null },
+    { chave: 'conversao.consciencia', rotulo: 'Consciência → Educação', valor: taxa(n.impressoes, n.leads) },
+    { chave: 'volume.educacao', rotulo: 'Educação · leads (pagos e orgânicos)', valor: inteiro(n.leads) },
+    { chave: 'volume.compromisso', rotulo: 'Compromisso · vendas lançadas', valor: n.vendas !== null ? inteiro(n.vendas) : null },
+    { chave: 'num.cac', rotulo: 'CAC (investido ÷ vendas)', valor: n.vendas && n.investido > 0 ? dinheiro(n.investido / n.vendas) : null },
+    { chave: 'num.ticket', rotulo: 'Ticket médio (faturamento ÷ vendas)', valor: n.vendas && n.faturamento ? dinheiro(n.faturamento / n.vendas) : null },
+  ]
+  return itens.filter((i): i is { chave: string; rotulo: string; valor: string } => i.valor !== null)
+}
+
 // ───────────────────────────── SWOT ─────────────────────────────
 
 export const SWOT = [

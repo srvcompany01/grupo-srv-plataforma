@@ -46,3 +46,7 @@ next-env.d.ts
 # sobras locais (cópia do repositório e capturas do navegador)
 /grupo-srv-plataforma/
 /.playwright-mcp/
+
+# playwright
+/test-results/
+/playwright-report/
