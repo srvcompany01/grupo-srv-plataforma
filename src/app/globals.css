@@ -997,3 +997,11 @@ li:hover > .est-x, .est-x:focus-visible { opacity: 1; }
 .app-ui main .kanban-coluna[data-sobre] { background: var(--sel); }
 /* Título da página maior e mais leve: a hierarquia vem do tamanho. */
 .app-ui .page-title { font-size: 1.625rem; font-weight: 500; letter-spacing: -0.025em; }
+
+/* Pele 2026-11, etapa 2: blocos com contorno e sem fundo viram cartão; botões, campos e filtros de uma linha em pílula; abas sublinhadas viram pílulas (a ativa em preto). */
+.app-ui main :is(.rounded-lg, .rounded-xl, .rounded-2xl).border.border-borda:not([class*="bg-"], input, select, textarea, button, a, summary, label, [role='button'], [role='dialog'], [role='menu'], .controle, [data-slot]) { background: var(--cartao); border-color: transparent; border-radius: 20px; --bg-subtle: var(--cartao-suave); --bg-hover: var(--cartao-hover); }
+.app-ui :is(button, a, [role='button'], select, input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'])):is(.h-7, .h-8, .h-9, .h-10, .h-11):is(.rounded, .rounded-md, .rounded-lg, .rounded-xl) { border-radius: 999px; }
+.app-ui [data-slot='button'], .app-ui .controle:not(textarea) { border-radius: 999px; }
+.app-ui main :is(a, button).border-b-2 { border-bottom-width: 0; margin-bottom: 0; border-radius: 999px; padding: 6px 14px; }
+.app-ui main :is(a, button).border-b-2:not(.border-transparent) { background: var(--text); color: var(--bg); }
+.app-ui main :is(nav, div):has(> .border-b-2) { border-bottom-color: transparent; gap: 4px; }
