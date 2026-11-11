@@ -46,7 +46,8 @@ export type ResumoInstagram = {
 }
 
 /** Gasto/alcance pago por dia (Meta + Google somados). */
-export type PagoPorDia = { dia: string; gasto: number; impressoes: number; alcance: number; cliques: number }
+/** `conversoes` e `valor` (das vendas) só vêm direto das plataformas; a soma Meta + Google do relatório não os usa. */
+export type PagoPorDia = { dia: string; gasto: number; impressoes: number; alcance: number; cliques: number; conversoes?: number; valor?: number }
 
 /**
  * Tom de cada insight, número ou recomendação: bom (verde), atenção (amarelo), ruim (vermelho), neutro (cinza).

@@ -15,7 +15,7 @@ const NIVEL = { campanha: 'campanha', conjunto: 'conjunto', anuncio: 'anúncio' 
 type Plataforma = 'meta' | 'google'
 type Nivel = keyof typeof NIVEL
 
-function useAlterar(clienteId: string) {
+export function useAlterar(clienteId: string) {
   const [pendente, iniciar] = useTransition()
   const alterar = (p: { plataforma: Plataforma; nivel: Nivel; objetoId: string; acao: 'pausar' | 'ativar' | 'orcamento'; valor?: number }) =>
     iniciar(async () => { avisar(await alterarAnuncioAcao(clienteId, p), true) })
@@ -23,7 +23,7 @@ function useAlterar(clienteId: string) {
 }
 
 /** Liga/desliga. Ligar começa a gastar: pede confirmação. */
-function Interruptor({ ligado, nome, desabilitado, aoMudar }: { ligado: boolean; nome: string; desabilitado: boolean; aoMudar: (ligar: boolean) => void }) {
+export function Interruptor({ ligado, nome, desabilitado, aoMudar }: { ligado: boolean; nome: string; desabilitado: boolean; aoMudar: (ligar: boolean) => void }) {
   return (
     <button
       type="button"

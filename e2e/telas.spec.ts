@@ -8,7 +8,7 @@ const EMAIL = process.env.E2E_EMAIL
 const SENHA = process.env.E2E_SENHA
 
 const TELAS = [
-  '/home', '/inicio', '/agenda', '/agendamentos', '/anuncios', '/biolytics', '/caixa-de-entrada', '/chat', '/clientes', '/clientes/relatorio',
+  '/home', '/inicio', '/novo/anuncios', '/agenda', '/agendamentos', '/anuncios', '/biolytics', '/caixa-de-entrada', '/chat', '/clientes', '/clientes/relatorio',
   '/config', '/config/armazenamento', '/config/campos', '/config/campos-clientes', '/config/custos', '/config/design', '/config/espacos',
   '/config/formularios', '/config/integracoes', '/config/personalizacao', '/config/usuarios', '/documentos', '/editor-blog', '/estrategia',
   '/financeiro', '/funis', '/gmn', '/insights', '/painel-de-gestao', '/performance', '/projetos', '/quadros', '/redes', '/reunioes', '/time',

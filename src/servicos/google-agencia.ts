@@ -139,11 +139,11 @@ export function campanhasGoogle(contaId: string, periodo: { de: string; ate: str
 export function pagoPorDiaGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<PagoPorDia[] | { erro: string }> {
   return comErro(async () => {
     if (![periodo.de, periodo.ate].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new ErroGoogle('Período inválido.')
-    const r = await google<{ results?: { segments?: { date?: string }; metrics?: { costMicros?: string; impressions?: string; clicks?: string } }[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
+    const r = await google<{ results?: { segments?: { date?: string }; metrics?: { costMicros?: string; impressions?: string; clicks?: string; conversions?: number; conversionsValue?: number } }[] }>(`${ADS}/customers/${contaId}/googleAds:search`, {
       metodo: 'POST', cabecalhos: cabecalhosAds(), cacheSeg: cacheDoPeriodo(periodo, 1800),
-      corpo: { query: `SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks FROM customer WHERE segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` },
+      corpo: { query: `SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM customer WHERE segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` },
     })
-    return (r.results ?? []).map((x) => ({ dia: x.segments?.date ?? '', gasto: Number(x.metrics?.costMicros ?? 0) / 1_000_000, impressoes: Number(x.metrics?.impressions ?? 0), alcance: 0, cliques: Number(x.metrics?.clicks ?? 0) }))
+    return (r.results ?? []).map((x) => ({ dia: x.segments?.date ?? '', gasto: Number(x.metrics?.costMicros ?? 0) / 1_000_000, impressoes: Number(x.metrics?.impressions ?? 0), alcance: 0, cliques: Number(x.metrics?.clicks ?? 0), conversoes: Number(x.metrics?.conversions ?? 0), valor: Number(x.metrics?.conversionsValue ?? 0) }))
   })
 }
 
@@ -258,16 +258,16 @@ export async function publicarNoNegocio(perfil: string, texto: string, fotoUrl: 
 }
 
 // Controle das campanhas (pausar, ativar, orçamento). Sempre pela conta do cliente: o id da campanha só vale nela.
-export type CampanhaControle = { id: string; nome: string; status: 'ENABLED' | 'PAUSED'; tipo: string; orcamento: { recurso: string; diario: number; compartilhado: boolean } | null; custo: number; conversoes: number; cliques: number }
+export type CampanhaControle = { id: string; nome: string; status: 'ENABLED' | 'PAUSED'; tipo: string; orcamento: { recurso: string; diario: number; compartilhado: boolean } | null; custo: number; conversoes: number; valor: number; cliques: number }
 
 /** Campanhas (ativas e pausadas) com o orçamento diário e os números do período. Sem cache: é a tela de edição. */
 export function estruturaGoogle(contaId: string, periodo: { de: string; ate: string }): Promise<CampanhaControle[] | { erro: string }> {
   return comErro(async () => {
     const url = `${ADS}/customers/${contaId}/googleAds:search`
-    type Linha = { campaign: { id: string; name: string; status: 'ENABLED' | 'PAUSED'; advertisingChannelType?: string }; campaignBudget?: { resourceName: string; amountMicros?: string; explicitlyShared?: boolean }; metrics?: { costMicros?: string; conversions?: number; clicks?: string } }
+    type Linha = { campaign: { id: string; name: string; status: 'ENABLED' | 'PAUSED'; advertisingChannelType?: string }; campaignBudget?: { resourceName: string; amountMicros?: string; explicitlyShared?: boolean }; metrics?: { costMicros?: string; conversions?: number; conversionsValue?: number; clicks?: string } }
     const [base, numeros] = await Promise.all([
       google<{ results?: Linha[] }>(url, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: "SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign_budget.resource_name, campaign_budget.amount_micros, campaign_budget.explicitly_shared FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED') LIMIT 200" } }),
-      google<{ results?: Linha[] }>(url, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: `SELECT campaign.id, metrics.cost_micros, metrics.conversions, metrics.clicks FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED') AND segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` } }),
+      google<{ results?: Linha[] }>(url, { metodo: 'POST', cabecalhos: cabecalhosAds(), corpo: { query: `SELECT campaign.id, metrics.cost_micros, metrics.conversions, metrics.conversions_value, metrics.clicks FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED') AND segments.date BETWEEN '${periodo.de}' AND '${periodo.ate}'` } }),
     ])
     const m = new Map((numeros.results ?? []).map((l) => [l.campaign.id, l.metrics]))
     return (base.results ?? []).map((l) => ({
@@ -278,6 +278,7 @@ export function estruturaGoogle(contaId: string, periodo: { de: string; ate: str
       orcamento: l.campaignBudget?.resourceName ? { recurso: l.campaignBudget.resourceName, diario: Number(l.campaignBudget.amountMicros ?? 0) / 1e6, compartilhado: !!l.campaignBudget.explicitlyShared } : null,
       custo: Number(m.get(l.campaign.id)?.costMicros ?? 0) / 1e6,
       conversoes: Number(m.get(l.campaign.id)?.conversions ?? 0),
+      valor: Number(m.get(l.campaign.id)?.conversionsValue ?? 0),
       cliques: Number(m.get(l.campaign.id)?.clicks ?? 0),
     }))
   })
