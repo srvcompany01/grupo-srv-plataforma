@@ -14,16 +14,16 @@ export function SeletorPrioridade({ tarefaId, prioridade, className = '' }: { ta
   const [pendente, iniciar] = useTransition()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger disabled={pendente} aria-label={`Prioridade: ${ROTULO_PRIORIDADE[prioridade]}`} className={`flex h-7 items-center gap-1.5 rounded px-1.5 text-[13px] text-texto-2 outline-none hover:bg-[var(--bg-hover)] ${className}`}>
+      <DropdownMenuTrigger disabled={pendente} aria-label={`Prioridade: ${ROTULO_PRIORIDADE[prioridade]}`}>
         <Ic n="flag" s={15} fill style={{ color: COR_PRIORIDADE[prioridade] }} />{ROTULO_PRIORIDADE[prioridade]}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-56">
+      <DropdownMenuContent align="start">
         <DropdownMenuLabel>Prioridade</DropdownMenuLabel>
         {PRIORIDADES.map((p) => (
           <DropdownMenuItem key={p} onSelect={() => p !== prioridade && iniciar(async () => void avisar(await atualizarTarefaAcao(tarefaId, { prioridade: p })))}>
             <Ic n="flag" s={16} fill style={{ color: COR_PRIORIDADE[p] }} />
-            <span className="min-w-0 flex-1 truncate">{ROTULO_PRIORIDADE[p]}</span>
-            {p === prioridade && <Ic n="check" s={18} className="text-texto-2" />}
+            <span>{ROTULO_PRIORIDADE[p]}</span>
+            {p === prioridade && <Ic n="check" s={18} />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

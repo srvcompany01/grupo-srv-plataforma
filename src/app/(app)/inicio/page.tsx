@@ -37,12 +37,12 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex h-10 items-center gap-3 border-b border-borda-fraca bg-white px-3">
-        <h1 className="text-destaque font-semibold">Minhas tarefas</h1>
-        <span className="text-rotulo text-texto-3">{abertas} abertas · <span className={emAtraso ? 'text-[var(--red)]' : ''}>{emAtraso} em atraso</span></span>
-        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} role="switch" aria-checked={comConcluidas} className="ml-auto inline-flex items-center gap-2 text-rotulo text-texto-2">
+      <header>
+        <h1>Minhas tarefas</h1>
+        <span>{abertas} abertas · <span>{emAtraso} em atraso</span></span>
+        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} role="switch" aria-checked={comConcluidas}>
           Mostrar publicadas
-          <span className={`flex h-4 w-7 items-center rounded-full px-0.5 transition-colors ${comConcluidas ? 'bg-petroleo' : 'bg-[var(--border-strong)]'}`}><span className={`h-3 w-3 rounded-full bg-[var(--bg)] transition-transform ${comConcluidas ? 'translate-x-3' : ''}`} /></span>
+          <span><span /></span>
         </Link>
       </header>
       <div>
@@ -57,7 +57,7 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
       ) : (
         <div style={{ maxWidth: 1200, padding: '4px 16px 80px', overflowX: 'auto' }}>
           {GRUPOS.map((g) => ({ ...g, tarefas: planas.filter((t) => grupoDePrazo(t.prazo, t.concluidaEm, hoje) === g.id) })).filter((g) => g.tarefas.length).map((g) => (
-            <details key={g.id} open className="cartao-grupo" style={{ marginTop: 10 }}>
+            <details key={g.id} open style={{ marginTop: 10 }}>
               <summary style={{ height: 32, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', listStyle: 'none' }}>
                 <Ic n="expand_more" s={16} style={{ color: 'var(--text-3)' }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: g.id === 'atrasadas' ? 'var(--red)' : undefined }}>{g.nome}</span>
@@ -68,13 +68,13 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
                   const opcoes = statusPorLista[t.listaId] ?? []
                   const atrasada = !!t.prazo && t.prazo < hoje && !t.concluidaEm
                   return (
-                    <div key={t.id} className="hover:bg-[var(--bg-hover)]" style={{ display: 'grid', gridTemplateColumns: '28px minmax(240px,1fr) 200px 136px 90px 96px', height: 36, alignItems: 'center', borderBottom: '1px solid var(--border-soft)' }}>
+                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px minmax(240px,1fr) 200px 136px 90px 96px', height: 36, alignItems: 'center', borderBottom: '1px solid var(--border-soft)' }}>
                       <div style={{ display: 'flex', justifyContent: 'center' }}><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} /></div>
                       <Link href={`/tarefas/${t.id}`} scroll={false} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 12 }}>
-                        <span className="truncate hover:underline" style={{ fontSize: 13 }}>{t.titulo}</span>
+                        <span style={{ fontSize: 13 }}>{t.titulo}</span>
                         {t.clienteNome && <span style={{ flex: 'none', height: 18, display: 'inline-flex', alignItems: 'center', padding: '0 6px', borderRadius: 4, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.clienteNome}</span>}
                       </Link>
-                      <span className="truncate" style={{ fontSize: 12, color: 'var(--text-3)', paddingRight: 8 }}>{t.listaNome}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-3)', paddingRight: 8 }}>{t.listaNome}</span>
                       <div><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} comNome /></div>
                       <div style={{ color: atrasada ? 'var(--red)' : undefined, fontSize: 13 }}><EditorVencimento tarefaId={t.id} prazo={t.prazo} concluida={!!t.concluidaEm} hoje={hoje} /></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--text-2)', padding: '0 6px' }}><Ic n="flag" s={15} fill style={{ color: COR_PRIO[t.prioridade] }} />{ROTULO_PRIORIDADE[t.prioridade]}</div>

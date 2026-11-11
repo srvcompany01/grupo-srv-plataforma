@@ -10,7 +10,7 @@ export function LeitorDocumento({ conteudo }: { conteudo: unknown }) {
     content: (conteudo as JSONContent | null) ?? '',
     editable: false,
     immediatelyRender: false,
-    editorProps: { attributes: { class: 'documento px-1 py-2 outline-none' } },
+    editorProps: { attributes: { class: 'documento' } },
   })
   return <EditorContent editor={editor} />
 }

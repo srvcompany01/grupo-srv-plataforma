@@ -42,11 +42,11 @@ export function FiltrosSalvos({ listaId, filtros, salvos }: { listaId: string; f
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="b-ghost">
+      <DropdownMenuTrigger>
         <Ic n="bookmark" s={16} />
         {filtros.logica === 'ou' ? 'Salvos · OU' : 'Salvos'}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start">
         <DropdownMenuLabel>Combinar filtros</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={filtros.logica} onValueChange={(v) => ir({ ...filtros, logica: v as Filtros['logica'] })}>
           <DropdownMenuRadioItem value="e">E — todos precisam bater</DropdownMenuRadioItem>
@@ -54,12 +54,12 @@ export function FiltrosSalvos({ listaId, filtros, salvos }: { listaId: string; f
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Filtros salvos</DropdownMenuLabel>
-        {salvos.length === 0 && <div className="px-2 py-1.5 text-legenda text-texto-3">Nenhum ainda.</div>}
+        {salvos.length === 0 && <div>Nenhum ainda.</div>}
         {salvos.map((f) => (
-          <DropdownMenuItem key={f.id} onSelect={() => ir(aplicarFiltroSalvo(filtros, f.params))} className="justify-between">
-            <span className="truncate">{f.nome}</span>
-            <button type="button" aria-label={`Remover ${f.nome}`} disabled={pendente} onClick={(e) => { e.stopPropagation(); remover(f.id) }} className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-              <Trash2 className="h-3 w-3" />
+          <DropdownMenuItem key={f.id} onSelect={() => ir(aplicarFiltroSalvo(filtros, f.params))}>
+            <span>{f.nome}</span>
+            <button type="button" aria-label={`Remover ${f.nome}`} disabled={pendente} onClick={(e) => { e.stopPropagation(); remover(f.id) }}>
+              <Trash2 />
             </button>
           </DropdownMenuItem>
         ))}

@@ -85,27 +85,27 @@ function Casca({ children, periodo, hoje, q, clientes, escolhido, aba, base, aba
   abas?: Aba[]
 }) {
   return (
-    <div className="page-shell relatorio">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div>
         <div>
-          <p className="eyebrow">Captação e medição por cliente</p>
-          <h1 className="page-title mt-1">Biolytics</h1>
+          <p>Captação e medição por cliente</p>
+          <h1>Biolytics</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
           <SeletorCliente base={`/biolytics?aba=${escolhido ? aba : 'geral'}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={q} />
           <SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />
         </div>
       </div>
       {abas && (
-        <nav className="flex flex-wrap gap-1 border-b border-borda" aria-label="Módulos do Biolytics">
+        <nav aria-label="Módulos do Biolytics">
           {abas.map(({ a, rotulo, Icone, href }) => (
-            <Link key={a} href={href} className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-rotulo font-semibold ${aba === a ? 'border-petroleo text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>
-              <Icone className="h-4 w-4" /> {rotulo}
+            <Link key={a} href={href}>
+              <Icone /> {rotulo}
             </Link>
           ))}
         </nav>
       )}
-      <Suspense fallback={<Modulo icone={Radar} titulo="Biolytics" descricao="Buscando os números…"><p className="py-8 text-center text-rotulo text-texto-3">Carregando…</p></Modulo>}>{children}</Suspense>
+      <Suspense fallback={<Modulo icone={Radar} titulo="Biolytics" descricao="Buscando os números…"><p>Carregando…</p></Modulo>}>{children}</Suspense>
     </div>
   )
 }

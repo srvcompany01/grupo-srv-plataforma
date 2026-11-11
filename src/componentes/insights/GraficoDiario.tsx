@@ -20,16 +20,16 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha', r
   const y = (v: number) => M.cima + h - (v / maior) * h
   const passo = Math.max(1, Math.ceil(dias.length / 8))
   const larguraBarra = Math.max(2, w / Math.max(1, dias.length) - 2)
-  if (!dias.length) return <p className="py-6 text-center text-rotulo text-texto-3">Sem dados por dia no período.</p>
+  if (!dias.length) return <p>Sem dados por dia no período.</p>
   return (
-    <figure className="grafico min-w-0">
-      <figcaption className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-legenda text-texto-2">
-        <span className="font-semibold text-texto">{titulo}</span>
+    <figure>
+      <figcaption>
+        <span>{titulo}</span>
         {series.length > 1 && series.map((s, i) => (
-          <span key={s.nome} className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full" style={{ background: cor(i) }} />{s.nome}</span>
+          <span key={s.nome}><span style={{ background: cor(i) }} />{s.nome}</span>
         ))}
       </figcaption>
-      <svg viewBox={`0 0 ${L} ${A}`} className="h-auto max-h-56 w-full" role="img" aria-label={titulo}>
+      <svg viewBox={`0 0 ${L} ${A}`} role="img" aria-label={titulo}>
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
             <line x1={M.esq} x2={L - M.dir} y1={y(maior * f)} y2={y(maior * f)} stroke="var(--g-grade, #e0e0e0)" strokeWidth={1} strokeDasharray="4 4" />

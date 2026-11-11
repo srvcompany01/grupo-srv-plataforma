@@ -35,7 +35,7 @@ export function NovaTarefa({
 
   if (!aberta) {
     return (
-      <button onClick={() => setAberta(true)} className="flex h-8 w-full items-center gap-2 border-0 bg-transparent text-left text-[13px] text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto-2" style={{ paddingLeft: recuo ?? 50 }}>
+      <button onClick={() => setAberta(true)} style={{ paddingLeft: recuo ?? 50 }}>
         <Ic n="add" s={16} /> {paiId ? 'Adicionar subtarefa' : 'Adicionar tarefa'}
       </button>
     )
@@ -50,7 +50,6 @@ export function NovaTarefa({
           onCriada?.()
         })
       }}
-      className="flex h-9 items-center gap-2 border-b border-[var(--border-soft)] pr-2"
       style={{ paddingLeft: recuo ?? 50 }}
     >
       <input
@@ -61,9 +60,8 @@ export function NovaTarefa({
         onBlur={() => !titulo && fechar()}
         disabled={pendente}
         placeholder={`${paiId ? 'Nome da subtarefa' : 'Nome da tarefa'} — Enter salva, Esc cancela`}
-        className="h-7 flex-1 rounded border border-[var(--focus)] bg-[var(--bg)] px-2 text-[13px] outline-none ring-3 ring-[var(--focus-ring)]"
       />
-      <button disabled={pendente || !titulo.trim()} className="b-pri" style={{ padding: '0 12px' }}>Salvar</button>
+      <button disabled={pendente || !titulo.trim()} style={{ padding: '0 12px' }}>Salvar</button>
     </form>
   )
 }

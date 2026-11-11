@@ -12,7 +12,6 @@ import { formatarData, formatarDataHora } from '@/dominio/formatar'
 import { dbAdmin } from '@/infra/admin'
 import { midiasParaVer } from '@/lib/midias-view'
 import { ou404 } from '@/lib/pagina'
-import { botaoPrimario } from '@/lib/ui'
 import { detalhePost } from '@/servicos/posts'
 
 export default async function DetalhePost({ params }: PageProps<'/admin/posts/[id]'>) {
@@ -33,14 +32,14 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
           { rotulo: atual.ideia.split('\n')[0] || 'Post' },
         ]}
         acoes={
-          <Link href={`/admin/posts/${post.id}/editar`} className={botaoPrimario}>
-            <Icone nome="editar" className="h-3.5 w-3.5" /> Editar
+          <Link href={`/admin/posts/${post.id}/editar`}>
+            <Icone nome="editar" /> Editar
           </Link>
         }
       />
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto lg:flex-row lg:overflow-hidden">
-        <main className="min-w-0 flex-1 space-y-6 bg-white p-4 sm:p-8 lg:overflow-auto">
-          <h1 className="text-2xl font-semibold leading-tight">{atual.ideia.split('\n')[0] || 'Post sem ideia'}</h1>
+      <div>
+        <main>
+          <h1>{atual.ideia.split('\n')[0] || 'Post sem ideia'}</h1>
           <Propriedades
             itens={[
               { icone: 'status', rotulo: 'Status', valor: <SeloStatus status={post.status} /> },
@@ -49,28 +48,28 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
               { icone: 'versao', rotulo: 'Versão', valor: `v${atual.numero}` },
             ]}
           />
-          <div className="grid gap-8 border-t border-borda pt-6 md:grid-cols-[minmax(0,340px)_1fr]">
+          <div>
             <VisualizadorMidia midias={midiasAtuais} formato={post.formato} nomeZip={zip} />
             <TextosPost {...atual} />
           </div>
         </main>
 
-        <aside className="w-full shrink-0 border-t border-borda bg-fundo lg:w-[380px] lg:overflow-auto lg:border-l lg:border-t-0">
-          <h2 className="sticky top-0 z-10 border-b border-borda bg-fundo px-5 py-3.5 text-sm font-semibold">Atividade</h2>
-          <ol className="space-y-4 p-5">
+        <aside>
+          <h2>Atividade</h2>
+          <ol>
             {cronologia.map((v, i) => (
-              <li key={v.id} className="space-y-3">
-                <div className="flex items-start gap-2 text-corpo text-texto-2">
-                  <Icone nome={v.numero === 1 ? 'mais' : 'atualizar'} className="mt-0.5 h-3.5 w-3.5 shrink-0 text-texto-3" />
-                  <div className="min-w-0 flex-1">
+              <li key={v.id}>
+                <div>
+                  <Icone nome={v.numero === 1 ? 'mais' : 'atualizar'} />
+                  <div>
                     <p>
-                      {v.numero === 1 ? 'Post criado' : <>Versão <strong className="text-texto">v{v.numero}</strong> enviada</>}
-                      <span className="ml-1.5 text-xs text-texto-3">{formatarDataHora(v.criadaEm)}</span>
+                      {v.numero === 1 ? 'Post criado' : <>Versão <strong>v{v.numero}</strong> enviada</>}
+                      <span>{formatarDataHora(v.criadaEm)}</span>
                     </p>
                     {v.id !== atual.id && (
-                      <details className="mt-1.5">
-                        <summary className="cursor-pointer text-xs font-medium text-marca hover:underline">Ver conteúdo da v{v.numero}</summary>
-                        <div className="mt-3 space-y-4 rounded-lg border border-borda bg-white p-3">
+                      <details>
+                        <summary>Ver conteúdo da v{v.numero}</summary>
+                        <div>
                           <VisualizadorMidia midias={midias[i]} formato={post.formato} nomeZip={zip.replace('.zip', `-v${v.numero}.zip`)} />
                           <TextosPost {...v} />
                         </div>
@@ -82,8 +81,8 @@ export default async function DetalhePost({ params }: PageProps<'/admin/posts/[i
               </li>
             ))}
             {post.status === 'aguardando' && (
-              <li className="flex items-center gap-2 text-corpo text-texto-3">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-st-aguardando" /> Aguardando resposta do cliente
+              <li>
+                <span /> Aguardando resposta do cliente
               </li>
             )}
           </ol>

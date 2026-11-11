@@ -25,7 +25,7 @@ export type NomeIcone = keyof typeof CAMINHOS
 
 export function Icone({ nome, className = 'h-4 w-4' }: { nome: NomeIcone; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d={CAMINHOS[nome]} />
     </svg>
   )

@@ -18,11 +18,8 @@ export function CopiarTexto({ texto, rotulo = 'Copiar' }: { texto: string; rotul
     <button
       type="button"
       onClick={copiar}
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition ${
-        copiado ? 'text-st-aprovado' : 'text-texto-2 hover:bg-hover hover:text-marca'
-      }`}
     >
-      <Icone nome={copiado ? 'check' : 'copiar'} className="h-3 w-3" />
+      <Icone nome={copiado ? 'check' : 'copiar'} />
       {copiado ? 'Copiado' : rotulo}
     </button>
   )

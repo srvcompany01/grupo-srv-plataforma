@@ -34,7 +34,7 @@ export const GLIFO_VISAO: Record<VisaoTarefas | 'canal', string> = {
 /** Quadradinho colorido 16×16 (raio 4) com o glifo branco preenchido de 12px. */
 export function IconeVisao({ visao, className }: { visao: VisaoTarefas | 'canal'; className?: string }) {
   return (
-    <span className={className} style={{ width: 16, height: 16, flex: 'none', borderRadius: 4, background: COR_VISAO[visao], color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+    <span style={{ width: 16, height: 16, flex: 'none', borderRadius: 4, background: COR_VISAO[visao], color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       <Ic n={GLIFO_VISAO[visao]} s={12} fill w={500} />
     </span>
   )

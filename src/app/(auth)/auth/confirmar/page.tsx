@@ -43,16 +43,16 @@ export default function Confirmar() {
   }, [])
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 text-center">
+    <main>
       {erro ? (
-        <div className="space-y-3">
-          <p className="text-sm text-perigo">{erro}</p>
-          <Link href="/login" className="text-sm text-marca hover:underline">
+        <div>
+          <p>{erro}</p>
+          <Link href="/login">
             Ir para o login
           </Link>
         </div>
       ) : (
-        <p className="text-sm text-texto-2">Entrando…</p>
+        <p>Entrando…</p>
       )}
     </main>
   )

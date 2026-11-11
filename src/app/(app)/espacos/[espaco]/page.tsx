@@ -38,22 +38,21 @@ export default async function PaginaEspaco({ params, searchParams }: PageProps<'
   const abas: [Aba, string][] = [['tarefas', 'Tarefas'], ...(podeGerir ? ([...(folha ? [['estrutura', 'Pastas e listas']] : []), ['membros', 'Membros']] as [Aba, string][]) : [])]
 
   return (
-    <div className="page-shell">
-      <header className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg text-claro ring-4 ring-fundo" style={{ background: espaco.color }}><IconeVisual icone={espaco.icon} emoji={espaco.emoji} className="h-5 w-5" /></span>
+    <div>
+      <header>
+        <span style={{ background: espaco.color }}><IconeVisual icone={espaco.icon} emoji={espaco.emoji} /></span>
         <div>
-          <p className="eyebrow">Espaço</p>
-          <h1 className="page-title mt-1">{espaco.name}</h1>
-          {espaco.description && <p className="mt-1 text-corpo text-texto-2">{espaco.description}</p>}
+          <p>Espaço</p>
+          <h1>{espaco.name}</h1>
+          {espaco.description && <p>{espaco.description}</p>}
         </div>
       </header>
       {abas.length > 1 && (
-        <nav className="flex gap-6 border-b border-borda">
+        <nav>
           {abas.map(([a, rotulo]) => (
             <Link
               key={a}
               href={a === 'tarefas' ? `/espacos/${id}` : `/espacos/${id}?aba=${a}`}
-              className={`-mb-px border-b-2 pb-2.5 text-corpo font-semibold ${aba === a ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
             >
               {rotulo}
             </Link>
@@ -71,7 +70,7 @@ async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<st
   const filtros = lerFiltros(sp)
   if (filtros.visao === 'painel') {
     return (
-      <div className="space-y-4">
+      <div>
         <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} visoes={['lista', 'kanban', 'painel']} />
         <PainelDoEscopo escopo={{ espacoId }} caminho={`/espacos/${espacoId}`} sp={sp} euId={euId} />
       </div>
@@ -92,10 +91,10 @@ async function Tarefas({ espacoId, sp, euId }: { espacoId: string; sp: Record<st
   const ctx = { equipe, hoje, statusPorLista, mostrarLista: true }
 
   return (
-    <div className="space-y-4">
+    <div>
       <AlternadorVisao caminho={`/espacos/${espacoId}`} filtros={filtros} visoes={['lista', 'kanban', 'painel']} />
       <BarraFiltros filtros={filtros} equipe={equipe} status={[]} tags={tags} clientes={clientes} comMes />
-      {tarefas.length === 0 && <p className="text-corpo text-texto-3">Nenhuma tarefa encontrada.</p>}
+      {tarefas.length === 0 && <p>Nenhuma tarefa encontrada.</p>}
       {filtros.visao === 'lista' ? (
         <VisaoLista grupos={CATEGORIAS.map((c) => ({ ...c, tarefas: arvore.filter((t) => categoria(t) === c.id) }))} ctx={ctx} euId={euId} />
       ) : (
@@ -123,7 +122,7 @@ async function AbaMembros({ espacoId, podePromover }: { espacoId: string; podePr
   const espaco = espacos.find((e) => e.id === espacoId)
   if (!espaco) notFound()
   return (
-    <div className="rounded-lg border border-borda bg-white p-5">
+    <div>
       <MembrosEspaco espaco={espaco} equipe={equipe} podePromover={podePromover} />
     </div>
   )

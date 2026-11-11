@@ -19,12 +19,12 @@ export function AcoesLancamento({ lancamento, clientes, hoje }: { lancamento: La
   }
   const entrada = lancamento.tipo === 'entrada'
   return (
-    <div className="flex items-center justify-end gap-0.5">
-      <button type="button" disabled={pendente} onClick={alternar} title={lancamento.pago ? 'Marcar como pendente' : entrada ? 'Marcar como recebido' : 'Marcar como pago'} aria-label={lancamento.pago ? 'Marcar como pendente' : 'Marcar como pago'} className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto disabled:opacity-50">
-        {lancamento.pago ? <RotateCcw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+    <div>
+      <button type="button" disabled={pendente} onClick={alternar} title={lancamento.pago ? 'Marcar como pendente' : entrada ? 'Marcar como recebido' : 'Marcar como pago'} aria-label={lancamento.pago ? 'Marcar como pendente' : 'Marcar como pago'}>
+        {lancamento.pago ? <RotateCcw /> : <Check />}
       </button>
       <LancamentoDialog lancamento={lancamento} clientes={clientes} hoje={hoje} />
-      <button type="button" disabled={pendente} onClick={excluir} title="Excluir" aria-label="Excluir lançamento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-perigo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+      <button type="button" disabled={pendente} onClick={excluir} title="Excluir" aria-label="Excluir lançamento"><Trash2 /></button>
     </div>
   )
 }

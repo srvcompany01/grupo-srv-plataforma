@@ -39,14 +39,14 @@ export function SecaoCampos({ tarefaId, campos, equipe }: { tarefaId: string; ca
   }
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-3">
-        <button onClick={() => setAberta(!aberta)} className="flex items-center gap-1 text-corpo font-semibold hover:text-marca" aria-expanded={aberta}>
-          {aberta ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+    <section>
+      <div>
+        <button onClick={() => setAberta(!aberta)} aria-expanded={aberta}>
+          {aberta ? <ChevronDown /> : <ChevronRight />}
           Campos
         </button>
         {aberta && vazios.length > 0 && (
-          <button onClick={alternar} className="text-rotulo text-texto-3 hover:text-texto">
+          <button onClick={alternar}>
             {ocultar ? `Mostrar ${vazios.length} campos vazios` : `Ocultar ${vazios.length} campos vazios`}
           </button>
         )}

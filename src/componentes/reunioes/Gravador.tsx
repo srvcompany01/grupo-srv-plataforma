@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react'
 import { processarReuniaoAcao, urlEnvioReuniaoAcao } from '@/app/(app)/reunioes/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { LIMITE_GRAVACAO_MB } from '@/dominio/ata'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 type Opcao = { id: string; nome: string }
 type Etapa = 'pronto' | 'gravando' | 'pausado' | 'enviando' | 'gerando'
@@ -129,75 +128,75 @@ export function Gravador({ clientes, listas }: { clientes: Opcao[]; listas: Opca
 
   const ocupado = etapa === 'enviando' || etapa === 'gerando'
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="space-y-1 md:col-span-2">
-          <span className={rotulo}>Assunto da reunião (opcional)</span>
-          <input className={campo} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Planejamento de novembro com a Padaria" maxLength={120} disabled={ocupado} />
+    <div>
+      <div>
+        <label>
+          <span>Assunto da reunião (opcional)</span>
+          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Planejamento de novembro com a Padaria" maxLength={120} disabled={ocupado} />
         </label>
-        <label className="space-y-1">
-          <span className={rotulo}>Cliente (opcional)</span>
-          <select className={campo} value={clienteId} onChange={(e) => setClienteId(e.target.value)} disabled={ocupado}>
+        <label>
+          <span>Cliente (opcional)</span>
+          <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} disabled={ocupado}>
             <option value="">Nenhum</option>
             {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
         </label>
-        <label className="space-y-1">
-          <span className={rotulo}>Lista (opcional)</span>
-          <select className={campo} value={listaId} onChange={(e) => setListaId(e.target.value)} disabled={ocupado}>
+        <label>
+          <span>Lista (opcional)</span>
+          <select value={listaId} onChange={(e) => setListaId(e.target.value)} disabled={ocupado}>
             <option value="">Nenhuma</option>
             {listas.map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}
           </select>
         </label>
         {listaId && (
-          <label className="flex items-center gap-2 text-rotulo text-texto-2 md:col-span-2">
+          <label>
             <input type="checkbox" checked={criarTarefas} onChange={(e) => setCriarTarefas(e.target.checked)} disabled={ocupado} />
             Criar tarefas dos próximos passos nessa lista (a ata também fica vinculada a ela)
           </label>
         )}
       </div>
 
-      <div className="space-y-2 rounded-lg border border-borda bg-fundo/50 p-3">
-        <p className={rotulo}>O que gravar</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setUsarMic((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarMic} className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-rotulo font-medium ${usarMic ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
-            <Mic className="h-3.5 w-3.5" /> Microfone (reunião presencial ou você)
+      <div>
+        <p>O que gravar</p>
+        <div>
+          <button type="button" onClick={() => setUsarMic((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarMic}>
+            <Mic /> Microfone (reunião presencial ou você)
           </button>
-          <button type="button" onClick={() => setUsarAba((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarAba} className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-rotulo font-medium ${usarAba ? 'border-petroleo bg-petroleo/10 text-petroleo' : 'border-borda bg-white text-texto-2'}`}>
-            <MonitorSpeaker className="h-3.5 w-3.5" /> Áudio da reunião online (aba do Meet, Zoom, Teams)
+          <button type="button" onClick={() => setUsarAba((v) => !v)} disabled={gravando || ocupado} aria-pressed={usarAba}>
+            <MonitorSpeaker /> Áudio da reunião online (aba do Meet, Zoom, Teams)
           </button>
         </div>
-        {usarAba && <p className="text-legenda text-texto-3">Ao começar, escolha a <strong>aba</strong> da reunião e marque <strong>&quot;Compartilhar áudio da guia&quot;</strong>. Deixe o microfone ligado para gravar a sua voz também.</p>}
+        {usarAba && <p>Ao começar, escolha a <strong>aba</strong> da reunião e marque <strong>&quot;Compartilhar áudio da guia&quot;</strong>. Deixe o microfone ligado para gravar a sua voz também.</p>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div>
         {etapa === 'pronto' && (
           <>
-            <button type="button" className={botaoPrimario} onClick={gravar}><span className="h-2.5 w-2.5 rounded-full bg-perigo" /> Começar a gravar</button>
-            <label className={`${botaoSecundario} cursor-pointer`}>
-              <Upload className="h-3.5 w-3.5" /> Enviar gravação
+            <button type="button" onClick={gravar}><span /> Começar a gravar</button>
+            <label>
+              <Upload /> Enviar gravação
               <input type="file" accept="audio/*,video/mp4,video/webm" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f, null) }} />
             </label>
-            <span className="text-legenda text-texto-3">Até {MAX_MIN} min gravando, ou arquivo de até {LIMITE_GRAVACAO_MB} MB.</span>
+            <span>Até {MAX_MIN} min gravando, ou arquivo de até {LIMITE_GRAVACAO_MB} MB.</span>
           </>
         )}
         {gravando && (
           <>
-            <span className="inline-flex items-center gap-2 rounded-md bg-perigo-fundo px-3 py-1.5 text-rotulo font-semibold tabular-nums text-perigo-forte">
-              <span className={`h-2.5 w-2.5 rounded-full bg-perigo ${etapa === 'gravando' ? 'animate-pulse' : ''}`} /> {etapa === 'pausado' ? 'Pausado' : 'Gravando'} {relogio(segundos)}
+            <span>
+              <span /> {etapa === 'pausado' ? 'Pausado' : 'Gravando'} {relogio(segundos)}
             </span>
-            <button type="button" className={botaoSecundario} onClick={pausar}>{etapa === 'pausado' ? <><Play className="h-3.5 w-3.5" /> Continuar</> : <><Pause className="h-3.5 w-3.5" /> Pausar</>}</button>
-            <button type="button" className={botaoPrimario} onClick={parar}><Square className="h-3.5 w-3.5" /> Parar e gerar a ata</button>
+            <button type="button" onClick={pausar}>{etapa === 'pausado' ? <><Play /> Continuar</> : <><Pause /> Pausar</>}</button>
+            <button type="button" onClick={parar}><Square /> Parar e gerar a ata</button>
           </>
         )}
         {ocupado && (
-          <span className="inline-flex items-center gap-2 text-rotulo text-texto-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <span>
+            <Loader2 />
             {etapa === 'enviando' ? 'Enviando a gravação…' : 'A IA está ouvindo a reunião e escrevendo a ata. Em reuniões longas, isso leva alguns minutos. Não feche esta página.'}
           </span>
         )}
       </div>
-      {erro && <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{erro}</p>}
+      {erro && <p>{erro}</p>}
     </div>
   )
 }

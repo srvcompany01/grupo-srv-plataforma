@@ -50,13 +50,13 @@ function Linha({ texto }: { texto: string }) {
 /** Resposta da IA com o mínimo de formatação: parágrafos, listas com "-" e **negrito**. */
 function TextoFormatado({ texto }: { texto: string }) {
   return (
-    <div className="space-y-1">
+    <div>
       {texto.split('\n').map((l, i) => {
         const item = /^\s*(?:[-•*])\s+(.*)$/.exec(l)
         const titulo = /^\s*#{1,6}\s+(.*)$/.exec(l)
-        if (!l.trim()) return <div key={i} className="h-1.5" />
-        if (item) return <div key={i} className="flex gap-2 pl-1"><span aria-hidden="true">•</span><span className="min-w-0 flex-1"><Linha texto={item[1]} /></span></div>
-        return <div key={i} className={titulo ? 'font-semibold' : undefined}><Linha texto={titulo ? titulo[1] : l} /></div>
+        if (!l.trim()) return <div key={i} />
+        if (item) return <div key={i}><span aria-hidden="true">•</span><span><Linha texto={item[1]} /></span></div>
+        return <div key={i}><Linha texto={titulo ? titulo[1] : l} /></div>
       })}
     </div>
   )
@@ -74,10 +74,10 @@ class ProtegePainel extends Component<{ children: ReactNode }, { erro: Error | n
   render() {
     if (!this.state.erro) return this.props.children
     return (
-      <section className="fixed bottom-4 right-4 z-40 w-[22rem] max-w-[calc(100vw-2rem)] space-y-2 rounded-2xl bg-white p-4 shadow-flutuante ring-1 ring-black/10">
-        <p className="text-corpo font-semibold text-perigo">A Emma encontrou um problema</p>
-        <p className="break-words text-legenda text-texto-2">{this.state.erro.message}</p>
-        <button type="button" onClick={() => this.setState({ erro: null })} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro">Tentar de novo</button>
+      <section>
+        <p>A Emma encontrou um problema</p>
+        <p>{this.state.erro.message}</p>
+        <button type="button" onClick={() => this.setState({ erro: null })}>Tentar de novo</button>
       </section>
     )
   }
@@ -226,19 +226,18 @@ function PainelIAInterno() {
 
   if (!aberto) {
     return (
-      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 max-md:hidden items-center justify-center rounded-full bg-petroleo text-claro shadow-flutuante transition hover:bg-petroleo-700">
-        <Sparkles className="h-5 w-5" />
+      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV">
+        <Sparkles />
       </button>
     )
   }
   return (
     <section
       aria-label="Emma, assistente da Grupo SRV"
-      className={`fixed bottom-4 right-4 z-[60] flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-flutuante ring-1 ring-black/10 transition-[width,height] ${grande ? 'h-[calc(100dvh-2rem)] w-[56rem]' : 'h-[42rem] w-[30rem]'}`}
     >
-      <header className="flex items-center gap-2 px-4 py-3">
-        <Sparkles className="h-4 w-4 text-petroleo" />
-        <h2 className="flex-1 text-destaque font-semibold">Emma <span className="font-normal text-texto-3">· assistente da Grupo SRV</span></h2>
+      <header>
+        <Sparkles />
+        <h2>Emma <span>· assistente da Grupo SRV</span></h2>
         <button
           type="button"
           aria-label={grande ? 'Diminuir o painel' : 'Ampliar o painel'}
@@ -249,43 +248,42 @@ function PainelIAInterno() {
               localStorage.setItem('srv-ia-grande', grande ? '0' : '1')
             } catch {}
           }}
-          className="rounded-lg p-1.5 text-texto-3 hover:bg-hover"
         >
-          {grande ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {grande ? <Minimize2 /> : <Maximize2 />}
         </button>
-        <button type="button" aria-label="Fechar" onClick={() => { voz.current?.stop(); setAberto(false) }} className="rounded-lg p-1.5 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
+        <button type="button" aria-label="Fechar" onClick={() => { voz.current?.stop(); setAberto(false) }}><X /></button>
       </header>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
+      <div>
         {mensagens.length === 0 && (
-          <div className="space-y-2">
-            <p className="text-corpo text-texto-2">Oi, eu sou a Emma! Posso consultar tarefas, listas, clientes e documentos, e criar tarefas e documentos para você. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero a sua confirmação.</p>
+          <div>
+            <p>Oi, eu sou a Emma! Posso consultar tarefas, listas, clientes e documentos, e criar tarefas e documentos para você. Antes de gravar qualquer coisa, eu mostro o que vou fazer e espero a sua confirmação.</p>
             {SUGESTOES.map((s) => (
-              <button key={s} type="button" onClick={() => void enviar(s)} className="block w-full rounded-lg bg-fundo px-3 py-2 text-left text-rotulo text-texto-2 hover:bg-hover">{s}</button>
+              <button key={s} type="button" onClick={() => void enviar(s)}>{s}</button>
             ))}
           </div>
         )}
         {mensagens.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-corpo ${m.role === 'user' ? 'whitespace-pre-wrap bg-petroleo text-claro' : 'bg-fundo text-texto'}`}>
+          <div key={i}>
+            <div>
               {m.role === 'user' ? comoTexto(m.content) : <TextoFormatado texto={comoTexto(m.content)} />}
             </div>
           </div>
         ))}
         {propostas && (
-          <div className="space-y-2 rounded-xl bg-aviso-fundo p-3 text-corpo">
-            <p className="font-semibold text-texto">Confirma estas ações?</p>
-            <ul className="list-disc space-y-1 pl-5 text-rotulo text-texto-2">{propostas.map((p) => <li key={p.id}>{p.resumo}</li>)}</ul>
-            <div className="flex gap-2">
-              <button type="button" disabled={!!andamento} onClick={() => void confirmar()} className="h-8 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro disabled:opacity-50">{andamento ?? 'Confirmar e executar'}</button>
-              <button type="button" disabled={!!andamento} onClick={() => { setPropostas(null); setMensagens((m) => [...m, { role: 'assistant', content: 'Cancelado. Nada foi alterado.' }]) }} className="h-8 rounded-lg px-3 text-rotulo font-medium text-texto-2 hover:bg-white/60 disabled:opacity-50">Cancelar</button>
+          <div>
+            <p>Confirma estas ações?</p>
+            <ul>{propostas.map((p) => <li key={p.id}>{p.resumo}</li>)}</ul>
+            <div>
+              <button type="button" disabled={!!andamento} onClick={() => void confirmar()}>{andamento ?? 'Confirmar e executar'}</button>
+              <button type="button" disabled={!!andamento} onClick={() => { setPropostas(null); setMensagens((m) => [...m, { role: 'assistant', content: 'Cancelado. Nada foi alterado.' }]) }}>Cancelar</button>
             </div>
           </div>
         )}
-        {carregando && <p className="text-legenda text-texto-3">Consultando a plataforma…</p>}
+        {carregando && <p>Consultando a plataforma…</p>}
         <div ref={fim} />
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); void enviar(texto) }} className="px-3 pb-3 pt-2">
-        <div className={`rounded-2xl border bg-white shadow-sm transition ${ouvindo ? 'border-perigo ring-2 ring-perigo/20' : 'border-borda focus-within:border-petroleo focus-within:ring-2 focus-within:ring-petroleo/15'}`}>
+      <form onSubmit={(e) => { e.preventDefault(); void enviar(texto) }}>
+        <div>
           <textarea
             ref={campoRef}
             rows={1}
@@ -300,9 +298,8 @@ function PainelIAInterno() {
             placeholder={ouvindo ? 'Estou ouvindo… pode falar' : 'Pergunte à Emma ou peça uma tarefa…'}
             maxLength={2000}
             autoFocus
-            className="block max-h-44 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-corpo outline-none"
           />
-          <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1">
+          <div>
             <button
               type="button"
               role="switch"
@@ -314,25 +311,23 @@ function PainelIAInterno() {
                   localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
                 } catch {}
               }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
             >
-              <Brain className="h-3.5 w-3.5" /> Pensar {pensar ? 'ligado' : 'desligado'}
+              <Brain /> Pensar {pensar ? 'ligado' : 'desligado'}
             </button>
-            <span className="min-w-0 flex-1 truncate px-1 text-legenda text-perigo">{avisoVoz}</span>
+            <span>{avisoVoz}</span>
             <button
               type="button"
               aria-pressed={ouvindo}
               aria-label={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar'}
               title={ouvindo ? 'Parar de ouvir' : 'Falar em vez de digitar (o navegador transcreve a sua voz)'}
               onClick={alternarMicrofone}
-              className={`flex h-9 w-9 items-center justify-center rounded-full transition ${ouvindo ? 'animate-pulse bg-perigo text-claro' : 'text-texto-2 hover:bg-hover'}`}
             >
-              <Mic className="h-4 w-4" />
+              <Mic />
             </button>
-            <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar" className="flex h-9 w-9 items-center justify-center rounded-full bg-petroleo text-claro transition disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+            <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar"><ArrowUp /></button>
           </div>
         </div>
-        <p className="mt-1.5 hidden px-2 text-legenda text-texto-3 sm:block">Enter envia · Shift+Enter nova linha</p>
+        <p className="hidden">Enter envia · Shift+Enter nova linha</p>
       </form>
     </section>
   )

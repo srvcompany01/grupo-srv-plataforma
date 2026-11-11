@@ -107,94 +107,94 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
 
   return (
     <div>
-      <div className="sticky top-0 z-10 flex h-10 items-center gap-2 border-b border-borda-fraca bg-white px-3 text-corpo">
-        <Link href="/clientes" className="text-texto-2 hover:text-texto">Clientes</Link>
-        <span className="text-texto-3">/</span>
-        <h2 className="truncate text-destaque font-bold text-[var(--client)]">{cliente.nome}</h2>
-        <span className="rounded bg-[var(--bg-active)] px-1.5 text-legenda font-semibold text-texto-2">{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
+      <div>
+        <Link href="/clientes">Clientes</Link>
+        <span>/</span>
+        <h2>{cliente.nome}</h2>
+        <span>{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
       </div>
       <div>
-      <div className="flex items-start">
-        <aside className="sticky top-10 hidden max-h-[calc(100dvh-122px)] w-[220px] shrink-0 overflow-y-auto border-r border-borda-fraca bg-[var(--bg-subtle)] p-2 lg:block" aria-label="Clientes">
+      <div>
+        <aside className="hidden" aria-label="Clientes">
           {lista.map((c) => (
-            <Link key={c.id} href={`/clientes/${c.id}${aba === 'visao' ? '' : `?aba=${aba}`}`} className={`flex h-8 items-center justify-between gap-2 rounded px-2 text-corpo hover:bg-hover ${c.id === id ? 'bg-[var(--bg-active)]' : ''}`}>
-              <span className="truncate font-bold text-[var(--client)]">{c.nome}</span>
-              {abertasPorCliente.get(c.id) ? <span className="text-rotulo tabular-nums text-texto-3">{abertasPorCliente.get(c.id)}</span> : null}
+            <Link key={c.id} href={`/clientes/${c.id}${aba === 'visao' ? '' : `?aba=${aba}`}`}>
+              <span>{c.nome}</span>
+              {abertasPorCliente.get(c.id) ? <span>{abertasPorCliente.get(c.id)}</span> : null}
             </Link>
           ))}
         </aside>
-        <div className="min-w-0 flex-1 space-y-4 p-3">
-          <nav className="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-borda-fraca [scrollbar-width:none]" aria-label="Seções do cliente">
+        <div>
+          <nav aria-label="Seções do cliente">
             {ABAS.map((a) => (
-              <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined} className={`h-9 shrink-0 border-b-2 px-2 text-corpo leading-9 ${aba === a.id ? 'border-texto font-semibold text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>{a.rotulo}</Link>
+              <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined}>{a.rotulo}</Link>
             ))}
           </nav>
           {aba === 'visao' && (
-            <div className="max-w-[1100px] space-y-4">
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
-                <Suspense fallback={<div className="rounded-3xl bg-[var(--bg-subtle)] px-4 py-3.5"><p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Alcance 30 dias</p><p className="text-xl font-semibold text-texto-3">…</p></div>}>
+            <div>
+              <div>
+                <Suspense fallback={<div><p>Alcance 30 dias</p><p>…</p></div>}>
                   <AlcanceIndicador paginaId={cliente.metaPaginaId} hoje={hoje} />
                 </Suspense>
                 {indicadores.map((i) => (
-                  <div key={i.rotulo} className="flex flex-col gap-1.5 rounded-3xl bg-[var(--bg-subtle)] px-4 py-3.5">
-                    <p className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full text-white" style={{ background: i.cor }}><Ic n={i.icone} s={14} fill /></span><span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">{i.rotulo}</span></p>
-                    <p className={`text-xl font-semibold tabular-nums ${i.vermelho ? 'text-[var(--red)]' : ''}`}>{i.valor}</p>
+                  <div key={i.rotulo}>
+                    <p><span style={{ background: i.cor }}><Ic n={i.icone} s={14} fill /></span><span>{i.rotulo}</span></p>
+                    <p>{i.valor}</p>
                   </div>
                 ))}
               </div>
-      <header className="overflow-hidden rounded-lg border border-borda bg-white">
-        <div className="relative h-28 w-full md:h-36" style={{ background: cliente.cor }}>
+      <header>
+        <div style={{ background: cliente.cor }}>
           {capa?.url ? (
             // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
-            <img src={capa.url} alt="" width={1600} height={400} className="h-full w-full object-cover" />
+            <img src={capa.url} alt="" width={1600} height={400} />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-[40px] font-bold tracking-rotulo text-claro/90">{iniciais(cliente.nome)}</span>
+            <span>{iniciais(cliente.nome)}</span>
           )}
-          <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                    <div className="absolute bottom-3 left-4 right-4 flex flex-wrap items-end justify-between gap-2">
-            <div className="flex min-w-0 items-end gap-3">
+          <span />
+                    <div>
+            <div>
               {capa?.logo && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} className="h-14 w-14 shrink-0 rounded-lg border-2 border-claro bg-white object-cover" />
+                <img src={capa.logo} alt={`Logo de ${cliente.nome}`} width={72} height={72} />
               )}
-              <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold text-claro drop-shadow md:text-2xl">{cliente.nome}</h1>
-              {cliente.razaoSocial && <p className="truncate text-rotulo text-claro/85">{cliente.razaoSocial}</p>}
+              <div>
+              <h1>{cliente.nome}</h1>
+              {cliente.razaoSocial && <p>{cliente.razaoSocial}</p>}
               </div>
             </div>
             
           </div>
-          {capa?.credito && <span className="absolute right-2 top-3 rounded bg-black/50 px-1.5 py-0.5 text-legenda text-claro/90">{capa.credito}</span>}
+          {capa?.credito && <span>{capa.credito}</span>}
         </div>
-        {podeGerir && <div className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-2.5"><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
+        {podeGerir && <div><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>
-              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)]">
-                <div className="min-w-0 space-y-4">
-                  <section className="overflow-hidden rounded-3xl bg-[var(--bg-subtle)]">
-                    <div className="flex h-10 items-center gap-2 px-3"><span className="flex-1 text-[13px] font-semibold">Entregas do mês</span><Link href={`/clientes/${id}?aba=tarefas`} className="text-[12px] text-texto-2 hover:text-texto">Abrir na lista</Link></div>
-                    {doMes.length === 0 && <p className="px-3 py-4 text-[13px] text-texto-3">Nenhuma entrega com vencimento neste mês.</p>}
+              <div>
+                <div>
+                  <section>
+                    <div><span>Entregas do mês</span><Link href={`/clientes/${id}?aba=tarefas`}>Abrir na lista</Link></div>
+                    {doMes.length === 0 && <p>Nenhuma entrega com vencimento neste mês.</p>}
                     {doMes.slice(0, 8).map((t) => (
-                      <Link key={t.id} href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-2 border-b border-[var(--border-soft)] px-3 text-[13px] last:border-b-0 hover:bg-hover">
+                      <Link key={t.id} href={`/tarefas/${t.id}`}>
                         <span style={{ width: 12, height: 12, flex: 'none', borderRadius: '50%', border: `2px solid ${statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94'}`, background: categoria(t) === 'done' ? (statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94') : 'transparent' }} />
-                        <span className="min-w-0 flex-1 truncate">{t.titulo}</span>
-                        <span className="h-5 shrink-0 rounded px-2 text-[12px] leading-5" style={{ background: `color-mix(in srgb, ${statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94'} 16%, transparent)` }}>{nomeStatus(t)}</span>
-                        <span className={`w-14 shrink-0 text-right text-[12px] ${t.prazo && t.prazo < hoje && !t.concluidaEm ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
+                        <span>{t.titulo}</span>
+                        <span style={{ background: `color-mix(in srgb, ${statusPorLista[t.listaId]?.find((x) => x.id === t.statusId)?.cor ?? '#8b8b94'} 16%, transparent)` }}>{nomeStatus(t)}</span>
+                        <span>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
                       </Link>
                     ))}
                   </section>
-                  <section className="overflow-hidden rounded-3xl bg-[var(--bg-subtle)]">
-                    <div className="flex h-10 items-center gap-2 px-3">
-                      <span className="flex-1 text-[13px] font-semibold">Entregas por semana</span>
-                      <span className="flex gap-2.5 text-[11px] text-texto-2"><span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'repeating-linear-gradient(135deg, var(--hachura) 0 2px, transparent 2px 6px)' }} />Planejado</span><span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--text)' }} />Entregue</span></span>
+                  <section>
+                    <div>
+                      <span>Entregas por semana</span>
+                      <span><span><span style={{ width: 8, height: 8, borderRadius: 2, background: 'repeating-linear-gradient(135deg, var(--hachura) 0 2px, transparent 2px 6px)' }} />Planejado</span><span><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--text)' }} />Entregue</span></span>
                     </div>
-                    <div className="flex items-end justify-around px-4 pb-2 pt-3" style={{ height: 140 }}>
+                    <div style={{ height: 140 }}>
                       {semanasDoMes.map((w) => (
-                        <div key={w.l} className="flex flex-col items-center gap-1.5">
-                          <div className="flex items-end gap-1" style={{ height: 90 }}>
+                        <div key={w.l}>
+                          <div style={{ height: 90 }}>
                             <span style={{ width: 18, height: Math.min(90, w.plan * 20), borderRadius: '6px 6px 0 0', background: 'repeating-linear-gradient(135deg, var(--hachura) 0 2px, transparent 2px 6px)' }} />
                             <span style={{ width: 18, height: Math.min(90, w.feitas * 20), borderRadius: '6px 6px 0 0', background: 'linear-gradient(180deg, #e8262b, #d80d12)' }} />
                           </div>
-                          <span className="text-[11px] text-texto-3">{w.l} · {w.feitas}/{w.plan}</span>
+                          <span>{w.l} · {w.feitas}/{w.plan}</span>
                         </div>
                       ))}
                     </div>
@@ -203,35 +203,35 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
                     <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
                   </Modulo>
                 </div>
-                <div className="space-y-4">
+                <div>
                     <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
                 </div>
               </div>
             </div>
           )}
-          {aba === 'tarefas' && <div className="space-y-4">
+          {aba === 'tarefas' && <div>
         <Modulo
           icone={ListChecks}
           titulo="Trabalho por departamento"
           descricao="Tarefas com a tag deste cliente, separadas pela lista em que estão"
-          acoes={<span className="rounded-md bg-fundo px-2.5 py-0.5 text-legenda font-semibold text-texto-2">{totalTarefas} {totalTarefas === 1 ? 'tarefa' : 'tarefas'}</span>}
+          acoes={<span>{totalTarefas} {totalTarefas === 1 ? 'tarefa' : 'tarefas'}</span>}
         >
           {departamentos.length === 0 ? (
-            <p className="py-6 text-center text-corpo text-texto-3">Nenhuma tarefa com a tag deste cliente ainda.</p>
+            <p>Nenhuma tarefa com a tag deste cliente ainda.</p>
           ) : (
-            <div className="space-y-4">
+            <div>
               {departamentos.map(([listaId, listaNome]) => {
                 const raizes = arvore.filter((t) => t.listaId === listaId)
                 return (
-                  <div key={listaId} className="overflow-hidden rounded-lg border border-borda">
-                    <div className="flex items-center justify-between gap-2 border-b border-borda bg-fundo/60 px-3 py-2">
-                      <h3 className="flex min-w-0 items-center gap-2 text-rotulo font-semibold text-texto">
-                        <span className="truncate">{listaNome}</span>
-                        <span className="rounded-md bg-white px-2 py-0.5 text-legenda font-normal text-texto-3">{raizes.length}</span>
+                  <div key={listaId}>
+                    <div>
+                      <h3>
+                        <span>{listaNome}</span>
+                        <span>{raizes.length}</span>
                       </h3>
-                      <Link href={`/listas/${listaId}`} className="shrink-0 text-legenda font-semibold text-petroleo hover:underline">Abrir lista →</Link>
+                      <Link href={`/listas/${listaId}`}>Abrir lista →</Link>
                     </div>
-                    <div className="p-2">
+                    <div>
                       <VisaoLista grupos={CATEGORIAS.map((c) => ({ ...c, id: `${listaId}-${c.id}`, tarefas: raizes.filter((t) => categoria(t) === c.id) })).filter((g) => g.tarefas.length)} ctx={ctx} euId={eu.id} />
                     </div>
                   </div>
@@ -244,16 +244,16 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           {aba === 'estrategia' && <EstrategiaDoCliente clienteId={id} />}
           {aba === 'hashtags' && <HashtagsCliente clienteId={id} iniciais={{ instagram: (await hashtagsDoCliente(sb, id, 'instagram')).join(' ') }} />}
           {aba === 'posts' && (
-            <Modulo icone={ListChecks} titulo="Posts" descricao="Tarefas das listas de conteúdo com a tag deste cliente" acoes={<span className="text-rotulo text-texto-3">{posts.length}</span>}>
-              {posts.length === 0 ? <p className="py-6 text-center text-corpo text-texto-3">Nenhum post deste cliente ainda.</p> : (
-                <ul className="-mx-3 -my-3">
+            <Modulo icone={ListChecks} titulo="Posts" descricao="Tarefas das listas de conteúdo com a tag deste cliente" acoes={<span>{posts.length}</span>}>
+              {posts.length === 0 ? <p>Nenhum post deste cliente ainda.</p> : (
+                <ul>
                   {posts.map((t) => (
                     <li key={t.id}>
-                      <Link href={`/tarefas/${t.id}`} className="flex h-9 items-center gap-3 border-b border-borda-fraca px-3 text-corpo last:border-b-0 hover:bg-hover">
-                        <span className="min-w-0 flex-1 truncate">{t.titulo}</span>
-                        <span className="hidden w-40 truncate text-rotulo text-texto-3 sm:block">{t.listaNome}</span>
-                        <span className="w-28 truncate text-rotulo text-texto-2">{nomeStatus(t)}</span>
-                        <span className={`w-16 text-right text-rotulo tabular-nums ${t.prazo && t.prazo < hoje && !t.concluidaEm ? 'text-[var(--red)]' : 'text-texto-3'}`}>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
+                      <Link href={`/tarefas/${t.id}`}>
+                        <span>{t.titulo}</span>
+                        <span className="hidden">{t.listaNome}</span>
+                        <span>{nomeStatus(t)}</span>
+                        <span>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
                       </Link>
                     </li>
                   ))}
@@ -262,15 +262,15 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </Modulo>
           )}
           {aba === 'arquivos' && (
-            <Modulo icone={IdCard} titulo="Arquivos" descricao="Documentos ligados a este cliente" acoes={<Link href="/documentos" className="text-rotulo text-texto-2 hover:text-texto">Abrir Documentos</Link>}>
-              {arquivos.length === 0 ? <p className="py-6 text-center text-corpo text-texto-3">Nenhum documento deste cliente.</p> : (
-                <ul className="-mx-3 -my-3">
+            <Modulo icone={IdCard} titulo="Arquivos" descricao="Documentos ligados a este cliente" acoes={<Link href="/documentos">Abrir Documentos</Link>}>
+              {arquivos.length === 0 ? <p>Nenhum documento deste cliente.</p> : (
+                <ul>
                   {arquivos.map((d) => (
                     <li key={d.id}>
-                      <Link href={`/documentos/${d.id}`} className="flex h-9 items-center gap-3 border-b border-borda-fraca px-3 text-corpo last:border-b-0 hover:bg-hover">
-                        <span className="min-w-0 flex-1 truncate">{d.icone ? `${d.icone} ` : ''}{d.titulo}</span>
-                        <span className="w-32 truncate text-rotulo text-texto-3">{d.donoNome}</span>
-                        <span className="w-20 text-right text-rotulo tabular-nums text-texto-3">{new Date(d.atualizadoEm).toLocaleDateString('pt-BR', { timeZone: 'America/Belem', day: '2-digit', month: '2-digit' })}</span>
+                      <Link href={`/documentos/${d.id}`}>
+                        <span>{d.icone ? `${d.icone} ` : ''}{d.titulo}</span>
+                        <span>{d.donoNome}</span>
+                        <span>{new Date(d.atualizadoEm).toLocaleDateString('pt-BR', { timeZone: 'America/Belem', day: '2-digit', month: '2-digit' })}</span>
                       </Link>
                     </li>
                   ))}
@@ -278,16 +278,16 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
               )}
             </Modulo>
           )}
-          {aba === 'relatorio' && <div className="space-y-4">
+          {aba === 'relatorio' && <div>
         {!cliente.interno && (cliente.metaPaginaId || cliente.metaContaId || cliente.googleAdsId) && (
-          <Suspense fallback={<Modulo icone={BarChart3} titulo="Relatório do cliente" descricao="Buscando no Meta e no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Montando o relatório (pago, orgânico e os dois juntos)…</p></Modulo>}>
+          <Suspense fallback={<Modulo icone={BarChart3} titulo="Relatório do cliente" descricao="Buscando no Meta e no Google…"><p>Montando o relatório (pago, orgânico e os dois juntos)…</p></Modulo>}>
             <CarregarRelatorio cliente={cliente} periodo={periodo} seletor={seletor} />
           </Suspense>
         )}
         {!cliente.interno && (
           <div id="relatorios">
             <Modulo icone={Send} titulo="Relatório para o cliente" descricao="Gera um link com os números do período (anúncios, Instagram e Google) e o texto pronto para o WhatsApp">
-              <div className="space-y-4">
+              <div>
                 <EnviarRelatorio clienteId={cliente.id} hoje={dataDeHoje(new Date())} temWhatsapp={!!cliente.whatsapp} />
                 <Suspense fallback={null}>
                   <RelatoriosGerados clienteId={cliente.id} whatsapp={cliente.whatsapp} />
@@ -297,22 +297,22 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
           </div>
         )}
         {cliente.metaContaId && (
-          <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando os anúncios…</p></Modulo>}>
+          <Suspense fallback={<Modulo icone={Megaphone} titulo="Anúncios ativos" descricao="Buscando no Meta…"><p>Carregando os anúncios…</p></Modulo>}>
             <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto seletor={seletor} />
           </Suspense>
         )}
         {cliente.googleAdsId && (
-          <Suspense fallback={<Modulo icone={Search} titulo="Google Ads" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as campanhas…</p></Modulo>}>
+          <Suspense fallback={<Modulo icone={Search} titulo="Google Ads" descricao="Buscando no Google…"><p>Carregando as campanhas…</p></Modulo>}>
             <GoogleAds contaId={cliente.googleAdsId} periodo={periodo} seletor={seletor} />
           </Suspense>
         )}
         {!cliente.interno && (
-          <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p className="py-6 text-center text-rotulo text-texto-3">Carregando as métricas…</p></Modulo>}>
+          <Suspense fallback={<Modulo icone={MapPin} titulo="Google Meu Negócio" descricao="Buscando no Google…"><p>Carregando as métricas…</p></Modulo>}>
             <GoogleNegocio clienteId={id} perfil={cliente.googlePerfil} perfilNome={cliente.googlePerfilNome} periodo={periodo} seletor={seletor} podeGerir={podeGerir} />
           </Suspense>
         )}
           </div>}
-          {aba === 'acessos' && <div className="max-w-[720px] space-y-4">
+          {aba === 'acessos' && <div>
           <Modulo icone={IdCard} titulo="Cadastro" descricao="Dados do cliente e as ligações com o Meta e o Google Ads">
             <FormCliente acao={editarCliente.bind(null, id)} cliente={cliente} podeEditar={podeGerir} embutido />
           </Modulo>
@@ -335,9 +335,9 @@ async function AlcanceIndicador({ paginaId, hoje }: { paginaId: string | null; h
   const r = paginaId ? await instagramDoCliente(paginaId, atalhoPeriodo(30, hoje), false).catch(() => null) : null
   const valor = r && !('erro' in r) ? r.alcance.toLocaleString('pt-BR') : '—'
   return (
-    <div className="flex flex-col gap-1.5 rounded-3xl bg-[var(--bg-subtle)] px-4 py-3.5">
-      <p className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full text-white" style={{ background: '#1d6fe0' }}><Ic n="donut_large" s={14} fill /></span><span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Alcance 30 dias</span></p>
-      <p className="text-xl font-semibold tabular-nums">{valor}</p>
+    <div>
+      <p><span style={{ background: '#1d6fe0' }}><Ic n="donut_large" s={14} fill /></span><span>Alcance 30 dias</span></p>
+      <p>{valor}</p>
     </div>
   )
 }
@@ -348,22 +348,22 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
   if (!lista.length) return null
   const data = (d: string) => d.split('-').reverse().slice(0, 2).join('/')
   return (
-    <div className="space-y-1">
-      <p className="text-legenda font-semibold text-texto-3">Gerados</p>
-      <ul className="divide-y divide-borda/60 rounded-lg border border-borda text-rotulo">
+    <div>
+      <p>Gerados</p>
+      <ul>
         {lista.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5">
-            <span className="min-w-0 flex-1">
+          <li key={r.id}>
+            <span>
               {data(r.de)} a {data(r.ate)}
-              {r.automatico && <span className="ml-1.5 rounded-md bg-fundo px-1.5 text-micro font-semibold text-texto-3">automático</span>}
-              {r.desatualizado && <span className="ml-1.5 rounded-md bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title="Há uma versão mais nova do cálculo e da separação entre pago e orgânico. Gere novamente antes de enviar.">desatualizado</span>}
-              {r.revogado && <span className="ml-1.5 rounded-md bg-perigo-fundo px-1.5 text-micro font-semibold text-perigo-forte">revogado</span>}
-              {r.avisos.length > 0 && <span className="ml-1.5 rounded-md bg-aviso-fundo px-1.5 text-micro font-semibold text-aviso-forte" title={r.avisos.join('\n')}>{r.avisos.length} aviso(s)</span>}
+              {r.automatico && <span>automático</span>}
+              {r.desatualizado && <span title="Há uma versão mais nova do cálculo e da separação entre pago e orgânico. Gere novamente antes de enviar.">desatualizado</span>}
+              {r.revogado && <span>revogado</span>}
+              {r.avisos.length > 0 && <span title={r.avisos.join('\n')}>{r.avisos.length} aviso(s)</span>}
             </span>
-            <span className="text-legenda text-texto-3">{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
-            {!r.revogado && <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-sucesso-forte hover:underline" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>}
-            <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline"><ExternalLink className="h-3.5 w-3.5" /> Abrir</a>
-            {!r.revogado && <a href={`${r.url}?imprimir=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-legenda font-semibold text-[#1d6fe0] hover:underline" title="Abre o relatório já na impressão: escolha Salvar como PDF">PDF</a>}
+            <span>{new Date(r.em).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })}</span>
+            {!r.revogado && <a href={r.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(r.texto)}`} target="_blank" rel="noreferrer" title={r.whatsapp ? 'Para o WhatsApp do cadastro' : 'Sem WhatsApp no cadastro: escolha o contato'}><MessageCircle /> WhatsApp</a>}
+            <a href={r.url} target="_blank" rel="noreferrer"><ExternalLink /> Abrir</a>
+            {!r.revogado && <a href={`${r.url}?imprimir=1`} target="_blank" rel="noreferrer" title="Abre o relatório já na impressão: escolha Salvar como PDF">PDF</a>}
           </li>
         ))}
       </ul>
@@ -375,24 +375,24 @@ async function RelatoriosGerados({ clienteId, whatsapp }: { clienteId: string; w
 async function EstrategiaDoCliente({ clienteId }: { clienteId: string }) {
   const est = await estrategiaDoCliente(await criarClienteServidor(), clienteId)
   return (
-    <div className="max-w-[1300px] space-y-6">
-      <nav className="flex flex-wrap gap-2" aria-label="Seções da estratégia">
+    <div>
+      <nav aria-label="Seções da estratégia">
         {METODOS.map((m) => (
-          <a key={m.id} href={`#est-${m.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--bg-subtle)] px-3 text-rotulo font-semibold hover:bg-[var(--bg-active)]">
-            <Ic n={m.icone} s={15} /> {m.curto} <span className="tabular-nums text-texto-3">{Math.round(preenchimento(m.id, est[m.id]) * 100)}%</span>
+          <a key={m.id} href={`#est-${m.id}`}>
+            <Ic n={m.icone} s={15} /> {m.curto} <span>{Math.round(preenchimento(m.id, est[m.id]) * 100)}%</span>
           </a>
         ))}
       </nav>
       {METODOS.map((m) => (
-        <section key={m.id} id={`est-${m.id}`} className="scroll-mt-12 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="flex items-center gap-2 text-destaque font-bold"><Ic n={m.icone} s={18} /> {m.rotulo}</h3>
-            <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`} className="text-rotulo font-semibold text-[var(--accent)] hover:underline">Editar</Link>
+        <section key={m.id} id={`est-${m.id}`}>
+          <div>
+            <h3><Ic n={m.icone} s={18} /> {m.rotulo}</h3>
+            <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`}>Editar</Link>
           </div>
           {preenchimento(m.id, est[m.id]) > 0 || est[m.id].marcados.length ? (
             <QuadroEstrategia metodo={m.id} clienteId={clienteId} inicial={est[m.id]} leitura />
           ) : (
-            <p className="rounded-2xl bg-[var(--bg-subtle)] px-4 py-6 text-center text-corpo text-texto-3">Ainda não preenchido. <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`} className="font-semibold text-texto underline">Começar</Link></p>
+            <p>Ainda não preenchido. <Link href={`/estrategia?secao=${m.id}&cliente=${clienteId}`}>Começar</Link></p>
           )}
         </section>
       ))}

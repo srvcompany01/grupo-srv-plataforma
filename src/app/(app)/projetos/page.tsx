@@ -16,10 +16,10 @@ export default async function Projetos({ searchParams }: PageProps<'/projetos'>)
   if (lista) return <PaginaLista id={lista.id} caminho="/projetos" sp={sp} rotuloPainel="Projeto" />
 
   return (
-    <div className="page-shell relatorio">
+    <div>
       <div>
-        <p className="eyebrow">Acompanhamento</p>
-        <h1 className="page-title mt-1">Projetos</h1>
+        <p>Acompanhamento</p>
+        <h1>Projetos</h1>
       </div>
       <EstadoVazio
         icone={Briefcase}

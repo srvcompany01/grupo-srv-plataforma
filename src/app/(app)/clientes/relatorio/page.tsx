@@ -13,25 +13,25 @@ const dia = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/')
 
 function Lista({ titulo, tom, linhas, maior, vazio }: { titulo: string; tom: 'bom' | 'ruim'; linhas: LinhaRanking[]; maior: number; vazio: string }) {
   return (
-    <div className="rounded-lg border border-borda p-3">
-      <h2 className={`mb-2 text-rotulo font-semibold ${tom === 'bom' ? 'text-sucesso' : 'text-perigo'}`}>{titulo} ({linhas.length})</h2>
+    <div>
+      <h2>{titulo} ({linhas.length})</h2>
       {linhas.length === 0 ? (
-        <p className="py-6 text-center text-rotulo text-texto-3">{vazio}</p>
+        <p>{vazio}</p>
       ) : (
-        <ol className="space-y-2">
+        <ol>
           {linhas.map((c) => (
-            <li key={c.id} className="text-rotulo">
-              <div className="flex items-center justify-between gap-2">
-                <Link href={`/clientes/${c.id}`} className="flex min-w-0 items-center gap-2 text-texto hover:underline">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.cor }} />
-                  <NomeCliente nome={c.nome} className="truncate" />
+            <li key={c.id}>
+              <div>
+                <Link href={`/clientes/${c.id}`}>
+                  <span style={{ background: c.cor }} />
+                  <NomeCliente nome={c.nome} />
                 </Link>
-                <span className="shrink-0 tabular-nums text-texto-2">
+                <span>
                   {c.dias} {c.dias === 1 ? 'dia' : 'dias'}
-                  <span className="ml-2 text-legenda text-texto-3">{c.ultimo ? `último ${dia(c.ultimo)}` : 'nenhum no período'}</span>
+                  <span>{c.ultimo ? `último ${dia(c.ultimo)}` : 'nenhum no período'}</span>
                 </span>
               </div>
-              <div className="mt-0.5 h-1.5 rounded-full bg-fundo"><div className={`h-1.5 rounded-full ${tom === 'bom' ? 'bg-sucesso' : 'bg-perigo'}`} style={{ width: `${(c.dias / maior) * 100}%` }} /></div>
+              <div><div style={{ width: `${(c.dias / maior) * 100}%` }} /></div>
             </li>
           ))}
         </ol>
@@ -53,36 +53,36 @@ export default async function RelatorioClientes({ searchParams }: PageProps<'/cl
   const media = porDia.reduce((s, d) => s + d.total, 0) / periodo
 
   return (
-    <div className="min-h-full bg-white">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-borda px-4 py-3 md:px-5">
-        <div className="flex items-center gap-2">
-          <Link href="/clientes" aria-label="Voltar para clientes" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ArrowLeft className="h-4 w-4" /></Link>
-          <h1 className="flex items-center gap-2 text-destaque font-bold text-texto"><BarChart3 className="h-4 w-4" /> Clientes trabalhados</h1>
+    <div>
+      <header>
+        <div>
+          <Link href="/clientes" aria-label="Voltar para clientes"><ArrowLeft /></Link>
+          <h1><BarChart3 /> Clientes trabalhados</h1>
         </div>
-        <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Período">
+        <nav aria-label="Período">
           {PERIODOS.map((p) => (
-            <Link key={p} href={`/clientes/relatorio?dias=${p}`} className={`rounded-md px-2.5 py-1 text-rotulo font-semibold ${p === periodo ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}>{p} dias</Link>
+            <Link key={p} href={`/clientes/relatorio?dias=${p}`}>{p} dias</Link>
           ))}
         </nav>
       </header>
 
-      <main className="space-y-4 p-4 md:p-5">
-        <section className="rounded-lg border border-borda p-3">
-          <h2 className="mb-2 text-rotulo font-semibold text-texto">Clientes por dia <span className="font-normal text-texto-3">· média de {media.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por dia</span></h2>
-          <div className="flex h-32 items-end gap-1">
+      <main>
+        <section>
+          <h2>Clientes por dia <span>· média de {media.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por dia</span></h2>
+          <div>
             {porDia.map((d) => (
-              <div key={d.dia} className="flex h-full min-w-0 flex-1 flex-col justify-end gap-1" title={`${dia(d.dia)}: ${d.total} ${d.total === 1 ? 'cliente' : 'clientes'}`}>
-                <span className="text-center text-micro tabular-nums text-texto-2">{d.total || ''}</span>
-                <span className="mx-auto w-full max-w-6 rounded-t bg-petroleo" style={{ height: `${(d.total / maiorDia) * 100}%` }} />
-                <span className="truncate text-center text-micro text-texto-3">{periodo === 7 ? semana(d.dia) : dia(d.dia)}</span>
+              <div key={d.dia} title={`${dia(d.dia)}: ${d.total} ${d.total === 1 ? 'cliente' : 'clientes'}`}>
+                <span>{d.total || ''}</span>
+                <span style={{ height: `${(d.total / maiorDia) * 100}%` }} />
+                <span>{periodo === 7 ? semana(d.dia) : dia(d.dia)}</span>
               </div>
             ))}
           </div>
         </section>
 
-        <p className="text-legenda text-texto-3">Saudável: trabalhado em pelo menos {minimo} dos últimos {periodo} dias (2 por semana). Só conta as suas marcas no botão ✓ da galeria.</p>
+        <p>Saudável: trabalhado em pelo menos {minimo} dos últimos {periodo} dias (2 por semana). Só conta as suas marcas no botão ✓ da galeria.</p>
 
-        <section className="grid gap-3 lg:grid-cols-2">
+        <section>
           <Lista titulo="Saudáveis" tom="bom" linhas={ranking.filter((c) => c.saudavel)} maior={maior} vazio="Nenhum cliente com ritmo saudável neste período." />
           <Lista titulo="Precisando de atenção" tom="ruim" linhas={ranking.filter((c) => !c.saudavel).reverse()} maior={maior} vazio="Todos os clientes estão em dia." />
         </section>

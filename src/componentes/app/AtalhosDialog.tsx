@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
 import { ATALHOS_DE_NAVEGACAO } from '@/dominio/paleta'
 
-const Tecla = ({ children }: { children: React.ReactNode }) => <kbd className="min-w-6 rounded border border-borda bg-fundo px-1.5 py-0.5 text-center text-legenda font-semibold text-texto-2">{children}</kbd>
+const Tecla = ({ children }: { children: React.ReactNode }) => <kbd>{children}</kbd>
 
 const GRUPOS: { titulo: string; itens: { rotulo: string; teclas: string[] }[] }[] = [
   { titulo: 'Em qualquer tela', itens: [{ rotulo: 'Abrir a paleta de comandos (pesquisar)', teclas: ['⌘', 'K'] }, { rotulo: 'Abrir ou recolher a barra de espaços', teclas: ['⌘', '\\'] }, { rotulo: 'Mostrar esta lista', teclas: ['?'] }, { rotulo: 'Fechar janela ou menu', teclas: ['Esc'] }] },
@@ -15,20 +15,20 @@ const GRUPOS: { titulo: string; itens: { rotulo: string; teclas: string[] }[] }[
 export function AtalhosDialog({ aberto, aoMudar }: { aberto: boolean; aoMudar: (aberto: boolean) => void }) {
   return (
     <Dialog open={aberto} onOpenChange={aoMudar}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Atalhos de teclado</DialogTitle>
           <DialogDescription>No Windows, use Ctrl no lugar de ⌘.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div>
           {GRUPOS.map((g) => (
             <section key={g.titulo}>
-              <h3 className="mb-1.5 text-rotulo font-semibold text-texto-3">{g.titulo}</h3>
-              <ul className="divide-y divide-borda">
+              <h3>{g.titulo}</h3>
+              <ul>
                 {g.itens.map((i) => (
-                  <li key={i.rotulo} className="flex items-center justify-between gap-3 py-1.5 text-corpo text-texto">
+                  <li key={i.rotulo}>
                     <span>{i.rotulo}</span>
-                    <span className="flex shrink-0 gap-1">{i.teclas.map((t) => <Tecla key={t}>{t}</Tecla>)}</span>
+                    <span>{i.teclas.map((t) => <Tecla key={t}>{t}</Tecla>)}</span>
                   </li>
                 ))}
               </ul>

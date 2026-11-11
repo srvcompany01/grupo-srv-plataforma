@@ -24,20 +24,20 @@ export default async function Clientes() {
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
   const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
-    <div className="page-shell">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div>
         <div>
-          <p className="eyebrow">Relacionamento</p>
-          <h1 className="page-title mt-1">Clientes</h1>
+          <p>Relacionamento</p>
+          <h1>Clientes</h1>
         </div>
-        <Link href="/clientes/relatorio" className="flex items-center gap-1.5 rounded-md border border-borda px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
-          <BarChart3 className="h-3.5 w-3.5" /> Relatório de trabalho
+        <Link href="/clientes/relatorio">
+          <BarChart3 /> Relatório de trabalho
         </Link>
       </div>
       {podeCriar && (
-        <details className="group">
-          <summary className="w-fit cursor-pointer rounded-md bg-texto px-4 py-2 text-corpo font-semibold text-claro transition hover:bg-carbon">+ Novo cliente</summary>
-          <div className="mt-2">
+        <details>
+          <summary>+ Novo cliente</summary>
+          <div>
             <FormCliente acao={criarCliente} podeEditar />
           </div>
         </details>

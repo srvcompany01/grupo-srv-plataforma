@@ -12,7 +12,6 @@ import { consultaPeriodo, lerPeriodo } from '@/dominio/periodo-anuncios'
 import { lerMes } from '@/dominio/performance'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { botaoSecundario } from '@/lib/ui'
 import { listarClientes } from '@/servicos/clientes-plataforma'
 import { Aviso, GmnCliente, GmnTodos, GoogleCliente, GoogleTodos, MetaCliente, MetaTodos, OrganicoCliente, OrganicoTodos, PanoramaCliente, type Aba } from './canais'
 import { ProjecaoCliente } from './projecao'
@@ -62,46 +61,46 @@ export default async function Performance({ searchParams }: PageProps<'/performa
   const periodoXlsx = `de=${periodo.de}&ate=${periodo.ate}`
 
   return (
-    <div className="page-shell relatorio">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div>
         <div>
-          <p className="eyebrow">Resultados e análise por canal</p>
-          <h1 className="page-title mt-1">Performance</h1>
+          <p>Resultados e análise por canal</p>
+          <h1>Performance</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
           <SeletorCliente base={`/performance?aba=${aba}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={q} />
           {doPeriodo && <SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />}
         </div>
       </div>
 
-      <nav className="flex flex-wrap gap-1 border-b border-borda" aria-label="Seções da Performance">
+      <nav aria-label="Seções da Performance">
         {abasVisiveis.map(([a, rotulo, Icone]) => (
-          <Link key={a} href={link(a)} className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-rotulo font-semibold ${aba === a ? 'border-petroleo text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>
-            <Icone className="h-3.5 w-3.5" /> {rotulo}
+          <Link key={a} href={link(a)}>
+            <Icone /> {rotulo}
           </Link>
         ))}
       </nav>
 
       {escolhido ? (
         <Modulo icone={Send} titulo="Enviar e exportar" descricao={<><NomeCliente nome={escolhido.nome} /> · link e texto do WhatsApp para o cliente, PDF e planilha</>}>
-          <div className="space-y-3">
+          <div>
             <EnviarRelatorio clienteId={escolhido.id} hoje={hoje} temWhatsapp={!!escolhido.whatsapp} />
-            <div className="flex flex-wrap items-center gap-2 border-t border-borda pt-3">
-              <a href={`/api/performance/exportar?cliente=${escolhido.id}&${periodoXlsx}`} className={botaoSecundario}><Download className="h-4 w-4" /> Baixar planilha (.xlsx) do período</a>
-              <span className="text-legenda text-texto-3">A planilha segue o período escolhido no topo (padrão do Resumo e dos canais). Para PDF, gere o relatório acima e use o botão de PDF.</span>
+            <div>
+              <a href={`/api/performance/exportar?cliente=${escolhido.id}&${periodoXlsx}`}><Download /> Baixar planilha (.xlsx) do período</a>
+              <span>A planilha segue o período escolhido no topo (padrão do Resumo e dos canais). Para PDF, gere o relatório acima e use o botão de PDF.</span>
             </div>
           </div>
         </Modulo>
       ) : aba === 'resumo' && (
-        <div className="flex flex-wrap items-center gap-2">
-          <a href={`/api/performance/exportar?mes=${mes}`} className={botaoSecundario}><Download className="h-4 w-4" /> Baixar planilha (.xlsx) de todos os clientes no mês</a>
+        <div>
+          <a href={`/api/performance/exportar?mes=${mes}`}><Download /> Baixar planilha (.xlsx) de todos os clientes no mês</a>
         </div>
       )}
 
-      <Suspense key={`${aba}-${escolhido?.id}-${q}-${mes}`} fallback={<Modulo icone={Target} titulo="Performance" descricao="Buscando os números…"><p className="py-8 text-center text-rotulo text-texto-3">Carregando…</p></Modulo>}>
+      <Suspense key={`${aba}-${escolhido?.id}-${q}-${mes}`} fallback={<Modulo icone={Target} titulo="Performance" descricao="Buscando os números…"><p>Carregando…</p></Modulo>}>
         {aba === 'resumo' ? (
           escolhido ? (
-            <div className="space-y-4">
+            <div>
               <PanoramaCliente c={escolhido} periodo={periodo} />
               <ResultadoDoMes cliente={escolhido} mes={mes} hoje={hoje} acoes={seletorMes} />
             </div>

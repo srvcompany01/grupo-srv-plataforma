@@ -23,8 +23,8 @@ export function ExcluirCliente({ clienteId, nome }: { clienteId: string; nome: s
 
   return (
     <Modulo icone={Trash2} titulo="Zona de perigo" descricao="Exclusão definitiva. Para só pausar, mude o status no cadastro." perigo>
-      <button type="button" disabled={pendente} onClick={excluir} className="inline-flex items-center gap-1.5 rounded-lg border border-perigo/40 px-3 py-1.5 text-corpo font-medium text-perigo hover:bg-perigo/10 disabled:opacity-50">
-        <Trash2 className="h-4 w-4" /> Excluir cliente
+      <button type="button" disabled={pendente} onClick={excluir}>
+        <Trash2 /> Excluir cliente
       </button>
     </Modulo>
   )

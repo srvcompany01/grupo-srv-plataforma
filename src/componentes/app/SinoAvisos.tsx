@@ -60,34 +60,34 @@ export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo', ouvir = 
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className={variante === 'dock' ? 'dock-item' : 'tb flex items-center justify-center'} style={variante === 'dock' ? undefined : { padding: 0 }}>
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} style={variante === 'dock' ? undefined : { padding: 0 }}>
         <Ic n="notifications" s={variante === 'dock' ? 22 : 18} />
-        {selo && <span className={variante === 'dock' ? 'dock-ponto' : 'tb-ponto'} />}
+        {selo && <span />}
       </PopoverTrigger>
-      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align={variante === 'dock' ? 'end' : 'end'} className="painel-alerta">
-        <div className="pa-topo">
-          <p className="pa-titulo">Alertas</p>
-          <div className="pa-seg" role="tablist">
+      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align={variante === 'dock' ? 'end' : 'end'}>
+        <div>
+          <p>Alertas</p>
+          <div role="tablist">
             <button type="button" role="tab" aria-selected={!soNovos} data-on={!soNovos || undefined} onClick={() => setSoNovos(false)}>Todos</button>
             <button type="button" role="tab" aria-selected={soNovos} data-on={soNovos || undefined} onClick={() => setSoNovos(true)}>Não lidos</button>
           </div>
         </div>
         {lista.length === 0 ? (
-          <p className="pa-vazio">{soNovos ? 'Nenhum aviso novo.' : 'Nenhum aviso por enquanto.'}</p>
+          <p>{soNovos ? 'Nenhum aviso novo.' : 'Nenhum aviso por enquanto.'}</p>
         ) : (
-          <div className="pa-lista">
+          <div>
             {lista.map((a) => (
-              <button key={a.id} type="button" disabled={pendente} onClick={() => abrir(a)} data-nova={!a.lido || undefined} className="pa-item">
-                <span className="pa-ico" data-erro={a.mensagem ? true : undefined}>{a.mensagem ? <TriangleAlert size={18} strokeWidth={1.6} /> : <AtSign size={18} strokeWidth={1.6} />}</span>
-                <span className="pa-corpo">
-                  <span className="pa-t block">{a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}</span>
+              <button key={a.id} type="button" disabled={pendente} onClick={() => abrir(a)} data-nova={!a.lido || undefined}>
+                <span data-erro={a.mensagem ? true : undefined}>{a.mensagem ? <TriangleAlert size={18} strokeWidth={1.6} /> : <AtSign size={18} strokeWidth={1.6} />}</span>
+                <span>
+                  <span>{a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}</span>
                 </span>
-                <span className="pa-lado">{!a.lido && <span className="pa-ponto" />}{tempoRelativo(a.criadoEm, agora)}</span>
+                <span>{!a.lido && <span />}{tempoRelativo(a.criadoEm, agora)}</span>
               </button>
             ))}
           </div>
         )}
-        <button type="button" disabled={pendente || naoLidos === 0} onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))} className="pa-rodape">Marcar todos como lidos</button>
+        <button type="button" disabled={pendente || naoLidos === 0} onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))}>Marcar todos como lidos</button>
       </PopoverContent>
     </Popover>
   )

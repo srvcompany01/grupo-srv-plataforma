@@ -100,20 +100,20 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
       if (!definicao) return null
       return (
-        <div key={colunaId} {...marca(colunaId)} className={`min-w-0 py-1${realce(colunaId)}`}>
+        <div key={colunaId} {...marca(colunaId)}>
           <CelulaCampoPersonalizado tarefaId={tarefa.id} definicao={{ ...definicao, valor: tarefa.camposPersonalizados?.[definicao.id] ?? null }} equipe={ctx.equipe} />
         </div>
       )
     }
     switch (colunaId) {
       case 'responsavel':
-        return <span key={colunaId} {...marca(colunaId)} className={`px-2${realce(colunaId)}`}><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
+        return <span key={colunaId} {...marca(colunaId)}><SeletorResponsaveis tarefaId={tarefa.id} atuais={tarefa.responsaveis} equipe={ctx.equipe} /></span>
       case 'prazo':
-        return <span key={colunaId} {...marca(colunaId)} className={`px-1 text-rotulo${realce(colunaId)}`}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
+        return <span key={colunaId} {...marca(colunaId)}><EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} /></span>
       case 'prioridade':
-        return <span key={colunaId} {...marca(colunaId)} className={`px-1${realce(colunaId)}`}><SeletorPrioridade tarefaId={tarefa.id} prioridade={tarefa.prioridade} /></span>
+        return <span key={colunaId} {...marca(colunaId)}><SeletorPrioridade tarefaId={tarefa.id} prioridade={tarefa.prioridade} /></span>
       case 'status':
-        return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
+        return <span key={colunaId} {...marca(colunaId)}><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} comNome /></span>
       case 'comentarios':
       case 'criado_por':
       case 'data_criada':
@@ -125,17 +125,17 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
       case 'linha_tempo':
       case 'lista':
       case 'tempo_rastreado':
-        return <span key={colunaId} {...marca(colunaId)} className={`min-w-0 truncate px-2 text-[13px] text-texto-2${realce(colunaId)}`}>{valorDaColunaNativa(colunaId, tarefa)}</span>
+        return <span key={colunaId} {...marca(colunaId)}>{valorDaColunaNativa(colunaId, tarefa)}</span>
       case 'tagcliente':
         return (
-          <span key={colunaId} {...marca(colunaId)} className={`min-w-0 px-2${realce(colunaId)}`}>
+          <span key={colunaId} {...marca(colunaId)}>
             <SeletorTagCliente tarefaId={tarefa.id} atual={tarefa.clienteId ? { id: tarefa.clienteId, nome: tarefa.clienteNome, cor: tarefa.clienteCor } : null} opcoes={ctx.tagsCliente} podeGerir={ctx.podeGerirTagCliente} />
           </span>
         )
       case 'etiquetas':
         return (
-          <span key={colunaId} {...marca(colunaId)} className={`flex min-w-0 flex-wrap gap-1 px-2${realce(colunaId)}`}>
-            {tarefa.tags.length === 0 ? <span className="text-texto-3">—</span> : tarefa.tags.map((t) => <span key={t.id} className="rounded-md px-2 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
+          <span key={colunaId} {...marca(colunaId)}>
+            {tarefa.tags.length === 0 ? <span>—</span> : tarefa.tags.map((t) => <span key={t.id} style={{ background: t.cor }}>{t.nome}</span>)}
           </span>
         )
       default:
@@ -144,28 +144,27 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} className={`group grid h-8 items-center rounded-lg text-[13px] transition-colors ${selecionada ? 'bg-[var(--sel)]' : 'hover:bg-[var(--bg-hover)]'}`} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
-        <div className="flex justify-center">
+      <div data-linha={tarefa.id} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+        <div>
           <input
             type="checkbox"
             checked={selecionada}
             data-tarefa-id={tarefa.id}
             onChange={(evento) => ctx.alternarSelecao?.(tarefa.id, evento.target.checked, (evento.nativeEvent as MouseEvent).shiftKey === true)}
             aria-label={`Selecionar ${tarefa.titulo}`}
-            className="ck"
           />
         </div>
         <div>
           {tarefa.filhos.length > 0 && (
-            <button aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'} onClick={() => setAberta(!aberta)} className="b-icon" style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}>
+            <button aria-label={aberta ? 'Recolher subtarefas' : 'Mostrar subtarefas'} onClick={() => setAberta(!aberta)} style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}>
               <Ic n={aberta ? 'expand_more' : 'chevron_right'} s={16} />
             </button>
           )}
         </div>
-        <div className="flex justify-center"><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} /></div>
-        <div {...marca('nome')} className={`flex min-w-0 items-center gap-2${realce('nome')}`} style={{ padding: '0 12px 0 2px', paddingLeft: 2 + nivel * 18 }}>
-          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="truncate hover:underline" style={{ fontSize: 13 }}>
-            {tarefa.titulo.trim() || <span className="italic text-texto-3">Sem título</span>}
+        <div><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} /></div>
+        <div {...marca('nome')} style={{ padding: '0 12px 0 2px', paddingLeft: 2 + nivel * 18 }}>
+          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} style={{ fontSize: 13 }}>
+            {tarefa.titulo.trim() || <span>Sem título</span>}
           </Link>
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente
@@ -177,10 +176,10 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             />
           )}
           {tarefa.filhos.length > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] text-texto-3"><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
+            <span><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
           )}
-          {tarefa.paiTitulo && <span className="hidden max-w-[40%] shrink truncate text-[12px] text-texto-3 lg:inline" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
-          {ctx.mostrarLista && <span className="hidden truncate text-[12px] text-texto-3 xl:inline" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
+          {tarefa.paiTitulo && <span className="hidden" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
+          {ctx.mostrarLista && <span className="hidden" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
           <button
             type="button"
             onClick={() => {
@@ -189,7 +188,6 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             }}
             aria-label={`Adicionar subtarefa em ${tarefa.titulo}`}
             title="Adicionar subtarefa"
-            className="b-icon ml-auto opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
             style={{ width: 22, height: 22, borderRadius: 4, color: 'var(--text-3)' }}
           >
             <Ic n="subdirectory_arrow_right" s={14} />
@@ -202,10 +200,9 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         <button
           type="button"
           onClick={() => setCriandoSubtarefa(true)}
-          className="flex min-h-8 w-full items-center gap-2 rounded-lg py-1 text-left text-corpo text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto"
           style={{ paddingLeft: 50 + nivel * 18 }}
         >
-          <CornerDownRight className="h-3.5 w-3.5" /> Adicionar subtarefa
+          <CornerDownRight /> Adicionar subtarefa
         </button>
       )}
       {criandoSubtarefa && (

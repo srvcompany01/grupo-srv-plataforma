@@ -10,12 +10,12 @@ export default async function Espacos() {
   const [espacos, equipe] = await Promise.all([listarEspacosComMembros(sb), listarEquipe(sb)])
   const raizes = espacos.filter((e) => !e.paiId)
   return (
-    <div className="space-y-4">
+    <div>
       <FormNovoEspaco pais={raizes.map((e) => ({ id: e.id, nome: e.nome }))} />
       {raizes.map((e) => (
-        <div key={e.id} className="space-y-2">
+        <div key={e.id}>
           <CartaoEspaco espaco={e} equipe={equipe} />
-          <div className="space-y-2 pl-6">
+          <div>
             {espacos
               .filter((f) => f.paiId === e.id)
               .map((f) => (

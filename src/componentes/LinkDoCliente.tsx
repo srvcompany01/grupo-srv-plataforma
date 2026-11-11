@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react'
 import { novoLinkAcao } from '@/app/(app)/clientes/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { botaoFantasma, botaoSecundario } from '@/lib/ui'
 
 /** Link do cliente (sem login) para mandar a ele: copiar, abrir e gerar um novo (o anterior para de funcionar). */
 export function LinkDoCliente({ clienteId, url, podeGerir }: { clienteId: string; url: string; podeGerir: boolean }) {
@@ -28,14 +27,14 @@ export function LinkDoCliente({ clienteId, url, podeGerir }: { clienteId: string
     iniciar(async () => { if (avisar(await novoLinkAcao(clienteId), true)) router.refresh() })
   }
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 rounded-lg border border-borda bg-fundo/60 px-3 py-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-rotulo text-texto" title={url}>{url}</span>
+    <div>
+      <div>
+        <span title={url}>{url}</span>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={copiar} className={botaoSecundario}>{copiado ? <><Check className="h-3.5 w-3.5 text-sucesso" /> Copiado</> : <><Copy className="h-3.5 w-3.5" /> Copiar link</>}</button>
-        <a href={url} target="_blank" rel="noreferrer" className={botaoFantasma}><ExternalLink className="h-3.5 w-3.5" /> Abrir</a>
-        {podeGerir && <button type="button" onClick={novo} disabled={pendente} className={botaoFantasma}><RefreshCw className="h-3.5 w-3.5" /> Gerar link novo</button>}
+      <div>
+        <button type="button" onClick={copiar}>{copiado ? <><Check /> Copiado</> : <><Copy /> Copiar link</>}</button>
+        <a href={url} target="_blank" rel="noreferrer"><ExternalLink /> Abrir</a>
+        {podeGerir && <button type="button" onClick={novo} disabled={pendente}><RefreshCw /> Gerar link novo</button>}
       </div>
     </div>
   )

@@ -31,9 +31,9 @@ export default async function EditarArtigo({ params }: PageProps<'/editor-blog/[
   const situacao = !post || post.status === 'rascunho' ? 'Rascunho' : post.status === 'revisao' ? 'Em revisão' : post.publicadoEmBruto && new Date(post.publicadoEmBruto) > agora ? 'Agendado' : 'Publicado'
   const chave = new Map(chaves.map((c) => [c.id, c.palavraChave]))
   return (
-    <div className="page-shell">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href="/editor-blog" className="text-rotulo text-texto-2 hover:text-texto">← Blog</Link>
+    <div>
+      <div>
+        <Link href="/editor-blog">← Blog</Link>
         {novo && <ImportarArtigo />}
       </div>
       <EditorArtigo

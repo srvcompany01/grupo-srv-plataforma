@@ -23,7 +23,6 @@ export function TituloPagina({ id, inicial, podeEditar }: { id: string; inicial:
         })
       }}
       placeholder="Sem título"
-      className="mx-auto block w-full max-w-3xl bg-white px-10 pt-6 text-[1.9rem] font-bold leading-tight text-texto outline-none placeholder:text-texto-3"
     />
   )
 }

@@ -123,33 +123,33 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
-    <div className="flex min-h-full flex-col bg-[var(--bg)]">
-      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-2 bg-[var(--bg)]" style={{ height: 40, padding: '0 10px 0 12px' }}>
-        <nav aria-label="Localização da lista" className="flex min-w-0 flex-1 items-center overflow-hidden" style={{ gap: 2, flexBasis: 160 }}>
+    <div>
+      <div style={{ height: 40, padding: '0 10px 0 12px' }}>
+        <nav aria-label="Localização da lista" style={{ gap: 2, flexBasis: 160 }}>
           {lista.espaco.id ? (
-            <Link href={`/espacos/${lista.espaco.id}`} className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
+            <Link href={`/espacos/${lista.espaco.id}`} className="hidden" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
               <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="check_circle" s={12} fill w={500} /></span>
               {lista.espaco.nome}
             </Link>
           ) : (
-            <span className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px' }}>Itens soltos</span>
+            <span className="hidden" style={{ height: 24, padding: '0 6px' }}>Itens soltos</span>
           )}
-          {lista.pasta && <><span className="hidden text-[13px] text-texto-3 md:inline">/</span><span className="b-ghost hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}><Ic n="folder" s={16} style={{ color: '#1d6fe0' }} />{lista.pasta.nome}</span></>}
-          <span className="hidden text-[13px] text-texto-3 md:inline">/</span>
+          {lista.pasta && <><span className="hidden">/</span><span className="hidden" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}><Ic n="folder" s={16} style={{ color: '#1d6fe0' }} />{lista.pasta.nome}</span></>}
+          <span className="hidden">/</span>
           <span style={{ width: 16, height: 16, flex: 'none', marginLeft: 6, borderRadius: '50%', background: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--bg)' }} /></span>
-          <h1 className="truncate" style={{ fontWeight: 600, fontSize: 14, padding: '0 4px 0 6px', whiteSpace: 'nowrap' }}>{lista.nome}</h1>
+          <h1 style={{ fontWeight: 600, fontSize: 14, padding: '0 4px 0 6px', whiteSpace: 'nowrap' }}>{lista.nome}</h1>
           <EstrelaLista listaId={id} favorita={favorita} />
           <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
         </nav>
-        <div className="flex shrink-0 items-center gap-1">
-          <div className="mr-1 hidden xl:flex">
+        <div>
+          <div className="hidden">
             {membrosDoEspaco.slice(0, 2).map((m, i) => (
               <span key={m.id} title={m.nome} style={{ width: 22, height: 22, marginLeft: i ? -6 : 0, borderRadius: '50%', background: i ? '#0d9488' : '#d80d12', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>{m.nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
             ))}
             {membrosDoEspaco.length > 2 && <span style={{ width: 22, height: 22, marginLeft: -6, borderRadius: '50%', background: 'var(--bg-active)', color: 'var(--text-2)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>+{membrosDoEspaco.length - 2}</span>}
           </div>
           <CompartilharDialog nome={lista.nome} membros={membrosDoEspaco} />
-          <div className="hidden items-center gap-1 xl:flex">
+          <div className="hidden">
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
             
@@ -159,19 +159,19 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
       </div>
       {abas && vistaAtual ? <AbasDaLista listaId={id} caminho={caminho} visoes={abas} atualId={vistaAtual.id} euId={eu.id} podeGerir={lista.podeGerir} /> : <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />}
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
-      <div className="flex shrink-0 items-center gap-1" style={{ height: 44, padding: '0 10px 0 12px', color: 'var(--text-2)' }}>
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <div style={{ height: 44, padding: '0 10px 0 12px', color: 'var(--text-2)' }}>
+        <div style={{ scrollbarWidth: 'none' }}>
           <BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} />
           <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
           <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
           <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
           <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={vistaAtual ? vistaAtual.params !== '' : salva !== null} vistaId={vistaAtual?.id} />
           {tipo === 'conteudo' && (<><div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px', flex: 'none' }} /><NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} /></>)}
-          <div className="ml-0.5 flex shrink-0"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
+          <div><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
         </div>
       </div>
       )}
-      <main className="min-h-0 flex-1 p-0">
+      <main>
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
         {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}

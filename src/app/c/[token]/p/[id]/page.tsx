@@ -29,9 +29,9 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
   return (
     <>
       <CabecalhoCliente nome={cliente.nome} token={token} />
-      <main className="mx-auto max-w-[560px] space-y-5 p-4 pb-12">
-        <Link href={`/c/${token}`} className="inline-flex items-center gap-1 text-corpo text-texto-2 hover:text-marca">
-          <Icone nome="voltar" className="h-4 w-4" /> Todos os posts
+      <main>
+        <Link href={`/c/${token}`}>
+          <Icone nome="voltar" /> Todos os posts
         </Link>
         <VisualizadorMidia midias={midias} formato={post.formato} nomeZip={nomeZip(cliente.nome, post.dataPrevista)} />
         {post.status === 'aguardando' ? (
@@ -39,7 +39,7 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
         ) : (
           atual.resposta && <CartaoResposta resposta={atual.resposta} />
         )}
-        <div className="space-y-5 rounded-xl border border-borda bg-white p-4">
+        <div>
           <Propriedades
             itens={[
               { icone: 'status', rotulo: 'Status', valor: <SeloStatus status={post.status} /> },
@@ -47,7 +47,7 @@ export default async function PostDoCliente({ params }: PageProps<'/c/[token]/p/
               { icone: 'calendario', rotulo: 'Data prevista', valor: formatarData(post.dataPrevista) },
             ]}
           />
-          <div className="border-t border-borda pt-5">
+          <div>
             <TextosPost {...atual} />
           </div>
         </div>

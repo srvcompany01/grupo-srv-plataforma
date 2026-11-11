@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { acaoPedirUpload } from '@/app/admin/(protegido)/acoes'
 import { TIPOS_ACEITOS } from '@/dominio/midias'
 import type { MidiaEntrada, TipoMidia } from '@/dominio/tipos'
-import { botaoFantasma } from '@/lib/ui'
 import { Icone } from './Icone'
 
 function formatarTamanho(bytes: number): string {
@@ -114,7 +113,7 @@ export function EditorMidias({
   }
 
   return (
-    <div className="space-y-3">
+    <div>
       <div
         onDragOver={(e) => {
           e.preventDefault()
@@ -127,15 +126,12 @@ export function EditorMidias({
           adicionar(e.dataTransfer.files)
         }}
         onClick={() => entrada.current?.click()}
-        className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-6 text-center text-corpo transition ${
-          arrastando ? 'border-marca bg-marca-fundo text-marca' : 'border-borda-forte bg-fundo text-texto-2 hover:border-marca hover:text-marca'
-        }`}
       >
-        <Icone nome="upload" className="h-5 w-5" />
+        <Icone nome="upload" />
         <span>
-          Solte os arquivos aqui ou <span className="font-medium text-marca">escolha no computador</span>
+          Solte os arquivos aqui ou <span>escolha no computador</span>
         </span>
-        <span className="text-xs text-texto-3">1 vídeo, 1 imagem ou carrossel de até 20 imagens · até 4 GB</span>
+        <span>1 vídeo, 1 imagem ou carrossel de até 20 imagens · até 4 GB</span>
         <input
           ref={entrada}
           type="file"
@@ -149,39 +145,39 @@ export function EditorMidias({
         />
       </div>
 
-      <ol className="divide-y divide-borda overflow-hidden rounded-lg border border-borda bg-white empty:hidden">
+      <ol>
         {itens.map((item, i) => (
-          <li key={item.id} className="flex items-center gap-3 px-2 py-2 hover:bg-hover">
-            <span className="w-5 text-center text-xs text-texto-3">{i + 1}</span>
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-hover">
+          <li key={item.id}>
+            <span>{i + 1}</span>
+            <div>
               {item.tipo === 'video' ? (
-                <video src={item.preview} muted preload="metadata" className="h-full w-full object-cover" />
+                <video src={item.preview} muted preload="metadata" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.preview} alt="" className="h-full w-full object-cover" />
+                <img src={item.preview} alt="" />
               )}
             </div>
-            <div className="min-w-0 flex-1 text-corpo">
-              <p className="truncate">{item.nome}</p>
+            <div>
+              <p>{item.nome}</p>
               {item.erro ? (
-                <p className="text-perigo">
+                <p>
                   {item.erro}{' '}
                   {item.arquivo && TIPOS_ACEITOS[item.arquivo.type] && (
-                    <button type="button" className="underline" onClick={() => subir(item)}>
+                    <button type="button" onClick={() => subir(item)}>
                       Tentar de novo
                     </button>
                   )}
                 </p>
               ) : item.progresso < 1 ? (
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-hover">
-                  <div className="h-full rounded-full bg-marca transition-all" style={{ width: `${item.progresso * 100}%` }} />
+                <div>
+                  <div style={{ width: `${item.progresso * 100}%` }} />
                 </div>
               ) : (
-                <p className="text-xs text-texto-3">{formatarTamanho(item.tamanhoBytes)}</p>
+                <p>{formatarTamanho(item.tamanhoBytes)}</p>
               )}
             </div>
-            <div className="flex gap-0.5">
-              <button type="button" aria-label="Subir" disabled={i === 0} onClick={() => mover(i, -1)} className={`${botaoFantasma} w-8 px-0`}>
+            <div>
+              <button type="button" aria-label="Subir" disabled={i === 0} onClick={() => mover(i, -1)}>
                 ↑
               </button>
               <button
@@ -189,7 +185,6 @@ export function EditorMidias({
                 aria-label="Descer"
                 disabled={i === itens.length - 1}
                 onClick={() => mover(i, 1)}
-                className={`${botaoFantasma} w-8 px-0`}
               >
                 ↓
               </button>
@@ -197,9 +192,8 @@ export function EditorMidias({
                 type="button"
                 aria-label="Remover"
                 onClick={() => setItens((atual) => atual.filter((x) => x.id !== item.id))}
-                className={`${botaoFantasma} w-8 px-0`}
               >
-                <Icone nome="x" className="h-3.5 w-3.5" />
+                <Icone nome="x" />
               </button>
             </div>
           </li>

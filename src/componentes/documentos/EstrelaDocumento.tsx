@@ -13,9 +13,8 @@ export function EstrelaDocumento({ id, favorito }: { id: string; favorito: boole
       type="button"
       aria-label={exibido ? 'Tirar dos favoritos' : 'Favoritar'}
       onClick={() => iniciar(async () => { definir(!exibido); avisar(await favoritarAcao(id, !exibido)) })}
-      className="rounded p-1 hover:bg-hover"
     >
-      <Star className={`h-3.5 w-3.5 ${exibido ? 'fill-aviso text-aviso' : 'text-texto-3'}`} />
+      <Star />
     </button>
   )
 }

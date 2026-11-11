@@ -35,39 +35,38 @@ function Linha({ a, agora, soHora, hoje, x }: { a: Agendamento; agora: Date; soH
   const m = a.igMediaId ? x.metricas.get(a.igMediaId) : undefined
   const nota = x.notas.get(a.id)
   const situacao = situacaoPublicacao({ status: a.status, em: a.em, modo: a.modo, aprovacao: a.aprovacao }, agora)
-  const cor = a.status === 'publicado' ? 'text-sucesso-forte' : a.status === 'falhou' || a.aprovacao === 'ajuste' ? 'text-perigo-forte' : a.modo === 'aprovacao' && a.aprovacao !== 'aprovado' ? 'text-aviso-forte' : 'text-texto-2'
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5 hover:bg-hover/50">
-      <span className="w-14 shrink-0 text-center text-rotulo font-semibold tabular-nums text-texto">
+    <li>
+      <span>
         {a.status === 'publicado' && a.publicadoEm ? diaHora.format(new Date(a.publicadoEm)) : a.em ? (soHora ? hora.format(new Date(a.em)) : diaHora.format(new Date(a.em))) : '—'}
       </span>
-      <Link href={`/tarefas/${a.id}`} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-fundo">
-        {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
+      <Link href={`/tarefas/${a.id}`}>
+        {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted /><Video /></> : (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img loading="lazy" decoding="async" src={a.capa.url} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={a.capa.url} alt="" />
         ))}
       </Link>
-      <div className="min-w-0 flex-1">
-        <Link href={`/tarefas/${a.id}`} className="block truncate text-corpo font-semibold text-texto hover:underline">{a.titulo}</Link>
-        <p className="flex flex-wrap items-center gap-x-2 text-legenda text-texto-3">
-          {a.cliente && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></span>}
+      <div>
+        <Link href={`/tarefas/${a.id}`}>{a.titulo}</Link>
+        <p>
+          {a.cliente && <span><span style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></span>}
           <span>{ROTULO_FORMATO[a.formato]}</span>
           {a.alvos.length > 0 && <span>{a.alvos.map((x) => ROTULO_ALVO[x]).join(' + ')}</span>}
-          <span className={`font-semibold ${cor}`}>{situacao}</span>
+          <span>{situacao}</span>
         </p>
-        {a.status === 'falhou' && a.erro && <p className="truncate text-legenda text-perigo-forte" title={a.erro}>{a.erro}</p>}
+        {a.status === 'falhou' && a.erro && <p title={a.erro}>{a.erro}</p>}
         {a.status === 'publicado' && (
-          <p className="mt-0.5 flex flex-wrap items-center gap-2">
-            {m ? <MetricasMini m={m} /> : a.igMediaId && <span className="text-legenda text-texto-3">sem métricas do Instagram</span>}
+          <p>
+            {m ? <MetricasMini m={m} /> : a.igMediaId && <span>sem métricas do Instagram</span>}
             {nota && <SeloNota nota={nota} />}
-            {a.igMediaId && <Link href={x.insight(a.id)} scroll={false} className="inline-flex items-center gap-1 text-legenda font-semibold text-[#6250d6] hover:underline"><BarChart3 className="h-3 w-3" /> Insights</Link>}
+            {a.igMediaId && <Link href={x.insight(a.id)} scroll={false}><BarChart3 /> Insights</Link>}
           </p>
         )}
       </div>
       {(a.igLink || a.fbLink) && (
-        <div className="flex shrink-0 flex-col items-end gap-0.5 text-legenda">
-          {a.igLink && <a href={a.igLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Instagram <ExternalLink className="h-3 w-3" /></a>}
-          {a.fbLink && <a href={a.fbLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-marca hover:underline">Facebook <ExternalLink className="h-3 w-3" /></a>}
+        <div>
+          {a.igLink && <a href={a.igLink} target="_blank" rel="noreferrer">Instagram <ExternalLink /></a>}
+          {a.fbLink && <a href={a.fbLink} target="_blank" rel="noreferrer">Facebook <ExternalLink /></a>}
         </div>
       )}
       <AcoesAgendamento id={a.id} em={a.em} alvos={a.alvos} modo={a.modo} status={a.status} hoje={hoje} />
@@ -76,45 +75,45 @@ function Linha({ a, agora, soHora, hoje, x }: { a: Agendamento; agora: Date; soH
 }
 
 const Lista = ({ itens, agora, soHora, hoje, x }: { itens: Agendamento[]; agora: Date; soHora?: boolean; hoje: string; x: Extras }) => (
-  <ul className="divide-y divide-borda rounded-lg border border-borda">{itens.map((a) => <Linha key={a.id} a={a} agora={agora} soHora={soHora} hoje={hoje} x={x} />)}</ul>
+  <ul>{itens.map((a) => <Linha key={a.id} a={a} agora={agora} soHora={soHora} hoje={hoje} x={x} />)}</ul>
 )
 
 /** Kanban: uma coluna por etapa (atenção, com o cliente, agendado, publicado). */
 function Kanban({ colunas, agora, x }: { colunas: { titulo: string; cor: string; itens: Agendamento[] }[]; agora: Date; x: Extras }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div>
       {colunas.map((c) => (
-        <section key={c.titulo} className="flex min-w-0 flex-col rounded-lg border border-borda bg-fundo/50">
-          <h2 className="flex items-center gap-2 border-b border-borda px-3 py-2 text-rotulo font-semibold text-texto">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.cor }} aria-hidden /> {c.titulo}
-            <span className="ml-auto rounded-md bg-white px-1.5 text-micro font-semibold text-texto-2">{c.itens.length}</span>
+        <section key={c.titulo}>
+          <h2>
+            <span style={{ background: c.cor }} aria-hidden /> {c.titulo}
+            <span>{c.itens.length}</span>
           </h2>
-          <ul className="space-y-2 p-2">
-            {c.itens.length === 0 && <li className="py-4 text-center text-legenda text-texto-3">Nada aqui.</li>}
+          <ul>
+            {c.itens.length === 0 && <li>Nada aqui.</li>}
             {c.itens.map((a) => {
               const m = a.igMediaId ? x.metricas.get(a.igMediaId) : undefined
               const nota = x.notas.get(a.id)
               const quando = a.status === 'publicado' ? a.publicadoEm ?? a.em : a.em
               return (
-                <li key={a.id} className={`overflow-hidden rounded-lg border-l-4 bg-white shadow-sm ${corDoItem(a)}`}>
-                  <Link href={`/tarefas/${a.id}`} className="flex gap-2 p-2 hover:bg-hover/50">
-                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-fundo">
-                      {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted className="h-full w-full object-cover" /><Video className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-claro drop-shadow" /></> : (
+                <li key={a.id}>
+                  <Link href={`/tarefas/${a.id}`}>
+                    <span>
+                      {a.capa && (a.capa.tipo === 'video' ? <><video src={a.capa.url} muted /><Video /></> : (
                         // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-                        <img loading="lazy" decoding="async" src={a.capa.url} alt="" className="h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={a.capa.url} alt="" />
                       ))}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="line-clamp-2 text-rotulo font-semibold text-texto">{a.titulo}</span>
-                      <span className="block text-micro text-texto-3">{ROTULO_FORMATO[a.formato]}{quando ? ` · ${diaHora.format(new Date(quando))}` : ''}</span>
-                      <span className="block text-micro font-semibold text-texto-2">{situacaoPublicacao({ status: a.status, em: a.em, modo: a.modo, aprovacao: a.aprovacao }, agora)}</span>
+                    <span>
+                      <span>{a.titulo}</span>
+                      <span>{ROTULO_FORMATO[a.formato]}{quando ? ` · ${diaHora.format(new Date(quando))}` : ''}</span>
+                      <span>{situacaoPublicacao({ status: a.status, em: a.em, modo: a.modo, aprovacao: a.aprovacao }, agora)}</span>
                     </span>
                   </Link>
                   {(a.cliente || m || nota) && (
-                    <div className="space-y-1 border-t border-borda/60 px-2 py-1.5">
-                      {a.cliente && <p className="flex items-center gap-1 text-legenda"><span className="h-2 w-2 rounded-full" style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></p>}
-                      {(m || nota) && <div className="flex flex-wrap items-center gap-1.5">{m && <MetricasMini m={m} />}{nota && <SeloNota nota={nota} />}</div>}
-                      {a.igMediaId && <Link href={x.insight(a.id)} scroll={false} className="inline-flex items-center gap-1 text-legenda font-semibold text-[#6250d6] hover:underline"><BarChart3 className="h-3 w-3" /> Insights</Link>}
+                    <div>
+                      {a.cliente && <p><span style={{ background: a.cliente.cor }} /><NomeCliente nome={a.cliente.nome} href={`/clientes/${a.cliente.id}`} /></p>}
+                      {(m || nota) && <div>{m && <MetricasMini m={m} />}{nota && <SeloNota nota={nota} />}</div>}
+                      {a.igMediaId && <Link href={x.insight(a.id)} scroll={false}><BarChart3 /> Insights</Link>}
                     </div>
                   )}
                 </li>
@@ -143,32 +142,32 @@ function Calendario({ itens, mes, hoje, href }: { itens: Agendamento[]; mes: str
   const nomeMes = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${mes}-01T00:00:00Z`))
   return (
     <Modulo icone={CalendarDays} titulo={nomeMes.replace(/^./, (c) => c.toUpperCase())} descricao="Borda verde: publicado · amarela: esperando o cliente · azul: agendado · vermelha: atenção" acoes={
-      <nav className="flex items-center gap-1">
-        <Link href={href(mesVizinho(mes, -1))} aria-label="Mês anterior" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></Link>
-        <Link href={href(hoje.slice(0, 7))} className="rounded-lg border border-borda px-2 py-0.5 text-rotulo font-semibold text-texto-2 hover:bg-hover">Hoje</Link>
-        <Link href={href(mesVizinho(mes, 1))} aria-label="Próximo mês" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
+      <nav>
+        <Link href={href(mesVizinho(mes, -1))} aria-label="Mês anterior"><ChevronLeft /></Link>
+        <Link href={href(hoje.slice(0, 7))}>Hoje</Link>
+        <Link href={href(mesVizinho(mes, 1))} aria-label="Próximo mês"><ChevronRight /></Link>
       </nav>
     }>
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-borda bg-borda">
-        {SEMANA.map((d) => <div key={d} className="bg-fundo px-1 py-1 text-center text-micro font-semibold text-texto-3">{d}</div>)}
+      <div>
+        {SEMANA.map((d) => <div key={d}>{d}</div>)}
         {dias.map((dia) => {
           const lista = porDia.get(dia) ?? []
           const fora = !dia.startsWith(mes)
           return (
-            <div key={dia} className={`min-h-24 min-w-0 p-1 md:min-h-32 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-              <span className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2'}`}>{Number(dia.slice(8))}</span>
-              <ul className="space-y-0.5">
+            <div key={dia}>
+              <span>{Number(dia.slice(8))}</span>
+              <ul>
                 {lista.slice(0, 4).map((a) => (
                   <li key={a.id}>
-                    <Link href={`/tarefas/${a.id}`} title={`${a.titulo}${a.cliente ? ` · ${a.cliente.nome}` : ''}`} className={`flex items-center gap-1 rounded border-l-2 bg-fundo px-1 py-0.5 text-micro hover:bg-hover ${corDoItem(a)}`}>
-                      {a.cliente && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: a.cliente.cor }} />}
-                      {a.em && <span className="tabular-nums text-texto-3">{hora.format(new Date(a.status === 'publicado' ? a.publicadoEm ?? a.em : a.em))}</span>}
-                      <span className="truncate text-texto">{a.titulo}</span>
+                    <Link href={`/tarefas/${a.id}`} title={`${a.titulo}${a.cliente ? ` · ${a.cliente.nome}` : ''}`}>
+                      {a.cliente && <span style={{ background: a.cliente.cor }} />}
+                      {a.em && <span>{hora.format(new Date(a.status === 'publicado' ? a.publicadoEm ?? a.em : a.em))}</span>}
+                      <span>{a.titulo}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
-              {lista.length > 4 && <p className="mt-0.5 text-micro font-semibold text-texto-3">+{lista.length - 4} mais</p>}
+              {lista.length > 4 && <p>+{lista.length - 4} mais</p>}
             </div>
           )
         })}
@@ -188,7 +187,7 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
     listarClientes(sb),
   ])
   const maes = await tarefasMaeDeConteudo(sb).catch(() => [])
-  if (!todos) return <div className="page-shell"><EstadoVazio icone={CalendarClock} titulo="Agendamentos ainda não ativados" descricao="Falta rodar a migration de publicação no banco." /></div>
+  if (!todos) return <div><EstadoVazio icone={CalendarClock} titulo="Agendamentos ainda não ativados" descricao="Falta rodar a migration de publicação no banco." /></div>
 
   const agora = new Date()
   const hoje = dataDeHoje(agora)
@@ -228,26 +227,26 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
   const chip = (ativo: boolean) => `rounded-md px-3 py-1 text-rotulo font-medium ${ativo ? 'bg-petroleo text-claro' : 'border border-borda bg-white text-texto-2 hover:bg-hover'}`
 
   return (
-    <div className="page-shell">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div>
         <div>
-          <p className="eyebrow">Conteúdo</p>
-          <h1 className="page-title mt-1">Posts</h1>
+          <p>Conteúdo</p>
+          <h1>Posts</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <nav className="flex gap-0.5 rounded-lg bg-fundo p-0.5" aria-label="Visão">
-            <Link href={url({ visao: 'lista' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'lista' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><List className="h-3.5 w-3.5" /> Lista</Link>
-            <Link href={url({ visao: 'kanban' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'kanban' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><Columns3 className="h-3.5 w-3.5" /> Kanban</Link>
-            <Link href={url({ visao: 'calendario' })} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-rotulo font-semibold ${visao === 'calendario' ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}><CalendarDays className="h-3.5 w-3.5" /> Calendário</Link>
+        <div>
+          <nav aria-label="Visão">
+            <Link href={url({ visao: 'lista' })}><List /> Lista</Link>
+            <Link href={url({ visao: 'kanban' })}><Columns3 /> Kanban</Link>
+            <Link href={url({ visao: 'calendario' })}><CalendarDays /> Calendário</Link>
           </nav>
           {listaConteudo[0] && <NovoPostDialog listaId={listaConteudo[0].id} maes={maes} clientes={todosClientes.filter((c) => !c.interno && c.status !== 'encerrado').map((c) => ({ id: c.id, nome: c.nome }))} />}
         </div>
       </div>
-      <p className="text-rotulo text-texto-3">{proximos.length} para sair · {esperandoCliente.length} com o cliente · {atencao.length} pedindo atenção</p>
+      <p>{proximos.length} para sair · {esperandoCliente.length} com o cliente · {atencao.length} pedindo atenção</p>
       {clientes.length > 1 && (
-        <nav className="flex flex-wrap gap-1.5" aria-label="Filtrar por cliente">
-          <Link href={url({ cliente: null })} className={chip(!filtro)}>Todos</Link>
-          {clientes.map((c) => <Link key={c.id} href={url({ cliente: c.id })} className={chip(filtro === c.id)}>{c.nome}</Link>)}
+        <nav aria-label="Filtrar por cliente">
+          <Link href={url({ cliente: null })}>Todos</Link>
+          {clientes.map((c) => <Link key={c.id} href={url({ cliente: c.id })}>{c.nome}</Link>)}
         </nav>
       )}
 
@@ -267,19 +266,19 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
           ]}
         />
       ) : (
-        <div className="grid items-start gap-5 xl:grid-cols-2">
-          <div className="space-y-5">
+        <div>
+          <div>
             {atencao.length > 0 && (
               <Modulo icone={AlertTriangle} titulo="Pedindo atenção" descricao="Falhou ao publicar ou o cliente pediu ajuste" perigo>
                 <Lista itens={atencao} agora={agora} hoje={hoje} x={x} />
               </Modulo>
             )}
             <Modulo icone={Clock} titulo="Próximos" descricao="Prontos para sair (aprovados ou sem aprovação), na ordem">
-              {proximos.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nada na fila agora.</p> : (
-                <div className="space-y-3">
+              {proximos.length === 0 ? <p>Nada na fila agora.</p> : (
+                <div>
                   {[...porDia.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dia, lista]) => (
-                    <div key={dia} className="space-y-1.5">
-                      <p className="text-legenda font-semibold capitalize text-texto-2">{dia < hoje ? 'Atrasados (saem na próxima rodada)' : rotuloDia(dia, hoje)}</p>
+                    <div key={dia}>
+                      <p>{dia < hoje ? 'Atrasados (saem na próxima rodada)' : rotuloDia(dia, hoje)}</p>
                       <Lista itens={lista} agora={agora} soHora={dia >= hoje} hoje={hoje} x={x} />
                     </div>
                   ))}
@@ -287,19 +286,19 @@ export default async function Agendamentos({ searchParams }: PageProps<'/agendam
               )}
             </Modulo>
           </div>
-          <div className="space-y-5">
+          <div>
             <Modulo icone={Hourglass} titulo="Aguardando o cliente" descricao="Enviados para aprovação no portal; publicam no horário depois do sim">
-              {esperandoCliente.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nenhum post esperando o cliente.</p> : <Lista itens={esperandoCliente} agora={agora} hoje={hoje} x={x} />}
+              {esperandoCliente.length === 0 ? <p>Nenhum post esperando o cliente.</p> : <Lista itens={esperandoCliente} agora={agora} hoje={hoje} x={x} />}
             </Modulo>
             <Modulo icone={CheckCircle2} titulo="Publicados" descricao="Os 30 mais recentes">
-              {publicados.length === 0 ? <p className="py-6 text-center text-rotulo text-texto-3">Nada publicado pela plataforma ainda.</p> : <Lista itens={publicados} agora={agora} hoje={hoje} x={x} />}
+              {publicados.length === 0 ? <p>Nada publicado pela plataforma ainda.</p> : <Lista itens={publicados} agora={agora} hoje={hoje} x={x} />}
             </Modulo>
           </div>
         </div>
       )}
       {postAberto && (
-        <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-xl overflow-y-auto border-l border-borda bg-white p-4 shadow-2xl sm:p-5" aria-label="Insight do post">
-          <Suspense key={postAberto} fallback={<p className="py-10 text-center text-rotulo text-texto-3">Buscando as métricas no Instagram…</p>}>
+        <aside aria-label="Insight do post">
+          <Suspense key={postAberto} fallback={<p>Buscando as métricas no Instagram…</p>}>
             <PainelInsight id={postAberto} fechar={url({ post: null })} />
           </Suspense>
         </aside>

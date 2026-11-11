@@ -11,10 +11,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { enviarImagemAcao, excluirPostAcao, gerarRascunhoAcao, publicacaoAcao, revisaoAcao, salvarPostAcao, validarAcao } from '@/app/(app)/editor-blog/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { ESTILO_TOM, SeloTom } from '@/componentes/insights/tom'
+import { SeloTom } from '@/componentes/insights/tom'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { CAMPOS_BRIEFING, bloqueiosDePublicacao, checklistSeo, contarPalavras, lerMetadados, limparBriefing, slugify, type Briefing, type CampoBriefing } from '@/dominio/blog'
-import { botaoFantasma, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { Autor, Categoria, Desempenho, PostEquipe } from '@/servicos/blog'
 import type { Verificacao } from '@/servicos/blog-validacao'
 
@@ -47,7 +46,7 @@ async function enviar(arquivo: File): Promise<string | null> {
 }
 
 function BotaoBarra({ ativo, aoClicar, titulo, children }: { ativo?: boolean; aoClicar: () => void; titulo: string; children: React.ReactNode }) {
-  return <button type="button" title={titulo} aria-label={titulo} onClick={aoClicar} className={`rounded p-1.5 ${ativo ? 'bg-petroleo-100 text-petroleo' : 'text-texto-2 hover:bg-hover'}`}>{children}</button>
+  return <button type="button" title={titulo} aria-label={titulo} onClick={aoClicar}>{children}</button>
 }
 
 function Barra({ editor, aoImagem }: { editor: Editor; aoImagem: () => void }) {
@@ -59,19 +58,19 @@ function Barra({ editor, aoImagem }: { editor: Editor; aoImagem: () => void }) {
     else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border-b border-borda bg-white px-2 py-1">
-      <BotaoBarra titulo="Subtítulo (H2)" ativo={editor.isActive('heading', { level: 2 })} aoClicar={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Subtítulo menor (H3)" ativo={editor.isActive('heading', { level: 3 })} aoClicar={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Negrito" ativo={editor.isActive('bold')} aoClicar={() => editor.chain().focus().toggleBold().run()}><Bold className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Itálico" ativo={editor.isActive('italic')} aoClicar={() => editor.chain().focus().toggleItalic().run()}><Italic className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Lista" ativo={editor.isActive('bulletList')} aoClicar={() => editor.chain().focus().toggleBulletList().run()}><List className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Lista numerada" ativo={editor.isActive('orderedList')} aoClicar={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Citação" ativo={editor.isActive('blockquote')} aoClicar={() => editor.chain().focus().toggleBlockquote().run()}><Quote className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Link" ativo={editor.isActive('link')} aoClicar={link}><IconeLink className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Imagem" aoClicar={aoImagem}><ImagePlus className="h-4 w-4" /></BotaoBarra>
-      <span className="mx-1 h-5 w-px bg-borda" />
-      <BotaoBarra titulo="Desfazer" aoClicar={() => editor.chain().focus().undo().run()}><Undo2 className="h-4 w-4" /></BotaoBarra>
-      <BotaoBarra titulo="Refazer" aoClicar={() => editor.chain().focus().redo().run()}><Redo2 className="h-4 w-4" /></BotaoBarra>
+    <div>
+      <BotaoBarra titulo="Subtítulo (H2)" ativo={editor.isActive('heading', { level: 2 })} aoClicar={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></BotaoBarra>
+      <BotaoBarra titulo="Subtítulo menor (H3)" ativo={editor.isActive('heading', { level: 3 })} aoClicar={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 /></BotaoBarra>
+      <BotaoBarra titulo="Negrito" ativo={editor.isActive('bold')} aoClicar={() => editor.chain().focus().toggleBold().run()}><Bold /></BotaoBarra>
+      <BotaoBarra titulo="Itálico" ativo={editor.isActive('italic')} aoClicar={() => editor.chain().focus().toggleItalic().run()}><Italic /></BotaoBarra>
+      <BotaoBarra titulo="Lista" ativo={editor.isActive('bulletList')} aoClicar={() => editor.chain().focus().toggleBulletList().run()}><List /></BotaoBarra>
+      <BotaoBarra titulo="Lista numerada" ativo={editor.isActive('orderedList')} aoClicar={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></BotaoBarra>
+      <BotaoBarra titulo="Citação" ativo={editor.isActive('blockquote')} aoClicar={() => editor.chain().focus().toggleBlockquote().run()}><Quote /></BotaoBarra>
+      <BotaoBarra titulo="Link" ativo={editor.isActive('link')} aoClicar={link}><IconeLink /></BotaoBarra>
+      <BotaoBarra titulo="Imagem" aoClicar={aoImagem}><ImagePlus /></BotaoBarra>
+      <span />
+      <BotaoBarra titulo="Desfazer" aoClicar={() => editor.chain().focus().undo().run()}><Undo2 /></BotaoBarra>
+      <BotaoBarra titulo="Refazer" aoClicar={() => editor.chain().focus().redo().run()}><Redo2 /></BotaoBarra>
     </div>
   )
 }
@@ -102,19 +101,19 @@ function inicial(post: PostEquipe | null, categorias: Categoria[], autores: Auto
 function CampoDoBriefing({ c, valor, aoMudar }: { c: CampoBriefing; valor: string | string[] | undefined; aoMudar: (v: string | string[]) => void }) {
   const texto = Array.isArray(valor) ? valor.join('\n') : (valor ?? '')
   return (
-    <label className="block space-y-1">
-      <span className={rotulo}>{c.rotulo}</span>
+    <label>
+      <span>{c.rotulo}</span>
       {c.tipo === 'opcao' ? (
-        <select className={campo} value={texto} onChange={(e) => aoMudar(e.target.value)}>
+        <select value={texto} onChange={(e) => aoMudar(e.target.value)}>
           <option value="">—</option>
           {c.opcoes!.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : c.tipo === 'texto' ? (
-        <input className={campo} value={texto} onChange={(e) => aoMudar(e.target.value)} maxLength={2000} />
+        <input value={texto} onChange={(e) => aoMudar(e.target.value)} maxLength={2000} />
       ) : (
-        <textarea className={campo} rows={3} value={texto} onChange={(e) => aoMudar(c.tipo === 'lista' ? e.target.value.split('\n') : e.target.value)} placeholder={c.tipo === 'lista' ? 'Um item por linha' : undefined} />
+        <textarea rows={3} value={texto} onChange={(e) => aoMudar(c.tipo === 'lista' ? e.target.value.split('\n') : e.target.value)} placeholder={c.tipo === 'lista' ? 'Um item por linha' : undefined} />
       )}
-      {c.ajuda && <span className="block text-legenda text-texto-3">{c.ajuda}</span>}
+      {c.ajuda && <span>{c.ajuda}</span>}
     </label>
   )
 }
@@ -154,7 +153,7 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
     content: post?.conteudo ?? '',
     contentType: 'markdown',
     immediatelyRender: false,
-    editorProps: { attributes: { class: 'artigo-blog min-h-[60vh] px-6 py-5 outline-none' } },
+    editorProps: { attributes: { class: 'artigo-blog' } },
     onUpdate: ({ editor: e }) => {
       setConteudo(e.getMarkdown())
       setSujo(true)
@@ -350,180 +349,180 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
   const copiar = (t: string) => void navigator.clipboard.writeText(t).then(() => avisar({ ok: 'Copiado.' }, true))
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="min-w-0 space-y-3">
+    <div>
+      <div>
         {ia.aberto && (
-          <section className="space-y-3 rounded-xl border border-[#6250d6]/30 bg-[#6250d6]/5 p-4">
-            <h2 className="flex items-center gap-2 text-corpo font-semibold text-texto"><Sparkles className="h-4 w-4 text-[#6250d6]" /> Escrever com IA</h2>
-            {!iaPronta && <p className="text-rotulo text-aviso-forte">A IA da plataforma não está configurada (IA_API_KEY na Vercel).</p>}
-            <p className="text-legenda text-texto-3">A IA usa o contexto da marca, o tema, a palavra-chave, o público e tudo o que estiver na aba <strong>Briefing</strong>. Quanto mais completo o briefing (problema, tese, exemplos reais), melhor o texto.</p>
-            <div className="grid gap-2 md:grid-cols-2">
-              <label className="space-y-1 md:col-span-2"><span className={rotulo}>Tema do artigo</span><input className={campo} value={f.tema} onChange={(e) => muda('tema', e.target.value)} placeholder="Ex.: por que os leads somem depois do primeiro contato" maxLength={300} /></label>
-              <label className="space-y-1"><span className={rotulo}>Palavra-chave foco</span><input className={campo} value={f.palavraChave} onChange={(e) => muda('palavraChave', e.target.value)} maxLength={80} /></label>
-              <label className="space-y-1"><span className={rotulo}>Para quem é o artigo</span><input className={campo} value={f.publico} onChange={(e) => muda('publico', e.target.value)} maxLength={200} /></label>
+          <section>
+            <h2><Sparkles /> Escrever com IA</h2>
+            {!iaPronta && <p>A IA da plataforma não está configurada (IA_API_KEY na Vercel).</p>}
+            <p>A IA usa o contexto da marca, o tema, a palavra-chave, o público e tudo o que estiver na aba <strong>Briefing</strong>. Quanto mais completo o briefing (problema, tese, exemplos reais), melhor o texto.</p>
+            <div>
+              <label><span>Tema do artigo</span><input value={f.tema} onChange={(e) => muda('tema', e.target.value)} placeholder="Ex.: por que os leads somem depois do primeiro contato" maxLength={300} /></label>
+              <label><span>Palavra-chave foco</span><input value={f.palavraChave} onChange={(e) => muda('palavraChave', e.target.value)} maxLength={80} /></label>
+              <label><span>Para quem é o artigo</span><input value={f.publico} onChange={(e) => muda('publico', e.target.value)} maxLength={200} /></label>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={gerar} disabled={gerando || !iaPronta} className={botaoPrimario}><Sparkles className="h-3.5 w-3.5" /> {gerando ? 'Escrevendo… (até 2 minutos)' : 'Gerar rascunho'}</button>
-              <button type="button" onClick={() => setIa({ aberto: false })} className={botaoFantasma}>Fechar</button>
+            <div>
+              <button type="button" onClick={gerar} disabled={gerando || !iaPronta}><Sparkles /> {gerando ? 'Escrevendo… (até 2 minutos)' : 'Gerar rascunho'}</button>
+              <button type="button" onClick={() => setIa({ aberto: false })}>Fechar</button>
             </div>
           </section>
         )}
 
         {colar.aberto && (
-          <section className="space-y-3 rounded-xl border border-[#2a78d6]/30 bg-[#2a78d6]/5 p-4">
-            <h2 className="flex items-center gap-2 text-corpo font-semibold text-texto"><ClipboardPaste className="h-4 w-4 text-[#2a78d6]" /> Colar artigo e metadados</h2>
-            <p className="text-legenda text-texto-3">Cole o que outra IA entregou: linhas (<code>Meta title: …</code>, <code>Público-alvo: …</code>), o <strong>YAML do modelo mestre</strong> (briefing, search_strategy, editorial, cms, seo, cover, social) ou JSON. Briefing, SEO, CTA, capa e social são preenchidos de uma vez.</p>
-            <div className="grid gap-2 md:grid-cols-2">
-              <label className="space-y-1"><span className={rotulo}>Metadados</span><textarea className={`${campo} font-mono text-legenda`} rows={12} value={colar.metadados} onChange={(e) => setColar({ ...colar, metadados: e.target.value })} placeholder={'seo:\n  seo_title: …\n  meta_description: …\nbriefing:\n  target_audience: …'} /></label>
-              <label className="space-y-1"><span className={rotulo}>Texto do artigo em Markdown (opcional)</span><textarea className={`${campo} font-mono text-legenda`} rows={12} value={colar.artigo} onChange={(e) => setColar({ ...colar, artigo: e.target.value })} placeholder={'# Título\n\nResposta direta…\n\n## Primeiro subtítulo\n…'} /></label>
+          <section>
+            <h2><ClipboardPaste /> Colar artigo e metadados</h2>
+            <p>Cole o que outra IA entregou: linhas (<code>Meta title: …</code>, <code>Público-alvo: …</code>), o <strong>YAML do modelo mestre</strong> (briefing, search_strategy, editorial, cms, seo, cover, social) ou JSON. Briefing, SEO, CTA, capa e social são preenchidos de uma vez.</p>
+            <div>
+              <label><span>Metadados</span><textarea rows={12} value={colar.metadados} onChange={(e) => setColar({ ...colar, metadados: e.target.value })} placeholder={'seo:\n  seo_title: …\n  meta_description: …\nbriefing:\n  target_audience: …'} /></label>
+              <label><span>Texto do artigo em Markdown (opcional)</span><textarea rows={12} value={colar.artigo} onChange={(e) => setColar({ ...colar, artigo: e.target.value })} placeholder={'# Título\n\nResposta direta…\n\n## Primeiro subtítulo\n…'} /></label>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => void aplicarColados()} disabled={!colar.metadados.trim() && !colar.artigo.trim()} className={botaoPrimario}><ClipboardPaste className="h-3.5 w-3.5" /> Preencher os campos</button>
-              <button type="button" onClick={() => setColar({ ...colar, aberto: false })} className={botaoFantasma}>Fechar</button>
+            <div>
+              <button type="button" onClick={() => void aplicarColados()} disabled={!colar.metadados.trim() && !colar.artigo.trim()}><ClipboardPaste /> Preencher os campos</button>
+              <button type="button" onClick={() => setColar({ ...colar, aberto: false })}>Fechar</button>
             </div>
           </section>
         )}
 
-        <input value={f.titulo} onChange={(e) => mudarTitulo(e.target.value)} placeholder="Título do artigo (H1)" maxLength={160} className="w-full bg-transparent text-2xl font-bold text-texto outline-none placeholder:text-texto-3" />
-        <input value={f.subtitulo} onChange={(e) => muda('subtitulo', e.target.value)} placeholder="Subtítulo (opcional, aparece abaixo do título)" maxLength={200} className="w-full bg-transparent text-corpo text-texto-2 outline-none placeholder:text-texto-3" />
-        <div className="flex flex-wrap items-center gap-2 text-legenda text-texto-3">
+        <input value={f.titulo} onChange={(e) => mudarTitulo(e.target.value)} placeholder="Título do artigo (H1)" maxLength={160} />
+        <input value={f.subtitulo} onChange={(e) => muda('subtitulo', e.target.value)} placeholder="Subtítulo (opcional, aparece abaixo do título)" maxLength={200} />
+        <div>
           <span>www.gruposrv.com.br/blog/</span>
-          <input value={f.slug} onChange={(e) => { muda('slug', slugify(e.target.value)); setSlugManual(true) }} className="min-w-48 flex-1 rounded border border-borda bg-white px-2 py-1 font-mono text-legenda text-texto" />
-          {!ia.aberto && <button type="button" onClick={() => setIa({ aberto: true })} className="inline-flex items-center gap-1 font-semibold text-[#6250d6] hover:underline"><Sparkles className="h-3 w-3" /> Escrever com IA</button>}
-          {!colar.aberto && <button type="button" onClick={() => setColar({ ...colar, aberto: true })} className="inline-flex items-center gap-1 font-semibold text-[#2a78d6] hover:underline"><ClipboardPaste className="h-3 w-3" /> Colar metadados</button>}
+          <input value={f.slug} onChange={(e) => { muda('slug', slugify(e.target.value)); setSlugManual(true) }} />
+          {!ia.aberto && <button type="button" onClick={() => setIa({ aberto: true })}><Sparkles /> Escrever com IA</button>}
+          {!colar.aberto && <button type="button" onClick={() => setColar({ ...colar, aberto: true })}><ClipboardPaste /> Colar metadados</button>}
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-borda bg-white px-3 py-2">
-          <span className="w-40 shrink-0 text-rotulo font-semibold text-texto">Tema</span>
-          <input value={f.tema} onChange={(e) => muda('tema', e.target.value)} maxLength={300} placeholder="Ex.: quanto investir em tráfego pago no primeiro mês" className="min-w-0 flex-1 bg-transparent text-rotulo text-texto outline-none placeholder:text-texto-3" />
+        <label>
+          <span>Tema</span>
+          <input value={f.tema} onChange={(e) => muda('tema', e.target.value)} maxLength={300} placeholder="Ex.: quanto investir em tráfego pago no primeiro mês" />
         </label>
-        <label className="flex items-center gap-2 rounded-lg border border-borda bg-white px-3 py-2">
-          <span className="w-40 shrink-0 text-rotulo font-semibold text-texto">Para quem é este artigo</span>
-          <input value={f.publico} onChange={(e) => muda('publico', e.target.value)} maxLength={200} placeholder="Ex.: donos de clínicas e lojas que querem mais clientes pelo Instagram" className="min-w-0 flex-1 bg-transparent text-rotulo text-texto outline-none placeholder:text-texto-3" />
+        <label>
+          <span>Para quem é este artigo</span>
+          <input value={f.publico} onChange={(e) => muda('publico', e.target.value)} maxLength={200} placeholder="Ex.: donos de clínicas e lojas que querem mais clientes pelo Instagram" />
         </label>
 
-        <div className="overflow-hidden rounded-xl border border-borda bg-white">
+        <div>
           {editor && <Barra editor={editor} aoImagem={() => entradaImagem.current?.click()} />}
           <EditorContent editor={editor} />
-          <p className="border-t border-borda px-4 py-2 text-legenda text-texto-3">{contarPalavras(conteudo)} palavras · {Math.max(1, Math.round(contarPalavras(conteudo) / 200))} min de leitura</p>
+          <p>{contarPalavras(conteudo)} palavras · {Math.max(1, Math.round(contarPalavras(conteudo) / 200))} min de leitura</p>
         </div>
         <input ref={entradaImagem} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { void inserirImagem(e.target.files?.[0]); e.target.value = '' }} />
       </div>
 
-      <aside className="space-y-3 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto">
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-borda bg-white p-3">
-          <div className="flex flex-wrap items-center gap-2">
+      <aside>
+        <div>
+          <div>
             <SeloTom tom={situacao === 'Publicado' ? 'bom' : situacao === 'Rascunho' ? 'neutro' : 'atencao'} rotulo={situacao} />
             <SeloTom tom={tomNota} rotulo={`Qualidade ${seo.nota}`} />
           </div>
-          <button type="button" onClick={salvarClicando} disabled={pendente} className={botaoSecundario}><Save className="h-3.5 w-3.5" /> Salvar{sujo ? ' *' : ''}</button>
+          <button type="button" onClick={salvarClicando} disabled={pendente}><Save /> Salvar{sujo ? ' *' : ''}</button>
         </div>
-        <nav className="flex flex-wrap gap-1 rounded-lg bg-fundo p-1">
-          {ABAS.map((a) => <button key={a} type="button" onClick={() => setAba(a)} className={`rounded-md px-2.5 py-1 text-legenda font-semibold ${aba === a ? 'bg-white text-texto shadow-sm' : 'text-texto-2 hover:text-texto'}`}>{a}</button>)}
+        <nav>
+          {ABAS.map((a) => <button key={a} type="button" onClick={() => setAba(a)}>{a}</button>)}
         </nav>
 
         {aba === 'Publicar' && (
-          <div className="space-y-3">
-            <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-              <h2 className="flex items-center gap-1.5 text-corpo font-semibold"><ShieldCheck className="h-4 w-4 text-sucesso" /> Revisão humana</h2>
+          <div>
+            <section>
+              <h2><ShieldCheck /> Revisão humana</h2>
               {post?.revisadoEm ? (
-                <p className="text-rotulo text-sucesso-forte">Aprovado por {post.revisadoPor ?? 'alguém da equipe'} em {new Date(post.revisadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.</p>
+                <p>Aprovado por {post.revisadoPor ?? 'alguém da equipe'} em {new Date(post.revisadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.</p>
               ) : (
-                <p className="text-rotulo text-texto-2">Obrigatória para publicar: confira fatos, números, exemplos, links e o tom antes de aprovar.</p>
+                <p>Obrigatória para publicar: confira fatos, números, exemplos, links e o tom antes de aprovar.</p>
               )}
-              <div className="flex flex-wrap gap-2">
-                {situacao === 'Rascunho' && <button type="button" onClick={() => publicar('revisao')} disabled={pendente} className={botaoSecundario}>Enviar para revisão</button>}
-                {post?.revisadoEm ? <button type="button" onClick={() => revisar(false)} disabled={pendente} className={botaoFantasma}>Desfazer aprovação</button> : <button type="button" onClick={() => revisar(true)} disabled={pendente} className={botaoPrimario}><BadgeCheck className="h-3.5 w-3.5" /> Aprovar revisão</button>}
+              <div>
+                {situacao === 'Rascunho' && <button type="button" onClick={() => publicar('revisao')} disabled={pendente}>Enviar para revisão</button>}
+                {post?.revisadoEm ? <button type="button" onClick={() => revisar(false)} disabled={pendente}>Desfazer aprovação</button> : <button type="button" onClick={() => revisar(true)} disabled={pendente}><BadgeCheck /> Aprovar revisão</button>}
               </div>
             </section>
 
-            <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-              <h2 className="text-corpo font-semibold">Publicação</h2>
-              {post?.publicadoEmBruto && (situacao === 'Publicado' || situacao === 'Agendado') && <p className="text-legenda text-texto-3">{situacao === 'Agendado' ? 'Vai ao ar em' : 'No ar desde'} {new Date(post.publicadoEmBruto).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
+            <section>
+              <h2>Publicação</h2>
+              {post?.publicadoEmBruto && (situacao === 'Publicado' || situacao === 'Agendado') && <p>{situacao === 'Agendado' ? 'Vai ao ar em' : 'No ar desde'} {new Date(post.publicadoEmBruto).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
               {bloqueios.length > 0 && situacao !== 'Publicado' && (
-                <ul className={`space-y-1 rounded-lg border px-3 py-2 text-legenda ${ESTILO_TOM.ruim.fundo} ${ESTILO_TOM.ruim.borda} ${ESTILO_TOM.ruim.texto}`}>
-                  <li className="font-semibold">Falta para publicar:</li>
+                <ul>
+                  <li>Falta para publicar:</li>
                   {bloqueios.map((b) => <li key={b}>• {b}</li>)}
                 </ul>
               )}
-              <div className="flex flex-wrap gap-2">
+              <div>
                 {situacao === 'Publicado' || situacao === 'Agendado' ? (
-                  <button type="button" onClick={() => publicar(null)} disabled={pendente} className={botaoFantasma}>Tirar do ar</button>
+                  <button type="button" onClick={() => publicar(null)} disabled={pendente}>Tirar do ar</button>
                 ) : (
-                  <button type="button" onClick={() => publicar(new Date().toISOString())} disabled={pendente || bloqueios.length > 0} className={botaoPrimario}><Send className="h-3.5 w-3.5" /> Publicar agora</button>
+                  <button type="button" onClick={() => publicar(new Date().toISOString())} disabled={pendente || bloqueios.length > 0}><Send /> Publicar agora</button>
                 )}
               </div>
-              <div className="flex gap-2">
-                <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} className={`${campo} h-9 flex-1`} aria-label="Data e hora para publicar" />
-                <button type="button" disabled={!agendar || pendente || bloqueios.length > 0} onClick={() => publicar(new Date(agendar).toISOString())} className={botaoSecundario}><CalendarClock className="h-3.5 w-3.5" /> Agendar</button>
+              <div>
+                <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} aria-label="Data e hora para publicar" />
+                <button type="button" disabled={!agendar || pendente || bloqueios.length > 0} onClick={() => publicar(new Date(agendar).toISOString())}><CalendarClock /> Agendar</button>
               </div>
               {post && situacao === 'Publicado' && (
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link href={`/blog/${post.slug}`} target="_blank" className="inline-flex items-center gap-1 text-legenda font-semibold text-petroleo hover:underline">Ver no blog <ExternalLink className="h-3 w-3" /></Link>
-                  <button type="button" onClick={validar} disabled={pendente} className="text-legenda font-semibold text-petroleo hover:underline">Validar publicação</button>
+                <div>
+                  <Link href={`/blog/${post.slug}`} target="_blank">Ver no blog <ExternalLink /></Link>
+                  <button type="button" onClick={validar} disabled={pendente}>Validar publicação</button>
                 </div>
               )}
               {validacao && (
-                <ul className="space-y-1">
+                <ul>
                   {validacao.map((v) => (
-                    <li key={v.item} className="flex gap-1.5 text-legenda">
-                      <span className={v.situacao === 'aprovado' ? 'text-sucesso' : 'text-perigo'}>{v.situacao === 'aprovado' ? '✓' : '✗'}</span>
-                      <span className="text-texto">{v.item}{v.detalhe && <span className="block text-texto-3">{v.detalhe}</span>}</span>
+                    <li key={v.item}>
+                      <span>{v.situacao === 'aprovado' ? '✓' : '✗'}</span>
+                      <span>{v.item}{v.detalhe && <span>{v.detalhe}</span>}</span>
                     </li>
                   ))}
                 </ul>
               )}
-              <label className="block space-y-1"><span className={rotulo}>Motivo da última atualização (aparece no artigo)</span><input className={campo} value={f.notaAtualizacao} onChange={(e) => muda('notaAtualizacao', e.target.value)} maxLength={300} placeholder="Ex.: dados de custo por lead atualizados para 2026" /></label>
-              <label className="block space-y-1"><span className={rotulo}>Revisar o conteúdo de novo em</span><input type="date" className={campo} value={f.revisarEm} onChange={(e) => muda('revisarEm', e.target.value)} /></label>
-              <label className="block space-y-1"><span className={rotulo}>Aviso editorial (opcional, aparece no fim)</span><input className={campo} value={f.aviso} onChange={(e) => muda('aviso', e.target.value)} maxLength={300} placeholder="Ex.: produzido com apoio de IA e revisado por Fabrício Saraiva" /></label>
+              <label><span>Motivo da última atualização (aparece no artigo)</span><input value={f.notaAtualizacao} onChange={(e) => muda('notaAtualizacao', e.target.value)} maxLength={300} placeholder="Ex.: dados de custo por lead atualizados para 2026" /></label>
+              <label><span>Revisar o conteúdo de novo em</span><input type="date" value={f.revisarEm} onChange={(e) => muda('revisarEm', e.target.value)} /></label>
+              <label><span>Aviso editorial (opcional, aparece no fim)</span><input value={f.aviso} onChange={(e) => muda('aviso', e.target.value)} maxLength={300} placeholder="Ex.: produzido com apoio de IA e revisado por Fabrício Saraiva" /></label>
             </section>
 
             {id && (
-              <section className="space-y-2 rounded-xl border border-perigo-borda bg-perigo-fundo/20 p-4">
-                <h2 className="text-corpo font-semibold text-perigo-forte">Excluir artigo</h2>
-                <p className="text-legenda text-texto-2">{situacao === 'Publicado' || situacao === 'Agendado' ? 'Tire do ar antes de excluir: assim ninguém cai num link quebrado vindo do Google.' : 'Apaga o artigo de vez, com as métricas de leitura.'}</p>
-                <button type="button" onClick={() => void excluir()} disabled={pendente || situacao === 'Publicado' || situacao === 'Agendado'} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-perigo px-3 text-rotulo font-semibold text-claro hover:bg-perigo-forte disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Excluir artigo</button>
+              <section>
+                <h2>Excluir artigo</h2>
+                <p>{situacao === 'Publicado' || situacao === 'Agendado' ? 'Tire do ar antes de excluir: assim ninguém cai num link quebrado vindo do Google.' : 'Apaga o artigo de vez, com as métricas de leitura.'}</p>
+                <button type="button" onClick={() => void excluir()} disabled={pendente || situacao === 'Publicado' || situacao === 'Agendado'}><Trash2 /> Excluir artigo</button>
               </section>
             )}
 
             {desempenho && (
-              <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-                <h2 className="text-corpo font-semibold">Desempenho (90 dias)</h2>
-                <div className="grid grid-cols-3 gap-2 text-center">
+              <section>
+                <h2>Desempenho (90 dias)</h2>
+                <div>
                   {[['Visitas', String(desempenho.visitas)], ['Leram metade', pct(desempenho.rolagem['50'], desempenho.visitas)], ['Leram 90%', pct(desempenho.rolagem['90'], desempenho.visitas)], ['Leitura engajada', pct(desempenho.leituraEngajada, desempenho.visitas)], ['Cliques no CTA', String(desempenho.cliquesCta + desempenho.cliquesCta2)], ['Taxa do CTA', pct(desempenho.cliquesCta + desempenho.cliquesCta2, desempenho.visitas)]].map(([r, v]) => (
-                    <div key={r} className="rounded-lg bg-fundo p-2"><p className="text-micro text-texto-3">{r}</p><p className="text-corpo font-bold tabular-nums">{v}</p></div>
+                    <div key={r}><p>{r}</p><p>{v}</p></div>
                   ))}
                 </div>
-                {Object.keys(desempenho.origens).length > 0 && <p className="text-legenda text-texto-2">Origem: {Object.entries(desempenho.origens).sort((a, b) => b[1] - a[1]).map(([o, n]) => `${o} ${n}`).join(' · ')}</p>}
+                {Object.keys(desempenho.origens).length > 0 && <p>Origem: {Object.entries(desempenho.origens).sort((a, b) => b[1] - a[1]).map(([o, n]) => `${o} ${n}`).join(' · ')}</p>}
               </section>
             )}
           </div>
         )}
 
         {aba === 'SEO' && (
-          <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-            <div className="h-2 overflow-hidden rounded-full bg-fundo"><div className={`h-full ${tomNota === 'bom' ? 'bg-sucesso' : tomNota === 'atencao' ? 'bg-aviso' : 'bg-perigo'}`} style={{ width: `${seo.nota}%` }} /></div>
-            <label className="block space-y-1"><span className={rotulo}>Palavra-chave foco</span><input className={campo} value={f.palavraChave} onChange={(e) => muda('palavraChave', e.target.value)} maxLength={80} placeholder="O que a pessoa digita no Google" /></label>
-            {conflito && <p className={`rounded-lg border px-2 py-1 text-legenda ${ESTILO_TOM.atencao.fundo} ${ESTILO_TOM.atencao.borda} ${ESTILO_TOM.atencao.texto}`}>“{conflito.titulo}” já mira esta palavra-chave: escolha outra variação ou ligue os dois artigos.</p>}
-            <label className="block space-y-1"><span className={rotulo}>Palavras-chave secundárias ({listaSecundarias.length}/15)</span><textarea className={campo} rows={2} value={f.secundarias} onChange={(e) => muda('secundarias', e.target.value)} placeholder="Separe por vírgula" /></label>
-            <label className="block space-y-1"><span className={rotulo}>Título para o Google ({(f.seoTitulo || f.titulo).length}/60)</span><input className={campo} value={f.seoTitulo} onChange={(e) => muda('seoTitulo', e.target.value)} maxLength={80} placeholder={f.titulo || 'Se vazio, usa o título do artigo'} /></label>
-            <label className="block space-y-1"><span className={rotulo}>Descrição / resumo ({f.resumo.length}/160)</span><textarea className={campo} rows={3} value={f.resumo} onChange={(e) => muda('resumo', e.target.value)} maxLength={300} /></label>
-            <div className="rounded-lg border border-borda bg-fundo/40 p-3">
-              <p className="text-micro text-texto-3">Prévia no Google</p>
-              <p className="truncate text-legenda text-[#202124]">www.gruposrv.com.br › blog › {f.slug || slugify(f.titulo)}</p>
-              <p className="truncate text-[15px] text-[#1a0dab]">{f.seoTitulo || f.titulo || 'Título do artigo'} | Blog Grupo SRV</p>
-              <p className="line-clamp-2 text-legenda text-[#4d5156]">{f.resumo || 'A descrição aparece aqui.'}</p>
+          <section>
+            <div><div style={{ width: `${seo.nota}%` }} /></div>
+            <label><span>Palavra-chave foco</span><input value={f.palavraChave} onChange={(e) => muda('palavraChave', e.target.value)} maxLength={80} placeholder="O que a pessoa digita no Google" /></label>
+            {conflito && <p>“{conflito.titulo}” já mira esta palavra-chave: escolha outra variação ou ligue os dois artigos.</p>}
+            <label><span>Palavras-chave secundárias ({listaSecundarias.length}/15)</span><textarea rows={2} value={f.secundarias} onChange={(e) => muda('secundarias', e.target.value)} placeholder="Separe por vírgula" /></label>
+            <label><span>Título para o Google ({(f.seoTitulo || f.titulo).length}/60)</span><input value={f.seoTitulo} onChange={(e) => muda('seoTitulo', e.target.value)} maxLength={80} placeholder={f.titulo || 'Se vazio, usa o título do artigo'} /></label>
+            <label><span>Descrição / resumo ({f.resumo.length}/160)</span><textarea rows={3} value={f.resumo} onChange={(e) => muda('resumo', e.target.value)} maxLength={300} /></label>
+            <div>
+              <p>Prévia no Google</p>
+              <p>www.gruposrv.com.br › blog › {f.slug || slugify(f.titulo)}</p>
+              <p>{f.seoTitulo || f.titulo || 'Título do artigo'} | Blog Grupo SRV</p>
+              <p>{f.resumo || 'A descrição aparece aqui.'}</p>
             </div>
-            <label className="block space-y-1"><span className={rotulo}>Tags ({listaTags.length}; ideal 3 a 7)</span><input className={campo} value={f.tags} onChange={(e) => muda('tags', e.target.value)} placeholder="Separe por vírgula" /></label>
-            <label className="block space-y-1"><span className={rotulo}>Entidades (pessoas, marcas, conceitos citados)</span><textarea className={campo} rows={2} value={f.entidades} onChange={(e) => muda('entidades', e.target.value)} placeholder="Ex.: Máquina de Vendas, Fabrício Saraiva, CRM, Meta Ads" /></label>
-            <label className="block space-y-1"><span className={rotulo}>Título curto no caminho (breadcrumb)</span><input className={campo} value={f.breadcrumb} onChange={(e) => muda('breadcrumb', e.target.value)} maxLength={60} placeholder="Se vazio, usa o título" /></label>
-            <label className="block space-y-1"><span className={rotulo}>URL canônica (só se for diferente)</span><input className={campo} value={f.canonical} onChange={(e) => muda('canonical', e.target.value)} placeholder="https://www.gruposrv.com.br/blog/…" /></label>
-            <label className="flex items-start gap-2 text-rotulo"><input type="checkbox" checked={f.indexar} onChange={(e) => muda('indexar', e.target.checked)} className="mt-0.5" /> <span>Aparecer no Google (index, follow). Desmarque só com motivo.</span></label>
+            <label><span>Tags ({listaTags.length}; ideal 3 a 7)</span><input value={f.tags} onChange={(e) => muda('tags', e.target.value)} placeholder="Separe por vírgula" /></label>
+            <label><span>Entidades (pessoas, marcas, conceitos citados)</span><textarea rows={2} value={f.entidades} onChange={(e) => muda('entidades', e.target.value)} placeholder="Ex.: Máquina de Vendas, Fabrício Saraiva, CRM, Meta Ads" /></label>
+            <label><span>Título curto no caminho (breadcrumb)</span><input value={f.breadcrumb} onChange={(e) => muda('breadcrumb', e.target.value)} maxLength={60} placeholder="Se vazio, usa o título" /></label>
+            <label><span>URL canônica (só se for diferente)</span><input value={f.canonical} onChange={(e) => muda('canonical', e.target.value)} placeholder="https://www.gruposrv.com.br/blog/…" /></label>
+            <label><input type="checkbox" checked={f.indexar} onChange={(e) => muda('indexar', e.target.checked)} /> <span>Aparecer no Google (index, follow). Desmarque só com motivo.</span></label>
             {(['SEO', 'Conteúdo', 'Conversão', 'Publicação'] as const).map((g) => (
               <div key={g}>
-                <p className="mt-2 text-legenda font-semibold text-texto-2">{g}</p>
-                <ul className="space-y-1">
+                <p>{g}</p>
+                <ul>
                   {seo.itens.filter((i) => i.grupo === g).map((i) => (
-                    <li key={i.texto} className="flex gap-1.5 text-legenda"><span className={i.ok ? 'text-sucesso' : i.bloqueia ? 'text-perigo' : 'text-aviso-forte'}>{i.ok ? '✓' : i.bloqueia ? '✗' : '!'}</span><span className={i.ok ? 'text-texto-3' : 'text-texto'}>{i.texto}</span></li>
+                    <li key={i.texto}><span>{i.ok ? '✓' : i.bloqueia ? '✗' : '!'}</span><span>{i.texto}</span></li>
                   ))}
                 </ul>
               </div>
@@ -532,11 +531,11 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
         )}
 
         {aba === 'Briefing' && (
-          <section className="space-y-3 rounded-xl border border-borda bg-white p-4">
-            <p className="text-legenda text-texto-3">Estratégia do artigo (não aparece no site): orienta a IA e a revisão. A resposta direta deve abrir o texto.</p>
+          <section>
+            <p>Estratégia do artigo (não aparece no site): orienta a IA e a revisão. A resposta direta deve abrir o texto.</p>
             {(['Briefing', 'Busca'] as const).map((g) => (
-              <div key={g} className="space-y-2">
-                <p className="text-rotulo font-semibold text-texto">{g === 'Busca' ? 'Estratégia de busca' : 'Briefing editorial'}</p>
+              <div key={g}>
+                <p>{g === 'Busca' ? 'Estratégia de busca' : 'Briefing editorial'}</p>
                 {CAMPOS_BRIEFING.filter((c) => c.grupo === g).map((c) => <CampoDoBriefing key={c.chave} c={c} valor={f.briefing[c.chave]} aoMudar={(v) => mudaBriefing(c.chave, v)} />)}
               </div>
             ))}
@@ -544,37 +543,37 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
         )}
 
         {aba === 'CTA e social' && (
-          <div className="space-y-3">
-            <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-              <h2 className="text-corpo font-semibold">Chamada para ação</h2>
-              <label className="block space-y-1"><span className={rotulo}>Texto do CTA principal</span><input className={campo} value={f.ctaLabel} onChange={(e) => muda('ctaLabel', e.target.value)} maxLength={80} placeholder="Ex.: Faça o pré-diagnóstico" /></label>
-              <label className="block space-y-1"><span className={rotulo}>Destino (se vazio, Máquina de Vendas)</span><input className={campo} value={f.ctaUrl} onChange={(e) => muda('ctaUrl', e.target.value)} placeholder="/maquinadevendas" /></label>
-              <label className="block space-y-1"><span className={rotulo}>Por que o CTA faz sentido depois deste artigo</span><textarea className={campo} rows={2} value={f.ctaContexto} onChange={(e) => muda('ctaContexto', e.target.value)} maxLength={300} /></label>
-              <label className="block space-y-1"><span className={rotulo}>Onde aparece</span>
-                <select className={campo} value={f.ctaPosicao} onChange={(e) => muda('ctaPosicao', e.target.value as Formulario['ctaPosicao'])}><option value="ambos">No meio e no fim</option><option value="meio">Só no meio</option><option value="final">Só no fim</option></select>
+          <div>
+            <section>
+              <h2>Chamada para ação</h2>
+              <label><span>Texto do CTA principal</span><input value={f.ctaLabel} onChange={(e) => muda('ctaLabel', e.target.value)} maxLength={80} placeholder="Ex.: Faça o pré-diagnóstico" /></label>
+              <label><span>Destino (se vazio, Máquina de Vendas)</span><input value={f.ctaUrl} onChange={(e) => muda('ctaUrl', e.target.value)} placeholder="/maquinadevendas" /></label>
+              <label><span>Por que o CTA faz sentido depois deste artigo</span><textarea rows={2} value={f.ctaContexto} onChange={(e) => muda('ctaContexto', e.target.value)} maxLength={300} /></label>
+              <label><span>Onde aparece</span>
+                <select value={f.ctaPosicao} onChange={(e) => muda('ctaPosicao', e.target.value as Formulario['ctaPosicao'])}><option value="ambos">No meio e no fim</option><option value="meio">Só no meio</option><option value="final">Só no fim</option></select>
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block space-y-1"><span className={rotulo}>CTA secundário</span><input className={campo} value={f.cta2Label} onChange={(e) => muda('cta2Label', e.target.value)} maxLength={80} placeholder="Ex.: Leia o guia completo" /></label>
-                <label className="block space-y-1"><span className={rotulo}>Destino</span><input className={campo} value={f.cta2Url} onChange={(e) => muda('cta2Url', e.target.value)} placeholder="/blog/…" /></label>
+              <div>
+                <label><span>CTA secundário</span><input value={f.cta2Label} onChange={(e) => muda('cta2Label', e.target.value)} maxLength={80} placeholder="Ex.: Leia o guia completo" /></label>
+                <label><span>Destino</span><input value={f.cta2Url} onChange={(e) => muda('cta2Url', e.target.value)} placeholder="/blog/…" /></label>
               </div>
             </section>
-            <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-              <h2 className="text-corpo font-semibold">Leia também (2 a 4)</h2>
-              <p className="text-legenda text-texto-3">Se não escolher, entram os mais recentes da mesma categoria.</p>
-              <ul className="max-h-48 space-y-1 overflow-y-auto">
+            <section>
+              <h2>Leia também (2 a 4)</h2>
+              <p>Se não escolher, entram os mais recentes da mesma categoria.</p>
+              <ul>
                 {outros.filter((o) => o.id !== id).map((o) => (
-                  <li key={o.id}><label className="flex items-start gap-2 text-rotulo"><input type="checkbox" className="mt-0.5" checked={f.relacionadosIds.includes(o.id)} disabled={!f.relacionadosIds.includes(o.id) && f.relacionadosIds.length >= 4} onChange={(e) => muda('relacionadosIds', e.target.checked ? [...f.relacionadosIds, o.id] : f.relacionadosIds.filter((x) => x !== o.id))} /> {o.titulo}</label></li>
+                  <li key={o.id}><label><input type="checkbox" checked={f.relacionadosIds.includes(o.id)} disabled={!f.relacionadosIds.includes(o.id) && f.relacionadosIds.length >= 4} onChange={(e) => muda('relacionadosIds', e.target.checked ? [...f.relacionadosIds, o.id] : f.relacionadosIds.filter((x) => x !== o.id))} /> {o.titulo}</label></li>
                 ))}
               </ul>
             </section>
-            <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-              <h2 className="text-corpo font-semibold">Compartilhamento (WhatsApp, LinkedIn, X)</h2>
-              <label className="block space-y-1"><span className={rotulo}>Título para redes</span><input className={campo} value={f.ogTitulo} onChange={(e) => muda('ogTitulo', e.target.value)} maxLength={100} placeholder={f.seoTitulo || f.titulo} /></label>
-              <label className="block space-y-1"><span className={rotulo}>Descrição para redes</span><textarea className={campo} rows={2} value={f.ogDescricao} onChange={(e) => muda('ogDescricao', e.target.value)} maxLength={300} placeholder={f.resumo} /></label>
+            <section>
+              <h2>Compartilhamento (WhatsApp, LinkedIn, X)</h2>
+              <label><span>Título para redes</span><input value={f.ogTitulo} onChange={(e) => muda('ogTitulo', e.target.value)} maxLength={100} placeholder={f.seoTitulo || f.titulo} /></label>
+              <label><span>Descrição para redes</span><textarea rows={2} value={f.ogDescricao} onChange={(e) => muda('ogDescricao', e.target.value)} maxLength={300} placeholder={f.resumo} /></label>
               {CAMPOS_BRIEFING.filter((c) => c.grupo === 'Distribuição').map((c) => (
-                <div key={c.chave} className="space-y-1">
+                <div key={c.chave}>
                   <CampoDoBriefing c={c} valor={f.briefing[c.chave]} aoMudar={(v) => mudaBriefing(c.chave, v)} />
-                  {typeof f.briefing[c.chave] === 'string' && f.briefing[c.chave] && <button type="button" onClick={() => copiar(String(f.briefing[c.chave]))} className="inline-flex items-center gap-1 text-legenda font-semibold text-petroleo hover:underline"><Copy className="h-3 w-3" /> Copiar</button>}
+                  {typeof f.briefing[c.chave] === 'string' && f.briefing[c.chave] && <button type="button" onClick={() => copiar(String(f.briefing[c.chave]))}><Copy /> Copiar</button>}
                 </div>
               ))}
             </section>
@@ -582,33 +581,33 @@ export function EditorArtigo({ post, categorias, autores, iaPronta, situacao, ou
         )}
 
         {aba === 'Capa' && (
-          <section className="space-y-2 rounded-xl border border-borda bg-white p-4">
-            <div className="overflow-hidden rounded-lg border border-borda bg-fundo">
+          <section>
+            <div>
               {f.capaChave ? (
                 // eslint-disable-next-line @next/next/no-img-element -- prévia da capa enviada
-                <img src={`/blog/imagem/${f.capaChave}`} alt={f.capaAlt} className="aspect-[1200/630] w-full object-cover" />
+                <img src={`/blog/imagem/${f.capaChave}`} alt={f.capaAlt} />
               ) : (
-                <p className="flex aspect-[1200/630] items-center justify-center text-legenda text-texto-3">Sem capa (1200×630, WebP de até 250 KB)</p>
+                <p>Sem capa (1200×630, WebP de até 250 KB)</p>
               )}
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => entradaCapa.current?.click()} className={botaoSecundario}><Upload className="h-3.5 w-3.5" /> {f.capaChave ? 'Trocar capa' : 'Enviar capa'}</button>
-              {f.capaChave && <button type="button" onClick={() => muda('capaChave', null)} className={botaoFantasma}>Tirar</button>}
+            <div>
+              <button type="button" onClick={() => entradaCapa.current?.click()}><Upload /> {f.capaChave ? 'Trocar capa' : 'Enviar capa'}</button>
+              {f.capaChave && <button type="button" onClick={() => muda('capaChave', null)}>Tirar</button>}
             </div>
             <input ref={entradaCapa} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { void trocarCapa(e.target.files?.[0]); e.target.value = '' }} />
-            <label className="block space-y-1"><span className={rotulo}>Texto alternativo da capa</span><input className={campo} value={f.capaAlt} onChange={(e) => muda('capaAlt', e.target.value)} maxLength={200} placeholder="Descreva a imagem para quem não a vê" /></label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block space-y-1"><span className={rotulo}>Legenda (opcional)</span><input className={campo} value={f.capaLegenda} onChange={(e) => muda('capaLegenda', e.target.value)} maxLength={200} /></label>
-              <label className="block space-y-1"><span className={rotulo}>Crédito</span><input className={campo} value={f.capaCredito} onChange={(e) => muda('capaCredito', e.target.value)} maxLength={120} placeholder="Grupo SRV" /></label>
+            <label><span>Texto alternativo da capa</span><input value={f.capaAlt} onChange={(e) => muda('capaAlt', e.target.value)} maxLength={200} placeholder="Descreva a imagem para quem não a vê" /></label>
+            <div>
+              <label><span>Legenda (opcional)</span><input value={f.capaLegenda} onChange={(e) => muda('capaLegenda', e.target.value)} maxLength={200} /></label>
+              <label><span>Crédito</span><input value={f.capaCredito} onChange={(e) => muda('capaCredito', e.target.value)} maxLength={120} placeholder="Grupo SRV" /></label>
             </div>
             {CAMPOS_BRIEFING.filter((c) => c.grupo === 'Capa').map((c) => <CampoDoBriefing key={c.chave} c={c} valor={f.briefing[c.chave]} aoMudar={(v) => mudaBriefing(c.chave, v)} />)}
-            <label className="block space-y-1"><span className={rotulo}>Categoria (pilar)</span>
-              <select className={campo} value={f.categoriaId ?? ''} onChange={(e) => muda('categoriaId', e.target.value || null)}>{categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+            <label><span>Categoria (pilar)</span>
+              <select value={f.categoriaId ?? ''} onChange={(e) => muda('categoriaId', e.target.value || null)}>{categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
             </label>
-            <label className="block space-y-1"><span className={rotulo}>Autor</span>
-              <select className={campo} value={f.autorId ?? ''} onChange={(e) => muda('autorId', e.target.value || null)}>{autores.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}</select>
+            <label><span>Autor</span>
+              <select value={f.autorId ?? ''} onChange={(e) => muda('autorId', e.target.value || null)}>{autores.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}</select>
             </label>
-            <label className="flex items-start gap-2 text-rotulo"><input type="checkbox" checked={f.pilar} onChange={(e) => muda('pilar', e.target.checked)} className="mt-0.5" /> <span>É o <strong>guia completo</strong> desta categoria (página pilar)</span></label>
+            <label><input type="checkbox" checked={f.pilar} onChange={(e) => muda('pilar', e.target.checked)} /> <span>É o <strong>guia completo</strong> desta categoria (página pilar)</span></label>
           </section>
         )}
       </aside>

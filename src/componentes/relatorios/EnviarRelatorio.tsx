@@ -5,7 +5,6 @@ import { useState, useTransition } from 'react'
 import { gerarRelatorioAcao } from '@/app/(app)/clientes/acoes-relatorio'
 import { CopiarTexto } from '@/componentes/CopiarTexto'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 const dia = (d: Date) => d.toISOString().slice(0, 10)
 const menos = (hoje: string, n: number) => dia(new Date(Date.parse(`${hoje}T12:00:00Z`) - n * 86_400_000))
@@ -38,11 +37,11 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
     }
   }
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="block space-y-1">
-          <span className={rotulo}>Período</span>
-          <select className={`${campo} w-44`} value={tipo} onChange={(e) => escolher(e.target.value)}>
+    <div>
+      <div>
+        <label>
+          <span>Período</span>
+          <select value={tipo} onChange={(e) => escolher(e.target.value)}>
             <option value="hoje">Hoje</option>
             <option value="7">Últimos 7 dias</option>
             <option value="30">Últimos 30 dias</option>
@@ -53,33 +52,33 @@ export function EnviarRelatorio({ clienteId, hoje }: { clienteId: string; hoje: 
         </label>
         {tipo === 'personalizado' && (
           <>
-            <label className="block space-y-1"><span className={rotulo}>De</span><input type="date" className={`${campo} w-40`} value={de} max={ate} onChange={(e) => setDe(e.target.value)} /></label>
-            <label className="block space-y-1"><span className={rotulo}>Até</span><input type="date" className={`${campo} w-40`} value={ate} min={de} max={hoje} onChange={(e) => setAte(e.target.value)} /></label>
+            <label><span>De</span><input type="date" value={de} max={ate} onChange={(e) => setDe(e.target.value)} /></label>
+            <label><span>Até</span><input type="date" value={ate} min={de} max={hoje} onChange={(e) => setAte(e.target.value)} /></label>
           </>
         )}
-        <label className="flex items-center gap-2 pb-2 text-rotulo"><input type="checkbox" checked={investimento} onChange={(e) => setInvestimento(e.target.checked)} /> Mostrar investimento</label>
+        <label><input type="checkbox" checked={investimento} onChange={(e) => setInvestimento(e.target.checked)} /> Mostrar investimento</label>
         <button type="button" disabled={pendente} onClick={() => iniciar(async () => {
           const r = await gerarRelatorioAcao(clienteId, de, ate, investimento)
           if ('erro' in r) avisar(r)
           else setPronto(r)
-        })} className={botaoPrimario}><FileText className="h-4 w-4" /> {pendente ? 'Gerando…' : 'Gerar relatório'}</button>
+        })}><FileText /> {pendente ? 'Gerando…' : 'Gerar relatório'}</button>
       </div>
       {pronto && (
-        <div className="space-y-2 rounded-lg border border-sucesso/30 bg-sucesso-fundo/40 p-3">
-          <div className="flex flex-wrap gap-2">
-            {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer" className={botaoPrimario}><MessageCircle className="h-4 w-4" /> Enviar no WhatsApp do cliente</a>}
-            {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer" className={botaoSecundario}><MessageCircle className="h-4 w-4" /> Abrir WhatsApp e escolher o contato</a>}
-            <a href={pronto.url} target="_blank" rel="noreferrer" className={botaoSecundario}><ExternalLink className="h-4 w-4" /> Ver relatório</a>
-            <a href={`${pronto.url}?imprimir=1`} target="_blank" rel="noreferrer" className={botaoSecundario}><Download className="h-4 w-4" /> Baixar PDF</a>
+        <div>
+          <div>
+            {pronto.whatsapp && <a href={pronto.whatsapp} target="_blank" rel="noreferrer"><MessageCircle /> Enviar no WhatsApp do cliente</a>}
+            {!pronto.whatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(pronto.texto)}`} target="_blank" rel="noreferrer"><MessageCircle /> Abrir WhatsApp e escolher o contato</a>}
+            <a href={pronto.url} target="_blank" rel="noreferrer"><ExternalLink /> Ver relatório</a>
+            <a href={`${pronto.url}?imprimir=1`} target="_blank" rel="noreferrer"><Download /> Baixar PDF</a>
             <CopiarTexto texto={pronto.texto} rotulo="Copiar texto" />
           </div>
           {pronto.avisos.length > 0 && (
-            <div className="space-y-1 rounded-lg border border-aviso/40 bg-aviso-fundo/50 p-2">
-              <p className="text-legenda font-semibold text-aviso-forte">Só para a equipe (o cliente não vê):</p>
-              <ul className="list-disc space-y-0.5 pl-5 text-legenda text-texto-2">{pronto.avisos.map((a) => <li key={a}>{a}</li>)}</ul>
+            <div>
+              <p>Só para a equipe (o cliente não vê):</p>
+              <ul>{pronto.avisos.map((a) => <li key={a}>{a}</li>)}</ul>
             </div>
           )}
-          <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-white p-2 font-sans text-legenda text-texto-2">{pronto.texto}</pre>
+          <pre>{pronto.texto}</pre>
         </div>
       )}
     </div>

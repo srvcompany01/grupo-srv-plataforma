@@ -99,7 +99,7 @@ export function VisaoKanban({
 
   return (
     <DndContext id="kanban-tarefas" sensors={sensores} collisionDetection={closestCorners} onDragStart={inicio} onDragEnd={fim} onDragCancel={() => setArrastando(null)}>
-      <div className="flex gap-2 overflow-x-auto pb-4">
+      <div>
         {colunas.map((c) => (
           <ColunaKanban key={c.id} coluna={c} tarefas={itens[c.id] ?? []} ctx={ctx} subtarefas={subtarefas} />
         ))}
@@ -112,12 +112,12 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} data-sobre={isOver ? '' : undefined} style={{ ['--kanban-cor' as string]: coluna.cor ?? undefined }} className="kanban-coluna flex w-[272px] shrink-0 flex-col rounded-2xl p-2 transition">
-      <header className="mb-1 flex h-8 items-center gap-2 px-1">
-        <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} data-sobre={isOver ? '' : undefined} style={{ ['--kanban-cor' as string]: coluna.cor ?? undefined }}>
+      <header>
+        <h3><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>
       <SortableContext items={tarefas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex min-h-16 flex-col gap-2">
+        <div>
           {tarefas.map((t) => (
             <CartaoArrastavel key={t.id} tarefa={t} ctx={ctx} subtarefas={subtarefas[t.id] ?? 0} />
           ))}
@@ -130,7 +130,7 @@ function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; ta
 function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tarefa.id })
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={isDragging ? 'opacity-40' : ''} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners}>
       <Cartao tarefa={tarefa} ctx={ctx} subtarefas={subtarefas} />
     </div>
   )
@@ -138,38 +138,38 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2 rounded-2xl bg-[var(--bg)] p-2.5 text-corpo transition focus-within:ring-2 focus-within:ring-[var(--focus-ring)]">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div>
+      <div>
         <SeloPrioridade prioridade={tarefa.prioridade} />
-        {ctx.mostrarLista && <span className="max-w-full truncate rounded bg-[var(--bg-active)] px-1.5 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
+        {ctx.mostrarLista && <span title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
       </div>
-      <Link href={`/tarefas/${tarefa.id}`} scroll={false} className="block font-medium leading-snug outline-none hover:text-marca focus-visible:underline">
-        {tarefa.titulo.trim() || <span className="font-normal italic text-texto-3">Sem título</span>}
+      <Link href={`/tarefas/${tarefa.id}`} scroll={false}>
+        {tarefa.titulo.trim() || <span>Sem título</span>}
       </Link>
       {tarefa.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div>
           {tarefa.tags.map((t) => (
-            <span key={t.id} className="rounded px-1.5 py-0.5 text-legenda font-medium text-claro" style={{ background: t.cor }}>
+            <span key={t.id} style={{ background: t.cor }}>
               {t.nome}
             </span>
           ))}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-rotulo text-texto-3">
-        <span className="inline-flex items-center gap-0.5" title="Vencimento">
-          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+      <div>
+        <span title="Vencimento">
+          <CalendarDays aria-hidden="true" />
           <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
         {!!tarefa.comentarios && (
-          <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>
-            <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="tabular-nums">{tarefa.comentarios}</span>
+          <span title={`${tarefa.comentarios} comentários`}>
+            <MessageSquare aria-hidden="true" />
+            <span>{tarefa.comentarios}</span>
           </span>
         )}
-        {subtarefas > 0 && <span className="tabular-nums">{subtarefas} sub</span>}
+        {subtarefas > 0 && <span>{subtarefas} sub</span>}
       </div>
       {tarefa.responsaveis.length > 0 && (
-        <div className="flex items-center gap-2 text-rotulo">
+        <div>
           <Pessoas pessoas={tarefa.responsaveis} />
         </div>
       )}

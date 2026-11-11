@@ -38,25 +38,25 @@ const n = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 const compacto = (v: number) => v.toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
 const pct = (v: number) => `${n(v)}%`
 
-export const Aviso = ({ children }: { children: ReactNode }) => <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">{children}</p>
-const Erro = ({ texto: t }: { texto: string }) => <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{t}</p>
+export const Aviso = ({ children }: { children: ReactNode }) => <p>{children}</p>
+const Erro = ({ texto: t }: { texto: string }) => <p>{t}</p>
 
 /** Tabela comparando os clientes no canal. */
 function Tabela({ cabecalho, linhas }: { cabecalho: string[]; linhas: { c: Cliente; href: string; celulas: ReactNode[] }[] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[44rem] text-rotulo">
+    <div>
+      <table>
         <thead>
-          <tr className="border-b border-borda text-left text-legenda text-texto-3">
-            <th className="py-2 pr-3 font-medium">Cliente</th>
-            {cabecalho.map((h) => <th key={h} className="py-2 pr-3 text-right font-medium last:pr-0">{h}</th>)}
+          <tr>
+            <th>Cliente</th>
+            {cabecalho.map((h) => <th key={h}>{h}</th>)}
           </tr>
         </thead>
         <tbody>
           {linhas.map((l) => (
-            <tr key={l.c.id} className="border-b border-borda/60 last:border-0">
-              <td className="py-2 pr-3"><NomeCliente nome={l.c.nome} href={l.href} /></td>
-              {l.celulas.map((x, i) => <td key={i} className="py-2 pr-3 text-right tabular-nums last:pr-0">{x}</td>)}
+            <tr key={l.c.id}>
+              <td><NomeCliente nome={l.c.nome} href={l.href} /></td>
+              {l.celulas.map((x, i) => <td key={i}>{x}</td>)}
             </tr>
           ))}
         </tbody>
@@ -78,7 +78,7 @@ export async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; pe
   const reconhecimento = ok.reduce((s, t) => ({ gasto: s.gasto + t.reconhecimento.gasto, cliques: s.cliques + t.reconhecimento.cliquesLink }), { gasto: 0, cliques: 0 })
   return (
     <Modulo icone={Megaphone} titulo="Meta Ads · todos os clientes" descricao={rotuloPeriodo(periodo)}>
-      <div className="space-y-4">
+      <div>
         <Numeros itens={[
           { rotulo: 'Investido', valor: reais(gasto), icone: Wallet, cor: '#0866ff' },
           { rotulo: 'Captação', valor: reais(captacao.gasto), extra: `${n(captacao.leads)} leads`, icone: Users, cor: '#1baf7a' },
@@ -89,7 +89,7 @@ export async function MetaTodos({ clientes, periodo }: { clientes: Cliente[]; pe
         {linhas.length === 0 ? <Aviso>Nenhum cliente com conta de anúncios da Meta no cadastro.</Aviso> : (
           <Tabela cabecalho={['Captação', 'Leads', 'CPL', 'Reconhecimento', 'Cliques', 'CPC']} linhas={linhas.map(({ c, t }) => ({
             c, href: hrefCliente('meta', c, periodo),
-            celulas: 'erro' in t ? [<span key="e" className="text-perigo" title={t.erro}>erro</span>, '', '', '', '', ''] : [
+            celulas: 'erro' in t ? [<span key="e" title={t.erro}>erro</span>, '', '', '', '', ''] : [
               reais(t.captacao.gasto), n(t.captacao.leads), t.captacao.custoPorLead === null ? '—' : reais(t.captacao.custoPorLead), reais(t.reconhecimento.gasto), compacto(t.reconhecimento.cliquesLink), t.reconhecimento.custoPorClique === null ? '—' : reais(t.reconhecimento.custoPorClique),
             ],
           }))} />
@@ -110,7 +110,7 @@ export async function MetaCliente({ c, periodo }: { c: Cliente; periodo: Periodo
   return (
     <>
       <Modulo icone={Megaphone} titulo="Meta Ads" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · Facebook e Instagram · {rotuloPeriodo(periodo)}</>}>
-        <div className="space-y-4">
+        <div>
           {'erro' in t && <Erro texto={t.erro} />}
           <Numeros itens={[
             { rotulo: 'Investido', valor: reais(tot?.total.gasto ?? m?.gasto ?? 0), icone: Wallet, cor: '#0866ff' },
@@ -124,9 +124,9 @@ export async function MetaCliente({ c, periodo }: { c: Cliente; periodo: Periodo
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
           {tot && (
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div>
               <div>
-                <h3 className="mb-2 text-rotulo font-semibold text-texto">Funil de captação</h3>
+                <h3>Funil de captação</h3>
                 <FunilConversao principal="lead" etapas={[
                   { rotulo: 'Impressões', valor: tot.captacao.impressoes, extra: 'campanhas de captação' },
                   { rotulo: 'Cliques', valor: tot.captacao.cliques, extra: 'todos os cliques' },
@@ -134,7 +134,7 @@ export async function MetaCliente({ c, periodo }: { c: Cliente; periodo: Periodo
                 ]} />
               </div>
               <div>
-                <h3 className="mb-2 text-rotulo font-semibold text-texto">Funil de reconhecimento</h3>
+                <h3>Funil de reconhecimento</h3>
                 <FunilConversao principal="seguidor" etapas={[
                   { rotulo: 'Impressões', valor: tot.reconhecimento.impressoes, extra: 'campanhas de perfil e tráfego' },
                   { rotulo: 'Cliques no link', valor: tot.reconhecimento.cliquesLink },
@@ -165,7 +165,7 @@ export async function GoogleTodos({ clientes, periodo }: { clientes: Cliente[]; 
   const conv = ok.reduce((s, t) => s + t.conversoes, 0)
   return (
     <Modulo icone={Search} titulo="Google Ads · todos os clientes" descricao={rotuloPeriodo(periodo)}>
-      <div className="space-y-4">
+      <div>
         <Numeros itens={[
           { rotulo: 'Investido', valor: reais(custo), icone: Wallet, cor: '#eb6834' },
           { rotulo: 'Conversões', valor: n(conv), icone: Target, cor: '#1baf7a' },
@@ -174,9 +174,9 @@ export async function GoogleTodos({ clientes, periodo }: { clientes: Cliente[]; 
         ]} />
         {linhas.length === 0 ? <Aviso>Nenhum cliente com conta do Google Ads no cadastro.</Aviso> : (
           <Tabela cabecalho={['Investido', 'Cliques', 'CTR', 'Conversões', 'Custo por conversão']} linhas={linhas.map(({ c, r }) => {
-            if ('erro' in r) return { c, href: hrefCliente('google', c, periodo), celulas: [<span key="e" className="text-perigo" title={r.erro}>erro</span>, '', '', '', ''] }
+            if ('erro' in r) return { c, href: hrefCliente('google', c, periodo), celulas: [<span key="e" title={r.erro}>erro</span>, '', '', '', ''] }
             const t = totaisCampanhas(r.campanhas)
-            return { c, href: hrefCliente('google', c, periodo), celulas: [reais(t.custo), compacto(t.cliques), t.impressoes ? pct((t.cliques / t.impressoes) * 100) : '—', <span key="v" className={t.conversoes > 0 ? 'font-semibold text-sucesso-forte' : t.custo > 0 ? 'font-semibold text-perigo-forte' : ''}>{n(t.conversoes)}</span>, t.conversoes ? reais(t.custo / t.conversoes) : '—'] }
+            return { c, href: hrefCliente('google', c, periodo), celulas: [reais(t.custo), compacto(t.cliques), t.impressoes ? pct((t.cliques / t.impressoes) * 100) : '—', <span key="v">{n(t.conversoes)}</span>, t.conversoes ? reais(t.custo / t.conversoes) : '—'] }
           })} />
         )}
       </div>
@@ -196,8 +196,8 @@ export async function GoogleCliente({ c, periodo }: { c: Cliente; periodo: Perio
   return (
     <>
       <Modulo icone={Search} titulo="Análise do Google Ads" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
-        <div className="space-y-4">
-          {avisos.map((a) => <p key={a} className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">{a}</p>)}
+        <div>
+          {avisos.map((a) => <p key={a}>{a}</p>)}
           <GraficoDiario titulo="Investimento por dia" dias={dias} series={[{ nome: 'Investido', valores: dias.map((x) => diaMap.get(x) ?? 0) }]} formato={reaisCurto} tipo="barras" />
           {!('erro' in r) && (() => {
             const t = totaisCampanhas(r.campanhas)
@@ -225,8 +225,8 @@ export async function OrganicoTodos({ clientes, periodo }: { clientes: Cliente[]
         {linhas.length === 0 ? <Aviso>Nenhum cliente com a Página do Facebook (Instagram) no cadastro.</Aviso> : (
           <Tabela cabecalho={['Seguidores', 'Novos', 'Posts orgânicos', 'Cliques no link da bio']} linhas={linhas.map(({ c, ig, bio }) => ({
             c, href: hrefCliente('organico', c, periodo),
-            celulas: 'erro' in ig ? [<span key="e" className="text-perigo" title={ig.erro}>erro</span>, '', '', ''] : [
-              compacto(ig.seguidores), <span key="n" className={ig.novosSeguidores > 0 ? 'font-semibold text-sucesso-forte' : ig.novosSeguidores < 0 ? 'font-semibold text-perigo-forte' : ''}>{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, String(ig.posts.length), bio === null ? '—' : n(bio),
+            celulas: 'erro' in ig ? [<span key="e" title={ig.erro}>erro</span>, '', '', ''] : [
+              compacto(ig.seguidores), <span key="n">{ig.novosSeguidores > 0 ? '+' : ''}{n(ig.novosSeguidores)}</span>, String(ig.posts.length), bio === null ? '—' : n(bio),
             ],
           }))} />
         )}
@@ -244,10 +244,10 @@ export async function OrganicoCliente({ c, periodo }: { c: Cliente; periodo: Per
     <>
       <Modulo icone={Camera} titulo={'erro' in ig ? 'Instagram' : `Instagram @${ig.usuario}`} descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)}</>}>
         {'erro' in ig ? <Erro texto={ig.erro} /> : (
-          <div className="space-y-4">
+          <div>
             <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
             <FunilOrganico ig={ig} cliquesLinkBio={cliquesLinkBio} />
-            <p className="text-legenda text-texto-3">Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
+            <p>Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
           </div>
         )}
       </Modulo>
@@ -281,7 +281,7 @@ export async function GmnTodos({ clientes }: { clientes: Cliente[] }) {
       {linhas.length === 0 ? <Aviso>Nenhum cliente com o perfil do Google ligado. Ligue na aba GMN.</Aviso> : (
         <Tabela cabecalho={['Nota', 'Avaliações', 'Saúde', 'Top 3 no Maps']} linhas={linhas.map((l) => ({
           c: l.c, href: `/performance?aba=gmn&cliente=${l.c.id}`,
-          celulas: 'erro' in l ? [<span key="e" className="text-perigo" title={l.erro}>erro</span>, '', '', ''] : [
+          celulas: 'erro' in l ? [<span key="e" title={l.erro}>erro</span>, '', '', ''] : [
             l.d.nota === null ? '—' : `★ ${n(l.d.nota)}`, n(l.d.avaliacoes), <SeloTom key="s" tom={tomNota(l.saude)} rotulo={`${l.saude}/100`} />, l.ultima ? `${n(l.ultima.metricas.top3)}% ("${l.ultima.palavra}")` : '—',
           ],
         }))} />
@@ -297,7 +297,7 @@ export async function GmnCliente({ c, periodo }: { c: Cliente; periodo: PeriodoA
       <GoogleNegocio clienteId={c.id} perfil={c.googlePerfil} perfilNome={c.googlePerfilNome} periodo={periodo} seletor={seletor} podeGerir={false} />
     </Suspense>
   )
-  if (!c.googlePlaceId) return <><Aviso>Ligue o perfil do Google da <strong>{c.nome}</strong> na aba <Link href={`/gmn?cliente=${c.id}`} className="font-semibold text-[#1d6fe0] hover:underline">GMN</Link> para ver a saúde e o geogrid.</Aviso>{metricas}</>
+  if (!c.googlePlaceId) return <><Aviso>Ligue o perfil do Google da <strong>{c.nome}</strong> na aba <Link href={`/gmn?cliente=${c.id}`}>GMN</Link> para ver a saúde e o geogrid.</Aviso>{metricas}</>
   const sb = await criarClienteServidor()
   let s
   try {
@@ -308,9 +308,9 @@ export async function GmnCliente({ c, periodo }: { c: Cliente; periodo: PeriodoA
   const ultima = (await places.varreduras(sb, c.id, 1))[0]
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div>
         <Modulo icone={Star} titulo="Saúde do perfil no Google" descricao={<><NomeCliente nome={c.nome} href={`/gmn?cliente=${c.id}`} /> · dados públicos do Google</>}>
-          <div className="space-y-4">
+          <div>
             <Placar nota={s.nota} itens={s.itens} />
             <ItensSaude itens={s.itens} />
           </div>
@@ -318,15 +318,15 @@ export async function GmnCliente({ c, periodo }: { c: Cliente; periodo: PeriodoA
         <CartaoLugar d={s.detalhes} />
       </div>
       <Modulo icone={Radar} titulo="Posição no Google Maps" descricao={ultima ? `Última varredura: "${ultima.palavra}" · top 3 em ${n(ultima.metricas.top3)}% dos pontos · posição média ${n(ultima.metricas.posicaoMediaTotal)}º` : 'Sem varredura ainda'}>
-        {ultima ? <div className="max-w-xl"><MapaGrade centro={ultima.centro} pontos={ultima.pontos} rotulo={`Mapa de posições para ${ultima.palavra}`} /></div> : <p className="text-rotulo text-texto-3">Rode um geogrid na aba <Link href={`/gmn?cliente=${c.id}&aba=geogrid`} className="font-semibold text-[#1d6fe0] hover:underline">GMN</Link>.</p>}
+        {ultima ? <div><MapaGrade centro={ultima.centro} pontos={ultima.pontos} rotulo={`Mapa de posições para ${ultima.palavra}`} /></div> : <p>Rode um geogrid na aba <Link href={`/gmn?cliente=${c.id}&aba=geogrid`}>GMN</Link>.</p>}
       </Modulo>
       <Modulo icone={MessageCircle} titulo="Avaliações em destaque" descricao="As que o Google mostra primeiro">
-        {s.detalhes.avaliacoesRecentes.length === 0 ? <p className="text-rotulo text-texto-3">Sem avaliações visíveis.</p> : (
-          <ul className="space-y-2">
+        {s.detalhes.avaliacoesRecentes.length === 0 ? <p>Sem avaliações visíveis.</p> : (
+          <ul>
             {s.detalhes.avaliacoesRecentes.map((a, i) => (
-              <li key={i} className="rounded-lg border border-borda px-3 py-2 text-rotulo">
-                <p className="flex items-center gap-2"><strong>{a.autor || 'Cliente'}</strong><span className="text-[#eda100]">{'★'.repeat(a.nota ?? 0)}</span><span className="text-legenda text-texto-3">{a.quando}</span></p>
-                {a.texto && <p className="mt-0.5 line-clamp-3 text-texto-2">{a.texto}</p>}
+              <li key={i}>
+                <p><strong>{a.autor || 'Cliente'}</strong><span>{'★'.repeat(a.nota ?? 0)}</span><span>{a.quando}</span></p>
+                {a.texto && <p>{a.texto}</p>}
               </li>
             ))}
           </ul>
@@ -344,12 +344,12 @@ export function PanoramaEscolha({ clientes, periodo }: { clientes: Cliente[]; pe
   return (
     <Modulo icone={LayoutDashboard} titulo="Panorama por cliente" descricao="Escolha um cliente para ver todos os canais juntos: Meta Ads, Google Ads, orgânico, Google Meu Negócio e link da bio">
       {clientes.length === 0 ? <Aviso>Nenhum cliente ativo.</Aviso> : (
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul>
           {clientes.map((c) => (
             <li key={c.id}>
-              <Link href={hrefCliente('resumo', c, periodo)} className="flex items-center justify-between gap-2 rounded-lg border border-borda bg-white px-3 py-2.5 hover:bg-hover">
+              <Link href={hrefCliente('resumo', c, periodo)}>
                 <NomeCliente nome={c.nome} />
-                <span className="flex shrink-0 gap-1 text-micro text-texto-3">{c.metaContaId && 'Meta'}{c.googleAdsId && ' · Google'}{c.metaPaginaId && ' · IG'}</span>
+                <span>{c.metaContaId && 'Meta'}{c.googleAdsId && ' · Google'}{c.metaPaginaId && ' · IG'}</span>
               </Link>
             </li>
           ))}
@@ -363,14 +363,14 @@ type LinhaCanal = [rotulo: string, valor: ReactNode]
 
 function CartaoCanal({ titulo, icone: Icone, cor, href, linhas, vazio }: { titulo: string; icone: typeof Camera; cor: string; href: string; linhas: LinhaCanal[]; vazio?: string }) {
   return (
-    <section className="flex flex-col gap-2 rounded-lg border border-borda bg-white p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-corpo font-bold text-texto"><span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${cor}1f`, color: cor }}><Icone className="h-4 w-4" /></span>{titulo}</h3>
-        <Link href={href} className="text-legenda font-semibold text-[#1d6fe0] hover:underline">Ver detalhes</Link>
+    <section>
+      <div>
+        <h3><span style={{ background: `${cor}1f`, color: cor }}><Icone /></span>{titulo}</h3>
+        <Link href={href}>Ver detalhes</Link>
       </div>
-      {vazio ? <p className="py-3 text-rotulo text-texto-3">{vazio}</p> : (
-        <dl className="space-y-1.5 text-rotulo">
-          {linhas.map(([r, v]) => <div key={r} className="flex items-baseline justify-between gap-3 border-b border-borda/50 pb-1 last:border-0"><dt className="text-texto-2">{r}</dt><dd className="text-right font-semibold tabular-nums text-texto">{v}</dd></div>)}
+      {vazio ? <p>{vazio}</p> : (
+        <dl>
+          {linhas.map(([r, v]) => <div key={r}><dt>{r}</dt><dd>{v}</dd></div>)}
         </dl>
       )}
     </section>
@@ -391,7 +391,7 @@ export async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: Per
   const semGmn = !c.googlePlaceId ? 'Perfil do Google ainda não ligado (aba GMN).' : !d.gmn ? 'Sem dados do Google neste período.' : undefined
   const geo = d.gmn?.geogrid
   return (
-    <div className="space-y-4">
+    <div>
       <Modulo icone={LayoutDashboard} titulo="Panorama" descricao={<><NomeCliente nome={c.nome} href={`/clientes/${c.id}`} /> · {rotuloPeriodo(periodo)} · todos os canais</>}>
         <Numeros itens={[
           { rotulo: 'Investido (Meta + Google)', valor: reais(investido), extra: [meta?.investido ? `Meta ${reais(meta.investido)}` : '', google?.investido ? `Google ${reais(google.investido)}` : ''].filter(Boolean).join(' · ') || undefined, icone: BadgeDollarSign, cor: '#2a78d6' },
@@ -403,7 +403,7 @@ export async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: Per
         ]} />
       </Modulo>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div>
         <CartaoCanal titulo="Meta Ads" icone={Megaphone} cor="#0866ff" href={h('meta')} vazio={semMeta} linhas={meta ? [
           ['Investido', meta.investido === null ? '—' : reais(meta.investido)],
           ['Leads (captação)', `${n(meta.captacao?.leads ?? meta.leads)}${meta.captacao?.custoPorLead != null ? ` · CPL ${reais(meta.captacao.custoPorLead)}` : ''}`],
@@ -453,15 +453,15 @@ export async function PanoramaCliente({ c, periodo }: { c: Cliente; periodo: Per
       </div>
 
       {(d.destaques.length > 0 || avisos.length > 0) && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div>
           {d.destaques.length > 0 && (
             <Modulo icone={Star} titulo="Destaques do período" descricao="O que foi bem">
-              <ul className="space-y-1.5 text-rotulo">{d.destaques.map((t) => <li key={t} className="rounded-lg border border-sucesso/30 bg-sucesso-fundo/50 px-3 py-2">{t}</li>)}</ul>
+              <ul>{d.destaques.map((t) => <li key={t}>{t}</li>)}</ul>
             </Modulo>
           )}
           {avisos.length > 0 && (
             <Modulo icone={Target} titulo="Pontos de atenção" descricao="Só para a equipe">
-              <ul className="space-y-1.5 text-rotulo">{avisos.map((t) => <li key={t} className="rounded-lg border border-aviso/40 bg-aviso-fundo/50 px-3 py-2">{t}</li>)}</ul>
+              <ul>{avisos.map((t) => <li key={t}>{t}</li>)}</ul>
             </Modulo>
           )}
         </div>

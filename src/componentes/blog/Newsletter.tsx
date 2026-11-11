@@ -22,23 +22,23 @@ export function Newsletter({ origem, compacta }: { origem: string; compacta?: bo
     }
   }
   if (estado === 'ok') {
-    return <p className="flex items-center gap-2 rounded-xl bg-[#e8f5ec] px-4 py-3 text-[14px] font-medium text-[#167c3a]"><Check className="h-4 w-4" /> Pronto! Você vai receber os melhores conteúdos no seu e-mail.</p>
+    return <p><Check /> Pronto! Você vai receber os melhores conteúdos no seu e-mail.</p>
   }
   return (
-    <form onSubmit={enviar} className="space-y-3">
-      <div className={`grid gap-2 ${compacta ? '' : 'sm:grid-cols-[1fr_1.3fr_auto]'}`}>
-        <input name="nome" placeholder="Seu nome" maxLength={80} autoComplete="given-name" className="h-12 rounded-md border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
-        <input name="email" type="email" required placeholder="Seu melhor e-mail" maxLength={200} autoComplete="email" className="h-12 rounded-md border border-[#e6e6e2] bg-white px-5 text-[14px] text-[#070707] outline-none focus:border-[#d80d12]" />
+    <form onSubmit={enviar}>
+      <div>
+        <input name="nome" placeholder="Seu nome" maxLength={80} autoComplete="given-name" />
+        <input name="email" type="email" required placeholder="Seu melhor e-mail" maxLength={200} autoComplete="email" />
         <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
-        <button disabled={estado === 'enviando'} className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#d80d12] px-6 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a] disabled:opacity-60">
-          <Mail className="h-4 w-4" /> {estado === 'enviando' ? 'Enviando…' : 'Quero receber'}
+        <button disabled={estado === 'enviando'}>
+          <Mail /> {estado === 'enviando' ? 'Enviando…' : 'Quero receber'}
         </button>
       </div>
-      {estado === 'erro' && <p className="text-[13px] text-[#a2070a]">{erro}</p>}
-      <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[#656565]">
-        <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-[#167c3a]" /> De graça</span>
-        <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-[#167c3a]" /> Conteúdo prático</span>
-        <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-[#167c3a]" /> Cancele com um clique</span>
+      {estado === 'erro' && <p>{erro}</p>}
+      <p>
+        <span><Check /> De graça</span>
+        <span><Check /> Conteúdo prático</span>
+        <span><Check /> Cancele com um clique</span>
       </p>
     </form>
   )

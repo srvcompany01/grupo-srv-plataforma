@@ -7,7 +7,6 @@ import { criarPostAcao } from '@/app/(app)/conteudo/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { FORMATOS, ROTULO_FORMATO } from '@/dominio/conteudo'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 export type TarefaMae = { id: string; titulo: string; listaId: string; cliente: string | null }
 
@@ -38,41 +37,41 @@ export function NovoPostDialog({ listaId, clientes, maes = [] }: { listaId: stri
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>
-        <button className="b-out"><Ic n="add_photo_alternate" s={16} />Novo post</button>
+        <button><Ic n="add_photo_alternate" s={16} />Novo post</button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Novo post</DialogTitle>
           <DialogDescription>O post nasce como subtarefa da tarefa-mãe (com o cliente dela), em rascunho. Depois você escreve, adiciona as mídias e agenda.</DialogDescription>
         </DialogHeader>
-        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); criar() }}>
+        <form onSubmit={(e) => { e.preventDefault(); criar() }}>
           {maes.length > 0 && (
-            <label className="block space-y-1"><span className={rotulo}>Tarefa-mãe (campanha / tema)</span>
-              <select value={paiId} onChange={(e) => setPaiId(e.target.value)} className={campo}>
+            <label><span>Tarefa-mãe (campanha / tema)</span>
+              <select value={paiId} onChange={(e) => setPaiId(e.target.value)}>
                 {maes.map((m) => <option key={m.id} value={m.id}>{m.titulo}{m.cliente ? ` · ${m.cliente}` : ''}</option>)}
                 <option value="">Post avulso (sem tarefa-mãe)</option>
               </select>
             </label>
           )}
           {!paiId && (
-            <label className="block space-y-1"><span className={rotulo}>Cliente</span>
-              <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={campo}>
+            <label><span>Cliente</span>
+              <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
                 {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </label>
           )}
-          <label className="block space-y-1"><span className={rotulo}>Título</span><input required autoFocus maxLength={200} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Lançamento da coleção" className={campo} /></label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1"><span className={rotulo}>Formato</span>
-              <select value={formato} onChange={(e) => setFormato(e.target.value)} className={campo}>
+          <label><span>Título</span><input required autoFocus maxLength={200} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Lançamento da coleção" /></label>
+          <div>
+            <label><span>Formato</span>
+              <select value={formato} onChange={(e) => setFormato(e.target.value)}>
                 {FORMATOS.map((f) => <option key={f} value={f}>{ROTULO_FORMATO[f]}</option>)}
               </select>
             </label>
-            <label className="block space-y-1"><span className={rotulo}>Data prevista</span><input required type="date" value={data} onChange={(e) => setData(e.target.value)} className={campo} /></label>
+            <label><span>Data prevista</span><input required type="date" value={data} onChange={(e) => setData(e.target.value)} /></label>
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" className={botaoSecundario} onClick={() => setAberto(false)}>Cancelar</button>
-            <button disabled={pendente || !titulo.trim() || (!paiId && !clienteId) || !data} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar post'}</button>
+          <div>
+            <button type="button" onClick={() => setAberto(false)}>Cancelar</button>
+            <button disabled={pendente || !titulo.trim() || (!paiId && !clienteId) || !data}>{pendente ? 'Criando…' : 'Criar post'}</button>
           </div>
         </form>
       </DialogContent>

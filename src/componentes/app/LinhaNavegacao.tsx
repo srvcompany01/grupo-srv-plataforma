@@ -11,7 +11,6 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/componentes/ui/context-menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
-import { botaoPrimario, botaoSecundario, campo } from '@/lib/ui'
 
 export type TipoArrastavel = 'space' | 'folder' | 'list'
 
@@ -44,7 +43,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
   podeExcluir: boolean
   /** Área que a plataforma criou (tem funções ligadas a ela): o aviso de exclusão é mais forte. */
   fixa?: boolean
-  className: string
+  className?: string
   style?: CSSProperties
   children: ReactNode
 }) {
@@ -114,14 +113,13 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
             {...ouvintes}
             // Links e imagens são arrastados pelo navegador por padrão e "roubam" o gesto do dnd-kit.
             onDragStart={(e) => e.preventDefault()}
-            className={`${className} ${isDragging ? 'z-20 cursor-grabbing opacity-45 ring-1 ring-marca/40' : ''}`}
             style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
           >
             {children}
             {(podeEditar || podeExcluir) && (
               <DropdownMenu>
-                <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="hidden h-5 w-5 shrink-0 items-center justify-center rounded text-lat-3 hover:bg-lat-hover hover:text-lat-fg group-hover:flex data-[state=open]:flex"><MoreHorizontal className="h-3.5 w-3.5" /></DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="hidden"><MoreHorizontal /></DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
                   {podeEditar && <DropdownMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</DropdownMenuItem>}
                   {podeEditar && <DropdownMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</DropdownMenuItem>}
                   {podeEditar && tipo === 'list' && <DropdownMenuItem disabled={pendente} onSelect={duplicar}><CopyPlus /> Duplicar</DropdownMenuItem>}
@@ -155,34 +153,34 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
         </ContextMenuContent>
       </ContextMenu>
       <Dialog open={movendo} onOpenChange={setMovendo}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Mover {ROTULO[tipo]}</DialogTitle>
             <DialogDescription>Escolha onde &quot;{nome}&quot; vai ficar.</DialogDescription>
           </DialogHeader>
-          <div className="max-h-72 space-y-0.5 overflow-y-auto">
-            {tipo === 'space' && <button type="button" disabled={pendente} onClick={() => mover({ tipo: 'root' })} className="flex h-8 w-full items-center rounded px-2 text-left text-corpo hover:bg-hover">Raiz (sem espaço pai)</button>}
+          <div>
+            {tipo === 'space' && <button type="button" disabled={pendente} onClick={() => mover({ tipo: 'root' })}>Raiz (sem espaço pai)</button>}
             {destinos.map((d) => (
-              <button key={`${d.tipo}-${d.id}`} type="button" disabled={pendente} onClick={() => mover({ tipo: d.tipo, id: d.id })} className="flex h-8 w-full items-center gap-2 rounded px-2 text-left text-corpo hover:bg-hover">
-                <span className="text-texto-3">{d.tipo === 'space' ? 'Espaço' : 'Pasta'}</span>
-                <span className="truncate">{d.nome}</span>
+              <button key={`${d.tipo}-${d.id}`} type="button" disabled={pendente} onClick={() => mover({ tipo: d.tipo, id: d.id })}>
+                <span>{d.tipo === 'space' ? 'Espaço' : 'Pasta'}</span>
+                <span>{d.nome}</span>
               </button>
             ))}
-            {destinos.length === 0 && tipo !== 'space' && <p className="px-2 py-3 text-rotulo text-texto-3">Nenhum destino disponível.</p>}
+            {destinos.length === 0 && tipo !== 'space' && <p>Nenhum destino disponível.</p>}
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={renomeando} onOpenChange={setRenomeando}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Renomear {ROTULO[tipo]}</DialogTitle>
             <DialogDescription>O novo nome aparece para toda a equipe.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); salvarNome() }} className="space-y-4">
-            <input autoFocus value={novoNome} onChange={(e) => setNovoNome(e.target.value)} maxLength={120} aria-label="Novo nome" className={campo} />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setRenomeando(false)} className={botaoSecundario}>Cancelar</button>
-              <button disabled={pendente || !novoNome.trim()} className={botaoPrimario}>Salvar</button>
+          <form onSubmit={(e) => { e.preventDefault(); salvarNome() }}>
+            <input autoFocus value={novoNome} onChange={(e) => setNovoNome(e.target.value)} maxLength={120} aria-label="Novo nome" />
+            <div>
+              <button type="button" onClick={() => setRenomeando(false)}>Cancelar</button>
+              <button disabled={pendente || !novoNome.trim()}>Salvar</button>
             </div>
           </form>
         </DialogContent>

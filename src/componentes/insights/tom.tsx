@@ -20,8 +20,8 @@ export function SeloTom({ tom, rotulo }: { tom: Tom; rotulo?: ReactNode }) {
   const e = ESTILO_TOM[tom]
   const Icone = e.icone
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-micro font-semibold ${e.fundo} ${e.borda} ${e.texto}`}>
-      <Icone className="h-3 w-3" aria-hidden /> {rotulo ?? e.rotulo}
+    <span>
+      <Icone aria-hidden /> {rotulo ?? e.rotulo}
     </span>
   )
 }

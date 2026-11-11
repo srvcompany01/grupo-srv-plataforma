@@ -9,14 +9,14 @@ export default async function Busca({ searchParams }: PageProps<'/blog/busca'>) 
   const q = String((await searchParams).q ?? '').trim().slice(0, 80)
   const { posts } = q ? await publicados({ busca: q, limite: 30 }) : { posts: [] }
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="font-[family-name:var(--blog-titulo)] text-5xl font-extrabold uppercase">Buscar no blog</h1>
-      <form className="mt-6 flex max-w-2xl gap-2" role="search">
-        <input name="q" defaultValue={q} placeholder="Ex.: tráfego pago, Instagram, Google Meu Negócio" className="h-12 flex-1 rounded-md border border-[#e6e6e2] bg-white px-5 outline-none focus:border-[#d80d12]" />
-        <button className="h-12 rounded-md bg-[#070707] px-6 text-[14px] font-semibold text-claro">Buscar</button>
+    <div>
+      <h1>Buscar no blog</h1>
+      <form role="search">
+        <input name="q" defaultValue={q} placeholder="Ex.: tráfego pago, Instagram, Google Meu Negócio" />
+        <button>Buscar</button>
       </form>
-      {q && <p className="mt-6 text-[14px] text-[#656565]">{posts.length} resultado(s) para “{q}”</p>}
-      <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <CartaoPost key={p.id} p={p} />)}</div>
+      {q && <p>{posts.length} resultado(s) para “{q}”</p>}
+      <div>{posts.map((p) => <CartaoPost key={p.id} p={p} />)}</div>
     </div>
   )
 }

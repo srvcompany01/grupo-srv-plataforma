@@ -9,15 +9,14 @@ export function EtiquetaGrupo({ nome, cor, icone, contagem }: { nome: string; co
   const claro = icone?.categoria === 'todo'
   const texto = claro ? '#4b5260' : textoSobreCor(cor)
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
+    <span>
       <span
-        className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold uppercase leading-none tracking-[0.03em]"
         style={claro ? { background: `${cor}29`, color: texto } : { background: cor, color: texto }}
       >
-        {icone && <IconeStatus info={icone} cor={claro ? cor : texto} fundo={claro ? '#ffffff' : cor} className="h-3 w-3" />}
-        <span className="truncate">{nome}</span>
+        {icone && <IconeStatus info={icone} cor={claro ? cor : texto} fundo={claro ? '#ffffff' : cor} />}
+        <span>{nome}</span>
       </span>
-      {contagem !== undefined && <span className="text-legenda tabular-nums text-texto-3">{contagem}</span>}
+      {contagem !== undefined && <span>{contagem}</span>}
     </span>
   )
 }

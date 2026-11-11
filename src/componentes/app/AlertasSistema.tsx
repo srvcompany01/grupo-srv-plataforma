@@ -9,25 +9,25 @@ import type { AlertaSistema } from '@/servicos/alertas-sistema'
 export function AlertasSistema({ alertas }: { alertas: AlertaSistema[] }) {
   return (
     <Popover>
-      <PopoverTrigger aria-label={alertas.length ? `${alertas.length} alertas do sistema` : 'Alertas do sistema'} title="Alertas do sistema" className="tb flex items-center justify-center" style={{ padding: 0, color: alertas.length > 0 ? '#e08a00' : undefined }}>
+      <PopoverTrigger aria-label={alertas.length ? `${alertas.length} alertas do sistema` : 'Alertas do sistema'} title="Alertas do sistema" style={{ padding: 0, color: alertas.length > 0 ? '#e08a00' : undefined }}>
         <TriangleAlert size={18} strokeWidth={1.6} />
-        {alertas.length > 0 && <span className="tb-ponto" />}
+        {alertas.length > 0 && <span />}
       </PopoverTrigger>
-      <PopoverContent align="start" className="painel-alerta">
-        <div className="pa-topo">
-          <p className="pa-titulo">Alertas do sistema</p>
-          {alertas.length > 0 && <span className="pa-s">{alertas.length}</span>}
+      <PopoverContent align="start">
+        <div>
+          <p>Alertas do sistema</p>
+          {alertas.length > 0 && <span>{alertas.length}</span>}
         </div>
         {alertas.length === 0 ? (
-          <p className="pa-vazio">Tudo certo: nenhuma publicação com problema.</p>
+          <p>Tudo certo: nenhuma publicação com problema.</p>
         ) : (
-          <div className="pa-lista">
+          <div>
             {alertas.map((a) => (
-              <Link key={a.id} href={a.href} className="pa-item" data-nova>
-                <span className="pa-ico" data-erro><TriangleAlert size={18} strokeWidth={1.6} /></span>
-                <span className="pa-corpo">
-                  <span className="pa-t block">{a.texto}</span>
-                  <span className="pa-s block truncate">{a.detalhe}</span>
+              <Link key={a.id} href={a.href} data-nova>
+                <span data-erro><TriangleAlert size={18} strokeWidth={1.6} /></span>
+                <span>
+                  <span>{a.texto}</span>
+                  <span>{a.detalhe}</span>
                 </span>
               </Link>
             ))}

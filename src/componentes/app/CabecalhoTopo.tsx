@@ -20,20 +20,19 @@ export function CabecalhoTopo({ painel }: Props) {
   const abrirPaleta = useCallback(() => setPaleta(true), [])
   const abrirAjuda = useCallback(() => setAjuda(true), [])
 
-  const TB = 'tb flex items-center justify-center gap-1.5'
   return (
-    <header className="sticky top-0 z-30" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: 'var(--bg-frame)' }}>
+    <header style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: 'var(--bg-frame)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 0', minWidth: 0 }}>
       </div>
 
-      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="busca-topo hidden sm:flex">
+      <button type="button" onClick={abrirPaleta} aria-label="Buscar (⌘K)" className="hidden">
         <Ic n="search" s={16} />
         <span style={{ flex: 1, textAlign: 'left', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Buscar tarefas, clientes, documentos…</span>
         <kbd>⌘K</kbd>
       </button>
 
       <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        <button type="button" onClick={abrirPaleta} aria-label="Buscar" className={`sm:hidden ${TB}`}><Ic n="search" s={19} /></button>
+        <button type="button" onClick={abrirPaleta} aria-label="Buscar"><Ic n="search" s={19} /></button>
       </div>
 
       <AtalhosGlobais aoAbrirPaleta={abrirPaleta} aoAbrirAjuda={abrirAjuda} />

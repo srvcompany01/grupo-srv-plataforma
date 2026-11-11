@@ -31,7 +31,6 @@ function Linha({ id, children, suprimirClique }: { id: string; children: ReactNo
           e.stopPropagation()
         }
       }}
-      className={isDragging ? 'relative z-10 cursor-grabbing opacity-80' : undefined}
     >
       {children}
     </div>
@@ -61,7 +60,7 @@ export function ListaOrdenavel({ itens, ordemInicial, cookie, className }: { ite
   return (
     <DndContext id={idContexto} sensors={sensores} collisionDetection={closestCenter} onDragEnd={soltar}>
       <SortableContext items={exibidos.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-        <div className={className}>
+        <div>
           {exibidos.map((i) => (
             <Linha key={i.id} id={i.id} suprimirClique={() => acabou.current}>{i.no}</Linha>
           ))}

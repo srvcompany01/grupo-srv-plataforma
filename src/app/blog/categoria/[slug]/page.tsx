@@ -30,32 +30,32 @@ export default async function PaginaCategoria({ params, searchParams }: PageProp
   const pilar = pagina === 1 ? posts.find((p) => p.pilar) : undefined
   const demais = posts.filter((p) => p !== pilar)
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div>
       <JsonLd dados={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Blog', item: `${SITE}/blog` }, { '@type': 'ListItem', position: 2, name: c.nome, item: `${SITE}/blog/categoria/${c.slug}` }] }} />
-      <nav aria-label="Você está em" className="mb-4 text-[12px] text-[#656565]"><Link href="/blog" className="hover:text-[#070707]">Blog</Link> <span aria-hidden>/</span> {c.nome}</nav>
-      <header className="max-w-3xl border-l-4 pl-4" style={{ borderColor: c.cor }}>
-        <h1 className="font-[family-name:var(--blog-titulo)] text-5xl font-extrabold uppercase leading-none md:text-6xl">{c.nome}</h1>
-        <p className="mt-3 text-[17px] text-[#4a4a4a]">{c.descricao}</p>
+      <nav aria-label="Você está em"><Link href="/blog">Blog</Link> <span aria-hidden>/</span> {c.nome}</nav>
+      <header style={{ borderColor: c.cor }}>
+        <h1>{c.nome}</h1>
+        <p>{c.descricao}</p>
       </header>
 
       {pilar && (
-        <section className="mt-10 rounded-2xl bg-white p-5 ring-1 ring-[#e6e6e2] md:p-8">
-          <p className="mb-4 font-[family-name:var(--blog-mono)] text-[11px] font-semibold uppercase tracking-widest" style={{ color: c.cor }}>Guia completo</p>
+        <section>
+          <p style={{ color: c.cor }}>Guia completo</p>
           <CartaoPost p={pilar} destaque prioridade />
         </section>
       )}
 
       {demais.length > 0 ? (
-        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">{demais.map((p, i) => <CartaoPost key={p.id} p={p} prioridade={!pilar && i < 3} />)}</div>
+        <div>{demais.map((p, i) => <CartaoPost key={p.id} p={p} prioridade={!pilar && i < 3} />)}</div>
       ) : !pilar ? (
-        <p className="mt-10 rounded-xl border border-dashed border-[#e6e6e2] p-10 text-center text-[#656565]">Os primeiros artigos deste assunto estão chegando.</p>
+        <p>Os primeiros artigos deste assunto estão chegando.</p>
       ) : null}
       <Paginacao base={`/blog/categoria/${c.slug}`} pagina={pagina} total={total} porPagina={POR_PAGINA} />
 
       <ChamadaLanding slug={`categoria-${c.slug}`} />
-      <section className="rounded-2xl bg-white p-6 ring-1 ring-[#e6e6e2]">
-        <p className="font-[family-name:var(--blog-titulo)] text-2xl font-extrabold uppercase">Receba os novos artigos de {c.nome.toLowerCase()}</p>
-        <div className="mt-4"><Newsletter origem={`categoria:${c.slug}`} /></div>
+      <section>
+        <p>Receba os novos artigos de {c.nome.toLowerCase()}</p>
+        <div><Newsletter origem={`categoria:${c.slug}`} /></div>
       </section>
     </div>
   )

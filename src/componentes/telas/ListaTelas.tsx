@@ -7,7 +7,6 @@ import { useState, useTransition } from 'react'
 import { criarTelaAcao, excluirTelaAcao } from '@/app/(app)/telas/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { botaoPrimario, botaoSecundario } from '@/lib/ui'
 import type { ResumoTela, TipoTela } from '@/servicos/telas'
 
 const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', timeZone: 'America/Belem' })
@@ -39,24 +38,24 @@ export function ListaTelas({ tipo, telas, euId }: { tipo: TipoTela; telas: Resum
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" disabled={pendente} onClick={() => criar(false)} className={botaoPrimario}><Plus className="h-3.5 w-3.5" /> {t.novo}</button>
-        {tipo === 'funil' && <button type="button" disabled={pendente} onClick={() => criar(true)} className={botaoSecundario}><Sparkles className="h-3.5 w-3.5" /> Começar de um modelo</button>}
-        {erroCriar && <span className="text-legenda text-perigo">Não foi possível criar.</span>}
+      <div>
+        <button type="button" disabled={pendente} onClick={() => criar(false)}><Plus /> {t.novo}</button>
+        {tipo === 'funil' && <button type="button" disabled={pendente} onClick={() => criar(true)}><Sparkles /> Começar de um modelo</button>}
+        {erroCriar && <span>Não foi possível criar.</span>}
       </div>
       {telas.length === 0 ? (
-        <p className="py-16 text-center text-corpo text-texto-3">{t.vazio}</p>
+        <p>{t.vazio}</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul>
           {telas.map((tela) => (
-            <li key={tela.id} className="group relative rounded-lg border border-borda p-3 transition hover:border-borda-forte hover:shadow-sm">
-              <Link href={`${t.base}/${tela.id}`} className="block">
-                <span className="block truncate text-corpo font-semibold text-texto">{tela.titulo}</span>
-                <span className="mt-1 block truncate text-legenda text-texto-3">{tela.donoNome ?? '—'} · atualizado em {dia.format(new Date(tela.atualizadoEm))}</span>
+            <li key={tela.id}>
+              <Link href={`${t.base}/${tela.id}`}>
+                <span>{tela.titulo}</span>
+                <span>{tela.donoNome ?? '—'} · atualizado em {dia.format(new Date(tela.atualizadoEm))}</span>
               </Link>
               {(tela.donoId === euId) && (
-                <button type="button" disabled={pendente} onClick={() => excluir(tela)} aria-label={`Excluir ${tela.titulo}`} title="Excluir" className="absolute right-2 top-2 rounded p-1 text-texto-3 opacity-0 hover:bg-hover hover:text-perigo focus-visible:opacity-100 group-hover:opacity-100">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <button type="button" disabled={pendente} onClick={() => excluir(tela)} aria-label={`Excluir ${tela.titulo}`} title="Excluir">
+                  <Trash2 />
                 </button>
               )}
             </li>

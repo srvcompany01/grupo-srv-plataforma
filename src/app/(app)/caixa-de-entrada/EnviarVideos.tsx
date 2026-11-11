@@ -69,32 +69,31 @@ export function EnviarVideos({ clienteId }: { clienteId: string }) {
 
   return (
     <section>
-      <div role="radiogroup" aria-label="O que você está enviando" className="flex items-center gap-2 px-3 pt-3 text-[13px]">
-        <span className="text-texto-3">Este material é:</span>
+      <div role="radiogroup" aria-label="O que você está enviando">
+        <span>Este material é:</span>
         {(['organico', 'anuncio'] as const).map((t) => (
-          <button key={t} type="button" role="radio" aria-checked={tipo === t} onClick={() => setTipo(t)} className={tipo === t ? 'b-pri' : 'b-out'} style={{ height: 28, padding: '0 10px' }}>{ROTULO_TIPO_VIDEO[t]}</button>
+          <button key={t} type="button" role="radio" aria-checked={tipo === t} onClick={() => setTipo(t)} style={{ height: 28, padding: '0 10px' }}>{ROTULO_TIPO_VIDEO[t]}</button>
         ))}
       </div>
       <div
         onDragOver={(e) => { e.preventDefault(); setSobre(true) }}
         onDragLeave={() => setSobre(false)}
         onDrop={(e) => { e.preventDefault(); setSobre(false); if (e.dataTransfer.files.length) void tentarIniciar(e.dataTransfer.files) }}
-        className="m-3 flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center"
         style={{ borderColor: sobre ? 'var(--focus)' : 'var(--border-strong)', background: sobre ? 'var(--sel)' : 'transparent', opacity: clienteId ? 1 : 0.6 }}
       >
         <Ic n="upload_file" s={28} style={{ color: 'var(--text-3)' }} />
-        <p className="text-[14px]">{clienteId ? 'Arraste os vídeos aqui ou' : 'Escolha o cliente acima e arraste os vídeos aqui, ou'} <button type="button" onClick={() => (clienteId ? entrada.current?.click() : avisar({ erro: 'Escolha o cliente primeiro.' }))} className="font-semibold text-[var(--client)] hover:underline">escolha no computador</button></p>
-        <p className="text-[12px] text-texto-3">MP4 ou MOV, até 4 GB cada, sem compressão (acima de 1 GB a plataforma avisa antes). Vários de uma vez.</p>
+        <p>{clienteId ? 'Arraste os vídeos aqui ou' : 'Escolha o cliente acima e arraste os vídeos aqui, ou'} <button type="button" onClick={() => (clienteId ? entrada.current?.click() : avisar({ erro: 'Escolha o cliente primeiro.' }))}>escolha no computador</button></p>
+        <p>MP4 ou MOV, até 4 GB cada, sem compressão (acima de 1 GB a plataforma avisa antes). Vários de uma vez.</p>
         <input ref={entrada} type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov" hidden onChange={(e) => { if (e.target.files?.length) void tentarIniciar(e.target.files); e.target.value = '' }} />
       </div>
       {envios.length > 0 && (
-        <ul className="border-t border-borda-fraca">
+        <ul>
           {envios.map((e) => (
-            <li key={e.chave} className="flex items-center gap-3 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
+            <li key={e.chave}>
               <Ic n={e.erro ? 'error' : e.pronto ? 'check_circle' : 'upload'} s={16} style={{ color: e.erro ? 'var(--red)' : e.pronto ? 'var(--ok)' : 'var(--text-3)' }} />
-              <span className="min-w-0 flex-1 truncate">{e.nome}</span>
-              {e.erro ? <span className="max-w-[55%] truncate text-[12px] text-[var(--red)]" title={e.erro}>{e.erro}</span> : (
-                <span className="flex w-40 items-center gap-2"><span className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--bg-active)]"><span className="block h-full bg-[var(--text)]" style={{ width: `${e.pct}%` }} /></span><span className="w-9 text-right text-[12px] tabular-nums text-texto-3">{e.pct}%</span></span>
+              <span>{e.nome}</span>
+              {e.erro ? <span title={e.erro}>{e.erro}</span> : (
+                <span><span><span style={{ width: `${e.pct}%` }} /></span><span>{e.pct}%</span></span>
               )}
             </li>
           ))}

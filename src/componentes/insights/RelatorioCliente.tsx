@@ -18,12 +18,12 @@ const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits:
 /** Cada parte do relatório tem a sua cor (azul = pago, rosa = orgânico, violeta = os dois juntos). */
 function Secao({ icone: Icone, titulo, descricao, cor, children }: { icone: typeof Megaphone; titulo: string; descricao: string; cor: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-lg border-l-4 bg-white pl-3" style={{ borderLeftColor: cor }}>
-      <header className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg text-claro" style={{ background: cor }}><Icone className="h-4 w-4" /></span>
+    <section style={{ borderLeftColor: cor }}>
+      <header>
+        <span style={{ background: cor }}><Icone /></span>
         <div>
-          <h3 className="text-corpo font-semibold text-texto">{titulo}</h3>
-          <p className="text-legenda text-texto-3">{descricao}</p>
+          <h3>{titulo}</h3>
+          <p>{descricao}</p>
         </div>
       </header>
       {children}
@@ -48,10 +48,10 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
   const tomConversao: Tom | undefined = !pago.google ? undefined : pago.google.conversoes > 0 ? 'bom' : pago.google.custo > 0 ? 'ruim' : 'neutro'
   return (
     <Modulo icone={BarChart3} titulo="Relatório do cliente" descricao={`Tráfego pago, orgânico e os dois juntos · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
-      <div className="space-y-5">
+      <div>
         {dados.erros.length > 0 && (
-          <ul className="space-y-1 rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-legenda text-aviso-forte">
-            {dados.erros.map((e) => <li key={e} className="flex gap-1.5"><TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" />{e}</li>)}
+          <ul>
+            {dados.erros.map((e) => <li key={e}><TriangleAlert />{e}</li>)}
           </ul>
         )}
 
@@ -79,7 +79,7 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
               <BlocoAnalise analise={analisarOrganico(ig, dias.length)} />
             </>
           ) : (
-            <p className="rounded-lg border border-dashed border-borda px-3 py-4 text-center text-rotulo text-texto-3">Sem Instagram ligado: preencha a Página do Facebook do cliente no cadastro (o Instagram profissional precisa estar ligado a ela).</p>
+            <p>Sem Instagram ligado: preencha a Página do Facebook do cliente no cadastro (o Instagram profissional precisa estar ligado a ela).</p>
           )}
           {extraOrganico}
           <EmBreve itens={['TikTok', 'YouTube', 'Facebook (Página)']} />
@@ -88,7 +88,7 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
         <Secao icone={Combine} titulo="Pago + orgânico" descricao="Como o investimento e o perfil andam juntos no período" cor="#6250d6">
           {(pago.meta || pago.google) && ig ? (
             <>
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div>
                 <GraficoDiario titulo="Investimento por dia (Meta + Google)" dias={dias} series={[{ nome: 'Investido', valores: dias.map((d) => pagoDia.get(d)?.gasto ?? 0) }]} formato={(n) => reaisCurto.format(n)} tipo="barras" />
                 <GraficoDiario
                   titulo="Alcance por dia"
@@ -100,13 +100,13 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
                   formato={(n) => numero.format(n)}
                 />
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[30rem] text-rotulo">
+              <div>
+                <table>
                   <thead>
-                    <tr className="border-b border-borda text-left text-legenda text-texto-3">
-                      <th className="py-1.5 pr-3 font-medium">Comparativo</th>
-                      <th className="py-1.5 pr-3 text-right font-medium">Pago</th>
-                      <th className="py-1.5 text-right font-medium">Orgânico (Instagram)</th>
+                    <tr>
+                      <th>Comparativo</th>
+                      <th>Pago</th>
+                      <th>Orgânico (Instagram)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -114,13 +114,13 @@ export function RelatorioCliente({ dados, periodo, seletor, extraOrganico, cliqu
                       ['Alcance', numero.format(pagoPorDia.reduce((s, d) => s + d.alcance, 0)), numero.format(organico?.alcance ?? 0)],
                       ['Impressões / visualizações', numero.format(pagoPorDia.reduce((s, d) => s + d.impressoes, 0)), numero.format(organico?.visualizacoes ?? 0)],
                       ['Cliques / interações', numero.format(cliquesPagos), numero.format(organico?.interacoes ?? 0)],
-                      ['Taxa (CTR / engajamento)', pago.meta ? <span key="pago" className="inline-flex items-center gap-1.5">{pct(pago.meta.ctr)} <SeloTom tom={tomCtrMeta(pago.meta.ctr)} /></span> : '—', engajamentoOrganico(ig) === null ? '—' : <span key="organico" className="inline-flex items-center gap-1.5">{pct(engajamentoOrganico(ig)!)} <SeloTom tom={tomEngajamento(engajamentoOrganico(ig)!)} /></span>],
+                      ['Taxa (CTR / engajamento)', pago.meta ? <span key="pago">{pct(pago.meta.ctr)} <SeloTom tom={tomCtrMeta(pago.meta.ctr)} /></span> : '—', engajamentoOrganico(ig) === null ? '—' : <span key="organico">{pct(engajamentoOrganico(ig)!)} <SeloTom tom={tomEngajamento(engajamentoOrganico(ig)!)} /></span>],
                       ['Investimento', reais.format(total), 'R$ 0,00'],
                     ] as [string, ReactNode, ReactNode][]).map(([r, a, b]) => (
-                      <tr key={r} className="border-b border-borda/60 last:border-0">
-                        <td className="py-1.5 pr-3 text-texto-2">{r}</td>
-                        <td className="py-1.5 pr-3 text-right font-medium tabular-nums">{a}</td>
-                        <td className="py-1.5 text-right font-medium tabular-nums">{b}</td>
+                      <tr key={r}>
+                        <td>{r}</td>
+                        <td>{a}</td>
+                        <td>{b}</td>
                       </tr>
                     ))}
                   </tbody>

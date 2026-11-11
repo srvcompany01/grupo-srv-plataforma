@@ -3,7 +3,6 @@
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 import type { PapelUsuario } from '@/dominio/acesso'
-import { botaoFantasma, campo } from '@/lib/ui'
 import type { Resultado } from '@/servicos/acao'
 import { alterarPapel, definirAtivo } from './acoes'
 
@@ -15,14 +14,13 @@ export function avisar(r: Resultado) {
 export function ControlesUsuario({ id, papel, ativo }: { id: string; papel: PapelUsuario; ativo: boolean }) {
   const [pendente, iniciar] = useTransition()
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div>
       {papel !== 'cliente' && (
         <select
           aria-label="Papel"
           defaultValue={papel}
           disabled={pendente}
           onChange={(e) => iniciar(async () => avisar(await alterarPapel(id, e.target.value as PapelUsuario)))}
-          className={`${campo} h-8 w-28 py-0 text-corpo`}
         >
           <option value="admin">Admin</option>
           <option value="gestor">Gestor</option>
@@ -32,7 +30,6 @@ export function ControlesUsuario({ id, papel, ativo }: { id: string; papel: Pape
       <button
         disabled={pendente}
         onClick={() => iniciar(async () => avisar(await definirAtivo(id, !ativo)))}
-        className={botaoFantasma}
       >
         {ativo ? 'Desativar' : 'Reativar'}
       </button>

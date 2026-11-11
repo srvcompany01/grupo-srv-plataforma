@@ -16,37 +16,37 @@ export default async function Usuarios() {
   const espacos = navegacao.espacos.flatMap((e) => [{ id: e.id, nome: e.nome }, ...e.filhos.map((f) => ({ id: f.id, nome: `${e.nome} › ${f.nome}` }))])
 
   return (
-    <div className="space-y-6">
+    <div>
       <FormConvite clientes={clientes.filter((c) => !c.interno).map((c) => ({ id: c.id, nome: c.nome }))} espacos={espacos} />
-      <div className="overflow-hidden rounded-lg border border-borda bg-white">
-        <table className="w-full text-corpo">
-          <thead className="bg-hover text-left text-legenda font-medium text-texto-3">
+      <div>
+        <table>
+          <thead>
             <tr>
-              <th className="px-3 py-2">Pessoa</th>
-              <th className="hidden px-3 py-2 md:table-cell">Departamentos / cliente</th>
-              <th className="px-3 py-2">Papel</th>
-              <th className="px-3 py-2" />
+              <th>Pessoa</th>
+              <th className="hidden">Departamentos / cliente</th>
+              <th>Papel</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {usuarios.map((u) => (
-              <tr key={u.id} className={`border-t border-borda ${u.ativo ? '' : 'opacity-50'}`}>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
+              <tr key={u.id}>
+                <td>
+                  <div>
                     <Avatar nome={u.nome || u.email} tamanho="h-7 w-7 text-legenda" />
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{u.nome || '—'}</div>
-                      <div className="truncate text-texto-3">{u.email}</div>
+                    <div>
+                      <div>{u.nome || '—'}</div>
+                      <div>{u.email}</div>
                     </div>
                   </div>
                 </td>
-                <td className="hidden px-3 py-2 text-texto-2 md:table-cell">
+                <td className="hidden">
                   {u.cliente
                     ? u.cliente.nome
                     : u.espacos.map((e) => `${e.nome}${e.papel === 'gestor' ? ' (gestor)' : ''}`).join(', ') || '—'}
                 </td>
-                <td className="px-3 py-2">{u.papel === 'cliente' || u.id === eu.id ? ROTULO_PAPEL[u.papel] : null}</td>
-                <td className="px-3 py-2 text-right">
+                <td>{u.papel === 'cliente' || u.id === eu.id ? ROTULO_PAPEL[u.papel] : null}</td>
+                <td>
                   {u.id !== eu.id && <ControlesUsuario id={u.id} papel={u.papel} ativo={u.ativo} />}
                 </td>
               </tr>

@@ -16,7 +16,7 @@ export function EditorDescricao({ tarefaId, inicial }: { tarefaId: string; inici
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: 'prose-sm min-h-24 rounded-md px-2 py-1.5 text-corpo outline-none focus:bg-hover [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
+        class: 'descricao',
       },
     },
     onBlur: ({ editor: e }) => {
@@ -27,20 +27,20 @@ export function EditorDescricao({ tarefaId, inicial }: { tarefaId: string; inici
   })
   const botao = (ativo: boolean) => `rounded p-1 ${ativo ? 'bg-marca-fundo text-marca' : 'text-texto-3 hover:bg-hover'}`
   return (
-    <div className="controle rounded-md border border-borda">
+    <div>
       {editor && (
-        <div className="flex gap-0.5 border-b border-borda px-1 py-0.5">
-          <button type="button" aria-label="Negrito" onClick={() => editor.chain().focus().toggleBold().run()} className={botao(editor.isActive('bold'))}>
-            <Bold className="h-3.5 w-3.5" />
+        <div>
+          <button type="button" aria-label="Negrito" onClick={() => editor.chain().focus().toggleBold().run()}>
+            <Bold />
           </button>
-          <button type="button" aria-label="Itálico" onClick={() => editor.chain().focus().toggleItalic().run()} className={botao(editor.isActive('italic'))}>
-            <Italic className="h-3.5 w-3.5" />
+          <button type="button" aria-label="Itálico" onClick={() => editor.chain().focus().toggleItalic().run()}>
+            <Italic />
           </button>
-          <button type="button" aria-label="Lista" onClick={() => editor.chain().focus().toggleBulletList().run()} className={botao(editor.isActive('bulletList'))}>
-            <List className="h-3.5 w-3.5" />
+          <button type="button" aria-label="Lista" onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            <List />
           </button>
-          <button type="button" aria-label="Lista numerada" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={botao(editor.isActive('orderedList'))}>
-            <ListOrdered className="h-3.5 w-3.5" />
+          <button type="button" aria-label="Lista numerada" onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+            <ListOrdered />
           </button>
         </div>
       )}

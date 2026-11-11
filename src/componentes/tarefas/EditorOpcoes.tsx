@@ -2,7 +2,6 @@
 
 import { Plus, X } from 'lucide-react'
 import { corDaOpcao, type ConfigCampo } from '@/dominio/personalizacao'
-import { campo } from '@/lib/ui'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { SeletorCor } from './SeletorCor'
 
@@ -27,21 +26,21 @@ export function EditorOpcoes({ config, onChange }: { config: ConfigCampo; onChan
   const adicionar = () => onChange({ ...config, options: [...opcoes, ''] })
 
   return (
-    <div className="space-y-2">
+    <div>
       {opcoes.map((opcao, indice) => {
         const cor = corDaOpcao(config, opcao)
         return (
-          <div key={indice} className="controle flex items-center gap-2 rounded-[9px] border border-borda bg-white px-2 focus-within:border-marca focus-within:ring-3 focus-within:ring-marca/15">
+          <div key={indice}>
             <Popover>
-              <PopoverTrigger type="button" aria-label={`Cor da opção ${opcao || indice + 1}`} className="h-5 w-5 shrink-0 rounded-full ring-1 ring-borda transition hover:scale-110" style={{ background: cor }} />
-              <PopoverContent align="start" className="w-64 p-3"><SeletorCor cor={cor} onChange={(nova) => corar(opcao, nova)} /></PopoverContent>
+              <PopoverTrigger type="button" aria-label={`Cor da opção ${opcao || indice + 1}`} style={{ background: cor }} />
+              <PopoverContent align="start"><SeletorCor cor={cor} onChange={(nova) => corar(opcao, nova)} /></PopoverContent>
             </Popover>
-            <input value={opcao} onChange={(e) => trocar(indice, e.target.value)} maxLength={60} placeholder={`Opção ${indice + 1}`} aria-label={`Nome da opção ${indice + 1}`} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-texto-3" />
-            <button type="button" aria-label={`Remover opção ${opcao || indice + 1}`} onClick={() => remover(indice)} className="rounded-lg p-1.5 text-texto-3 transition hover:bg-perigo-fundo hover:text-perigo"><X className="h-4 w-4" /></button>
+            <input value={opcao} onChange={(e) => trocar(indice, e.target.value)} maxLength={60} placeholder={`Opção ${indice + 1}`} aria-label={`Nome da opção ${indice + 1}`} />
+            <button type="button" aria-label={`Remover opção ${opcao || indice + 1}`} onClick={() => remover(indice)}><X /></button>
           </div>
         )
       })}
-      <button type="button" onClick={adicionar} className={`${campo} flex items-center gap-2 text-left text-texto-3`}><Plus className="h-4 w-4" /> Adicionar opção</button>
+      <button type="button" onClick={adicionar}><Plus /> Adicionar opção</button>
     </div>
   )
 }

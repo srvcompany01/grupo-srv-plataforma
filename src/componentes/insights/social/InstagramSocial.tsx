@@ -59,33 +59,33 @@ export function InstagramSocial({ ig, anterior, dias, rotuloPeriodo, cliquesLink
   }))
   const formatos = porFormato(ig.posts)
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2.5">
-        <span className="ins-rede-logo" style={{ width: 32, height: 32 }}><LogoRede slug="instagram" tamanho={32} /></span>
-        <div className="min-w-0 flex-1 leading-tight">
-          <h2 className="text-[14px] font-semibold">Instagram</h2>
-          <p className="truncate text-[12px]" style={{ color: 'var(--ins-suave)' }}>@{ig.usuario} · consultado hoje, {hora.format(new Date())} · {rotuloPeriodo}</p>
+    <div>
+      <div>
+        <span style={{ width: 32, height: 32 }}><LogoRede slug="instagram" tamanho={32} /></span>
+        <div>
+          <h2>Instagram</h2>
+          <p style={{ color: 'var(--ins-suave)' }}>@{ig.usuario} · consultado hoje, {hora.format(new Date())} · {rotuloPeriodo}</p>
         </div>
-        <div className="flex flex-col items-end leading-tight"><span className="text-[20px] font-semibold tabular-nums">{inteiro.format(ig.seguidores)}</span><span className="text-[12px]" style={{ color: 'var(--ins-suave)' }}>seguidores</span></div>
+        <div><span>{inteiro.format(ig.seguidores)}</span><span style={{ color: 'var(--ins-suave)' }}>seguidores</span></div>
       </div>
       {seg && <SeguidoresDoPeriodo s={seg} />}
       <PainelInstagram saude={<CartaoSaude nota={saude?.nota ?? null} tom={saude?.tom ?? 'neutro'} dias={dias.length} />} metricas={metricas} dias={dias} interacoes={interacoes} totalInteracoes={org.interacoes} posts={melhores} />
       <SinaisTabela analise={analisarOrganico(ig, dias.length)} />
       {formatos.length > 0 && (
         <CartaoSocial titulo="Desempenho por formato" sub="Média por post publicado no período">
-          <div className="overflow-x-auto">
-            <table className="ins-tabela min-w-[28rem]">
+          <div>
+            <table>
               <thead>
-                <tr><th>Formato</th><th className="text-right">Posts</th><th className="text-right">Alcance médio</th><th className="text-right">Interações médias</th><th className="text-right">Engajamento</th></tr>
+                <tr><th>Formato</th><th>Posts</th><th>Alcance médio</th><th>Interações médias</th><th>Engajamento</th></tr>
               </thead>
               <tbody>
                 {formatos.map((f) => (
                   <tr key={f.formato}>
-                    <td className="font-medium"><span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: COR_FORMATO_IG[f.formato] }} />{f.formato}</span></td>
-                    <td className="text-right tabular-nums">{f.posts}</td>
-                    <td className="text-right tabular-nums">{numero.format(f.alcance)}</td>
-                    <td className="text-right tabular-nums">{numero.format(f.interacoes)}</td>
-                    <td className="text-right tabular-nums"><span className="inline-flex items-center gap-1.5">{pct(f.engajamento)} {tomEngajamento(f.engajamento) !== 'neutro' && <SeloTom tom={tomEngajamento(f.engajamento)} />}</span></td>
+                    <td><span><span style={{ background: COR_FORMATO_IG[f.formato] }} />{f.formato}</span></td>
+                    <td>{f.posts}</td>
+                    <td>{numero.format(f.alcance)}</td>
+                    <td>{numero.format(f.interacoes)}</td>
+                    <td><span>{pct(f.engajamento)} {tomEngajamento(f.engajamento) !== 'neutro' && <SeloTom tom={tomEngajamento(f.engajamento)} />}</span></td>
                   </tr>
                 ))}
               </tbody>

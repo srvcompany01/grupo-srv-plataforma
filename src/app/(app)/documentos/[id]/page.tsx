@@ -41,7 +41,7 @@ export default async function RotaDocumento({ params, searchParams }: PageProps<
   const podeGerir = podeGerirR.data === true
 
   return (
-    <div className="flex h-[calc(100vh-var(--altura-topo,0px))] min-h-[32rem] flex-col bg-white">
+    <div>
       <CabecalhoDocumento
         documento={doc.resumo}
         pessoas={doc.pessoas}
@@ -52,9 +52,9 @@ export default async function RotaDocumento({ params, searchParams }: PageProps<
         podeEditar={podeEditar}
         podeGerir={podeGerir}
       />
-      <div className="flex min-h-0 flex-1">
+      <div>
         <ArvorePaginas documentoId={id} paginas={doc.paginas} atualId={pagina.id} podeEditar={podeEditar} />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div>
           <TituloPagina key={pagina.id} id={pagina.id} inicial={pagina.titulo} podeEditar={podeEditar} />
           <EditorPagina
             key={pagina.id}

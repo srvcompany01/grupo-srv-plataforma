@@ -33,17 +33,16 @@ type Selecao = { tipo: 'no' | 'ligacao'; id: string } | null
 
 function Metrica({ rotulo, valor, tom }: { rotulo: string; valor: string; tom?: 'bom' | 'ruim' }) {
   return (
-    <div className="min-w-24 px-3 py-1">
-      <p className="text-micro font-medium uppercase text-texto-3">{rotulo}</p>
-      <p className={`text-corpo font-bold tabular-nums ${tom === 'bom' ? 'text-sucesso' : tom === 'ruim' ? 'text-perigo' : 'text-texto'}`}>{valor}</p>
+    <div>
+      <p>{rotulo}</p>
+      <p>{valor}</p>
     </div>
   )
 }
 
 function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return <label className="block space-y-1 text-legenda text-texto-3">{rotulo}{children}</label>
+  return <label>{rotulo}{children}</label>
 }
-const entrada = 'h-8 w-full rounded-lg border border-borda bg-white px-2 text-rotulo text-texto outline-none focus:border-marca'
 
 /** Funil visual: etapas ligadas por setas com a taxa de conversão; calcula visitantes, leads, vendas, receita e retorno. */
 export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo: string; dadosIniciais: DadosFunil }) {
@@ -181,7 +180,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
   const recebe = (idNo: string) => dados.ligacoes.some((l) => l.para === idNo)
 
   return (
-    <div className="flex h-[calc(100dvh-2.5rem)] flex-col">
+    <div>
       <BarraTela
         tipo="funil"
         id={id}
@@ -195,21 +194,21 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
         aoAproximar={aproximar}
         aoEnquadrar={enquadrarTudo}
         extra={
-          <button type="button" onClick={() => (confirmar(organizarFunil(atual.current)), setTimeout(enquadrarTudo, 0))} disabled={dados.nos.length === 0} className="mr-1 inline-flex h-8 items-center gap-1.5 rounded-lg border border-borda px-2.5 text-rotulo font-semibold text-texto-2 hover:bg-hover disabled:opacity-40" title="Arruma as etapas em colunas, da esquerda para a direita">
-            <Wand2 className="h-3.5 w-3.5" /> Organizar
+          <button type="button" onClick={() => (confirmar(organizarFunil(atual.current)), setTimeout(enquadrarTudo, 0))} disabled={dados.nos.length === 0} title="Arruma as etapas em colunas, da esquerda para a direita">
+            <Wand2 /> Organizar
           </button>
         }
       />
-      <div className="flex min-h-0 flex-1">
+      <div>
         <div
           ref={area}
           onPointerDown={aoPressionarFundo}
-          className="relative min-w-0 flex-1 touch-none overflow-hidden bg-[#f8f8f6] select-none"
+          className="select-none"
           style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: `${24 * camera.z}px ${24 * camera.z}px`, backgroundPosition: `${camera.x}px ${camera.y}px` }}
           aria-label="Funil"
         >
-          <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.z})` }}>
-            <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden="true">
+          <div style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.z})` }}>
+            <svg width={1} height={1} aria-hidden="true">
               <defs>
                 <marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569" /></marker>
                 <marker id="ponta-sel" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb" /></marker>
@@ -239,7 +238,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               if (!a || !b) return null
               const sel = selecao?.tipo === 'ligacao' && selecao.id === l.id
               return (
-                <button key={l.id} type="button" data-ui onPointerDown={(ev) => ev.stopPropagation()} onClick={() => setSelecao({ tipo: 'ligacao', id: l.id })} className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-white px-2 py-0.5 text-legenda font-semibold shadow-sm ${sel ? 'border-[#2563eb] text-[#2563eb]' : 'border-borda text-texto-2'}`} style={{ left: (a.x + NO_LARGURA + b.x) / 2, top: (a.y + b.y + NO_ALTURA) / 2 }} title="Clique para editar a taxa de conversão">
+                <button key={l.id} type="button" data-ui onPointerDown={(ev) => ev.stopPropagation()} onClick={() => setSelecao({ tipo: 'ligacao', id: l.id })} style={{ left: (a.x + NO_LARGURA + b.x) / 2, top: (a.y + b.y + NO_ALTURA) / 2 }} title="Clique para editar a taxa de conversão">
                   {numero.format(l.taxa)}% · {numero.format(calculo.fluxo[l.id] ?? 0)}
                 </button>
               )
@@ -251,74 +250,74 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               const r = calculo.nos[n.id]
               const sel = selecao?.tipo === 'no' && selecao.id === n.id
               return (
-                <div key={n.id} data-ui onPointerDown={(ev) => moverNo(ev, n)} className={`group absolute flex cursor-grab items-stretch overflow-visible rounded-lg border bg-white shadow-sm active:cursor-grabbing ${sel ? 'border-[#2563eb] ring-2 ring-[#2563eb]/30' : 'border-borda'}`} style={{ left: n.x, top: n.y, width: NO_LARGURA, height: NO_ALTURA }}>
-                  <span className="flex w-10 shrink-0 items-center justify-center rounded-l-xl text-claro" style={{ background: info.cor }}><Icone className="h-4 w-4" /></span>
-                  <span className="min-w-0 flex-1 px-2 py-1.5">
-                    <span className="block truncate text-rotulo font-semibold text-texto">{n.nome || info.rotulo}</span>
-                    <span className="block truncate text-legenda tabular-nums text-texto-3">{numero.format(r.visitantes)} pessoas{n.tipo === 'venda' && n.valor > 0 ? ` · ${formatarReais(r.receita * 100)}` : ''}</span>
-                    {r.excesso && <span className="block truncate text-micro text-perigo">Saídas somam mais de 100%</span>}
+                <div key={n.id} data-ui onPointerDown={(ev) => moverNo(ev, n)} style={{ left: n.x, top: n.y, width: NO_LARGURA, height: NO_ALTURA }}>
+                  <span style={{ background: info.cor }}><Icone /></span>
+                  <span>
+                    <span>{n.nome || info.rotulo}</span>
+                    <span>{numero.format(r.visitantes)} pessoas{n.tipo === 'venda' && n.valor > 0 ? ` · ${formatarReais(r.receita * 100)}` : ''}</span>
+                    {r.excesso && <span>Saídas somam mais de 100%</span>}
                   </span>
-                  <span data-ui onPointerDown={(ev) => ligar(ev, n)} title="Arraste até outra etapa para ligar" aria-label={`Ligar ${n.nome} a outra etapa`} className="absolute -right-2.5 top-1/2 h-5 w-5 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-claro bg-slate-500 opacity-70 shadow transition hover:scale-125 hover:bg-[#2563eb] hover:opacity-100 group-hover:opacity-100" />
+                  <span data-ui onPointerDown={(ev) => ligar(ev, n)} title="Arraste até outra etapa para ligar" aria-label={`Ligar ${n.nome} a outra etapa`} />
                 </div>
               )
             })}
           </div>
 
-          <div data-ui className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1 rounded-lg border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Adicionar etapa">
+          <div data-ui role="toolbar" aria-label="Adicionar etapa">
             {TIPOS_NO.map((tipo) => {
               const Icone = ICONE[tipo]
               return (
-                <button key={tipo} type="button" onClick={() => adicionar(tipo)} title={`Adicionar ${INFO_NO[tipo].rotulo}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-legenda font-semibold text-texto-2 hover:bg-hover">
-                  <span className="flex h-5 w-5 items-center justify-center rounded text-claro" style={{ background: INFO_NO[tipo].cor }}><Icone className="h-3 w-3" /></span>
-                  <span className="hidden xl:inline">{INFO_NO[tipo].rotulo}</span>
+                <button key={tipo} type="button" onClick={() => adicionar(tipo)} title={`Adicionar ${INFO_NO[tipo].rotulo}`}>
+                  <span style={{ background: INFO_NO[tipo].cor }}><Icone /></span>
+                  <span className="hidden">{INFO_NO[tipo].rotulo}</span>
                 </button>
               )
             })}
           </div>
 
           {dados.nos.length === 0 && (
-            <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-corpo text-texto-3">
-              <Filter className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" /> Adicione etapas pela barra acima e ligue-as arrastando o ponto à direita de cada uma.
+            <p>
+              <Filter aria-hidden="true" /> Adicione etapas pela barra acima e ligue-as arrastando o ponto à direita de cada uma.
             </p>
           )}
         </div>
 
-        <aside className="hidden w-72 shrink-0 space-y-3 overflow-y-auto border-l border-borda bg-white p-3 md:block" aria-label="Detalhes">
+        <aside className="hidden" aria-label="Detalhes">
           {selecionadoNo ? (
             <>
-              <h2 className="text-rotulo font-semibold text-texto">Etapa</h2>
-              <Campo rotulo="Nome"><input className={entrada} value={selecionadoNo.nome} maxLength={80} onChange={(e) => setProvisorio({ ...atual.current, nos: atual.current.nos.map((n) => (n.id === selecionadoNo.id ? { ...n, nome: e.target.value } : n)) })} onBlur={() => finalizar()} /></Campo>
+              <h2>Etapa</h2>
+              <Campo rotulo="Nome"><input value={selecionadoNo.nome} maxLength={80} onChange={(e) => setProvisorio({ ...atual.current, nos: atual.current.nos.map((n) => (n.id === selecionadoNo.id ? { ...n, nome: e.target.value } : n)) })} onBlur={() => finalizar()} /></Campo>
               <Campo rotulo="Tipo">
-                <select className={entrada} value={selecionadoNo.tipo} onChange={(e) => editarNo(selecionadoNo.id, { tipo: e.target.value as TipoNo })}>
+                <select value={selecionadoNo.tipo} onChange={(e) => editarNo(selecionadoNo.id, { tipo: e.target.value as TipoNo })}>
                   {TIPOS_NO.map((tp) => <option key={tp} value={tp}>{INFO_NO[tp].rotulo}</option>)}
                 </select>
               </Campo>
               {!recebe(selecionadoNo.id) ? (
-                <Campo rotulo="Visitantes que entram aqui"><input className={entrada} inputMode="numeric" defaultValue={selecionadoNo.visitantes} key={`v-${selecionadoNo.id}-${selecionadoNo.visitantes}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.visitantes && editarNo(selecionadoNo.id, { visitantes: lerNumero(e.target.value, 1e9) })} /></Campo>
+                <Campo rotulo="Visitantes que entram aqui"><input inputMode="numeric" defaultValue={selecionadoNo.visitantes} key={`v-${selecionadoNo.id}-${selecionadoNo.visitantes}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.visitantes && editarNo(selecionadoNo.id, { visitantes: lerNumero(e.target.value, 1e9) })} /></Campo>
               ) : (
-                <p className="rounded-lg bg-fundo px-2 py-1.5 text-legenda text-texto-2">Recebe {numero.format(calculo.nos[selecionadoNo.id]?.visitantes ?? 0)} pessoas das etapas anteriores.</p>
+                <p>Recebe {numero.format(calculo.nos[selecionadoNo.id]?.visitantes ?? 0)} pessoas das etapas anteriores.</p>
               )}
-              <Campo rotulo="Investimento nesta etapa (R$)"><input className={entrada} inputMode="decimal" defaultValue={selecionadoNo.custo} key={`c-${selecionadoNo.id}-${selecionadoNo.custo}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.custo && editarNo(selecionadoNo.id, { custo: lerNumero(e.target.value, 1e9) })} /></Campo>
+              <Campo rotulo="Investimento nesta etapa (R$)"><input inputMode="decimal" defaultValue={selecionadoNo.custo} key={`c-${selecionadoNo.id}-${selecionadoNo.custo}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.custo && editarNo(selecionadoNo.id, { custo: lerNumero(e.target.value, 1e9) })} /></Campo>
               {selecionadoNo.tipo === 'venda' && (
-                <Campo rotulo="Valor de cada venda (R$)"><input className={entrada} inputMode="decimal" defaultValue={selecionadoNo.valor} key={`p-${selecionadoNo.id}-${selecionadoNo.valor}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.valor && editarNo(selecionadoNo.id, { valor: lerNumero(e.target.value, 1e9) })} /></Campo>
+                <Campo rotulo="Valor de cada venda (R$)"><input inputMode="decimal" defaultValue={selecionadoNo.valor} key={`p-${selecionadoNo.id}-${selecionadoNo.valor}`} onBlur={(e) => lerNumero(e.target.value, 1e9) !== selecionadoNo.valor && editarNo(selecionadoNo.id, { valor: lerNumero(e.target.value, 1e9) })} /></Campo>
               )}
-              <button type="button" onClick={apagar} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-semibold text-perigo hover:bg-perigo/10"><Trash2 className="h-3.5 w-3.5" /> Excluir etapa</button>
+              <button type="button" onClick={apagar}><Trash2 /> Excluir etapa</button>
             </>
           ) : selecionadaLigacao ? (
             <>
-              <h2 className="text-rotulo font-semibold text-texto">Conversão</h2>
-              <p className="text-legenda text-texto-2">{no(selecionadaLigacao.de)?.nome} → {no(selecionadaLigacao.para)?.nome}</p>
+              <h2>Conversão</h2>
+              <p>{no(selecionadaLigacao.de)?.nome} → {no(selecionadaLigacao.para)?.nome}</p>
               <Campo rotulo="Taxa de conversão (%)">
-                <input type="range" min={0} max={100} step={0.5} value={selecionadaLigacao.taxa} onChange={(e) => setProvisorio({ ...atual.current, ligacoes: atual.current.ligacoes.map((l) => (l.id === selecionadaLigacao.id ? { ...l, taxa: Number(e.target.value) } : l)) })} onPointerUp={() => finalizar()} onKeyUp={() => finalizar()} className="w-full" aria-label="Taxa de conversão" />
-                <input className={entrada} inputMode="decimal" defaultValue={selecionadaLigacao.taxa} key={`t-${selecionadaLigacao.id}-${selecionadaLigacao.taxa}`} onBlur={(e) => lerNumero(e.target.value, 100) !== selecionadaLigacao.taxa && editarLigacao(selecionadaLigacao.id, lerNumero(e.target.value, 100))} />
+                <input type="range" min={0} max={100} step={0.5} value={selecionadaLigacao.taxa} onChange={(e) => setProvisorio({ ...atual.current, ligacoes: atual.current.ligacoes.map((l) => (l.id === selecionadaLigacao.id ? { ...l, taxa: Number(e.target.value) } : l)) })} onPointerUp={() => finalizar()} onKeyUp={() => finalizar()} aria-label="Taxa de conversão" />
+                <input inputMode="decimal" defaultValue={selecionadaLigacao.taxa} key={`t-${selecionadaLigacao.id}-${selecionadaLigacao.taxa}`} onBlur={(e) => lerNumero(e.target.value, 100) !== selecionadaLigacao.taxa && editarLigacao(selecionadaLigacao.id, lerNumero(e.target.value, 100))} />
               </Campo>
-              <p className="rounded-lg bg-fundo px-2 py-1.5 text-legenda text-texto-2">{numero.format(calculo.fluxo[selecionadaLigacao.id] ?? 0)} pessoas passam por aqui.{calculo.ciclos.includes(selecionadaLigacao.id) ? ' Esta ligação volta a uma etapa anterior e não entra na conta.' : ''}</p>
-              <button type="button" onClick={apagar} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-semibold text-perigo hover:bg-perigo/10"><Trash2 className="h-3.5 w-3.5" /> Excluir ligação</button>
+              <p>{numero.format(calculo.fluxo[selecionadaLigacao.id] ?? 0)} pessoas passam por aqui.{calculo.ciclos.includes(selecionadaLigacao.id) ? ' Esta ligação volta a uma etapa anterior e não entra na conta.' : ''}</p>
+              <button type="button" onClick={apagar}><Trash2 /> Excluir ligação</button>
             </>
           ) : (
             <>
-              <h2 className="text-rotulo font-semibold text-texto">Como usar</h2>
-              <ul className="list-disc space-y-1.5 pl-4 text-legenda text-texto-2">
+              <h2>Como usar</h2>
+              <ul>
                 <li>Adicione etapas pela barra no topo da tela.</li>
                 <li>Arraste o ponto à direita de uma etapa até outra para ligá-las.</li>
                 <li>Clique no número da ligação para definir quantos % avançam.</li>
@@ -330,7 +329,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
         </aside>
       </div>
 
-      <footer className="flex flex-wrap items-center divide-x divide-borda overflow-x-auto border-t border-borda bg-white" aria-label="Resultado do funil">
+      <footer aria-label="Resultado do funil">
         <Metrica rotulo="Entradas" valor={numero.format(t.entrada)} />
         <Metrica rotulo="Leads" valor={numero.format(t.leads)} />
         <Metrica rotulo="Vendas" valor={numero.format(t.vendas)} />

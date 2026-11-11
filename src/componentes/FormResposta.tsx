@@ -3,7 +3,6 @@
 import { useState, useSyncExternalStore, useTransition } from 'react'
 import { acaoResponder } from '@/app/c/[token]/acoes'
 import type { Decisao } from '@/dominio/tipos'
-import { botao, botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import { Icone } from './Icone'
 
 const CHAVE_NOME = 'srv_nome'
@@ -48,60 +47,58 @@ export function FormResposta({ token, postId, versaoNumero }: { token: string; p
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-borda bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+    <div>
       {!nomeSalvo && (
-        <label className="block space-y-1.5">
-          <span className={rotulo}>Seu nome</span>
-          <input value={nomeDigitado} onChange={(e) => setNome(e.target.value)} className={campo} autoComplete="name" />
+        <label>
+          <span>Seu nome</span>
+          <input value={nomeDigitado} onChange={(e) => setNome(e.target.value)} autoComplete="name" />
         </label>
       )}
       {nomeSalvo && (
-        <p className="text-corpo text-texto-2">
+        <p>
           Respondendo como <strong>{nomeSalvo}</strong>{' '}
-          <button type="button" className="font-medium text-marca" onClick={() => setTrocando(true)}>
+          <button type="button" onClick={() => setTrocando(true)}>
             trocar
           </button>
         </p>
       )}
 
       {decisao === 'ajuste' && (
-        <label className="block space-y-1.5">
-          <span className={rotulo}>O que precisa ser ajustado?</span>
+        <label>
+          <span>O que precisa ser ajustado?</span>
           <textarea
             rows={4}
             autoFocus
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
             placeholder="Ex.: na 3ª imagem, trocar a cor do fundo"
-            className={campo}
           />
         </label>
       )}
-      {erro && <p className="text-corpo text-perigo">{erro}</p>}
+      {erro && <p>{erro}</p>}
 
       {decisao === 'ajuste' ? (
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" disabled={enviando} onClick={() => setDecisao(null)} className={`${botaoSecundario} h-11`}>
+        <div>
+          <button type="button" disabled={enviando} onClick={() => setDecisao(null)}>
             Voltar
           </button>
-          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')} className={`${botao} h-11 bg-st-ajuste text-claro hover:brightness-95`}>
+          <button type="button" disabled={enviando} onClick={() => enviar('ajuste')}>
             {enviando ? 'Enviando…' : 'Enviar ajuste'}
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div>
           <button
             type="button"
             disabled={enviando}
             onClick={() => setDecisao('ajuste')}
-            className={`${botaoSecundario} h-11 text-sm`}
           >
-            <Icone nome="mensagem" className="h-4 w-4" /> Pedir ajuste
+            <Icone nome="mensagem" /> Pedir ajuste
           </button>
-          <button type="button" disabled={enviando} onClick={() => enviar('aprovado')} className={`${botaoPrimario} h-11 text-sm`}>
+          <button type="button" disabled={enviando} onClick={() => enviar('aprovado')}>
             {enviando ? 'Enviando…' : (
               <>
-                <Icone nome="check" className="h-4 w-4" /> Aprovar
+                <Icone nome="check" /> Aprovar
               </>
             )}
           </button>

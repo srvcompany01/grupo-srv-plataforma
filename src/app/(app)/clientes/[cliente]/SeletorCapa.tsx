@@ -64,10 +64,10 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda bg-white px-3 text-rotulo font-semibold transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/25">
-        <ImageIcon className="h-4 w-4" aria-hidden="true" /> {temCapa ? 'Alterar capa' : 'Escolher capa'}
+      <DialogTrigger>
+        <ImageIcon aria-hidden="true" /> {temCapa ? 'Alterar capa' : 'Escolher capa'}
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Capa do cliente</DialogTitle>
           <DialogDescription>Busque uma foto no Unsplash ou envie uma imagem sua (JPG, PNG ou WebP, até 5 MB).</DialogDescription>
@@ -78,46 +78,43 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
             e.preventDefault()
             void buscar()
           }}
-          className="flex gap-2"
         >
-          <label className="relative min-w-0 flex-1">
+          <label>
             <span className="sr-only">Buscar foto</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-3" aria-hidden="true" />
+            <Search aria-hidden="true" />
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar foto, ex.: clínica, restaurante…"
               autoComplete="off"
-              className="h-9 w-full rounded-lg border border-borda bg-white pl-9 pr-3 text-rotulo outline-none focus-visible:border-marca focus-visible:ring-3 focus-visible:ring-marca/20"
             />
           </label>
-          <button disabled={buscando || !busca.trim()} className="h-9 rounded-lg bg-texto px-4 text-rotulo font-semibold text-claro transition-colors hover:bg-carbon disabled:opacity-40">
+          <button disabled={buscando || !busca.trim()}>
             {buscando ? 'Buscando…' : 'Buscar'}
           </button>
         </form>
 
-        {erroBusca && <p role="alert" className="text-rotulo text-perigo">{erroBusca}</p>}
-        {fotos && fotos.length === 0 && !erroBusca && <p className="text-rotulo text-texto-3">Nenhuma foto encontrada. Tente outra palavra.</p>}
+        {erroBusca && <p role="alert">{erroBusca}</p>}
+        {fotos && fotos.length === 0 && !erroBusca && <p>Nenhuma foto encontrada. Tente outra palavra.</p>}
         {fotos && fotos.length > 0 && (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <ul>
             {fotos.map((foto) => (
               <li key={foto.id}>
                 <button
                   type="button"
                   disabled={pendente}
                   onClick={() => escolher(foto)}
-                  className="group relative block aspect-[16/10] w-full overflow-hidden rounded-lg border border-borda focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-marca/40 disabled:opacity-50"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- miniatura externa do Unsplash */}
-                  <img src={foto.miniatura} alt={foto.descricao} width={400} height={250} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]" />
-                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-left text-legenda text-claro">{foto.credito}</span>
+                  <img src={foto.miniatura} alt={foto.descricao} width={400} height={250} loading="lazy" />
+                  <span>{foto.credito}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-borda pt-3">
+        <div>
           <input
             ref={arquivo}
             type="file"
@@ -129,12 +126,12 @@ export function SeletorCapa({ clienteId, temCapa }: { clienteId: string; temCapa
               if (f) enviar(f)
             }}
           />
-          <button type="button" disabled={pendente} onClick={() => arquivo.current?.click()} className="inline-flex h-9 items-center gap-2 rounded-lg border border-borda px-3 text-rotulo font-semibold transition-colors hover:bg-hover disabled:opacity-50">
-            <Upload className="h-4 w-4" aria-hidden="true" /> {pendente ? 'Enviando…' : 'Enviar imagem'}
+          <button type="button" disabled={pendente} onClick={() => arquivo.current?.click()}>
+            <Upload aria-hidden="true" /> {pendente ? 'Enviando…' : 'Enviar imagem'}
           </button>
           {temCapa && (
-            <button type="button" disabled={pendente} onClick={remover} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-rotulo font-semibold text-perigo-forte transition-colors hover:bg-perigo-fundo disabled:opacity-50">
-              <Trash2 className="h-4 w-4" aria-hidden="true" /> Remover capa
+            <button type="button" disabled={pendente} onClick={remover}>
+              <Trash2 aria-hidden="true" /> Remover capa
             </button>
           )}
         </div>

@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { DURACAO_MAX_GRAVACAO_S } from '@/dominio/anexos'
 import { formatarRelogio } from '@/dominio/formatar'
 import { escolherMime, MIMES_AUDIO, MIMES_VIDEO, nomeGravacao } from '@/dominio/gravacao'
-import { botaoFantasma, botaoPrimario, botaoSecundario } from '@/lib/ui'
 
 type Fase = 'escolha' | 'iniciando' | 'gravando' | 'previa'
 type Fonte = 'tela' | 'camera'
@@ -125,47 +124,47 @@ export function Gravador({
   }, [modo])
 
   return (
-    <div className="space-y-2 rounded-md  bg-white p-2 text-corpo">
+    <div>
       {fase === 'escolha' && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-texto-2">Gravar:</span>
+        <div>
+          <span>Gravar:</span>
           <button type="button" onClick={() => {
               setFase('iniciando')
               void iniciar('tela')
-            }} className={botaoSecundario}>
-            <Monitor className="h-4 w-4" /> Tela
+            }}>
+            <Monitor /> Tela
           </button>
           <button type="button" onClick={() => {
               setFase('iniciando')
               void iniciar('camera')
-            }} className={botaoSecundario}>
-            <Video className="h-4 w-4" /> Câmera
+            }}>
+            <Video /> Câmera
           </button>
-          <button type="button" onClick={aoCancelar} className={botaoFantasma}>
+          <button type="button" onClick={aoCancelar}>
             Cancelar
           </button>
         </div>
       )}
-      {fase === 'iniciando' && <p className="text-texto-3">Aguardando permissão…</p>}
+      {fase === 'iniciando' && <p>Aguardando permissão…</p>}
       {fase === 'gravando' && (
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-perigo" />
-          <span className="font-mono tabular-nums">
+        <div>
+          <span />
+          <span>
             {formatarRelogio(segundos)} / {formatarRelogio(DURACAO_MAX_GRAVACAO_S)}
           </span>
-          <button type="button" onClick={() => gravador.current?.stop()} className={`${botaoSecundario} ml-auto`}>
-            <Square className="h-3.5 w-3.5" /> Parar
+          <button type="button" onClick={() => gravador.current?.stop()}>
+            <Square /> Parar
           </button>
         </div>
       )}
       {fase === 'previa' && previa && (
-        <div className="space-y-2">
-          {modo === 'audio' ? <audio src={previa.url} controls className="w-full" /> : <video src={previa.url} controls className="max-h-48 w-full rounded" />}
-          <div className="flex gap-1">
-            <button type="button" onClick={() => aoConcluir(previa.blob, previa.nome)} className={botaoPrimario}>
+        <div>
+          {modo === 'audio' ? <audio src={previa.url} controls /> : <video src={previa.url} controls />}
+          <div>
+            <button type="button" onClick={() => aoConcluir(previa.blob, previa.nome)}>
               Usar
             </button>
-            <button type="button" onClick={aoCancelar} className={botaoFantasma}>
+            <button type="button" onClick={aoCancelar}>
               Descartar
             </button>
           </div>

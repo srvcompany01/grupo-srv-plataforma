@@ -15,50 +15,50 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
   const [ampliado, setAmpliado] = useState<AnexoComentario | null>(null)
   if (anexos.length === 0) return null
   return (
-    <div className="mt-2 flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <div>
+      <div>
         {anexos
           .filter((a) => a.tipo === 'arquivo' && a.mime.startsWith('image/'))
           .map((a) => (
-            <button key={a.id} type="button" onClick={() => setAmpliado(a)} aria-label={`Ampliar ${a.nome}`} className="overflow-hidden rounded-md ">
+            <button key={a.id} type="button" onClick={() => setAmpliado(a)} aria-label={`Ampliar ${a.nome}`}>
               {/* URL assinada do R2: next/image exigiria configurar o domínio. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img loading="lazy" decoding="async" src={a.url} alt={a.nome} className="h-[120px] w-auto max-w-[200px] object-cover" />
+              <img loading="lazy" decoding="async" src={a.url} alt={a.nome} />
             </button>
           ))}
       </div>
       {anexos.map((a) => {
         if (a.tipo === 'audio') {
           return (
-            <audio key={a.id} controls preload="metadata" src={a.url} aria-label={a.nome} className="h-9 w-full max-w-xs">
+            <audio key={a.id} controls preload="metadata" src={a.url} aria-label={a.nome}>
               <track kind="captions" />
             </audio>
           )
         }
         if (a.tipo === 'video') {
           return (
-            <video key={a.id} controls preload="metadata" src={a.url} aria-label={a.nome} className="max-h-[320px] max-w-full rounded-md bg-black">
+            <video key={a.id} controls preload="metadata" src={a.url} aria-label={a.nome}>
               <track kind="captions" />
             </video>
           )
         }
         if (a.mime.startsWith('image/')) return null
         return (
-          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer" className="controle flex items-center gap-2 rounded-md  bg-white px-2 py-1.5 text-rotulo hover:bg-hover">
-            <FileText className="h-4 w-4 shrink-0 text-texto-3" />
-            <span className="min-w-0 flex-1 truncate">{a.nome}</span>
-            <span className="shrink-0 text-texto-3">{tamanhoLegivel(a.tamanho)}</span>
-            <Download className="h-3.5 w-3.5 shrink-0 text-texto-3" />
+          <a key={a.id} href={a.url} download={a.nome} target="_blank" rel="noreferrer">
+            <FileText />
+            <span>{a.nome}</span>
+            <span>{tamanhoLegivel(a.tamanho)}</span>
+            <Download />
           </a>
         )
       })}
       <Dialog open={!!ampliado} onOpenChange={(aberto) => !aberto && setAmpliado(null)}>
-        <DialogContent className="max-h-[90dvh] w-fit max-w-[calc(100vw-2rem)] overflow-auto p-2 sm:max-w-[90vw]">
+        <DialogContent>
           <DialogTitle className="sr-only">{ampliado?.nome}</DialogTitle>
           <DialogDescription className="sr-only">Imagem ampliada</DialogDescription>
           {ampliado && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={ampliado.url} alt={ampliado.nome} className="max-h-[85dvh] w-auto max-w-full object-contain" />
+            <img src={ampliado.url} alt={ampliado.nome} />
           )}
         </DialogContent>
       </Dialog>

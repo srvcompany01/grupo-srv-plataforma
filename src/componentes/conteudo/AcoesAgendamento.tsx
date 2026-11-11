@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { dataLocal, horaLocal } from '@/dominio/agenda'
 import { ALVOS, ROTULO_ALVO, type Alvo, type ModoPublicacao, type StatusPublicacao } from '@/dominio/publicacao'
-import { botaoFantasma, botaoPrimario, campo, rotulo } from '@/lib/ui'
 
 type Props = { id: string; em: string | null; alvos: Alvo[]; modo: ModoPublicacao; status: StatusPublicacao; hoje: string }
 
@@ -50,21 +49,21 @@ export function AcoesAgendamento({ id, em, alvos, modo, status, hoje }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger aria-label="Ações do post" disabled={pendente} className="rounded-md p-1.5 text-texto-3 hover:bg-hover hover:text-texto disabled:opacity-50">
-          <MoreHorizontal className="h-4 w-4" />
+        <DropdownMenuTrigger aria-label="Ações do post" disabled={pendente}>
+          <MoreHorizontal />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem asChild><Link href={`/tarefas/${id}`}><ExternalLink className="h-4 w-4" /> Abrir post</Link></DropdownMenuItem>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild><Link href={`/tarefas/${id}`}><ExternalLink /> Abrir post</Link></DropdownMenuItem>
           {!publicado && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setReagendar(true)}><CalendarClock className="h-4 w-4" /> Reagendar</DropdownMenuItem>
-              {status === 'falhou' && <DropdownMenuItem onSelect={tentarDeNovo}><RotateCcw className="h-4 w-4" /> Tentar de novo</DropdownMenuItem>}
-              <DropdownMenuItem onSelect={() => void agora()}><Zap className="h-4 w-4" /> Publicar agora</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setReagendar(true)}><CalendarClock /> Reagendar</DropdownMenuItem>
+              {status === 'falhou' && <DropdownMenuItem onSelect={tentarDeNovo}><RotateCcw /> Tentar de novo</DropdownMenuItem>}
+              <DropdownMenuItem onSelect={() => void agora()}><Zap /> Publicar agora</DropdownMenuItem>
               {status !== 'nao_agendado' && status !== 'publicando' && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void cancelar()} className="text-perigo"><XCircle className="h-4 w-4" /> Cancelar agendamento</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void cancelar()}><XCircle /> Cancelar agendamento</DropdownMenuItem>
                 </>
               )}
             </>
@@ -73,25 +72,25 @@ export function AcoesAgendamento({ id, em, alvos, modo, status, hoje }: Props) {
       </DropdownMenu>
 
       <Dialog open={reagendar} onOpenChange={setReagendar}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Reagendar</DialogTitle>
             <DialogDescription>{modo === 'aprovacao' ? 'Continua esperando a aprovação do cliente (se ainda não aprovou).' : 'Publica no novo horário, sem aprovação.'}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="space-y-1"><span className={rotulo}>Dia</span><input type="date" className={`${campo} h-9`} value={data} onChange={(e) => setData(e.target.value)} /></label>
-              <label className="space-y-1"><span className={rotulo}>Hora</span><input type="time" className={`${campo} h-9`} value={hora} onChange={(e) => setHora(e.target.value)} /></label>
+          <div>
+            <div>
+              <label><span>Dia</span><input type="date" value={data} onChange={(e) => setData(e.target.value)} /></label>
+              <label><span>Hora</span><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /></label>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <div>
               {ALVOS.map((a) => (
-                <label key={a} className="flex items-center gap-1.5 text-rotulo"><input type="checkbox" checked={redes.includes(a)} onChange={() => setRedes((v) => (v.includes(a) ? v.filter((x) => x !== a) : [...v, a]))} /> {ROTULO_ALVO[a]}</label>
+                <label key={a}><input type="checkbox" checked={redes.includes(a)} onChange={() => setRedes((v) => (v.includes(a) ? v.filter((x) => x !== a) : [...v, a]))} /> {ROTULO_ALVO[a]}</label>
               ))}
             </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" className={botaoFantasma} onClick={() => setReagendar(false)}>Voltar</button>
-            <button type="button" className={botaoPrimario} disabled={pendente || !redes.length} onClick={salvarHorario}>Salvar novo horário</button>
+          <div>
+            <button type="button" onClick={() => setReagendar(false)}>Voltar</button>
+            <button type="button" disabled={pendente || !redes.length} onClick={salvarHorario}>Salvar novo horário</button>
           </div>
         </DialogContent>
       </Dialog>

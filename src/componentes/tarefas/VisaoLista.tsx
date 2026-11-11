@@ -55,8 +55,8 @@ function CabecalhoColuna({ children, colunaId, className = '', onPointerDown, on
   onReset: (id: string) => void
 }) {
   return (
-    <span className={`relative flex h-full min-w-0 items-center px-2 ${className}`}>
-      <span className="min-w-0 flex-1 truncate">{children}</span>
+    <span>
+      <span>{children}</span>
       <button
         type="button"
         role="separator"
@@ -69,7 +69,6 @@ function CabecalhoColuna({ children, colunaId, className = '', onPointerDown, on
         onPointerCancel={onPointerUp}
         onDoubleClick={() => onReset(colunaId)}
         onKeyDown={(evento) => onKeyDown(colunaId, evento)}
-        className="absolute -right-1 top-0 z-10 flex h-full w-3 cursor-col-resize touch-none items-center justify-center outline-none after:h-4 after:w-px after:bg-borda-forte hover:after:h-6 hover:after:bg-marca focus-visible:after:h-6 focus-visible:after:w-0.5 focus-visible:after:bg-marca"
       />
     </span>
   )
@@ -338,18 +337,18 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
     const campo = camposPorColuna.get(colunaId)
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-1 outline-none ${campo ? 'justify-center text-center' : 'text-left'} transition hover:bg-hover focus-visible:ring-2 focus-visible:ring-marca/30`} title={titulo}>
+        <DropdownMenuTrigger title={titulo}>
           {gatilho}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52 normal-case">
-          <DropdownMenuItem onSelect={() => ocultarCampo(bruto)}><EyeOff className="h-4 w-4" />Ocultar coluna</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'inicio')}><ArrowLeftToLine className="h-4 w-4" />Mover para o início</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'final')}><ArrowRightToLine className="h-4 w-4" />Mover para o final</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => restaurarLargura(colunaId)}><MoveHorizontal className="h-4 w-4" />Restaurar largura</DropdownMenuItem>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => ocultarCampo(bruto)}><EyeOff />Ocultar coluna</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'inicio')}><ArrowLeftToLine />Mover para o início</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => moverCampo(bruto, 'final')}><ArrowRightToLine />Mover para o final</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => restaurarLargura(colunaId)}><MoveHorizontal />Restaurar largura</DropdownMenuItem>
           {campo && ctx.podeEditarCampos && (
             <>
-              <DropdownMenuItem onSelect={() => setConfigurando(campo.id)}><Settings2 className="h-4 w-4" />Configurar campo…</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => arquivarCampo(campo.id, campo.nome)}><Archive className="h-4 w-4" />Arquivar campo</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setConfigurando(campo.id)}><Settings2 />Configurar campo…</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => arquivarCampo(campo.id, campo.nome)}><Archive />Arquivar campo</DropdownMenuItem>
             </>
           )}
         </DropdownMenuContent>
@@ -358,9 +357,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   }
   const cabecalhoNativo = (id: string) => {
     const coluna = COLUNAS_PADRAO.find((c) => c.id === id)!
-    if (id === 'responsavel') return <><UserRound className="h-3 w-3 shrink-0" /><span className="truncate">{coluna.nome}</span></>
-    if (id === 'prioridade') return <Flag className="h-3 w-3" aria-label={coluna.nome} />
-    return <span className="truncate">{coluna.nome}</span>
+    if (id === 'responsavel') return <><UserRound /><span>{coluna.nome}</span></>
+    if (id === 'prioridade') return <Flag aria-label={coluna.nome} />
+    return <span>{coluna.nome}</span>
   }
   const propsRedimensionamento = {
     onPointerDown: iniciarRedimensionamento,
@@ -371,11 +370,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   }
   const colunasOcultas = colunasFora.length > 0 ? (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-rotulo font-medium text-texto-3 outline-none transition hover:bg-hover hover:text-texto"><EyeOff className="h-3.5 w-3.5" />{colunasFora.length} {colunasFora.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuTrigger><EyeOff />{colunasFora.length} {colunasFora.length === 1 ? 'coluna oculta' : 'colunas ocultas'}</DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
         {colunasFora.map((coluna) => (
           <DropdownMenuItem key={coluna.id} onSelect={() => mostrarCampo(coluna.id)}>
-            {coluna.campo && coluna.campo.icone !== 'nenhum' && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} className="h-4 w-4" /></span>}
+            {coluna.campo && coluna.campo.icone !== 'nenhum' && <span style={{ color: coluna.campo.cor }}><IconeVisual icone={coluna.campo.icone} /></span>}
             Mostrar {coluna.nome}
           </DropdownMenuItem>
         ))}
@@ -384,30 +383,30 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   ) : null
 
   return (
-    <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="area-lista space-y-2">
+    <div ref={(el) => { raiz.current = el; definirRaiz(el) }}>
       {faixa && !selecionadas.size && (
-        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
-          <span className="rounded-md bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
+        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa>
+          <span>
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
           {uniaColuna && campoDaFaixa(uniaColuna) && (
-            <button type="button" onClick={() => setAlterandoColuna(true)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-petroleo px-3 text-rotulo font-semibold text-claro hover:bg-petroleo-700">Alterar valor…</button>
+            <button type="button" onClick={() => setAlterandoColuna(true)}>Alterar valor…</button>
           )}
-          <button type="button" onClick={() => copiarFaixa()} className="inline-flex h-8 items-center rounded-lg px-2.5 text-rotulo font-medium text-texto-2 hover:bg-hover">Copiar</button>
+          <button type="button" onClick={() => copiarFaixa()}>Copiar</button>
           {camposNaFaixa.length > 0 && (
-            <button type="button" disabled={gravandoFaixa} onClick={() => void limparFaixa()} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-rotulo font-medium text-perigo hover:bg-perigo-fundo disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Limpar</button>
+            <button type="button" disabled={gravandoFaixa} onClick={() => void limparFaixa()}><Trash2 /> Limpar</button>
           )}
-          <span className="hidden text-legenda text-texto-3 md:inline">Ctrl+V cola · Delete limpa · Esc sai</span>
-          <button type="button" aria-label="Fechar seleção" onClick={() => setFaixa(null)} className="rounded p-1 text-texto-3 hover:bg-hover"><X className="h-4 w-4" /></button>
+          <span className="hidden">Ctrl+V cola · Delete limpa · Esc sai</span>
+          <button type="button" aria-label="Fechar seleção" onClick={() => setFaixa(null)}><X /></button>
         </div>
       )}
       {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
-        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-2xl bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
-          <span className="text-corpo font-semibold">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
+        <div>
+          <span>{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
-          <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-corpo font-semibold !text-[#ff8084] transition hover:bg-white/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
-          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-corpo font-medium transition hover:bg-white/10"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
+          <button type="button" disabled={excluindo} onClick={excluirSelecionadas}><Trash2 />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
+          <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())}><X /> Limpar seleção</button>
         </div>
       )}
       <PainelCampos
@@ -424,33 +423,33 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
         aoConfigurar={(id) => setConfigurando(id)}
       />
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
-      {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
-      <div className="overflow-x-auto px-4 pb-2 pt-1">
+      {colunasOcultas && grupos[0]?.semCabecalho && <div>{colunasOcultas}</div>}
+      <div>
         <div style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
-        <section key={g.id} className="bg-[var(--bg)]" style={{ marginTop: indice === 0 ? 0 : 4 }}>
+        <section key={g.id} style={{ marginTop: indice === 0 ? 0 : 4 }}>
           {!g.semCabecalho && (
-            <div className="flex h-8 items-center">
-              <button onClick={() => alternar(g.id)} className="flex min-w-0 items-center gap-1.5 text-left">
-                <span className="b-icon" style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
+            <div>
+              <button onClick={() => alternar(g.id)}>
+                <span style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
                 <EtiquetaGrupo nome={g.nome} cor={g.cor} icone={g.icone} contagem={g.tarefas.length} />
               </button>
-              <span className="flex-1" />
+              <span />
               {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
-              {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
+              {indice === 0 && colunasOcultas && <div>{colunasOcultas}</div>}
             </div>
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid h-7 items-center rounded-lg bg-[var(--bg-subtle)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
-                <span className="flex justify-center"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="ck" /></span><span /><span />
-                <CabecalhoColuna colunaId="nome" className="pl-0.5" {...propsRedimensionamento}>Nome</CabecalhoColuna>
+              <div style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+                <span><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" /></span><span /><span />
+                <CabecalhoColuna colunaId="nome" {...propsRedimensionamento}>Nome</CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)
                   if (definicao) {
                     return (
-                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="" {...propsRedimensionamento}>
-                        {menuDaColuna(colunaId, <>{definicao.icone !== 'nenhum' && <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span>}<span className="truncate" style={definicao.icone === 'nenhum' ? { color: definicao.cor } : undefined}>{definicao.nome}</span></>, definicao.nome)}
+                      <CabecalhoColuna key={colunaId} colunaId={colunaId} {...propsRedimensionamento}>
+                        {menuDaColuna(colunaId, <>{definicao.icone !== 'nenhum' && <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} /></span>}<span style={definicao.icone === 'nenhum' ? { color: definicao.cor } : undefined}>{definicao.nome}</span></>, definicao.nome)}
                       </CabecalhoColuna>
                     )
                   }
@@ -461,7 +460,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                   )
                 })}
                 {ctx.gerirCampos && (
-                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)}><Plus /></button>
                 )}
               </div>
               {g.tarefas.map((t) => (

@@ -46,7 +46,7 @@ export function Editor({ clienteId, metodo, inicial, leitura = false, children }
   return (
     <Contexto.Provider value={{ d, leitura, mudar }}>
       {!leitura && (
-        <p className="est-estado" aria-live="polite" data-estado={estado ?? 'salvo'}>
+        <p aria-live="polite" data-estado={estado ?? 'salvo'}>
           {estado === 'salvando' ? 'Salvando…' : estado === 'erro' ? 'Não salvou: tente de novo' : 'Tudo salvo · clique em qualquer parte do quadro para escrever'}
         </p>
       )}
@@ -59,8 +59,8 @@ export function Editor({ clienteId, metodo, inicial, leitura = false, children }
 export function Texto({ k, ph = 'Clique para escrever…', className = '', id }: { k: string; ph?: string; className?: string; id?: string }) {
   const { d, leitura, mudar } = useEstrategia()
   const v = d.textos[k] ?? ''
-  if (leitura) return <p className={`whitespace-pre-wrap ${v ? '' : 'text-texto-3'} ${className}`}>{v || '—'}</p>
-  return <textarea id={id} value={v} rows={1} maxLength={4000} placeholder={ph} aria-label={ph} className={`est-campo ${className}`} onChange={(e) => { const t = e.target.value; mudar((x) => ({ ...x, textos: { ...x.textos, [k]: t } })) }} />
+  if (leitura) return <p>{v || '—'}</p>
+  return <textarea id={id} value={v} rows={1} maxLength={4000} placeholder={ph} aria-label={ph} onChange={(e) => { const t = e.target.value; mudar((x) => ({ ...x, textos: { ...x.textos, [k]: t } })) }} />
 }
 
 /** Lista de itens de uma chave: Enter adiciona, item vazio some ao sair dele. `chips` mostra como etiquetas. */
@@ -76,43 +76,43 @@ export function Lista({ k, ph: phDado, cor, chips = false, riscado = false }: { 
     definir((l) => [...l, t])
     setNovo('')
   }
-  const ponto = <i className="est-ponto" style={cor ? { background: cor } : undefined} />
+  const ponto = <i style={cor ? { background: cor } : undefined} />
 
   if (chips) {
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div>
         {itens.map((t, i) => (
-          <span key={`${i}-${t}`} className={`est-chip ${riscado ? 'line-through' : ''}`} style={cor ? { ['--c' as string]: cor } : undefined}>
+          <span key={`${i}-${t}`} style={cor ? { ['--c' as string]: cor } : undefined}>
             {t}
-            {!leitura && <button type="button" aria-label={`Remover ${t}`} onClick={() => definir((l) => l.filter((_, j) => j !== i))}><X className="h-3 w-3" /></button>}
+            {!leitura && <button type="button" aria-label={`Remover ${t}`} onClick={() => definir((l) => l.filter((_, j) => j !== i))}><X /></button>}
           </span>
         ))}
-        {leitura && !itens.length && <span className="text-texto-3">—</span>}
-        {!leitura && <input value={novo} onChange={(e) => setNovo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionar() } }} onBlur={adicionar} maxLength={500} placeholder={ph} aria-label={ph} className="est-campo est-chip-novo" />}
+        {leitura && !itens.length && <span>—</span>}
+        {!leitura && <input value={novo} onChange={(e) => setNovo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionar() } }} onBlur={adicionar} maxLength={500} placeholder={ph} aria-label={ph} />}
       </div>
     )
   }
 
   return (
-    <ul className="est-lista">
+    <ul>
       {itens.map((t, i) => (
         <li key={i}>
           {ponto}
           {leitura ? (
-            <span className="whitespace-pre-wrap">{t}</span>
+            <span>{t}</span>
           ) : (
             <>
-              <textarea value={t} rows={1} maxLength={500} aria-label="Item" className="est-campo" onChange={(e) => { const v = e.target.value; definir((l) => l.map((x, j) => (j === i ? v : x))) }} onBlur={() => !t.trim() && definir((l) => l.filter((_, j) => j !== i))} />
-              <button type="button" className="est-x" aria-label="Remover item" onClick={() => definir((l) => l.filter((_, j) => j !== i))}><X className="h-3.5 w-3.5" /></button>
+              <textarea value={t} rows={1} maxLength={500} aria-label="Item" onChange={(e) => { const v = e.target.value; definir((l) => l.map((x, j) => (j === i ? v : x))) }} onBlur={() => !t.trim() && definir((l) => l.filter((_, j) => j !== i))} />
+              <button type="button" aria-label="Remover item" onClick={() => definir((l) => l.filter((_, j) => j !== i))}><X /></button>
             </>
           )}
         </li>
       ))}
-      {leitura && !itens.length && <li className="text-texto-3">—</li>}
+      {leitura && !itens.length && <li>—</li>}
       {!leitura && (
-        <li className="est-novo">
-          <span className="est-mais">+</span>
-          <textarea value={novo} rows={1} onChange={(e) => setNovo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); adicionar() } }} onBlur={adicionar} maxLength={500} placeholder={ph} aria-label={ph} className="est-campo" />
+        <li>
+          <span>+</span>
+          <textarea value={novo} rows={1} onChange={(e) => setNovo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); adicionar() } }} onBlur={adicionar} maxLength={500} placeholder={ph} aria-label={ph} />
         </li>
       )}
     </ul>
@@ -124,7 +124,7 @@ export function Escala({ k, esq, dir }: { k: string; esq: string; dir: string })
   const { d, leitura, mudar } = useEstrategia()
   const v = d.textos[k]
   return (
-    <div className="est-escala">
+    <div>
       <span>{esq}</span>
       <div role="radiogroup" aria-label={`${esq} ou ${dir}`}>
         {[0, 1, 2, 3, 4].map((i) => (

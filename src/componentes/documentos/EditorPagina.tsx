@@ -28,7 +28,7 @@ const PAUSA_GRAVAR_MS = 6000
 
 function Botao({ ativo, aoClicar, titulo, children, desabilitado }: { ativo?: boolean; aoClicar: () => void; titulo: string; children: React.ReactNode; desabilitado?: boolean }) {
   return (
-    <button type="button" title={titulo} aria-label={titulo} disabled={desabilitado} onMouseDown={(e) => e.preventDefault()} onClick={aoClicar} className={`rounded p-1.5 disabled:opacity-40 ${ativo ? 'bg-marca-fundo text-marca' : 'text-texto-2 hover:bg-hover'}`}>
+    <button type="button" title={titulo} aria-label={titulo} disabled={desabilitado} onMouseDown={(e) => e.preventDefault()} onClick={aoClicar}>
       {children}
     </button>
   )
@@ -44,31 +44,31 @@ function Barra({ editor, aoComentar, aoVersoes, aoExportar, aoImportar }: { edit
     else if (/^(https?:\/\/|mailto:)/i.test(url)) c().extendMarkRange('link').setLink({ href: url }).run()
   }
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-borda bg-white px-2 py-1">
-      <Botao titulo="Desfazer" aoClicar={() => c().undo().run()}><Undo2 className="h-4 w-4" /></Botao>
-      <Botao titulo="Refazer" aoClicar={() => c().redo().run()}><Redo2 className="h-4 w-4" /></Botao>
-      <span className="mx-1 h-4 w-px bg-borda" />
-      <Botao titulo="Título 1" ativo={editor.isActive('heading', { level: 1 })} aoClicar={() => c().toggleHeading({ level: 1 }).run()}><Heading1 className="h-4 w-4" /></Botao>
-      <Botao titulo="Título 2" ativo={editor.isActive('heading', { level: 2 })} aoClicar={() => c().toggleHeading({ level: 2 }).run()}><Heading2 className="h-4 w-4" /></Botao>
-      <span className="mx-1 h-4 w-px bg-borda" />
-      <Botao titulo="Negrito" ativo={editor.isActive('bold')} aoClicar={() => c().toggleBold().run()}><Bold className="h-4 w-4" /></Botao>
-      <Botao titulo="Itálico" ativo={editor.isActive('italic')} aoClicar={() => c().toggleItalic().run()}><Italic className="h-4 w-4" /></Botao>
-      <Botao titulo="Sublinhado" ativo={editor.isActive('underline')} aoClicar={() => c().toggleUnderline().run()}><Underline className="h-4 w-4" /></Botao>
-      <Botao titulo="Tachado" ativo={editor.isActive('strike')} aoClicar={() => c().toggleStrike().run()}><Strikethrough className="h-4 w-4" /></Botao>
-      <Botao titulo="Destaque" ativo={editor.isActive('highlight')} aoClicar={() => c().toggleHighlight().run()}><Highlighter className="h-4 w-4" /></Botao>
-      <Botao titulo="Código" ativo={editor.isActive('code')} aoClicar={() => c().toggleCode().run()}><Code className="h-4 w-4" /></Botao>
-      <Botao titulo="Link" ativo={editor.isActive('link')} aoClicar={link}><IconeLink className="h-4 w-4" /></Botao>
-      <span className="mx-1 h-4 w-px bg-borda" />
-      <Botao titulo="Lista" ativo={editor.isActive('bulletList')} aoClicar={() => c().toggleBulletList().run()}><List className="h-4 w-4" /></Botao>
-      <Botao titulo="Lista numerada" ativo={editor.isActive('orderedList')} aoClicar={() => c().toggleOrderedList().run()}><ListOrdered className="h-4 w-4" /></Botao>
-      <Botao titulo="Lista de tarefas" ativo={editor.isActive('taskList')} aoClicar={() => c().toggleTaskList().run()}><ListTodo className="h-4 w-4" /></Botao>
-      <Botao titulo="Citação" ativo={editor.isActive('blockquote')} aoClicar={() => c().toggleBlockquote().run()}><Quote className="h-4 w-4" /></Botao>
-      <Botao titulo="Tabela" aoClicar={() => c().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><Table className="h-4 w-4" /></Botao>
-      <span className="ml-auto flex items-center gap-0.5">
-        <Botao titulo="Comentar" aoClicar={aoComentar}><MessageSquare className="h-4 w-4" /></Botao>
-        <Botao titulo="Histórico de versões" aoClicar={aoVersoes}><History className="h-4 w-4" /></Botao>
-        <Botao titulo="Importar Markdown" aoClicar={aoImportar}><Upload className="h-4 w-4" /></Botao>
-        <Botao titulo="Exportar Markdown" aoClicar={aoExportar}><Download className="h-4 w-4" /></Botao>
+    <div>
+      <Botao titulo="Desfazer" aoClicar={() => c().undo().run()}><Undo2 /></Botao>
+      <Botao titulo="Refazer" aoClicar={() => c().redo().run()}><Redo2 /></Botao>
+      <span />
+      <Botao titulo="Título 1" ativo={editor.isActive('heading', { level: 1 })} aoClicar={() => c().toggleHeading({ level: 1 }).run()}><Heading1 /></Botao>
+      <Botao titulo="Título 2" ativo={editor.isActive('heading', { level: 2 })} aoClicar={() => c().toggleHeading({ level: 2 }).run()}><Heading2 /></Botao>
+      <span />
+      <Botao titulo="Negrito" ativo={editor.isActive('bold')} aoClicar={() => c().toggleBold().run()}><Bold /></Botao>
+      <Botao titulo="Itálico" ativo={editor.isActive('italic')} aoClicar={() => c().toggleItalic().run()}><Italic /></Botao>
+      <Botao titulo="Sublinhado" ativo={editor.isActive('underline')} aoClicar={() => c().toggleUnderline().run()}><Underline /></Botao>
+      <Botao titulo="Tachado" ativo={editor.isActive('strike')} aoClicar={() => c().toggleStrike().run()}><Strikethrough /></Botao>
+      <Botao titulo="Destaque" ativo={editor.isActive('highlight')} aoClicar={() => c().toggleHighlight().run()}><Highlighter /></Botao>
+      <Botao titulo="Código" ativo={editor.isActive('code')} aoClicar={() => c().toggleCode().run()}><Code /></Botao>
+      <Botao titulo="Link" ativo={editor.isActive('link')} aoClicar={link}><IconeLink /></Botao>
+      <span />
+      <Botao titulo="Lista" ativo={editor.isActive('bulletList')} aoClicar={() => c().toggleBulletList().run()}><List /></Botao>
+      <Botao titulo="Lista numerada" ativo={editor.isActive('orderedList')} aoClicar={() => c().toggleOrderedList().run()}><ListOrdered /></Botao>
+      <Botao titulo="Lista de tarefas" ativo={editor.isActive('taskList')} aoClicar={() => c().toggleTaskList().run()}><ListTodo /></Botao>
+      <Botao titulo="Citação" ativo={editor.isActive('blockquote')} aoClicar={() => c().toggleBlockquote().run()}><Quote /></Botao>
+      <Botao titulo="Tabela" aoClicar={() => c().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><Table /></Botao>
+      <span>
+        <Botao titulo="Comentar" aoClicar={aoComentar}><MessageSquare /></Botao>
+        <Botao titulo="Histórico de versões" aoClicar={aoVersoes}><History /></Botao>
+        <Botao titulo="Importar Markdown" aoClicar={aoImportar}><Upload /></Botao>
+        <Botao titulo="Exportar Markdown" aoClicar={aoExportar}><Download /></Botao>
       </span>
     </div>
   )
@@ -108,7 +108,7 @@ export function EditorPagina({ pagina, podeEditar, eu, equipe, documentoTitulo }
     content: colaborativo ? undefined : ((pagina.conteudo as JSONContent | null) ?? ''),
     editable: podeEditar,
     immediatelyRender: false,
-    editorProps: { attributes: { class: 'documento min-h-[60vh] px-10 py-6 outline-none' } },
+    editorProps: { attributes: { class: 'documento' } },
   })
 
   const tituloRef = useRef(pagina.titulo)
@@ -179,24 +179,24 @@ export function EditorPagina({ pagina, podeEditar, eu, equipe, documentoTitulo }
     setPainel('comentarios')
   }
 
-  if (!editor) return <div className="p-6 text-corpo text-texto-3">Carregando editor…</div>
+  if (!editor) return <div>Carregando editor…</div>
   return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">
+    <div>
+      <div>
         {podeEditar ? (
           <Barra editor={editor} aoComentar={comentar} aoVersoes={() => setPainel('versoes')} aoExportar={exportar} aoImportar={() => arquivo.current?.click()} />
         ) : (
-          <div className="flex items-center gap-2 border-b border-borda bg-fundo/60 px-4 py-1.5 text-legenda text-texto-3">
+          <div>
             Somente leitura
-            <button type="button" onClick={exportar} className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-1 hover:bg-hover"><Download className="h-3.5 w-3.5" /> Exportar Markdown</button>
+            <button type="button" onClick={exportar}><Download /> Exportar Markdown</button>
           </div>
         )}
         <input ref={arquivo} type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => { void importar(e.target.files?.[0]); e.target.value = '' }} />
-        <div className="min-h-0 flex-1 overflow-y-auto bg-white">
-          <EditorContent editor={editor} className="mx-auto max-w-3xl" />
+        <div>
+          <EditorContent editor={editor} />
         </div>
-        <div className="flex items-center gap-3 border-t border-borda bg-fundo/60 px-4 py-1 text-legenda text-texto-3">
-          {colaborativo && <span className={status === 'sem-conexao' ? 'text-perigo' : undefined}>{ROTULO_STATUS[status]}</span>}
+        <div>
+          {colaborativo && <span>{ROTULO_STATUS[status]}</span>}
           {online.length > 1 && (
             <span title={online.map((p) => p.nome).join(', ')}>
               {online.filter((p) => p.id !== eu.id).map((p) => p.nome.split(' ')[0]).join(', ')} {online.length === 2 ? 'está' : 'estão'} aqui

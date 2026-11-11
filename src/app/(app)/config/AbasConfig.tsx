@@ -19,12 +19,11 @@ const ABAS = [
 export function AbasConfig() {
   const caminho = usePathname()
   return (
-    <nav className="mt-5 flex gap-6 overflow-x-auto whitespace-nowrap border-b border-borda [scrollbar-width:none]">
+    <nav>
       {ABAS.map(([href, rotulo]) => (
         <Link
           key={href}
           href={href}
-          className={`-mb-px shrink-0 border-b-2 pb-2.5 text-corpo font-semibold ${caminho === href ? 'border-texto text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}
         >
           {rotulo}
         </Link>

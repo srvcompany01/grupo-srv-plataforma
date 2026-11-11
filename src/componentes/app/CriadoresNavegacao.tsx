@@ -28,7 +28,6 @@ import { SeletorVisual, type EstadoVisual } from '@/componentes/SeletorVisual'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 
 type Opcao = { id: string; nome: string }
 
@@ -46,14 +45,13 @@ function OpcaoCriacao({ icone: Icone, nome, descricao, cor, onClick, seta = fals
       type="button"
       onClick={onClick}
       disabled={indisponivel}
-      className="group/opcao flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-[#f2f2f3] disabled:cursor-default disabled:opacity-55"
     >
-      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center" style={{ color: cor }}><Icone className="h-[18px] w-[18px]" /></span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 text-destaque font-medium text-[var(--text)]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-rotulo text-[#8b8c91]">Em breve</span>}</span>
-        {descricao && <span className="mt-0.5 block text-legenda leading-[1.45] text-[var(--text-2)]">{descricao}</span>}
+      <span style={{ color: cor }}><Icone /></span>
+      <span>
+        <span>{nome}{indisponivel && <span>Em breve</span>}</span>
+        {descricao && <span>{descricao}</span>}
       </span>
-      {seta && <ChevronRight className="mt-0.5 h-4 w-4 text-[#98999d]" />}
+      {seta && <ChevronRight />}
     </button>
   )
 }
@@ -63,7 +61,7 @@ const GatilhoPadrao = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
   ref,
 ) {
   return (
-    <button ref={ref} type="button" aria-label={aria} title={aria} className="rounded-[5px] p-1 text-lat-3 opacity-0 transition hover:bg-lat-hover hover:text-lat-fg group-hover:opacity-100 focus:opacity-100" {...props}>
+    <button ref={ref} type="button" aria-label={aria} title={aria} {...props}>
       {children}
     </button>
   )
@@ -80,10 +78,10 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild>{trigger ?? <GatilhoPadrao rotulo="Novo espaço"><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogTrigger asChild>{trigger ?? <GatilhoPadrao rotulo="Novo espaço"><Plus /></GatilhoPadrao>}</DialogTrigger>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-xl">Criar novo espaço</DialogTitle>
+          <DialogTitle>Criar novo espaço</DialogTitle>
           <DialogDescription>Defina a identidade e a posição do novo departamento na plataforma.</DialogDescription>
         </DialogHeader>
         <form
@@ -98,20 +96,19 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
               if (resultado?.id) router.push(`/espacos/${resultado.id}`)
             })
           }}
-          className="space-y-5"
         >
-          <div className="grid gap-4 sm:grid-cols-[72px_1fr]">
-            <div className="flex h-[72px] items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}>
-              <IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-8 w-8" />
+          <div>
+            <div style={{ background: visual.cor }}>
+              <IconeVisual icone={visual.icone} emoji={visual.emoji} />
             </div>
-            <div className="space-y-3">
-              <label className="block space-y-1"><span className={rotulo}>Nome do espaço</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} placeholder="Ex.: Marketing" /></label>
-              <label className="block space-y-1"><span className={rotulo}>Dentro de</span><select value={paiId} onChange={(e) => setPaiId(e.target.value)} className={campo}><option value="">Nível principal</option>{pais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+            <div>
+              <label><span>Nome do espaço</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Marketing" /></label>
+              <label><span>Dentro de</span><select value={paiId} onChange={(e) => setPaiId(e.target.value)}><option value="">Nível principal</option>{pais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
             </div>
           </div>
-          <label className="block space-y-1"><span className={rotulo}>Descrição</span><textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} className={`${campo} min-h-20`} placeholder="Qual é a finalidade deste espaço?" /></label>
+          <label><span>Descrição</span><textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Qual é a finalidade deste espaço?" /></label>
           <SeletorVisual valor={visual} onChange={setVisual} />
-          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar espaço'}</button></div>
+          <div><button type="button" onClick={() => setAberto(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>{pendente ? 'Criando…' : 'Criar espaço'}</button></div>
         </form>
       </DialogContent>
     </Dialog>
@@ -155,31 +152,31 @@ export function CriarEstruturaDialog({
   return (
     <>
       <Popover open={menuAberto} onOpenChange={setMenuAberto}>
-        <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
-        <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-lg border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
-          <div className="px-4 pb-2 pt-4"><p className="text-rotulo font-medium text-[var(--text-2)]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
-          <div className="px-2 pb-2">
+        <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus /></GatilhoPadrao>}</PopoverTrigger>
+        <PopoverContent side="right" align="start" sideOffset={9}>
+          <div><p>Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
+          <div>
             <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="var(--text-2)" onClick={() => abrirCriador('lista')} />
             <OpcaoCriacao icone={FolderPlus} nome="Pasta" descricao="Agrupe listas, documentos e muito mais" cor="var(--text-2)" onClick={() => abrirCriador('pasta')} />
           </div>
-          <div className="border-t border-[var(--border-soft)] px-2 py-2">
+          <div>
             <OpcaoCriacao icone={FileText} nome="Documento" cor="#168ff5" indisponivel />
             <OpcaoCriacao icone={BarChart3} nome="Painéis" cor="#ae48ca" indisponivel />
             <OpcaoCriacao icone={PenTool} nome="Quadro branco" cor="#eaaa16" indisponivel />
             <OpcaoCriacao icone={ClipboardCheck} nome="Formulário" cor="#7058eb" indisponivel />
           </div>
-          <div className="border-t border-[var(--border-soft)] px-2 py-2">
+          <div>
             <OpcaoCriacao icone={FileInput} nome="Importações" cor="var(--text-2)" seta indisponivel />
             <OpcaoCriacao icone={Sparkles} nome="Modelos" cor="var(--text-2)" indisponivel />
           </div>
         </PopoverContent>
       </Popover>
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent>
         <DialogHeader><DialogTitle>Adicionar em {espaco?.nome ?? 'Itens soltos'}</DialogTitle><DialogDescription>Crie a estrutura sem sair da navegação lateral.</DialogDescription></DialogHeader>
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-fundo p-1">
-          <button type="button" onClick={() => trocarModo('pasta')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'pasta' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><FolderPlus className="h-4 w-4" /> Pasta</button>
-          <button type="button" onClick={() => trocarModo('lista')} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${modo === 'lista' ? 'bg-white shadow-sm' : 'text-texto-2'}`}><ListPlus className="h-4 w-4" /> Lista</button>
+        <div>
+          <button type="button" onClick={() => trocarModo('pasta')}><FolderPlus /> Pasta</button>
+          <button type="button" onClick={() => trocarModo('lista')}><ListPlus /> Lista</button>
         </div>
         <form
           onSubmit={(e) => {
@@ -195,18 +192,17 @@ export function CriarEstruturaDialog({
               if (resultado?.id) router.push(`/listas/${resultado.id}`)
             })
           }}
-          className="space-y-4"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-5 w-5" /></div>
-            <label className="block flex-1 space-y-1"><span className={rotulo}>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
+          <div>
+            <div style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} /></div>
+            <label><span>Nome da {modo}</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} /></label>
           </div>
-          {modo === 'lista' && <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1"><span className={rotulo}>Pasta</span><select value={pastaId} onChange={(e) => setPastaId(e.target.value)} className={campo}><option value="">Sem pasta</option>{pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
-            <label className="space-y-1 sm:col-span-2"><span className={rotulo}>Mês de referência</span><input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className={campo} /></label>
+          {modo === 'lista' && <div>
+            <label><span>Pasta</span><select value={pastaId} onChange={(e) => setPastaId(e.target.value)}><option value="">Sem pasta</option>{pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+            <label><span>Mês de referência</span><input type="month" value={mes} onChange={(e) => setMes(e.target.value)} /></label>
           </div>}
           <SeletorVisual valor={visual} onChange={setVisual} />
-          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>{pendente ? 'Criando…' : `Criar ${modo}`}</button></div>
+          <div><button type="button" onClick={() => setAberto(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>{pendente ? 'Criando…' : `Criar ${modo}`}</button></div>
         </form>
         </DialogContent>
       </Dialog>
@@ -233,13 +229,13 @@ export function PersonalizarItemDialog({
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild><GatilhoPadrao rotulo={`Personalizar ${nomeInicial}`}><MoreHorizontal className="h-3.5 w-3.5" /></GatilhoPadrao></DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogTrigger asChild><GatilhoPadrao rotulo={`Personalizar ${nomeInicial}`}><MoreHorizontal /></GatilhoPadrao></DialogTrigger>
+      <DialogContent>
         <DialogHeader><DialogTitle>Personalizar</DialogTitle><DialogDescription>Escolha o nome, a cor e um ícone Lucide ou emoji.</DialogDescription></DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }} className="space-y-5">
-          <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-lg text-claro" style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} className="h-6 w-6" /></div><label className="flex-1 space-y-1"><span className={rotulo}>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label></div>
+        <form onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }}>
+          <div><div style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} /></div><label><span>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} /></label></div>
           <SeletorVisual valor={visual} onChange={setVisual} />
-          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAberto(false)} className={botaoSecundario}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>Salvar</button></div>
+          <div><button type="button" onClick={() => setAberto(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>Salvar</button></div>
         </form>
       </DialogContent>
     </Dialog>
@@ -247,5 +243,5 @@ export function PersonalizarItemDialog({
 }
 
 export function IconeAdicionarEstrutura() {
-  return <Layers3 className="h-3.5 w-3.5" />
+  return <Layers3 />
 }

@@ -7,22 +7,21 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="light"
-      className="toaster group"
       icons={{
         success: (
-          <CircleCheckIcon className="size-4" />
+          <CircleCheckIcon />
         ),
         info: (
-          <InfoIcon className="size-4" />
+          <InfoIcon />
         ),
         warning: (
-          <TriangleAlertIcon className="size-4" />
+          <TriangleAlertIcon />
         ),
         error: (
-          <OctagonXIcon className="size-4" />
+          <OctagonXIcon />
         ),
         loading: (
-          <Loader2Icon className="size-4 animate-spin" />
+          <Loader2Icon />
         ),
       }}
       style={

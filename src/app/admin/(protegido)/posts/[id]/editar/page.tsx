@@ -29,13 +29,13 @@ export default async function EditarPost({ params }: PageProps<'/admin/posts/[id
           { rotulo: 'Editar' },
         ]}
       />
-      <main className="flex-1 overflow-auto bg-white">
-        <div className="mx-auto max-w-3xl space-y-6 px-4 pt-6 sm:px-8">
-          <h1 className="text-2xl font-semibold">Editar post</h1>
+      <main>
+        <div>
+          <h1>Editar post</h1>
           {post.status === 'ajuste' && atual.resposta && (
-            <div className="rounded-lg border border-st-ajuste/30 bg-aviso-fundo p-3 text-destaque">
-              <p className="font-medium text-st-ajuste">{atual.resposta.nomeRespondente} pediu ajuste</p>
-              <p className="mt-1 whitespace-pre-wrap">{atual.resposta.comentario}</p>
+            <div>
+              <p>{atual.resposta.nomeRespondente} pediu ajuste</p>
+              <p>{atual.resposta.comentario}</p>
             </div>
           )}
           <EditorPost

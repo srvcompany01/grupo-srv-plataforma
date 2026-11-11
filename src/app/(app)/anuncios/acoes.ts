@@ -30,7 +30,6 @@ export async function alterarAnuncioAcao(clienteId: string, p: controle.Pedido):
   let msg = ''
   const r = await tentar(async () => { msg = await controle.executarAlteracao(sb, eu, cliente, { plataforma: p.plataforma, nivel: p.nivel, objetoId: String(p.objetoId), acao: p.acao, valor: Number(p.valor) || undefined }) })
   revalidatePath('/anuncios')
-  revalidatePath('/novo/anuncios')
   return r?.erro ? r : { ok: msg }
 }
 

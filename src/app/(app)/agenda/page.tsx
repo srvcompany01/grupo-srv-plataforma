@@ -107,11 +107,11 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   /** Abre o compromisso (ou o evento no Google). O conteúdo e o estilo mudam conforme a visão. */
   const abrir = (o: Ocorrencia, className: string, estilo: CSSProperties, conteudo: ReactNode) =>
     o.compromisso ? (
-      <CompromissoDialog {...dialogo} compromisso={o.compromisso} dia={dataLocal(o.inicio)} podeEditar={podeMexer(o.compromisso.criadoPor)} className={className} estilo={estilo}>
+      <CompromissoDialog {...dialogo} compromisso={o.compromisso} dia={dataLocal(o.inicio)} podeEditar={podeMexer(o.compromisso.criadoPor)} estilo={estilo}>
         {conteudo}
       </CompromissoDialog>
     ) : (
-      <a href={o.google!.link} target="_blank" rel="noreferrer" className={`${className} border-dashed`} style={estilo} title="Evento do seu Google Agenda">
+      <a href={o.google!.link} target="_blank" rel="noreferrer" style={estilo} title="Evento do seu Google Agenda">
         {conteudo}
       </a>
     )
@@ -119,9 +119,9 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Dia: lista ----------
   const visaoDia = () => {
     const lista = doDia(todas, data)
-    if (!lista.length) return <p className="rounded-lg border border-dashed border-borda py-12 text-center text-corpo text-texto-3">Nenhum compromisso neste dia.</p>
+    if (!lista.length) return <p>Nenhum compromisso neste dia.</p>
     return (
-      <ul className="divide-y divide-borda overflow-hidden rounded-lg border border-borda">
+      <ul>
         {lista.map((o) => {
           const c = o.compromisso
           const categoria = c?.categoriaId ? categoriaPorId.get(c.categoriaId) : undefined
@@ -133,20 +133,20 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
             <li key={o.id}>
               {abrir(o, 'flex w-full gap-3 px-3 py-2.5 text-left hover:bg-hover', {}, (
                 <>
-                  <span className="w-24 shrink-0 pt-0.5 text-rotulo tabular-nums text-texto-2">{horario(o)}</span>
-                  <span className="w-1 shrink-0 self-stretch rounded-full" style={{ background: corDe(o) }} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-corpo font-semibold text-texto">{o.titulo}</span>
-                    <span className="flex flex-wrap items-center gap-x-2 text-legenda text-texto-3">
-                      {categoria && <span className="font-medium" style={{ color: categoria.cor }}>{categoria.nome}</span>}
+                  <span>{horario(o)}</span>
+                  <span style={{ background: corDe(o) }} />
+                  <span>
+                    <span>{o.titulo}</span>
+                    <span>
+                      {categoria && <span style={{ color: categoria.cor }}>{categoria.nome}</span>}
                       {cliente && <NomeCliente nome={cliente} />}
-                      {Icone && <span className="flex items-center gap-1"><Icone className="h-3 w-3" /> criado por {criador}</span>}
+                      {Icone && <span><Icone /> criado por {criador}</span>}
                       {!c && <span>Google Agenda</span>}
                     </span>
-                    {c?.descricao && <span className="mt-0.5 line-clamp-2 block text-legenda text-texto-2">{c.descricao}</span>}
+                    {c?.descricao && <span>{c.descricao}</span>}
                     {tagsDoItem.length > 0 && (
-                      <span className="mt-1 flex flex-wrap gap-0.5">
-                        {tagsDoItem.map((t) => <span key={t.id} className="rounded px-1 text-micro font-medium text-claro" style={{ background: t.cor }}>{t.nome}</span>)}
+                      <span>
+                        {tagsDoItem.map((t) => <span key={t.id} style={{ background: t.cor }}>{t.nome}</span>)}
                       </span>
                     )}
                   </span>
@@ -162,35 +162,35 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Semana: grade de horas ----------
   const minutosAgora = (agora.getTime() - instante(hoje).getTime()) / 60_000
   const visaoSemana = () => (
-    <div className="overflow-x-auto rounded-lg border border-borda">
-      <div className="min-w-[760px]">
-        <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b border-borda bg-fundo/60">
+    <div>
+      <div>
+        <div>
           <span />
           {dias.map((dia, i) => (
-            <Link key={dia} href={url({ visao: 'dia', data: dia })} className="flex items-center justify-center gap-1.5 border-l border-[var(--border-soft)] hover:bg-hover" style={{ height: 48 }}>
-              <span className="text-[11px] uppercase text-texto-3">{SEMANA[i]}</span>
-              <span className={`flex h-6 min-w-6 items-center justify-center rounded-xl px-1.5 text-[13px] font-semibold tabular-nums ${dia === hoje ? 'bg-[#d80d12] text-white' : 'text-texto'}`}>{Number(dia.slice(8))}</span>
+            <Link key={dia} href={url({ visao: 'dia', data: dia })} style={{ height: 48 }}>
+              <span>{SEMANA[i]}</span>
+              <span>{Number(dia.slice(8))}</span>
             </Link>
           ))}
         </div>
-        <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b border-borda">
-          <span className="py-1.5 pr-1.5 text-right text-[10px] text-texto-3">Tarefas</span>
+        <div>
+          <span>Tarefas</span>
           {dias.map((dia) => (
-            <ul key={dia} className="min-h-6 space-y-0.5 border-l border-borda p-0.5">
+            <ul key={dia}>
               {doDia(todas, dia).filter((o) => o.diaInteiro).map((o) => (
                 <li key={o.id}>{abrir(o, 'block w-full truncate rounded px-1 py-0.5 text-left text-micro font-medium text-claro', { background: corDe(o) }, o.titulo)}</li>
               ))}
             </ul>
           ))}
         </div>
-        <RolarAoAbrir topo={7 * HORA_PX} className="max-h-[65vh] overflow-y-auto">
-          <div className="relative grid grid-cols-[3rem_repeat(7,1fr)]" style={{ height: 24 * HORA_PX }}>
-            <div className="relative">
-              {HORAS.slice(1).map((h) => <span key={h} className="absolute right-1 -translate-y-1/2 text-micro tabular-nums text-texto-3" style={{ top: h * HORA_PX }}>{String(h).padStart(2, '0')}:00</span>)}
+        <RolarAoAbrir topo={7 * HORA_PX}>
+          <div style={{ height: 24 * HORA_PX }}>
+            <div>
+              {HORAS.slice(1).map((h) => <span key={h} style={{ top: h * HORA_PX }}>{String(h).padStart(2, '0')}:00</span>)}
             </div>
             {dias.map((dia) => (
-              <div key={dia} className={`relative border-l border-borda ${dia === hoje ? 'bg-petroleo/[0.03]' : ''}`}>
-                {HORAS.slice(1).map((h) => <span key={h} className="pointer-events-none absolute inset-x-0 border-t border-borda" style={{ top: h * HORA_PX }} />)}
+              <div key={dia}>
+                {HORAS.slice(1).map((h) => <span key={h} style={{ top: h * HORA_PX }} />)}
                 {blocosDoDia(todas, dia).map((b) => {
                   const cor = corDe(b.ocorrencia)
                   const altura = Math.max(((b.ate - b.de) / 60) * HORA_PX, 18)
@@ -207,16 +207,16 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                     <div key={b.ocorrencia.id}>
                       {abrir(b.ocorrencia, 'absolute overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left hover:brightness-95', estilo, (
                         <>
-                          <span className="block truncate text-micro font-semibold text-texto">{b.ocorrencia.titulo}</span>
-                          {altura >= 34 && <span className="block truncate text-micro tabular-nums text-texto-2">{horario(b.ocorrencia)}</span>}
+                          <span>{b.ocorrencia.titulo}</span>
+                          {altura >= 34 && <span>{horario(b.ocorrencia)}</span>}
                         </>
                       ))}
                     </div>
                   )
                 })}
                 {dia === hoje && (
-                  <span className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-perigo" style={{ top: (minutosAgora / 60) * HORA_PX }}>
-                    <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-perigo" />
+                  <span style={{ top: (minutosAgora / 60) * HORA_PX }}>
+                    <span />
                   </span>
                 )}
               </div>
@@ -229,33 +229,33 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
 
   // ---------- Mês ----------
   const visaoMes = () => (
-    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-borda bg-borda">
-      {SEMANA.map((d) => <div key={d} className="bg-fundo px-1 py-1 text-center text-micro font-semibold text-texto-3">{d}</div>)}
+    <div>
+      {SEMANA.map((d) => <div key={d}>{d}</div>)}
       {dias.map((dia) => {
         const lista = doDia(todas, dia)
         const fora = !dia.startsWith(mes)
         return (
-          <div key={dia} className={`min-h-20 min-w-0 p-1 md:min-h-28 ${fora ? 'bg-fundo/60' : 'bg-white'}`}>
-            <Link href={url({ visao: 'dia', data: dia })} className={`mb-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-micro font-semibold ${dia === hoje ? 'bg-petroleo text-claro' : fora ? 'text-texto-3/60' : 'text-texto-2 hover:bg-hover'}`}>
+          <div key={dia}>
+            <Link href={url({ visao: 'dia', data: dia })}>
               {Number(dia.slice(8))}
             </Link>
-            <ul className="space-y-0.5">
+            <ul>
               {lista.slice(0, 3).map((o) => (
                 <li key={o.id}>
                   {abrir(o, 'flex w-full min-w-0 items-center gap-1 rounded px-0.5 text-left hover:bg-hover', o.diaInteiro ? { background: corDe(o) } : {}, (
                     o.diaInteiro ? (
-                      <span className="truncate text-micro font-medium text-claro">{o.titulo}</span>
+                      <span>{o.titulo}</span>
                     ) : (
                       <>
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: corDe(o) }} />
-                        <span className="truncate text-micro text-texto"><span className="tabular-nums text-texto-3">{horaLocal(o.inicio)} </span>{o.titulo}</span>
+                        <span style={{ background: corDe(o) }} />
+                        <span><span>{horaLocal(o.inicio)} </span>{o.titulo}</span>
                       </>
                     )
                   ))}
                 </li>
               ))}
             </ul>
-            {lista.length > 3 && <Link href={url({ visao: 'dia', data: dia })} className="mt-0.5 block text-micro font-semibold text-petroleo hover:underline">+{lista.length - 3} mais</Link>}
+            {lista.length > 3 && <Link href={url({ visao: 'dia', data: dia })}>+{lista.length - 3} mais</Link>}
           </div>
         )
       })}
@@ -263,21 +263,21 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   )
 
   return (
-    <div className="min-h-full bg-white">
-      <header className="sticky top-0 z-20 flex min-h-10 flex-wrap items-center justify-between gap-3 border-b border-borda-fraca bg-white px-3 py-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="flex items-center gap-2 text-destaque font-semibold"><CalendarDays className="h-4 w-4 text-texto-2" /> Agenda</h1>
-          <nav className="flex items-center gap-1" aria-label="Período">
-            <Link href={url({ data: passo(-1) })} aria-label="Anterior" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronLeft className="h-4 w-4" /></Link>
-            <Link href={url({ data: hoje })} className="rounded-lg border border-borda px-2 py-0.5 text-rotulo font-semibold text-texto-2 hover:bg-hover">Hoje</Link>
-            <Link href={url({ data: passo(1) })} aria-label="Próximo" className="rounded-lg p-1.5 text-texto-2 hover:bg-hover"><ChevronRight className="h-4 w-4" /></Link>
+    <div>
+      <header>
+        <div>
+          <h1><CalendarDays /> Agenda</h1>
+          <nav aria-label="Período">
+            <Link href={url({ data: passo(-1) })} aria-label="Anterior"><ChevronLeft /></Link>
+            <Link href={url({ data: hoje })}>Hoje</Link>
+            <Link href={url({ data: passo(1) })} aria-label="Próximo"><ChevronRight /></Link>
           </nav>
-          <span className="text-[13px] capitalize text-texto-2">{titulo}</span>
+          <span>{titulo}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <nav className="flex gap-0.5 rounded-full bg-[var(--bg-active)] p-0.5" aria-label="Visão">
+        <div>
+          <nav aria-label="Visão">
             {VISOES.map((v) => (
-              <Link key={v.valor} href={url({ visao: v.valor })} className={`rounded-md px-3 py-0.5 text-rotulo font-semibold ${visao === v.valor ? 'bg-[var(--bg)] text-texto' : 'text-texto-2 hover:text-texto'}`}>{v.rotulo}</Link>
+              <Link key={v.valor} href={url({ visao: v.valor })}>{v.rotulo}</Link>
             ))}
           </nav>
           {googleConfigurado() && <BotaoGoogle email={google ? google.email : null} />}
@@ -285,8 +285,8 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         </div>
       </header>
 
-      <div className="grid gap-3 p-3 lg:grid-cols-[13rem_1fr]">
-        <aside className="order-2 space-y-4 lg:order-1">
+      <div>
+        <aside>
           <PainelEtiquetas
             tipo="categoria"
             titulo="Categorias"
@@ -297,14 +297,14 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
             ]}
           />
           <PainelEtiquetas tipo="tag" titulo="Tags" linhas={tags.map((t) => ({ item: t, podeExcluir: podeMexer(t.criadoPor) }))} />
-          <p className="flex flex-col gap-1 text-legenda text-texto-3">
-            <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> só você</span>
-            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> toda a equipe</span>
-            <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> pessoas selecionadas</span>
+          <p>
+            <span><Lock /> só você</span>
+            <span><Users /> toda a equipe</span>
+            <span><UserCheck /> pessoas selecionadas</span>
           </p>
         </aside>
-        <main className="order-1 min-w-0 space-y-3 lg:order-2">
-          {aviso && <p className="rounded-lg border border-borda bg-fundo px-3 py-2 text-rotulo text-texto-2">{aviso}</p>}
+        <main>
+          {aviso && <p>{aviso}</p>}
           {visao === 'dia' ? visaoDia() : visao === 'semana' ? visaoSemana() : visaoMes()}
         </main>
       </div>

@@ -9,7 +9,6 @@ const INICIO: Estado = { etapa: 0, escolhas: [], enviando: false, url: null, err
 /** Caminho do quiz no endereço atual: funciona no domínio dedicado (/cliente) e no do aplicativo (/l/cliente). */
 const caminhoQuiz = () => `${location.pathname.replace(/\/$/, '')}/quiz`
 
-const botaoBase = 'block w-full rounded-md border border-black px-5 py-3.5 text-center text-base font-medium transition-colors'
 
 /** O botão do WhatsApp da bio: abre um quiz curto e só libera a conversa (e conta o lead) depois da última resposta. */
 export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: string; quiz: QuizDaPagina; origem: string; destaque: boolean }) {
@@ -47,39 +46,39 @@ export function QuizWhatsapp({ rotulo, quiz, origem, destaque }: { rotulo: strin
   const q = perguntas[s.etapa]
   return (
     <>
-      <button type="button" onClick={abrir} style={cores} className={`${botaoBase} ${cores ? 'hover:opacity-85' : destaque ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
+      <button type="button" onClick={abrir} style={cores}>
         {rotulo}
       </button>
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" role="dialog" aria-modal="true" onClick={() => !s.enviando && setAberto(false)}>
-          <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 text-black sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div role="dialog" aria-modal="true" onClick={() => !s.enviando && setAberto(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
             {s.url ? (
-              <div className="space-y-4 text-center">
-                <p className="text-lg font-semibold">Tudo certo!</p>
-                <p className="text-sm text-black/70">Abrindo o WhatsApp…</p>
-                <a href={s.url} style={cores} className={`${botaoBase} ${cores ? '' : 'bg-black text-claro'}`}>Abrir o WhatsApp</a>
+              <div>
+                <p>Tudo certo!</p>
+                <p>Abrindo o WhatsApp…</p>
+                <a href={s.url} style={cores}>Abrir o WhatsApp</a>
               </div>
             ) : (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between text-sm text-black/60">
+              <div>
+                <div>
                   <span>{s.etapa + 1} de {perguntas.length}</span>
-                  <button type="button" onClick={() => setAberto(false)} disabled={s.enviando} className="underline-offset-2 hover:underline">Fechar</button>
+                  <button type="button" onClick={() => setAberto(false)} disabled={s.enviando}>Fechar</button>
                 </div>
                 {s.etapa === 0 && (aparencia.titulo || aparencia.descricao) && (
-                  <div className="space-y-1.5">
-                    {aparencia.titulo && <h2 className="text-2xl font-semibold leading-tight">{aparencia.titulo}</h2>}
-                    {aparencia.descricao && <p className="text-sm text-black/70">{aparencia.descricao}</p>}
+                  <div>
+                    {aparencia.titulo && <h2>{aparencia.titulo}</h2>}
+                    {aparencia.descricao && <p>{aparencia.descricao}</p>}
                   </div>
                 )}
-                <p className="text-xl font-semibold leading-snug">{q.pergunta}</p>
-                <div className="flex flex-col gap-2.5">
+                <p>{q.pergunta}</p>
+                <div>
                   {q.opcoes.map((o, i) => (
-                    <button key={o} type="button" disabled={s.enviando} onClick={() => escolher(i)} className={`${botaoBase} bg-white text-black hover:bg-black hover:text-claro disabled:opacity-50`}>{o}</button>
+                    <button key={o} type="button" disabled={s.enviando} onClick={() => escolher(i)}>{o}</button>
                   ))}
                 </div>
-                {s.etapa > 0 && !s.enviando && <button type="button" onClick={() => setS({ ...s, etapa: s.etapa - 1 })} className="block w-full text-center text-sm text-black/60 underline-offset-2 hover:underline">Voltar</button>}
-                {s.enviando && <p className="text-center text-sm text-black/60">Um instante…</p>}
-                {s.erro && <p className="text-center text-sm text-black">{s.erro}</p>}
+                {s.etapa > 0 && !s.enviando && <button type="button" onClick={() => setS({ ...s, etapa: s.etapa - 1 })}>Voltar</button>}
+                {s.enviando && <p>Um instante…</p>}
+                {s.erro && <p>{s.erro}</p>}
               </div>
             )}
           </div>

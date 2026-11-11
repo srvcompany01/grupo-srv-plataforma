@@ -9,7 +9,6 @@ import { adicionarCampoExistente, criarCampoPersonalizado } from '@/app/(app)/ac
 import { Ic } from '@/componentes/app/Ic'
 import { IconeVisual } from '@/componentes/IconeVisual'
 import { configuracaoPadrao, type ConfigCampo, type DefinicaoCampo, type ItemCatalogoCampo } from '@/dominio/personalizacao'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import { AparenciaCampo } from './AparenciaCampo'
 import { avisar } from './avisar'
 import { Catalogo, ConfiguracaoCampo } from './GerenciarCampos'
@@ -57,8 +56,8 @@ function Toggle({ ligado, aoAlternar, desabilitado = false, rotuloA11y }: { liga
 
 function Secao({ titulo, total, aberta, aoAlternar }: { titulo: string; total: number; aberta: boolean; aoAlternar: () => void }) {
   return (
-    <button type="button" onClick={aoAlternar} className="flex h-9 w-full items-center gap-1 px-4 text-left text-[13px] text-texto-3 hover:text-texto-2">
-      <span>{titulo}</span><Ic n={aberta ? 'arrow_drop_down' : 'arrow_right'} s={18} /><span className="flex-1" /><span>{total}</span>
+    <button type="button" onClick={aoAlternar}>
+      <span>{titulo}</span><Ic n={aberta ? 'arrow_drop_down' : 'arrow_right'} s={18} /><span /><span>{total}</span>
     </button>
   )
 }
@@ -68,11 +67,11 @@ type Linha = { id: string; nome: string; icone: React.ReactNode; campoId?: strin
 function LinhaMostrada({ linha, aoAlternar, aoConfigurar }: { linha: Linha; aoAlternar: () => void; aoConfigurar?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: linha.id, disabled: linha.travada })
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }} className="group mx-2 flex h-9 items-center gap-2 rounded px-2 hover:bg-[var(--bg-hover)]">
-      <span {...(linha.travada ? {} : attributes)} {...(linha.travada ? {} : listeners)} className={`flex w-4 shrink-0 justify-center text-texto-3 ${linha.travada ? 'invisible' : 'cursor-grab opacity-0 group-hover:opacity-100'}`} aria-label="Arrastar para reordenar"><Ic n="drag_indicator" s={16} /></span>
-      <span className="flex w-5 shrink-0 justify-center text-texto-2">{linha.icone}</span>
-      <span className={`min-w-0 flex-1 truncate text-[14px] ${linha.travada ? 'text-texto-3' : ''}`}>{linha.nome}</span>
-      {aoConfigurar && <button type="button" onClick={aoConfigurar} aria-label={`Configurar ${linha.nome}`} title="Configurar campo" className="hidden h-6 w-6 items-center justify-center rounded text-texto-2 hover:bg-[var(--bg-active)] group-hover:flex"><Ic n="edit" s={15} /></button>}
+    <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }}>
+      <span {...(linha.travada ? {} : attributes)} {...(linha.travada ? {} : listeners)} aria-label="Arrastar para reordenar"><Ic n="drag_indicator" s={16} /></span>
+      <span>{linha.icone}</span>
+      <span>{linha.nome}</span>
+      {aoConfigurar && <button type="button" onClick={aoConfigurar} aria-label={`Configurar ${linha.nome}`} title="Configurar campo" className="hidden"><Ic n="edit" s={15} /></button>}
       <Toggle ligado aoAlternar={aoAlternar} desabilitado={linha.travada} rotuloA11y={`Ocultar ${linha.nome}`} />
     </div>
   )
@@ -123,7 +122,7 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
     ...colunas.map((c): Linha => {
       if (c.startsWith('campo:')) {
         const f = porCampo.get(c.slice(6))
-        return { id: c, nome: f?.nome ?? 'Campo', campoId: f?.id, icone: f ? <span style={{ color: f.cor }}><IconeVisual icone={f.icone} className="h-4 w-4" /></span> : <Ic n="tune" s={18} /> }
+        return { id: c, nome: f?.nome ?? 'Campo', campoId: f?.id, icone: f ? <span style={{ color: f.cor }}><IconeVisual icone={f.icone} /></span> : <Ic n="tune" s={18} /> }
       }
       const p = PROP.get(c)
       return { id: c, nome: p?.nome ?? c, icone: <Ic n={p?.ms ?? 'view_column'} s={18} /> }
@@ -164,35 +163,35 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
 
   if (!aberto) return null
   return (
-    <aside aria-label="Campos" className="fixed bottom-2 right-2 top-10 z-40 flex w-[min(400px,calc(100vw-16px))] flex-col overflow-hidden border border-borda bg-[var(--bg)] max-md:inset-0 max-md:w-auto" style={{ borderRadius: 10, boxShadow: 'var(--shadow-panel)' }}>
-      <header className="flex h-14 shrink-0 items-center gap-2 px-4">
-        <h2 className="flex-1 text-[16px] font-semibold">Campos</h2>
-        <Link href="/config/campos" title="Gerenciar campos personalizados" aria-label="Gerenciar campos personalizados" className="flex h-8 w-8 items-center justify-center rounded-md text-texto-2 hover:bg-hover"><Ic n="settings" s={19} /></Link>
-        <button type="button" onClick={aoFechar} aria-label="Fechar" className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-active)] text-texto-2 hover:bg-[var(--border)]"><Ic n="close" s={18} /></button>
+    <aside aria-label="Campos" style={{ borderRadius: 10, boxShadow: 'var(--shadow-panel)' }}>
+      <header>
+        <h2>Campos</h2>
+        <Link href="/config/campos" title="Gerenciar campos personalizados" aria-label="Gerenciar campos personalizados"><Ic n="settings" s={19} /></Link>
+        <button type="button" onClick={aoFechar} aria-label="Fechar"><Ic n="close" s={18} /></button>
       </header>
-      <div className="shrink-0 px-4 pb-3">
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar campos de tarefa" aria-label="Pesquisar campos de tarefa" autoFocus className="h-10 w-full rounded-md border border-borda bg-[var(--bg)] px-3 text-[14px] outline-none focus:border-[var(--focus)] focus:ring-3 focus:ring-[var(--focus-ring)]" />
+      <div>
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar campos de tarefa" aria-label="Pesquisar campos de tarefa" autoFocus />
       </div>
       {podeGerir && (
-        <div role="tablist" className="flex shrink-0 gap-6 border-b border-borda px-4 text-[15px]">
+        <div role="tablist">
           {([['novo', 'Criar novo'], ['existente', 'Adicionar um existente']] as const).map(([k, r]) => (
-            <button key={k} type="button" role="tab" aria-selected={aba === k} onClick={() => setAba(k)} className="h-11" style={{ borderBottom: `2px solid ${aba === k ? 'var(--text)' : 'transparent'}`, fontWeight: aba === k ? 600 : 400, color: aba === k ? 'var(--text)' : 'var(--text-2)' }}>{r}</button>
+            <button key={k} type="button" role="tab" aria-selected={aba === k} onClick={() => setAba(k)} style={{ borderBottom: `2px solid ${aba === k ? 'var(--text)' : 'transparent'}`, fontWeight: aba === k ? 600 : 400, color: aba === k ? 'var(--text)' : 'var(--text-2)' }}>{r}</button>
           ))}
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+      <div>
         {podeGerir && aba === 'novo' ? (
           selecionado ? (
-            <form className="space-y-4 p-4" onSubmit={(e) => { e.preventDefault(); criar() }}>
-              <button type="button" className="text-[12px] font-semibold text-[var(--client)] hover:underline" onClick={() => setSelecionado(null)}>← Voltar aos tipos</button>
-              <label className="block space-y-1"><span className={rotulo}>Nome do campo</span><input autoFocus required className={campo} value={nome} onChange={(e) => setNome(e.target.value)} /></label>
+            <form onSubmit={(e) => { e.preventDefault(); criar() }}>
+              <button type="button" onClick={() => setSelecionado(null)}>← Voltar aos tipos</button>
+              <label><span>Nome do campo</span><input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} /></label>
               <ConfiguracaoCampo item={selecionado} config={config} onChange={setConfig} campos={camposDoEspaco} />
               <AparenciaCampo cor={corNova} aoMudarCor={setCorNova} icone={iconeNovo} aoMudarIcone={setIconeNovo} iconePadrao={selecionado.icone} />
-              <div className="flex justify-end gap-2"><button type="button" className={botaoSecundario} onClick={() => setSelecionado(null)}>Cancelar</button><button disabled={pendente || !nome.trim()} className={botaoPrimario}>{pendente ? 'Criando…' : 'Criar e adicionar'}</button></div>
+              <div><button type="button" onClick={() => setSelecionado(null)}>Cancelar</button><button disabled={pendente || !nome.trim()}>{pendente ? 'Criando…' : 'Criar e adicionar'}</button></div>
             </form>
           ) : (
-            <div className="p-3"><Catalogo busca={busca} onSelect={escolher} /></div>
+            <div><Catalogo busca={busca} onSelect={escolher} /></div>
           )
         ) : (
           <>
@@ -206,25 +205,25 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
                 </SortableContext>
               </DndContext>
             )}
-            <div className="my-2 border-t border-borda" />
+            <div />
             <Secao titulo="Propriedades" total={PROPRIEDADES.length - PROPRIEDADES.filter((p) => idsVisiveis.has(p.id)).length} aberta={abertas.propriedades} aoAlternar={() => setAbertas((a) => ({ ...a, propriedades: !a.propriedades }))} />
             {abertas.propriedades && propriedades.map((p) => (
-              <div key={p.id} className="mx-2 flex h-9 items-center gap-2 rounded px-2 hover:bg-[var(--bg-hover)]" title={p.pronta ? undefined : 'Ainda não disponível nesta plataforma'}>
-                <span className="w-4 shrink-0" />
-                <span className="flex w-5 shrink-0 justify-center text-texto-2"><Ic n={p.ms} s={18} /></span>
-                <span className={`min-w-0 flex-1 truncate text-[14px] ${p.pronta ? '' : 'text-texto-3'}`}>{p.nome}</span>
+              <div key={p.id} title={p.pronta ? undefined : 'Ainda não disponível nesta plataforma'}>
+                <span />
+                <span><Ic n={p.ms} s={18} /></span>
+                <span>{p.nome}</span>
                 <Toggle ligado={false} desabilitado={!p.pronta} aoAlternar={() => alternar(p.id)} rotuloA11y={`Mostrar ${p.nome}`} />
               </div>
             ))}
             {camposForaDaTela.length > 0 && (
               <>
-                <div className="my-2 border-t border-borda" />
+                <div />
                 <Secao titulo="Campos da lista ocultos" total={camposForaDaTela.length} aberta aoAlternar={() => {}} />
                 {camposForaDaTela.map((c) => (
-                  <div key={c.id} className="mx-2 flex h-9 items-center gap-2 rounded px-2 hover:bg-[var(--bg-hover)]">
-                    <span className="w-4 shrink-0" />
-                    <span className="flex w-5 shrink-0 justify-center" style={{ color: c.cor }}><IconeVisual icone={c.icone} className="h-4 w-4" /></span>
-                    <span className="min-w-0 flex-1 truncate text-[14px]">{c.nome}</span>
+                  <div key={c.id}>
+                    <span />
+                    <span style={{ color: c.cor }}><IconeVisual icone={c.icone} /></span>
+                    <span>{c.nome}</span>
                     <Toggle ligado={false} aoAlternar={() => alternar(c.id)} rotuloA11y={`Mostrar ${c.nome}`} />
                   </div>
                 ))}
@@ -232,10 +231,10 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
             )}
             {podeGerir && (
               <>
-                <div className="my-2 border-t border-borda" />
+                <div />
                 <Secao titulo="Campos personalizados herdados" total={herdados.length} aberta={abertas.herdados} aoAlternar={() => setAbertas((a) => ({ ...a, herdados: !a.herdados }))} />
                 {abertas.herdados && herdados.map((c) => <CampoDoEspaco key={c.id} c={c} pendente={pendente} adicionar={adicionar} />)}
-                <div className="my-2 border-t border-borda" />
+                <div />
                 <Secao titulo="Campos personalizados no Espaço de trabalho" total={doEspacoProprios.length} aberta={abertas.espaco} aoAlternar={() => setAbertas((a) => ({ ...a, espaco: !a.espaco }))} />
                 {abertas.espaco && doEspacoProprios.map((c) => <CampoDoEspaco key={c.id} c={c} pendente={pendente} adicionar={adicionar} />)}
               </>
@@ -249,10 +248,10 @@ export function PainelCampos({ aberto, aoFechar, listaId, espacoId, camposDaList
 
 function CampoDoEspaco({ c, pendente, adicionar }: { c: DefinicaoCampo; pendente: boolean; adicionar: (id: string) => void }) {
   return (
-    <div className="mx-2 flex h-9 items-center gap-2 rounded px-2 hover:bg-[var(--bg-hover)]">
-      <span className="w-4 shrink-0" />
-      <span className="flex w-5 shrink-0 justify-center" style={{ color: c.cor }}><IconeVisual icone={c.icone} className="h-4 w-4" /></span>
-      <span className="min-w-0 flex-1 truncate text-[14px]">{c.nome}</span>
+    <div>
+      <span />
+      <span style={{ color: c.cor }}><IconeVisual icone={c.icone} /></span>
+      <span>{c.nome}</span>
       <Toggle ligado={false} desabilitado={pendente} aoAlternar={() => adicionar(c.id)} rotuloA11y={`Adicionar ${c.nome} à lista`} />
     </div>
   )

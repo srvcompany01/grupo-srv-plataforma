@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react'
 import { responderPostAcao } from '@/app/cliente/[slug]/acoes'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
-import { botaoFantasma, botaoPrimario, campo } from '@/lib/ui'
 
 const CHAVE_NOME = 'srv-cliente-nome'
 
@@ -37,30 +36,30 @@ export function RespostaPost({ slug, tarefaId, quando }: { slug: string; tarefaI
   }
 
   const campoNome = (
-    <label className="block space-y-1">
-      <span className="text-legenda font-medium text-texto-3">Seu nome</span>
-      <input value={nome} onChange={(e) => lembrar(e.target.value)} placeholder="Quem está respondendo" maxLength={80} className={campo} suppressHydrationWarning />
+    <label>
+      <span>Seu nome</span>
+      <input value={nome} onChange={(e) => lembrar(e.target.value)} placeholder="Quem está respondendo" maxLength={80} suppressHydrationWarning />
     </label>
   )
 
   if (ajuste) {
     return (
-      <div className="space-y-2">
+      <div>
         {campoNome}
-        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} autoFocus placeholder="O que você quer mudar? (texto, imagem, horário…)" className={campo} maxLength={2000} />
-        <div className="flex gap-2">
-          <button type="button" className={botaoPrimario} disabled={pendente || !texto.trim() || !nome.trim()} onClick={() => responder('ajuste')}><PencilLine className="h-4 w-4" /> Enviar pedido de ajuste</button>
-          <button type="button" className={botaoFantasma} onClick={() => setAjuste(false)}>Voltar</button>
+        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} autoFocus placeholder="O que você quer mudar? (texto, imagem, horário…)" maxLength={2000} />
+        <div>
+          <button type="button" disabled={pendente || !texto.trim() || !nome.trim()} onClick={() => responder('ajuste')}><PencilLine /> Enviar pedido de ajuste</button>
+          <button type="button" onClick={() => setAjuste(false)}>Voltar</button>
         </div>
       </div>
     )
   }
   return (
-    <div className="space-y-2">
+    <div>
     {campoNome}
-    <div className="grid grid-cols-2 gap-2">
-      <button type="button" disabled={pendente || !nome.trim()} onClick={aprovar} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-sucesso px-4 text-corpo font-semibold text-claro hover:bg-sucesso-forte disabled:opacity-50"><Check className="h-4 w-4" /> Aprovar</button>
-      <button type="button" disabled={pendente} onClick={() => setAjuste(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-borda bg-white px-4 text-corpo font-semibold text-texto hover:bg-hover disabled:opacity-50"><PencilLine className="h-4 w-4" /> Pedir ajuste</button>
+    <div>
+      <button type="button" disabled={pendente || !nome.trim()} onClick={aprovar}><Check /> Aprovar</button>
+      <button type="button" disabled={pendente} onClick={() => setAjuste(true)}><PencilLine /> Pedir ajuste</button>
     </div>
     </div>
   )

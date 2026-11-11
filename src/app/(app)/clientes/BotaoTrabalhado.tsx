@@ -21,9 +21,8 @@ export function BotaoTrabalhado({ clienteId, nome, marcado }: { clienteId: strin
         definir(!exibido)
         avisar(await marcarTrabalhadoHojeAcao(clienteId, !exibido))
       })}
-      className={`absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full shadow-sm transition ${exibido ? 'bg-sucesso text-claro' : 'bg-white/90 text-texto-3 hover:bg-white hover:text-sucesso'}`}
     >
-      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+      <Check strokeWidth={3} />
     </button>
   )
 }

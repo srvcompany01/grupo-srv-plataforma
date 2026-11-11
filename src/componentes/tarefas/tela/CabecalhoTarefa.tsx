@@ -10,7 +10,6 @@ import { arquivarTarefaAcao, atualizarTarefaAcao, moverParaListaAcao } from '@/a
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/componentes/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { rotuloMes } from '@/dominio/formatar'
-import { botaoFantasma, campo } from '@/lib/ui'
 import type { StatusLista } from '@/dominio/tarefas'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { Ic } from '@/componentes/app/Ic'
@@ -46,24 +45,24 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex h-8 items-center gap-1.5 pr-8 text-[12px] text-texto-3">
-        <CircleDot className="h-3.5 w-3.5" />
-        <Link href={`/listas/${t.lista.id}`} className="max-w-[16rem] truncate hover:text-texto">{t.lista.nome}</Link>
+    <div>
+      <div>
+        <CircleDot />
+        <Link href={`/listas/${t.lista.id}`}>{t.lista.nome}</Link>
         <span>/</span>
-        <span className="font-medium text-texto-2">{ehSubtarefa ? 'Subtarefa' : 'Tarefa'}</span>
-        <button onClick={copiarLink} aria-label="Copiar link da tarefa" title="Copiar link" className="rounded p-1.5 hover:bg-hover hover:text-texto">
-          <Link2 className="h-4 w-4" />
+        <span>{ehSubtarefa ? 'Subtarefa' : 'Tarefa'}</span>
+        <button onClick={copiarLink} aria-label="Copiar link da tarefa" title="Copiar link">
+          <Link2 />
         </button>
-        <span className="flex-1" />
+        <span />
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Mais ações" className="rounded p-1.5 hover:bg-hover hover:text-texto">
-            <MoreHorizontal className="h-4 w-4" />
+          <DropdownMenuTrigger aria-label="Mais ações">
+            <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {!ehSubtarefa && (
               <DropdownMenuItem onSelect={() => setMovendo(true)}>
-                <ArrowRightLeft className="h-4 w-4" /> Mover para lista
+                <ArrowRightLeft /> Mover para lista
               </DropdownMenuItem>
             )}
             {podeGerir && (
@@ -78,7 +77,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
                   })
                 }
               >
-                <Archive className="h-4 w-4" /> Arquivar tarefa
+                <Archive /> Arquivar tarefa
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -86,19 +85,19 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
       </div>
 
       {t.pai ? (
-        <Link href={`/tarefas/${t.pai.id}`} className="inline-flex max-w-full items-center gap-1.5 text-rotulo text-texto-2 hover:text-marca">
-          Subtarefa de <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-texto-3" />
-          <span className="truncate font-medium">{t.pai.titulo}</span>
+        <Link href={`/tarefas/${t.pai.id}`}>
+          Subtarefa de <span />
+          <span>{t.pai.titulo}</span>
         </Link>
       ) : (
         t.paiId && (
-          <Link href={`/tarefas/${t.paiId}`} className="text-rotulo text-texto-2 hover:text-marca">
+          <Link href={`/tarefas/${t.paiId}`}>
             Subtarefa de uma tarefa mãe
           </Link>
         )
       )}
 
-      <div className="flex items-center" style={{ gap: 0 }}>
+      <div style={{ gap: 0 }}>
         {(() => {
           const atual = status.find((x) => x.id === t.statusId)
           const proximo = status[status.findIndex((x) => x.id === t.statusId) + 1]
@@ -120,8 +119,8 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
             </>
           )
         })()}
-        <span className="flex-1" />
-        <span className="text-[12px] text-texto-3">SRV-{t.id.slice(0, 4).toUpperCase()}</span>
+        <span />
+        <span>SRV-{t.id.slice(0, 4).toUpperCase()}</span>
       </div>
 
       <input
@@ -131,19 +130,18 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
           if (titulo.trim() && titulo !== t.titulo) iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, { titulo })))
         }}
         aria-label="Título"
-        className="w-full rounded-md border border-transparent px-1.5 py-0.5 text-[18px] font-semibold leading-snug outline-none hover:border-borda focus:border-[var(--focus)] focus:ring-3 focus:ring-[var(--focus-ring)]"
       />
 
-      <div className="text-rotulo text-texto-3">
+      <div>
         {t.lista.clienteNome && <><NomeCliente nome={t.lista.clienteNome} arroba href={t.lista.clienteId ? `/clientes/${t.lista.clienteId}` : undefined} /></>}
         {t.lista.mes && `${t.lista.clienteNome ? ' · ' : ''}${rotuloMes(t.lista.mes)}`}
       </div>
 
       <Dialog open={movendo} onOpenChange={setMovendo}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogTitle>Mover para lista</DialogTitle>
           <DialogDescription>A tarefa e as subtarefas vão para a lista escolhida.</DialogDescription>
-          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)} className={`${campo} h-9 py-0 text-corpo`}>
+          <select value={t.lista.id} disabled={pendente} onChange={(e) => mover(e.target.value)}>
             {listas.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.espacoNome} › {l.nome}{l.clienteNome ? ` · @${l.clienteNome}` : ''}
@@ -151,7 +149,7 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
               </option>
             ))}
           </select>
-          <button onClick={() => setMovendo(false)} className={`${botaoFantasma} justify-self-end`}>
+          <button onClick={() => setMovendo(false)}>
             Cancelar
           </button>
         </DialogContent>

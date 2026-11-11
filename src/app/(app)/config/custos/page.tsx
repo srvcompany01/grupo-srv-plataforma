@@ -24,51 +24,51 @@ export default async function Custos() {
   const contagem = (s: SituacaoCusto) => SERVICOS_DE_CUSTO.filter((x) => x.situacao === s).length
 
   return (
-    <div className="space-y-4">
-      <p className="rounded-lg border border-borda bg-fundo px-3 py-2 text-rotulo text-texto-2">
+    <div>
+      <p>
         Os limites abaixo são <strong>valores de referência</strong> de cada fornecedor e mudam com o tempo. Eu não consigo ver o seu plano nem a sua fatura: para o valor real, abra o painel de cada serviço pelo link.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div>
         {(Object.keys(ROTULO_SITUACAO) as SituacaoCusto[]).map((s) => (
-          <div key={s} className="rounded-lg border border-borda bg-white px-3 py-2">
-            <p className="text-legenda text-texto-3">{ROTULO_SITUACAO[s]}</p>
-            <p className="text-destaque font-semibold" style={{ color: COR[s] }}>{contagem(s)} serviço(s)</p>
+          <div key={s}>
+            <p>{ROTULO_SITUACAO[s]}</p>
+            <p style={{ color: COR[s] }}>{contagem(s)} serviço(s)</p>
           </div>
         ))}
       </div>
 
       <Modulo icone={HardDrive} titulo="O que dá para medir daqui: armazenamento (Cloudflare R2)" descricao="Posts, anexos, criativos e a caixa de entrada, contra os 10 GB grátis de referência">
-        <div className="space-y-2 text-rotulo">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <span><strong className="text-destaque">{tamanho(r2)}</strong> em uso de ~10 GB grátis ({pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%)</span>
-            <span className="text-legenda text-texto-3">arquivos dos posts e anexos: {tamanho(emUso)} · caixa de entrada: {tamanho(naCaixa)}</span>
+        <div>
+          <div>
+            <span><strong>{tamanho(r2)}</strong> em uso de ~10 GB grátis ({pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%)</span>
+            <span>arquivos dos posts e anexos: {tamanho(emUso)} · caixa de entrada: {tamanho(naCaixa)}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-active)]"><div className="h-full" style={{ width: `${pct}%`, background: pct > 80 ? 'var(--red)' : pct > 60 ? '#e08a00' : 'var(--ok)' }} /></div>
-          <p className="text-legenda text-texto-3">O áudio extraído dos vídeos e as cópias de segurança não entram nessa conta. Os outros serviços não têm medidor aqui: use o painel de cada um.</p>
+          <div><div style={{ width: `${pct}%`, background: pct > 80 ? 'var(--red)' : pct > 60 ? '#e08a00' : 'var(--ok)' }} /></div>
+          <p>O áudio extraído dos vídeos e as cópias de segurança não entram nessa conta. Os outros serviços não têm medidor aqui: use o painel de cada um.</p>
         </div>
       </Modulo>
 
       <Modulo icone={Coins} titulo="Todos os serviços da plataforma" descricao="O que é grátis, até onde, e o que passa a custar">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[56rem] text-rotulo">
+        <div>
+          <table>
             <thead>
-              <tr className="border-b border-borda text-left text-legenda text-texto-3">
-                <th className="py-2 pr-3 font-medium">Serviço</th>
-                <th className="py-2 pr-3 font-medium">Situação</th>
-                <th className="py-2 pr-3 font-medium">O que é grátis</th>
-                <th className="py-2 pr-3 font-medium">Depois do limite</th>
-                <th className="py-2 font-medium" />
+              <tr>
+                <th>Serviço</th>
+                <th>Situação</th>
+                <th>O que é grátis</th>
+                <th>Depois do limite</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {SERVICOS_DE_CUSTO.map((s) => (
-                <tr key={s.id} className="border-b border-borda-fraca align-top last:border-b-0">
-                  <td className="py-2 pr-3"><p className="font-semibold">{s.nome}</p><p className="text-legenda text-texto-3">{s.paraQue}</p></td>
-                  <td className="py-2 pr-3"><span className="whitespace-nowrap rounded px-1.5 text-legenda font-semibold" style={{ color: COR[s.situacao], background: `color-mix(in srgb, ${COR[s.situacao]} 14%, transparent)` }}>{ROTULO_SITUACAO[s.situacao]}</span></td>
-                  <td className="py-2 pr-3 text-texto-2">{s.gratis}</td>
-                  <td className="py-2 pr-3 text-texto-2">{s.depois}</td>
-                  <td className="py-2"><a href={s.painel} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 whitespace-nowrap text-[var(--client)] hover:underline">Painel <ExternalLink className="h-3 w-3" /></a></td>
+                <tr key={s.id}>
+                  <td><p>{s.nome}</p><p>{s.paraQue}</p></td>
+                  <td><span style={{ color: COR[s.situacao], background: `color-mix(in srgb, ${COR[s.situacao]} 14%, transparent)` }}>{ROTULO_SITUACAO[s.situacao]}</span></td>
+                  <td>{s.gratis}</td>
+                  <td>{s.depois}</td>
+                  <td><a href={s.painel} target="_blank" rel="noreferrer">Painel <ExternalLink /></a></td>
                 </tr>
               ))}
             </tbody>

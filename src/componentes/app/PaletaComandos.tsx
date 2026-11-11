@@ -27,10 +27,10 @@ export function PaletaComandos({ aberta, aoMudar, navegacao, papel, chatNaoLidas
     aoMudar(valor)
   }
   return (
-    <CommandDialog open={aberta} onOpenChange={fechando} title="Pesquisar" description="Abra um módulo, espaço ou lista, ou pesquise tarefas." className="sm:max-w-xl">
+    <CommandDialog open={aberta} onOpenChange={fechando} title="Pesquisar" description="Abra um módulo, espaço ou lista, ou pesquise tarefas.">
       <Command>
         <CommandInput value={texto} onValueChange={setTexto} placeholder="Pesquisar módulos, espaços, listas e tarefas…" />
-        <CommandList className="max-h-96">
+        <CommandList>
           <CommandEmpty>Nada encontrado. Pressione Enter para pesquisar tarefas.</CommandEmpty>
           {texto.trim() && (
             <CommandGroup heading="Tarefas">
@@ -49,8 +49,8 @@ export function PaletaComandos({ aberta, aoMudar, navegacao, papel, chatNaoLidas
               {destinos.map((d) => (
                 <CommandItem key={`${d.tipo}:${d.id}`} value={`${d.rotulo} ${d.contexto}`} onSelect={() => ir(d.href)}>
                   {d.tipo === 'espaco' ? <Layers /> : d.contexto.includes('/') ? <ListTodo /> : <Folder />}
-                  <span className="truncate">{d.rotulo}</span>
-                  {d.contexto && <span className="ml-auto truncate pl-3 text-legenda text-texto-3">{d.contexto}</span>}
+                  <span>{d.rotulo}</span>
+                  {d.contexto && <span>{d.contexto}</span>}
                 </CommandItem>
               ))}
             </CommandGroup>

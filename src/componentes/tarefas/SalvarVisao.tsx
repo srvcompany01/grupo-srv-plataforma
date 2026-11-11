@@ -28,12 +28,12 @@ export function SalvarVisao({ listaId, caminho, params, alterada, temSalva, vist
 
   if (alterada) {
     return (
-      <div className="flex items-center gap-1.5" role="group" aria-label="Visualização alterada">
-        <button type="button" onClick={salvar} disabled={pendente} className="b-pri" title="Salvar visualização">
+      <div role="group" aria-label="Visualização alterada">
+        <button type="button" onClick={salvar} disabled={pendente} title="Salvar visualização">
           <Ic n="save" s={16} /> Salvar visualização
         </button>
         {/* URL limpa: volta para a salva (ou o original). */}
-        <button type="button" onClick={() => router.replace(caminho, { scroll: false })} disabled={pendente} className="b-ghost" title="Descartar as mudanças desta tela">
+        <button type="button" onClick={() => router.replace(caminho, { scroll: false })} disabled={pendente} title="Descartar as mudanças desta tela">
           <Ic n="undo" s={16} /> Descartar
         </button>
       </div>
@@ -41,16 +41,16 @@ export function SalvarVisao({ listaId, caminho, params, alterada, temSalva, vist
   }
   if (temSalva) {
     return (
-      <div className="flex items-center gap-1.5 text-rotulo text-texto-2">
-        <span className="b-icon" title="Visualização salva" style={{ color: 'var(--ok)' }}><Ic n="save" s={16} fill /></span>
-        <button type="button" onClick={restaurar} disabled={pendente} className="b-ghost" title="Apaga a visualização salva e volta ao original">
+      <div>
+        <span title="Visualização salva" style={{ color: 'var(--ok)' }}><Ic n="save" s={16} fill /></span>
+        <button type="button" onClick={restaurar} disabled={pendente} title="Apaga a visualização salva e volta ao original">
           Voltar ao original
         </button>
       </div>
     )
   }
   return (
-    <button type="button" className="b-icon" title="Salvar visualização" aria-label="Salvar visualização" onClick={() => toast('Mude o agrupamento, os filtros ou as colunas para poder salvar a visualização.')}>
+    <button type="button" title="Salvar visualização" aria-label="Salvar visualização" onClick={() => toast('Mude o agrupamento, os filtros ou as colunas para poder salvar a visualização.')}>
       <Ic n="save" s={16} />
     </button>
   )

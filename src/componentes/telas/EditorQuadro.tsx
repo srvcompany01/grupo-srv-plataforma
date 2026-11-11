@@ -75,8 +75,8 @@ function Seta({ e, selecionado }: { e: Extract<ElementoQuadro, { tipo: 'seta' }>
 
 function Forma({ e, children }: { e: Extract<ElementoQuadro, { tipo: 'retangulo' | 'elipse' | 'losango' }>; children: ReactNode }) {
   return (
-    <div className="absolute" style={{ left: e.x, top: e.y, width: e.w, height: e.h }}>
-      <svg width={e.w} height={e.h} className="absolute inset-0 overflow-visible" aria-hidden="true">
+    <div style={{ left: e.x, top: e.y, width: e.w, height: e.h }}>
+      <svg width={e.w} height={e.h} aria-hidden="true">
         {e.tipo === 'retangulo' && <rect x={1.5} y={1.5} width={e.w - 3} height={e.h - 3} rx={8} fill={e.cor} stroke={e.borda} strokeWidth={3} />}
         {e.tipo === 'elipse' && <ellipse cx={e.w / 2} cy={e.h / 2} rx={e.w / 2 - 1.5} ry={e.h / 2 - 1.5} fill={e.cor} stroke={e.borda} strokeWidth={3} />}
         {e.tipo === 'losango' && <polygon points={`${e.w / 2},1.5 ${e.w - 1.5},${e.h / 2} ${e.w / 2},${e.h - 1.5} 1.5,${e.h / 2}`} fill={e.cor} stroke={e.borda} strokeWidth={3} strokeLinejoin="round" />}
@@ -86,8 +86,8 @@ function Forma({ e, children }: { e: Extract<ElementoQuadro, { tipo: 'retangulo'
   )
 }
 
-function CampoTexto({ valor, editando, aoMudar, aoSair, className, style }: { valor: string; editando: boolean; aoMudar: (v: string) => void; aoSair: () => void; className: string; style?: CSSProperties }) {
-  if (!editando) return <div className={`${className} whitespace-pre-wrap break-words`} style={style}>{valor}</div>
+function CampoTexto({ valor, editando, aoMudar, aoSair, className, style }: { valor: string; editando: boolean; aoMudar: (v: string) => void; aoSair: () => void; className?: string; style?: CSSProperties }) {
+  if (!editando) return <div style={style}>{valor}</div>
   return (
     <textarea
       autoFocus
@@ -97,7 +97,6 @@ function CampoTexto({ valor, editando, aoMudar, aoSair, className, style }: { va
       onBlur={aoSair}
       onKeyDown={(ev) => ev.key === 'Escape' && ev.currentTarget.blur()}
       onFocus={(ev) => ev.currentTarget.setSelectionRange(ev.currentTarget.value.length, ev.currentTarget.value.length)}
-      className={`${className} resize-none border-0 bg-transparent outline-none`}
       style={style}
       aria-label="Texto do elemento"
     />
@@ -372,7 +371,7 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
   const temPreenchimento = selecionados.some((e) => e.tipo === 'nota' || e.tipo === 'retangulo' || e.tipo === 'elipse' || e.tipo === 'losango')
 
   return (
-    <div className="flex h-[calc(100dvh-2.5rem)] flex-col">
+    <div>
       <BarraTela
         tipo="quadro"
         id={id}
@@ -390,33 +389,33 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
         ref={area}
         onPointerDown={aoPressionar}
         onDoubleClick={aoDuploClique}
-        className="relative min-h-0 flex-1 touch-none overflow-hidden bg-[#f8f8f6] select-none"
+        className="select-none"
         style={{ cursor: CURSOR[ferramenta], backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: `${24 * camera.z}px ${24 * camera.z}px`, backgroundPosition: `${camera.x}px ${camera.y}px` }}
         aria-label="Quadro branco"
       >
-        <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.z})` }}>
+        <div style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.z})` }}>
           {elementos.map((e) => {
             if (!naCaixa(e)) return null
             const edita = editando === e.id
             if (e.tipo === 'nota')
               return (
-                <div key={e.id} className="absolute rounded-sm p-3 shadow-md" style={{ left: e.x, top: e.y, width: e.w, height: e.h, background: e.cor }}>
-                  <CampoTexto valor={e.texto} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} className="h-full w-full overflow-hidden text-[16px] leading-snug text-gray-900" />
+                <div key={e.id} style={{ left: e.x, top: e.y, width: e.w, height: e.h, background: e.cor }}>
+                  <CampoTexto valor={e.texto} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} />
                 </div>
               )
             if (e.tipo === 'texto')
               return (
-                <div key={e.id} className="absolute" style={{ left: e.x, top: e.y, width: e.w, minHeight: e.h }}>
-                  <CampoTexto valor={e.texto || (edita ? '' : 'Texto')} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} className="w-full overflow-hidden leading-tight" style={{ fontSize: e.tamanho, color: e.texto ? e.cor : '#94a3b8', height: edita ? e.h : undefined }} />
+                <div key={e.id} style={{ left: e.x, top: e.y, width: e.w, minHeight: e.h }}>
+                  <CampoTexto valor={e.texto || (edita ? '' : 'Texto')} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} style={{ fontSize: e.tamanho, color: e.texto ? e.cor : '#94a3b8', height: edita ? e.h : undefined }} />
                 </div>
               )
             return (
               <Forma key={e.id} e={e}>
-                <CampoTexto valor={e.texto} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} className="absolute inset-0 flex items-center justify-center overflow-hidden p-3 text-center text-[16px] leading-snug text-gray-900" />
+                <CampoTexto valor={e.texto} editando={edita} aoMudar={(v) => mudarTexto(e, v)} aoSair={sairDaEdicao} />
               </Forma>
             )
           })}
-          <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden="true">
+          <svg width={1} height={1} aria-hidden="true">
             {elementos.map((e) =>
               e.tipo === 'seta' ? (
                 <Seta key={e.id} e={e} selecionado={selecao.includes(e.id) && selecao.length === 1} />
@@ -432,49 +431,49 @@ export function EditorQuadro({ id, titulo, dadosIniciais }: { id: string; titulo
           </svg>
           {/* Alças: elementos HTML para receber o ponteiro (o SVG acima não recebe cliques). */}
           {unico && naCaixa(unico) && !editando && ferramenta === 'selecionar' && (
-            <div data-ui onPointerDown={(ev) => redimensionar(ev, unico)} className="absolute rounded-sm border-2 border-[#2563eb] bg-white" style={{ left: unico.x + unico.w - CABO / camera.z / 2 + 4, top: unico.y + unico.h - CABO / camera.z / 2 + 4, width: CABO / camera.z, height: CABO / camera.z, cursor: 'nwse-resize' }} aria-label="Redimensionar" />
+            <div data-ui onPointerDown={(ev) => redimensionar(ev, unico)} style={{ left: unico.x + unico.w - CABO / camera.z / 2 + 4, top: unico.y + unico.h - CABO / camera.z / 2 + 4, width: CABO / camera.z, height: CABO / camera.z, cursor: 'nwse-resize' }} aria-label="Redimensionar" />
           )}
           {unico?.tipo === 'seta' && ferramenta === 'selecionar' && (
             <>
-              <div data-ui onPointerDown={(ev) => moverPonta(ev, unico, 1)} className="absolute rounded-full" style={{ left: unico.x1 - 10, top: unico.y1 - 10, width: 20, height: 20, cursor: 'move' }} aria-label="Mover início da seta" />
-              <div data-ui onPointerDown={(ev) => moverPonta(ev, unico, 2)} className="absolute rounded-full" style={{ left: unico.x2 - 10, top: unico.y2 - 10, width: 20, height: 20, cursor: 'move' }} aria-label="Mover ponta da seta" />
+              <div data-ui onPointerDown={(ev) => moverPonta(ev, unico, 1)} style={{ left: unico.x1 - 10, top: unico.y1 - 10, width: 20, height: 20, cursor: 'move' }} aria-label="Mover início da seta" />
+              <div data-ui onPointerDown={(ev) => moverPonta(ev, unico, 2)} style={{ left: unico.x2 - 10, top: unico.y2 - 10, width: 20, height: 20, cursor: 'move' }} aria-label="Mover ponta da seta" />
             </>
           )}
         </div>
 
-        <div data-ui className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-0.5 rounded-lg border border-borda bg-white p-1 shadow-md" role="toolbar" aria-label="Ferramentas" aria-orientation="vertical">
+        <div data-ui role="toolbar" aria-label="Ferramentas" aria-orientation="vertical">
           {FERRAMENTAS.map(({ id: f, rotulo, tecla, Icone }) => (
-            <button key={f} type="button" onClick={() => setFerramenta(f)} aria-pressed={ferramenta === f} title={`${rotulo} (${tecla})`} aria-label={rotulo} className={`rounded-lg p-2 ${ferramenta === f ? 'bg-petroleo text-claro' : 'text-texto-2 hover:bg-hover'}`}>
-              <Icone className="h-4 w-4" />
+            <button key={f} type="button" onClick={() => setFerramenta(f)} aria-pressed={ferramenta === f} title={`${rotulo} (${tecla})`} aria-label={rotulo}>
+              <Icone />
             </button>
           ))}
         </div>
 
         {caixaSelecao && !editando && (
-          <div data-ui className="absolute left-1/2 top-3 z-10 flex max-w-[95%] -translate-x-1/2 flex-wrap items-center gap-2 rounded-lg border border-borda bg-white px-2 py-1.5 shadow-md" role="toolbar" aria-label="Propriedades">
+          <div data-ui role="toolbar" aria-label="Propriedades">
             {temPreenchimento && (
-              <div className="flex items-center gap-1" role="group" aria-label="Preenchimento">
-                {CORES_NOTA.map((c) => <button key={c} type="button" onClick={() => preencher(c)} aria-label={`Preencher com ${c}`} className="h-5 w-5 rounded-full border border-borda" style={{ background: c }} />)}
+              <div role="group" aria-label="Preenchimento">
+                {CORES_NOTA.map((c) => <button key={c} type="button" onClick={() => preencher(c)} aria-label={`Preencher com ${c}`} style={{ background: c }} />)}
               </div>
             )}
-            <div className="flex items-center gap-1" role="group" aria-label="Cor do traço">
-              {CORES_TRACO.map((c) => <button key={c} type="button" onClick={() => tracar(c)} aria-label={`Traço ${c}`} className="h-5 w-5 rounded-full border border-claro ring-1 ring-borda" style={{ background: c }} />)}
+            <div role="group" aria-label="Cor do traço">
+              {CORES_TRACO.map((c) => <button key={c} type="button" onClick={() => tracar(c)} aria-label={`Traço ${c}`} style={{ background: c }} />)}
             </div>
             {unico?.tipo === 'texto' && (
-              <div className="flex items-center gap-0.5" role="group" aria-label="Tamanho do texto">
-                {TAMANHOS_TEXTO.map((t) => <button key={t} type="button" onClick={() => tamanhoTexto(t)} aria-pressed={unico.tamanho === t} className={`rounded px-1.5 py-0.5 text-legenda ${unico.tamanho === t ? 'bg-petroleo text-claro' : 'hover:bg-hover'}`}>{t}</button>)}
+              <div role="group" aria-label="Tamanho do texto">
+                {TAMANHOS_TEXTO.map((t) => <button key={t} type="button" onClick={() => tamanhoTexto(t)} aria-pressed={unico.tamanho === t}>{t}</button>)}
               </div>
             )}
-            <span className="h-4 w-px bg-borda" />
-            <button type="button" onClick={paraFrente} title="Trazer para a frente" aria-label="Trazer para a frente" className="rounded p-1 text-texto-2 hover:bg-hover"><ArrowUpToLine className="h-4 w-4" /></button>
-            <button type="button" onClick={duplicar} title="Duplicar (Ctrl+D)" aria-label="Duplicar" className="rounded p-1 text-texto-2 hover:bg-hover"><Copy className="h-4 w-4" /></button>
-            <button type="button" onClick={apagar} title="Excluir (Delete)" aria-label="Excluir" className="rounded p-1 text-texto-2 hover:bg-hover hover:text-perigo"><Trash2 className="h-4 w-4" /></button>
+            <span />
+            <button type="button" onClick={paraFrente} title="Trazer para a frente" aria-label="Trazer para a frente"><ArrowUpToLine /></button>
+            <button type="button" onClick={duplicar} title="Duplicar (Ctrl+D)" aria-label="Duplicar"><Copy /></button>
+            <button type="button" onClick={apagar} title="Excluir (Delete)" aria-label="Excluir"><Trash2 /></button>
           </div>
         )}
 
         {elementos.length === 0 && (
-          <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-corpo text-texto-3">
-            <Eraser className="mr-2 h-4 w-4" aria-hidden="true" /> Quadro vazio — escolha uma ferramenta à esquerda (N cria uma nota).
+          <p>
+            <Eraser aria-hidden="true" /> Quadro vazio — escolha uma ferramenta à esquerda (N cria uma nota).
           </p>
         )}
       </div>

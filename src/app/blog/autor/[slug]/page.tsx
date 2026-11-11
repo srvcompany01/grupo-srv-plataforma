@@ -20,23 +20,23 @@ export default async function PaginaAutor({ params, searchParams }: PageProps<'/
   const pagina = Math.max(1, Number((await searchParams).pagina) || 1)
   const { posts, total } = await publicados({ autorId: a.id, limite: POR_PAGINA, pagina })
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div>
       <JsonLd dados={{ '@context': 'https://schema.org', '@type': a.slug === 'equipe-grupo-srv' ? 'Organization' : 'Person', name: a.nome, description: a.bio, jobTitle: a.cargo || undefined, url: `${SITE}/blog/autor/${a.slug}`, image: a.foto ? `${SITE}${a.foto}` : undefined }} />
-      <header className="flex flex-col gap-5 rounded-2xl bg-white p-6 ring-1 ring-[#e6e6e2] sm:flex-row sm:items-center">
+      <header>
         {a.foto ? (
           // eslint-disable-next-line @next/next/no-img-element -- imagem servida por /blog/imagem
-          <img src={a.foto} alt={a.nome} width={96} height={96} className="h-24 w-24 rounded-full object-cover" />
+          <img src={a.foto} alt={a.nome} width={96} height={96} />
         ) : (
-          <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#070707] font-[family-name:var(--blog-titulo)] text-4xl font-bold text-claro">{a.nome.slice(0, 1)}</span>
+          <span>{a.nome.slice(0, 1)}</span>
         )}
         <div>
-          <h1 className="font-[family-name:var(--blog-titulo)] text-4xl font-extrabold uppercase leading-none">{a.nome}</h1>
-          {a.cargo && <p className="mt-1 text-[14px] text-[#656565]">{a.cargo}</p>}
-          {a.bio && <p className="mt-3 max-w-2xl text-[15px] text-[#4a4a4a]">{a.bio}</p>}
+          <h1>{a.nome}</h1>
+          {a.cargo && <p>{a.cargo}</p>}
+          {a.bio && <p>{a.bio}</p>}
         </div>
       </header>
-      <h2 className="mt-10 font-[family-name:var(--blog-titulo)] text-3xl font-extrabold uppercase">Artigos ({total})</h2>
-      <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <CartaoPost key={p.id} p={p} />)}</div>
+      <h2>Artigos ({total})</h2>
+      <div>{posts.map((p) => <CartaoPost key={p.id} p={p} />)}</div>
       <Paginacao base={`/blog/autor/${a.slug}`} pagina={pagina} total={total} porPagina={POR_PAGINA} />
     </div>
   )

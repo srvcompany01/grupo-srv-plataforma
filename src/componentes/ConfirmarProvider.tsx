@@ -2,7 +2,6 @@
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
-import { botaoPerigo, botaoPrimario, botaoSecundario } from '@/lib/ui'
 
 export type OpcoesConfirmacao = {
   titulo: string
@@ -37,14 +36,14 @@ export function ConfirmarProvider({ children }: { children: ReactNode }) {
     <Contexto.Provider value={confirmar}>
       {children}
       <Dialog open={pedido !== null} onOpenChange={(aberto) => !aberto && responder(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{pedido?.opcoes.titulo}</DialogTitle>
             {pedido?.opcoes.descricao && <DialogDescription>{pedido.opcoes.descricao}</DialogDescription>}
           </DialogHeader>
           <DialogFooter>
-            <button type="button" className={botaoSecundario} onClick={() => responder(false)}>Cancelar</button>
-            <button type="button" autoFocus className={pedido?.opcoes.perigo ? botaoPerigo : botaoPrimario} onClick={() => responder(true)}>{pedido?.opcoes.confirmar ?? 'Confirmar'}</button>
+            <button type="button" onClick={() => responder(false)}>Cancelar</button>
+            <button type="button" autoFocus onClick={() => responder(true)}>{pedido?.opcoes.confirmar ?? 'Confirmar'}</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

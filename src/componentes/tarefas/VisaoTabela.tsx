@@ -45,18 +45,18 @@ export function VisaoTabela({ tarefas, ctx }: { tarefas: TarefaResumo[]; ctx: Co
   }, [tarefas, colunas, ordem])
   const alternar = (id: string) => setOrdem((atual) => (atual?.coluna !== id ? { coluna: id, desc: false } : atual.desc ? null : { coluna: id, desc: true }))
 
-  if (!tarefas.length) return <p className="py-10 text-center text-corpo text-texto-3">Nenhuma tarefa nesta visualização.</p>
+  if (!tarefas.length) return <p>Nenhuma tarefa nesta visualização.</p>
   return (
-    <div className="overflow-x-auto rounded-lg border border-borda bg-white">
-      <table className="w-full min-w-[720px] border-collapse text-corpo">
+    <div>
+      <table>
         <thead>
-          <tr className="border-b border-borda text-left text-rotulo font-medium text-texto-3">
-            <th className="w-10 px-3 py-2 text-right font-medium">#</th>
+          <tr>
+            <th>#</th>
             {colunas.map((c) => (
-              <th key={c.id} className="px-3 py-2 font-medium" aria-sort={ordem?.coluna === c.id ? (ordem.desc ? 'descending' : 'ascending') : 'none'}>
-                <button type="button" onClick={() => alternar(c.id)} className="inline-flex items-center gap-1 hover:text-texto">
+              <th key={c.id} aria-sort={ordem?.coluna === c.id ? (ordem.desc ? 'descending' : 'ascending') : 'none'}>
+                <button type="button" onClick={() => alternar(c.id)}>
                   {c.rotulo}
-                  {ordem?.coluna === c.id && (ordem.desc ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />)}
+                  {ordem?.coluna === c.id && (ordem.desc ? <ArrowDown /> : <ArrowUp />)}
                 </button>
               </th>
             ))}
@@ -67,15 +67,15 @@ export function VisaoTabela({ tarefas, ctx }: { tarefas: TarefaResumo[]; ctx: Co
             const st = status(t)
             const atrasada = !!t.prazo && t.prazo < ctx.hoje && !t.concluidaEm
             return (
-              <tr key={t.id} className="h-9 border-b border-borda last:border-0 hover:bg-hover">
-                <td className="px-3 text-right text-rotulo tabular-nums text-texto-3">{i + 1}</td>
-                <td className="max-w-80 truncate px-3 font-medium"><Link href={`/tarefas/${t.id}`} className={`hover:underline ${t.concluidaEm ? 'text-texto-3 line-through' : 'text-texto'}`}>{t.titulo}</Link></td>
-                <td className="px-3"><NomeCliente nome={t.clienteNome} /></td>
-                <td className="px-3">{st && <span className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-legenda font-semibold uppercase" style={{ background: `${st.cor}22`, color: st.cor }}>{st.nome}</span>}</td>
-                <td className="px-3">{t.responsaveis.length ? <Pessoas pessoas={t.responsaveis} /> : <span className="text-texto-3">—</span>}</td>
-                <td className={`px-3 tabular-nums ${atrasada ? 'font-semibold text-perigo' : 'text-texto-2'}`}>{t.prazo ? formatarPrazo(t.prazo, t.horario) : <span className="text-texto-3">—</span>}</td>
-                <td className="px-3" title={ROTULO_PRIORIDADE[t.prioridade]}><SeloPrioridade prioridade={t.prioridade} /></td>
-                {campos.map((c) => <td key={c.id} className="max-w-48 truncate px-3 text-texto-2">{valorParaTexto(c, t.camposPersonalizados?.[c.id], ctx.equipe) || <span className="text-texto-3">—</span>}</td>)}
+              <tr key={t.id}>
+                <td>{i + 1}</td>
+                <td><Link href={`/tarefas/${t.id}`}>{t.titulo}</Link></td>
+                <td><NomeCliente nome={t.clienteNome} /></td>
+                <td>{st && <span style={{ background: `${st.cor}22`, color: st.cor }}>{st.nome}</span>}</td>
+                <td>{t.responsaveis.length ? <Pessoas pessoas={t.responsaveis} /> : <span>—</span>}</td>
+                <td>{t.prazo ? formatarPrazo(t.prazo, t.horario) : <span>—</span>}</td>
+                <td title={ROTULO_PRIORIDADE[t.prioridade]}><SeloPrioridade prioridade={t.prioridade} /></td>
+                {campos.map((c) => <td key={c.id}>{valorParaTexto(c, t.camposPersonalizados?.[c.id], ctx.equipe) || <span>—</span>}</td>)}
               </tr>
             )
           })}

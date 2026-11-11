@@ -4,7 +4,6 @@ import { zipSync } from 'fflate'
 import { useState } from 'react'
 import { nomesNoZip } from '@/dominio/download'
 import type { MidiaParaVer } from '@/lib/midias-view'
-import { botaoSecundario } from '@/lib/ui'
 import { Icone } from './Icone'
 
 function salvar(blob: Blob, nome: string) {
@@ -50,9 +49,9 @@ export function BotoesDownload({ midias, atual, nomeZip }: { midias: MidiaParaVe
   if (midias.length === 1) {
     const unica = midias[0]
     return (
-      <div className="flex justify-center">
-        <a href={unica.urlDownload} className={botaoSecundario}>
-          <Icone nome="baixar" className="h-3.5 w-3.5" />
+      <div>
+        <a href={unica.urlDownload}>
+          <Icone nome="baixar" />
           {unica.tipo === 'video' ? 'Baixar vídeo' : 'Baixar imagem'}
         </a>
       </div>
@@ -60,19 +59,19 @@ export function BotoesDownload({ midias, atual, nomeZip }: { midias: MidiaParaVe
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap justify-center gap-2">
-        <a href={midias[atual]?.urlDownload} className={botaoSecundario}>
-          <Icone nome="baixar" className="h-3.5 w-3.5" />
+    <div>
+      <div>
+        <a href={midias[atual]?.urlDownload}>
+          <Icone nome="baixar" />
           Baixar esta imagem
         </a>
-        <button type="button" onClick={baixarTodas} disabled={estado === 'montando'} className={botaoSecundario}>
-          <Icone nome="baixar" className="h-3.5 w-3.5" />
+        <button type="button" onClick={baixarTodas} disabled={estado === 'montando'}>
+          <Icone nome="baixar" />
           {estado === 'montando' ? 'Preparando…' : `Baixar todas (.zip)`}
         </button>
       </div>
       {estado === 'erro' && (
-        <p className="text-center text-xs text-perigo">Não foi possível montar o zip. Baixe as imagens uma a uma.</p>
+        <p>Não foi possível montar o zip. Baixe as imagens uma a uma.</p>
       )}
     </div>
   )

@@ -32,22 +32,22 @@ export function ArvorePaginas({ documentoId, paginas, atualId, podeEditar }: { d
   }
 
   return (
-    <nav className="w-56 shrink-0 overflow-y-auto border-r border-borda bg-fundo/40 p-2" aria-label="Páginas do documento">
+    <nav aria-label="Páginas do documento">
       {podeEditar && (
-        <button type="button" onClick={() => criar(null)} className="mb-2 flex w-full items-center gap-1.5 rounded-md border border-borda bg-white px-2 py-1.5 text-rotulo font-medium text-texto-2 hover:bg-hover">
-          <FilePlus2 className="h-3.5 w-3.5" /> Adicionar página
+        <button type="button" onClick={() => criar(null)}>
+          <FilePlus2 /> Adicionar página
         </button>
       )}
       {itens.map((p) => (
-        <div key={p.id} className={`group flex items-center rounded-md ${p.id === atualId ? 'bg-white shadow-sm ring-1 ring-borda' : 'hover:bg-hover'}`} style={{ paddingLeft: 4 + p.nivel * 14 }}>
-          <Link href={`/documentos/${documentoId}?p=${p.id}`} className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 pr-1 text-rotulo text-texto-2">
-            <FileText className="h-3.5 w-3.5 shrink-0 text-texto-3" />
-            <span className="truncate">{p.titulo || 'Sem título'}</span>
+        <div key={p.id} style={{ paddingLeft: 4 + p.nivel * 14 }}>
+          <Link href={`/documentos/${documentoId}?p=${p.id}`}>
+            <FileText />
+            <span>{p.titulo || 'Sem título'}</span>
           </Link>
           {podeEditar && (
-            <span className="mr-1 hidden items-center gap-0.5 group-hover:flex">
-              <button type="button" title="Adicionar subpágina" aria-label="Adicionar subpágina" onClick={() => criar(p.id)} className="rounded p-1 text-texto-3 hover:bg-fundo"><Plus className="h-3 w-3" /></button>
-              {paginas.length > 1 && <button type="button" title="Excluir página" aria-label="Excluir página" onClick={() => excluir(p)} className="rounded p-1 text-texto-3 hover:bg-fundo"><Trash2 className="h-3 w-3" /></button>}
+            <span className="hidden">
+              <button type="button" title="Adicionar subpágina" aria-label="Adicionar subpágina" onClick={() => criar(p.id)}><Plus /></button>
+              {paginas.length > 1 && <button type="button" title="Excluir página" aria-label="Excluir página" onClick={() => excluir(p)}><Trash2 /></button>}
             </span>
           )}
         </div>

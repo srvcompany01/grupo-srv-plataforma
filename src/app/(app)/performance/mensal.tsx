@@ -6,7 +6,6 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 import { tomVariacao } from '@/dominio/insights'
 import { indicadores, mesAnterior, mesesAte, rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { botaoSecundario, campo } from '@/lib/ui'
 import type { Cliente } from '@/servicos/clientes-plataforma'
 import { situacaoGoogle } from '@/servicos/google-agencia'
 import { historicoDoCliente, investido, leadsPagos, linkBioDoCliente, type MesPerformance } from '@/servicos/performance'
@@ -42,11 +41,11 @@ export function kpis(m: MesPerformance, ant: MesPerformance | null): Numero[] {
 
 function Fonte({ icone: Icone, cor, rotulo, valor, extra }: { icone: typeof Wallet; cor: string; rotulo: string; valor: string; extra?: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-borda bg-white px-3 py-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md" style={{ background: `${cor}1f`, color: cor }}><Icone className="h-3.5 w-3.5" /></span>
-      <div className="min-w-0">
-        <p className="truncate text-micro text-texto-3">{rotulo}</p>
-        <p className="text-rotulo font-bold tabular-nums text-texto">{valor}{extra && <span className="ml-1.5 text-micro font-normal text-texto-3">{extra}</span>}</p>
+    <div>
+      <span style={{ background: `${cor}1f`, color: cor }}><Icone /></span>
+      <div>
+        <p>{rotulo}</p>
+        <p>{valor}{extra && <span>{extra}</span>}</p>
       </div>
     </div>
   )
@@ -57,39 +56,39 @@ export function TabelaMeses({ linhas, total }: { linhas: { chave: string; rotulo
   const linha = (rotulo: React.ReactNode, m: MesPerformance, chave: string, forte = false) => {
     const i = numerosDe(m)
     return (
-      <tr key={chave} className={`border-b border-borda/60 last:border-0 ${forte ? 'bg-fundo font-bold' : ''}`}>
-        <td className="py-2 pr-3">{rotulo}</td>
-        <td className="py-2 pr-3 text-right font-semibold tabular-nums">{reais(investido(m))}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{reais(m.investidoMeta)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{reais(m.investidoGoogle)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{inteiro(leadsPagos(m))}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{m.cliquesPerfilInstagram === null ? '—' : inteiro(m.cliquesPerfilInstagram)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{inteiro(m.cliquesLinkBio)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{inteiro(m.leadsOrganicos)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{reais(i.cpl)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{reais(m.faturamento)}</td>
-        <td className="py-2 pr-3 text-right tabular-nums">{inteiro(m.vendas)}</td>
-        <td className={`py-2 text-right font-semibold tabular-nums ${i.roas === null ? 'text-texto-3' : i.roas >= 3 ? 'text-sucesso' : i.roas >= 1 ? 'text-aviso-forte' : 'text-perigo'}`}>{vezes(i.roas)}</td>
+      <tr key={chave}>
+        <td>{rotulo}</td>
+        <td>{reais(investido(m))}</td>
+        <td>{reais(m.investidoMeta)}</td>
+        <td>{reais(m.investidoGoogle)}</td>
+        <td>{inteiro(leadsPagos(m))}</td>
+        <td>{m.cliquesPerfilInstagram === null ? '—' : inteiro(m.cliquesPerfilInstagram)}</td>
+        <td>{inteiro(m.cliquesLinkBio)}</td>
+        <td>{inteiro(m.leadsOrganicos)}</td>
+        <td>{reais(i.cpl)}</td>
+        <td>{reais(m.faturamento)}</td>
+        <td>{inteiro(m.vendas)}</td>
+        <td>{vezes(i.roas)}</td>
       </tr>
     )
   }
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[64rem] text-rotulo">
+    <div>
+      <table>
         <thead>
-          <tr className="border-b border-borda text-left text-legenda text-texto-3">
-            <th className="py-2 pr-3 font-medium" />
-            <th className="py-2 pr-3 text-right font-medium">Investido total</th>
-            <th className="py-2 pr-3 text-right font-medium">Meta</th>
-            <th className="py-2 pr-3 text-right font-medium">Google</th>
-            <th className="py-2 pr-3 text-right font-medium">Leads pagos</th>
-            <th className="py-2 pr-3 text-right font-medium">Cliques perfil IG</th>
-            <th className="py-2 pr-3 text-right font-medium">Cliques na bio</th>
-            <th className="py-2 pr-3 text-right font-medium">Leads orgânicos</th>
-            <th className="py-2 pr-3 text-right font-medium">CPL</th>
-            <th className="py-2 pr-3 text-right font-medium">Faturamento</th>
-            <th className="py-2 pr-3 text-right font-medium">Vendas</th>
-            <th className="py-2 text-right font-medium">ROAS</th>
+          <tr>
+            <th />
+            <th>Investido total</th>
+            <th>Meta</th>
+            <th>Google</th>
+            <th>Leads pagos</th>
+            <th>Cliques perfil IG</th>
+            <th>Cliques na bio</th>
+            <th>Leads orgânicos</th>
+            <th>CPL</th>
+            <th>Faturamento</th>
+            <th>Vendas</th>
+            <th>ROAS</th>
           </tr>
         </thead>
         <tbody>
@@ -134,22 +133,22 @@ export async function PanoramaMensal({ clientes, mes, hoje, acoes }: { clientes:
   const q = `mes=${mes}`
   return (
     <Modulo icone={TrendingUp} titulo={`Panorama de ${rotuloMesLongo(mes)}`} descricao="Todos os clientes · leads, investimento e faturamento do mês" acoes={acoes}>
-      <div className="space-y-4">
+      <div>
         <Numeros itens={kpis(total, null)} />
         {semLancar.length > 0 && (
-          <p className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">
+          <p>
             Faturamento não lançado de {semLancar.length} cliente(s) com anúncios: {semLancar.map((l, i) => <span key={l.c.id}>{i > 0 && ', '}<NomeCliente nome={l.c.nome} href={`/performance?cliente=${l.c.id}&${q}`} /></span>)}. Sem ele, o ROAS do mês fica incompleto.
           </p>
         )}
         {ativos.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhum cliente com anúncios, cliques ou faturamento neste mês.</p>
+          <p>Nenhum cliente com anúncios, cliques ou faturamento neste mês.</p>
         ) : (
           <TabelaMeses linhas={ativos.map(({ c, h }) => ({ chave: c.id, rotulo: <NomeCliente nome={c.nome} href={`/performance?cliente=${c.id}&${q}`} />, m: h.meses[0] }))} total={total} />
         )}
         {erros.length > 0 && (
-          <details className="text-legenda text-texto-3">
-            <summary className="cursor-pointer">{erros.length} aviso(s) ao buscar os dados</summary>
-            <ul className="mt-1 space-y-0.5">{erros.map(({ c, e }) => <li key={`${c.id}${e}`}><NomeCliente nome={c.nome} />: {e}</li>)}</ul>
+          <details>
+            <summary>{erros.length} aviso(s) ao buscar os dados</summary>
+            <ul>{erros.map(({ c, e }) => <li key={`${c.id}${e}`}><NomeCliente nome={c.nome} />: {e}</li>)}</ul>
           </details>
         )}
       </div>
@@ -160,10 +159,10 @@ export async function PanoramaMensal({ clientes, mes, hoje, acoes }: { clientes:
 /** Escolhe o mês (resultados e lançamentos são mensais); mantém cliente, aba e período. */
 export function SeletorMes({ mes, hoje, ocultos }: { mes: string; hoje: string; ocultos: Record<string, string> }) {
   return (
-    <form action="/performance" className="flex items-center gap-2">
+    <form action="/performance">
       {Object.entries(ocultos).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-      <input type="month" name="mes" defaultValue={mes} max={hoje.slice(0, 7)} className={`${campo} h-9 w-40`} aria-label="Mês" />
-      <button type="submit" className={`${botaoSecundario} h-9`}>Ver</button>
+      <input type="month" name="mes" defaultValue={mes} max={hoje.slice(0, 7)} aria-label="Mês" />
+      <button type="submit">Ver</button>
     </form>
   )
 }
@@ -177,11 +176,11 @@ export async function ResultadoDoMes({ cliente, mes, hoje, acoes }: { cliente: C
   const ant = h.meses.find((m) => m.mes === mesAnterior(mes)) ?? null
   return (
     <>
-      {h.erros.length > 0 && <div className="space-y-1 rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">{h.erros.map((e) => <p key={e}>{e}</p>)}</div>}
+      {h.erros.length > 0 && <div>{h.erros.map((e) => <p key={e}>{e}</p>)}</div>}
       <Modulo icone={TrendingUp} titulo={`Resultado de ${rotuloMesLongo(mes)}`} descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · anúncios da Meta e do Google, orgânico e o faturamento lançado</>} acoes={acoes}>
-        <div className="space-y-4">
+        <div>
           <Numeros itens={kpis(atual, ant)} />
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
             <Fonte icone={ClipboardList} cor="#2a78d6" rotulo="Formulários instantâneos (Meta)" valor={inteiro(atual.formularios)} extra={atual.leadsSite ? `+ ${inteiro(atual.leadsSite)} leads do site` : undefined} />
             <Fonte icone={MessageCircle} cor="#1baf7a" rotulo="Conversas WhatsApp/Direct (Meta)" valor={inteiro(atual.conversas)} />
             <Fonte icone={Target} cor="#eb6834" rotulo="Conversões (Google Ads)" valor={cliente.googleAdsId ? inteiro(atual.conversoesGoogle) : 'sem conta'} />
@@ -208,17 +207,17 @@ export async function EvolucaoCliente({ cliente, mes, hoje, acoes }: { cliente: 
   const comDados = h.meses.filter((m) => investido(m) || leadsPagos(m) || m.faturamento !== null || m.cliquesLinkBio)
   return (
     <Modulo icone={CalendarRange} titulo="Mês a mês" descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · últimos 12 meses até {rotuloMesLongo(mes)}</>} acoes={acoes}>
-      {h.erros.length > 0 && <div className="mb-3 space-y-1 rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">{h.erros.map((e) => <p key={e}>{e}</p>)}</div>}
+      {h.erros.length > 0 && <div>{h.erros.map((e) => <p key={e}>{e}</p>)}</div>}
       {comDados.length === 0 ? (
-        <p className="py-6 text-center text-rotulo text-texto-3">Ainda sem dados nos últimos 12 meses.</p>
+        <p>Ainda sem dados nos últimos 12 meses.</p>
       ) : (
-        <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div>
+          <div>
             <GraficoDiario titulo="Investido x faturamento" dias={meses} rotulo={rotuloMesCurto} formato={(n) => reais(n)} series={[{ nome: 'Investido total', valores: h.meses.map(investido) }, { nome: 'Faturamento', valores: h.meses.map((m) => m.faturamento ?? 0) }]} />
             <GraficoDiario titulo="Investido por plataforma" dias={meses} rotulo={rotuloMesCurto} formato={(n) => reais(n)} series={[{ nome: 'Meta', valores: h.meses.map((m) => m.investidoMeta) }, { nome: 'Google Ads', valores: h.meses.map((m) => m.investidoGoogle) }]} />
             <GraficoDiario titulo="Leads por mês" dias={meses} rotulo={rotuloMesCurto} tipo="barras" formato={(n) => inteiro(n)} series={[{ nome: 'Leads', valores: h.meses.map((m) => numerosDe(m).leads) }]} />
           </div>
-          <TabelaMeses linhas={[...h.meses].reverse().map((m) => ({ chave: m.mes, rotulo: <span className="capitalize">{rotuloMesLongo(m.mes)}</span>, m }))} />
+          <TabelaMeses linhas={[...h.meses].reverse().map((m) => ({ chave: m.mes, rotulo: <span>{rotuloMesLongo(m.mes)}</span>, m }))} />
         </div>
       )}
     </Modulo>

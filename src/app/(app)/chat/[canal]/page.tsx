@@ -20,7 +20,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
 function IconeCanal({ c, className = 'h-3.5 w-3.5' }: { c: Pick<Canal, 'privado'>; className?: string }) {
-  return c.privado ? <Lock className={className} /> : <Hash className={className} />
+  return c.privado ? <Lock /> : <Hash />
 }
 
 /** Chat da equipe: canais à esquerda, conversa no meio e o tópico aberto à direita. */
@@ -31,7 +31,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
   const sb = await criarClienteServidor()
   const canais = await listarCanais(sb).catch(() => null)
   if (!canais) {
-    return <div className="page-shell"><EstadoVazio icone={MessagesSquare} titulo="O chat ainda não foi ativado" descricao="Falta rodar a migration do chat no banco." /></div>
+    return <div><EstadoVazio icone={MessagesSquare} titulo="O chat ainda não foi ativado" descricao="Falta rodar a migration do chat no banco." /></div>
   }
   const canal = canais.find((c) => c.nome === decodeURIComponent(nome))
   if (!canal) notFound()
@@ -81,10 +81,10 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
       return (
         <div key={m.id}>
           {novoDia && (
-            <div className="my-3 flex items-center gap-3 px-3">
-              <span className="h-px flex-1 bg-[var(--border-soft)]" />
-              <span className="rounded-md border border-borda bg-[var(--bg)] px-2.5 py-0.5 text-legenda font-semibold capitalize text-texto-2">{rotuloDia(dia, hoje)}</span>
-              <span className="h-px flex-1 bg-borda" />
+            <div>
+              <span />
+              <span>{rotuloDia(dia, hoje)}</span>
+              <span />
             </div>
           )}
           <ItemMensagem m={m} euId={eu.id} admin={admin} continuacao={!novoDia && continuacao(msgs[i - 1], m)} titulos={titulos} hrefFio={comFio ? `${base}?fio=${m.id}` : undefined} pessoas={pessoas} />
@@ -93,75 +93,75 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
     })
 
   return (
-    <div className="flex h-[calc(100dvh-50px)] min-h-0">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-borda bg-[var(--bg-subtle)] md:flex" aria-label="Canais">
-        <div className="flex h-10 items-center justify-between border-b border-borda-fraca px-3">
-          <p className="text-destaque font-semibold text-texto">Chat</p>
+    <div>
+      <aside className="hidden" aria-label="Canais">
+        <div>
+          <p>Chat</p>
           <NovoCanal equipe={outros} />
         </div>
-        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
-          <p className="px-2 pb-0.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Canais</p>
+        <nav>
+          <p>Canais</p>
           {canaisComuns.map((c) => (
-            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex items-center gap-2 rounded px-2 py-1 text-corpo ${c.id === canal.id ? 'bg-[var(--bg-active)] font-semibold text-texto' : c.naoLidas ? 'font-semibold text-texto hover:bg-hover' : 'text-texto-2 hover:bg-hover'}`}>
-              <IconeCanal c={c} className="h-3.5 w-3.5 shrink-0 text-texto-3" />
-              <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-              {c.naoLidas > 0 && c.id !== canal.id && <span className="rounded-md bg-perigo px-1.5 text-micro font-bold text-claro">{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
+            <Link key={c.id} href={`/chat/${c.nome}`}>
+              <IconeCanal c={c} />
+              <span>{c.nome}</span>
+              {c.naoLidas > 0 && c.id !== canal.id && <span>{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
             </Link>
           ))}
-          <p className="px-2 pb-0.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-texto-3">Mensagens diretas</p>
+          <p>Mensagens diretas</p>
           <ConversasDiretas pessoas={conversas} />
         </nav>
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col" aria-label={`Canal ${canal.nome}`}>
-        <header className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-borda-fraca px-3">
-          <div className="min-w-0">
-            <h1 className="flex items-center gap-1.5 text-destaque font-bold text-texto">{!interlocutor && <IconeCanal c={canal} className="h-4 w-4 text-texto-3" />}{tituloCanal}</h1>
-            {canal.descricao && <p className="truncate text-legenda text-texto-3">{canal.descricao}</p>}
+      <section aria-label={`Canal ${canal.nome}`}>
+        <header>
+          <div>
+            <h1>{!interlocutor && <IconeCanal c={canal} />}{tituloCanal}</h1>
+            {canal.descricao && <p>{canal.descricao}</p>}
           </div>
           <GerenciarCanal canalId={canal.id} privado={canal.privado} membros={membros} equipe={outros} podeGerir={canal.nome !== 'geral' && (canal.criadoPor === eu.id || admin)} />
         </header>
         {/* No celular os canais viram uma faixa rolável. */}
-        <nav className="flex gap-1 overflow-x-auto border-b border-borda px-3 py-2 md:hidden" aria-label="Canais">
+        <nav aria-label="Canais">
           {canaisComuns.map((c) => (
-            <Link key={c.id} href={`/chat/${c.nome}`} className={`flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-legenda ${c.id === canal.id ? 'bg-petroleo text-claro' : 'border border-borda text-texto-2'}`}>
-              <IconeCanal c={c} className="h-3 w-3" /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
+            <Link key={c.id} href={`/chat/${c.nome}`}>
+              <IconeCanal c={c} /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
             </Link>
           ))}
           <NovoCanal equipe={outros} />
         </nav>
-        <AoVivo canalId={canal.id} total={mensagens.length + (fio?.respostas.length ?? 0)} className="min-h-0 flex-1 overflow-y-auto pb-3">
+        <AoVivo canalId={canal.id} total={mensagens.length + (fio?.respostas.length ?? 0)}>
           {mensagens.length === 0 ? (
-            <p className="px-6 py-16 text-center text-corpo text-texto-3">Nenhuma mensagem em #{canal.nome} ainda. Comece a conversa!</p>
+            <p>Nenhuma mensagem em #{canal.nome} ainda. Comece a conversa!</p>
           ) : (
             lista(mensagens, true)
           )}
         </AoVivo>
-        <div className="border-t border-borda p-3">
+        <div>
           <CaixaChat canalId={canal.id} canalNome={tituloCanal} pessoas={pessoas} listas={listas} />
         </div>
-        <nav aria-label="Visualizações vinculadas" className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-t border-borda-fraca px-3 text-corpo">
+        <nav aria-label="Visualizações vinculadas">
           {[{ href: '/inicio', rotulo: 'Minhas tarefas', Icone: ListChecks }, { href: '/agenda', rotulo: 'Agenda', Icone: CalendarDays }, { href: '/documentos', rotulo: 'Documentos', Icone: FileText }].map(({ href, rotulo, Icone }) => (
-            <Link key={href} href={href} className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded px-2 text-texto-2 hover:bg-hover hover:text-texto"><Icone className="h-[15px] w-[15px]" />{rotulo}</Link>
+            <Link key={href} href={href}><Icone />{rotulo}</Link>
           ))}
         </nav>
       </section>
 
       {fio && (
-        <aside className="fixed inset-0 z-40 flex flex-col bg-white md:static md:z-auto md:w-[380px] md:shrink-0 md:border-l md:border-borda" aria-label="Tópico">
-          <header className="flex items-center justify-between border-b border-borda px-4 py-2.5">
-            <p className="text-corpo font-semibold text-texto">Tópico <span className="font-normal text-texto-3">· #{canal.nome}</span></p>
-            <Link href={base} scroll={false} aria-label="Fechar tópico" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto"><X className="h-4 w-4" /></Link>
+        <aside aria-label="Tópico">
+          <header>
+            <p>Tópico <span>· #{canal.nome}</span></p>
+            <Link href={base} scroll={false} aria-label="Fechar tópico"><X /></Link>
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto pb-3">
+          <div>
             <ItemMensagem m={fio.principal} euId={eu.id} admin={admin} continuacao={false} titulos={titulos} pessoas={pessoas} />
-            <div className="my-2 flex items-center gap-3 px-3">
-              <span className="text-legenda font-semibold text-texto-3">{fio.respostas.length} {fio.respostas.length === 1 ? 'resposta' : 'respostas'}</span>
-              <span className="h-px flex-1 bg-borda" />
+            <div>
+              <span>{fio.respostas.length} {fio.respostas.length === 1 ? 'resposta' : 'respostas'}</span>
+              <span />
             </div>
             {lista(fio.respostas, false)}
           </div>
-          <div className="border-t border-borda p-3">
+          <div>
             <CaixaChat canalId={canal.id} paiId={fio.principal.id} canalNome={canal.nome} pessoas={pessoas} />
           </div>
         </aside>

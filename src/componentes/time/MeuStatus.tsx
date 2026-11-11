@@ -5,7 +5,6 @@ import { useEffect, useState, useTransition } from 'react'
 import { definirStatusAcao } from '@/app/(app)/time/acoes'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { EMOJI_STATUS_TIME, ROTULO_STATUS_TIME, STATUS_TIME, type StatusTime } from '@/dominio/time'
-import { botaoPrimario, campo, rotulo } from '@/lib/ui'
 
 const PRAZOS = [
   { min: 0, rotulo: 'Sem prazo' },
@@ -29,26 +28,26 @@ export function MeuStatus({ status, texto }: { status: StatusTime; texto: string
       if (avisar(await definirStatusAcao(escolhido, nota, ate), true)) router.refresh()
     })
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
+    <div>
+      <div>
         {STATUS_TIME.map((s) => (
-          <button key={s} type="button" onClick={() => setEscolhido(s)} aria-pressed={escolhido === s} className={`rounded-md border px-3 py-1.5 text-rotulo ${escolhido === s ? 'border-petroleo bg-petroleo text-claro' : 'border-borda bg-white text-texto hover:bg-hover'}`}>
+          <button key={s} type="button" onClick={() => setEscolhido(s)} aria-pressed={escolhido === s}>
             {EMOJI_STATUS_TIME[s]} {ROTULO_STATUS_TIME[s]}
           </button>
         ))}
       </div>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end">
-        <label className="block space-y-1">
-          <span className={rotulo}>Detalhe (opcional)</span>
-          <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={80} placeholder="Ex.: almoço, gravação na Aurum, médico…" className={campo} />
+      <div>
+        <label>
+          <span>Detalhe (opcional)</span>
+          <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={80} placeholder="Ex.: almoço, gravação na Aurum, médico…" />
         </label>
-        <label className="block space-y-1">
-          <span className={rotulo}>Volta em</span>
-          <select value={prazo} onChange={(e) => setPrazo(Number(e.target.value))} disabled={escolhido === 'disponivel'} className={campo}>
+        <label>
+          <span>Volta em</span>
+          <select value={prazo} onChange={(e) => setPrazo(Number(e.target.value))} disabled={escolhido === 'disponivel'}>
             {PRAZOS.map((p) => <option key={p.min} value={p.min}>{p.rotulo}</option>)}
           </select>
         </label>
-        <button type="button" onClick={salvar} disabled={pendente} className={botaoPrimario}>Salvar status</button>
+        <button type="button" onClick={salvar} disabled={pendente}>Salvar status</button>
       </div>
     </div>
   )

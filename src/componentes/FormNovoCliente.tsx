@@ -12,16 +12,15 @@ export function FormNovoCliente() {
     if (estado && 'ok' in estado) ref.current?.reset()
   }, [estado])
   return (
-    <form ref={ref} action={acao} className="flex items-center gap-2 px-4 py-2">
-      <Icone nome="mais" className="h-4 w-4 shrink-0 text-texto-3" />
+    <form ref={ref} action={acao}>
+      <Icone nome="mais" />
       <input
         name="nome"
         placeholder="Novo cliente — digite o nome e tecle Enter"
         required
         disabled={enviando}
-        className="h-8 flex-1 bg-transparent text-sm outline-none placeholder:text-texto-3"
       />
-      {estado && 'erro' in estado && <span className="text-xs text-perigo">{estado.erro}</span>}
+      {estado && 'erro' in estado && <span>{estado.erro}</span>}
     </form>
   )
 }

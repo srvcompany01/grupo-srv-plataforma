@@ -5,7 +5,6 @@ import { NomeCliente } from '@/componentes/NomeCliente'
 import { rotuloMesCurto, rotuloMesLongo } from '@/dominio/performance'
 import { analisarProjecao, baseDaProjecao, ELASTICIDADE_INVESTIMENTO, lerAjustes, projetar } from '@/dominio/projecao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
-import { botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { Cliente } from '@/servicos/clientes-plataforma'
 import { situacaoGoogle } from '@/servicos/google-agencia'
 import { historicoDoCliente } from '@/servicos/performance'
@@ -26,7 +25,7 @@ export async function ProjecaoCliente({ cliente, hoje, ajustesBrutos }: { client
   if (!base) {
     return (
       <Modulo icone={TrendingUp} titulo="Projeção de 3 meses" descricao={<><NomeCliente nome={cliente.nome} href={`/clientes/${cliente.id}`} /> · base: {meses.map(rotuloMesCurto).join(', ')}</>}>
-        <p className="rounded-lg border border-dashed border-borda py-8 text-center text-rotulo text-texto-3">
+        <p>
           Para projetar, lance o <strong>faturamento</strong> e o <strong>número de vendas</strong> de pelo menos um dos últimos meses fechados ({meses.map(rotuloMesLongo).join(', ')}) em Performance → Lançamentos. A taxa de conversão e o custo por cliente saem das vendas.
         </p>
       </Modulo>
@@ -52,55 +51,55 @@ export async function ProjecaoCliente({ cliente, hoje, ajustesBrutos }: { client
       </Modulo>
 
       <Modulo icone={TrendingUp} titulo="Os próximos 3 meses" descricao={`${futuros.map(rotuloMesCurto).join(', ')} · quanto cada caminho rende em 3 meses`}>
-        <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
+        <form method="get">
           <input type="hidden" name="aba" value="projecao" />
           <input type="hidden" name="cliente" value={cliente.id} />
-          <label className="space-y-1"><span className={rotulo}>Investir a mais (%)</span><input name="inv" inputMode="numeric" defaultValue={ajustes.investimento} className={`${campo} w-28`} /></label>
-          <label className="space-y-1"><span className={rotulo}>Leads orgânicos a mais (%)</span><input name="org" inputMode="numeric" defaultValue={ajustes.organico} className={`${campo} w-28`} /></label>
-          <label className="space-y-1"><span className={rotulo}>Conversão melhor (%)</span><input name="conv" inputMode="numeric" defaultValue={ajustes.conversao} className={`${campo} w-28`} /></label>
-          <button type="submit" className={botaoSecundario}>Recalcular</button>
+          <label><span>Investir a mais (%)</span><input name="inv" inputMode="numeric" defaultValue={ajustes.investimento} /></label>
+          <label><span>Leads orgânicos a mais (%)</span><input name="org" inputMode="numeric" defaultValue={ajustes.organico} /></label>
+          <label><span>Conversão melhor (%)</span><input name="conv" inputMode="numeric" defaultValue={ajustes.conversao} /></label>
+          <button type="submit">Recalcular</button>
         </form>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[46rem] text-rotulo">
+        <div>
+          <table>
             <thead>
-              <tr className="border-b border-borda text-left text-legenda text-texto-3">
-                <th className="py-2 pr-3 font-medium">Cenário</th>
-                {['Investimento', 'Leads', 'Vendas', 'Faturamento', 'ROAS', 'CPA', 'Diferença'].map((h2) => <th key={h2} className="py-2 pr-3 text-right font-medium last:pr-0">{h2}</th>)}
+              <tr>
+                <th>Cenário</th>
+                {['Investimento', 'Leads', 'Vendas', 'Faturamento', 'ROAS', 'CPA', 'Diferença'].map((h2) => <th key={h2}>{h2}</th>)}
               </tr>
             </thead>
             <tbody>
               {cenarios.map((c) => {
                 const dif = c.total.faturamento - manter.total.faturamento
                 return (
-                  <tr key={c.id} className={`border-b border-borda/60 last:border-0 ${c.id === 'combinado' ? 'font-semibold' : ''}`}>
-                    <td className="py-2 pr-3">{c.nome}</td>
-                    {[reais(c.total.investimento), n(c.total.leads), n(c.total.vendas), reais(c.total.faturamento), c.total.roas !== null ? `${n(c.total.roas)}x` : '—', c.total.cpa !== null ? reais(c.total.cpa) : '—'].map((x, i) => <td key={i} className="py-2 pr-3 text-right tabular-nums">{x}</td>)}
-                    <td className={`py-2 text-right tabular-nums ${dif > 0 ? 'text-sucesso-forte' : 'text-texto-3'}`}>{c.id === 'manter' ? '—' : `${dif >= 0 ? '+' : ''}${reais(dif)}`}</td>
+                  <tr key={c.id}>
+                    <td>{c.nome}</td>
+                    {[reais(c.total.investimento), n(c.total.leads), n(c.total.vendas), reais(c.total.faturamento), c.total.roas !== null ? `${n(c.total.roas)}x` : '—', c.total.cpa !== null ? reais(c.total.cpa) : '—'].map((x, i) => <td key={i}>{x}</td>)}
+                    <td>{c.id === 'manter' ? '—' : `${dif >= 0 ? '+' : ''}${reais(dif)}`}</td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-legenda text-texto-3">
+        <p>
           Totais dos 3 meses. As melhorias entram aos poucos (um terço no primeiro mês, dois terços no segundo e tudo no terceiro). Mais verba rende menos que proporcional: dobrar o investimento não dobra os leads (rendimento decrescente de {ELASTICIDADE_INVESTIMENTO}). Mantém o ticket médio. É uma estimativa para decidir, não uma garantia.
         </p>
       </Modulo>
 
       <Modulo icone={BadgeDollarSign} titulo="Mês a mês" descricao="Manter o ritmo e fazer tudo junto, lado a lado">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[40rem] text-rotulo">
+        <div>
+          <table>
             <thead>
-              <tr className="border-b border-borda text-left text-legenda text-texto-3">
-                <th className="py-2 pr-3 font-medium">Mês</th>
-                {['Manter · vendas', 'Manter · faturamento', 'Tudo junto · vendas', 'Tudo junto · faturamento'].map((h2) => <th key={h2} className="py-2 pr-3 text-right font-medium last:pr-0">{h2}</th>)}
+              <tr>
+                <th>Mês</th>
+                {['Manter · vendas', 'Manter · faturamento', 'Tudo junto · vendas', 'Tudo junto · faturamento'].map((h2) => <th key={h2}>{h2}</th>)}
               </tr>
             </thead>
             <tbody>
               {futuros.map((mes, i) => (
-                <tr key={mes} className="border-b border-borda/60 last:border-0">
-                  <td className="py-2 pr-3">{rotuloMesLongo(mes)}</td>
-                  {[n(manter.meses[i].vendas), reais(manter.meses[i].faturamento), n(cenarios[4].meses[i].vendas), reais(cenarios[4].meses[i].faturamento)].map((x, j) => <td key={j} className="py-2 pr-3 text-right tabular-nums last:pr-0">{x}</td>)}
+                <tr key={mes}>
+                  <td>{rotuloMesLongo(mes)}</td>
+                  {[n(manter.meses[i].vendas), reais(manter.meses[i].faturamento), n(cenarios[4].meses[i].vendas), reais(cenarios[4].meses[i].faturamento)].map((x, j) => <td key={j}>{x}</td>)}
                 </tr>
               ))}
             </tbody>

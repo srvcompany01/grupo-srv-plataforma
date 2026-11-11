@@ -21,7 +21,7 @@ export function ListaConteudoToggle({ listaId, ligado }: { listaId: string; liga
     iniciar(async () => { if (avisar(await definirListaConteudoAcao(listaId, !ligado), true)) router.refresh() })
   }
   return (
-    <label className="flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap text-[13px] text-texto-2">
+    <label>
       <button type="button" role="switch" aria-checked={ligado} onClick={alternar} disabled={pendente} title={ligado ? 'As subtarefas desta lista são posts (clique para desligar)' : 'Fazer as subtarefas desta lista virarem posts'} style={{ width: 28, height: 16, flex: 'none', borderRadius: 8, background: ligado ? 'var(--primary)' : 'var(--border-strong)', border: 0, position: 'relative', padding: 0, cursor: 'pointer', transition: 'background 150ms' }}>
         <span style={{ position: 'absolute', top: 2, left: ligado ? 14 : 2, width: 12, height: 12, borderRadius: '50%', background: 'var(--bg)', transition: 'left 150ms' }} />
       </button>

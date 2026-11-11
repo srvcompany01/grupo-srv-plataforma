@@ -16,12 +16,12 @@ export function ConfigurarCampo({ campoId, aoFechar }: { campoId: string; aoFech
   const campo = dados?.campos.find((c) => c.id === campoId)
   return (
     <Dialog open onOpenChange={(aberto) => !aberto && aoFechar()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent>
         <DialogHeader><DialogTitle>Configurar campo</DialogTitle><DialogDescription>Nome, cor, ícone e listas onde o campo aparece.</DialogDescription></DialogHeader>
         {dados && campo ? (
           <EditorCampo alvo={{ tipo: 'editar', campo }} espacos={dados.espacos} listas={dados.listas} campos={dados.campos} aoFechar={aoFechar} />
         ) : (
-          <p className="py-8 text-center text-sm text-texto-3">{falhou || dados ? 'Não foi possível carregar o campo.' : 'Carregando…'}</p>
+          <p>{falhou || dados ? 'Não foi possível carregar o campo.' : 'Carregando…'}</p>
         )}
       </DialogContent>
     </Dialog>

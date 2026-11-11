@@ -25,10 +25,10 @@ export default async function CaixaDeEntrada() {
   after(() => processarPendentes(sb).catch(() => {}))
   return (
     <div>
-      <header className="sticky top-0 z-10 flex h-10 items-center gap-3 border-b border-borda-fraca bg-white px-3">
-        <h1 className="flex items-center gap-2 text-destaque font-semibold"><Ic n="move_to_inbox" s={16} style={{ color: 'var(--text-2)' }} /> Caixa de entrada</h1>
-        <span className="hidden text-rotulo text-texto-3 sm:inline">vídeos que chegam e viram posts</span>
-        <Link href="/caixa-de-entrada/configuracoes" className="b-ghost ml-auto"><Ic n="settings" s={16} />Configurações</Link>
+      <header>
+        <h1><Ic n="move_to_inbox" s={16} style={{ color: 'var(--text-2)' }} /> Caixa de entrada</h1>
+        <span className="hidden">vídeos que chegam e viram posts</span>
+        <Link href="/caixa-de-entrada/configuracoes"><Ic n="settings" s={16} />Configurações</Link>
       </header>
       <AreaDeEntrada arvore={arvore} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} itens={itens} driveConfigurado={driveConfigurado()} emailDaConta={emailDaContaDoDrive()} />
     </div>

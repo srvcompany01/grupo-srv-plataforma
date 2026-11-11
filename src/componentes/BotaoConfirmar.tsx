@@ -2,7 +2,6 @@
 
 import { useTransition, type ReactNode } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { botaoFantasma } from '@/lib/ui'
 
 export function BotaoConfirmar({
   acao,
@@ -19,7 +18,6 @@ export function BotaoConfirmar({
     <button
       type="button"
       disabled={pendente}
-      className={botaoFantasma}
       onClick={async () => {
         if (pergunta && !(await confirmar({ titulo: pergunta, perigo: true }))) return
         iniciar(() => acao())

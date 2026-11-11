@@ -17,8 +17,8 @@ export function filtrarPessoas(pessoas: PessoaMencao[], consulta: string): Pesso
 /** Lista flutuante; o teclado (setas/Enter/Esc) é tratado pela caixa, que mantém o foco na textarea. */
 export function SeletorMencao({ pessoas, indice, aoEscolher }: { pessoas: PessoaMencao[]; indice: number; aoEscolher: (p: PessoaMencao) => void }) {
   return (
-    <ul role="listbox" aria-label="Mencionar pessoa" className="absolute bottom-full left-0 z-20 mb-1 max-h-48 w-64 overflow-y-auto rounded-md  bg-white py-1 shadow-lg">
-      {pessoas.length === 0 && <li className="px-3 py-1.5 text-rotulo text-texto-3">Ninguém encontrado</li>}
+    <ul role="listbox" aria-label="Mencionar pessoa">
+      {pessoas.length === 0 && <li>Ninguém encontrado</li>}
       {pessoas.map((p, i) => (
         <li key={p.id} role="option" aria-selected={i === indice}>
           <button
@@ -28,10 +28,9 @@ export function SeletorMencao({ pessoas, indice, aoEscolher }: { pessoas: Pessoa
               e.preventDefault()
               aoEscolher(p)
             }}
-            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-corpo ${i === indice ? 'bg-hover' : 'hover:bg-hover'}`}
           >
             <Avatar nome={p.nome} tamanho="h-5 w-5 text-legenda" />
-            <span className="truncate">{p.nome}</span>
+            <span>{p.nome}</span>
           </button>
         </li>
       ))}

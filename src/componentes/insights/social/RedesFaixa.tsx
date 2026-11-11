@@ -13,13 +13,13 @@ const REDES_ORGANICO: { nome: string; situacao: string; slug?: SlugRede; cor: st
 /** Faixa de redes (pílulas do mesmo tamanho): logo, nome e uma linha de apoio. A rede ativa ganha o contorno preto. */
 export function RedesFaixa({ seguidoresInstagram }: { seguidoresInstagram?: string }) {
   return (
-    <div className="ins-redes" role="list" aria-label="Redes sociais">
+    <div role="list" aria-label="Redes sociais">
       {REDES_ORGANICO.map((r) => (
-        <span key={r.nome} role="listitem" className="ins-rede" data-ativa={r.ativa || undefined}>
-          {r.slug ? <LogoRede slug={r.slug} tamanho={30} /> : <span style={{ background: r.cor, borderRadius: 7 }} className="flex h-[30px] w-[30px] flex-none items-center justify-center text-[16px] font-bold text-white">f</span>}
-          <span className="min-w-0">
-            <span className="block truncate font-semibold">{r.nome}</span>
-            <small className="block truncate">{r.ativa ? (seguidoresInstagram ?? r.situacao) : r.situacao}</small>
+        <span key={r.nome} role="listitem" data-ativa={r.ativa || undefined}>
+          {r.slug ? <LogoRede slug={r.slug} tamanho={30} /> : <span style={{ background: r.cor, borderRadius: 7 }}>f</span>}
+          <span>
+            <span>{r.nome}</span>
+            <small>{r.ativa ? (seguidoresInstagram ?? r.situacao) : r.situacao}</small>
           </span>
         </span>
       ))}

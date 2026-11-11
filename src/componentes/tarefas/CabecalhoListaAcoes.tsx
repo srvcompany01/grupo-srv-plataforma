@@ -9,10 +9,8 @@ import { duplicarListaNavegacao, excluirItemNavegacao, renomearItemNavegacao } f
 import { favoritarListaAcao } from '@/app/(app)/listas/acoes-visao'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
-import { botaoSecundario, campo } from '@/lib/ui'
 import { avisar } from './avisar'
 
-const botaoIcone = 'b-icon'
 
 /** Estrela ao lado do nome da lista: favorita da pessoa. */
 export function EstrelaLista({ listaId, favorita }: { listaId: string; favorita: boolean }) {
@@ -24,7 +22,6 @@ export function EstrelaLista({ listaId, favorita }: { listaId: string; favorita:
       aria-label={exibida ? 'Tirar dos favoritos' : 'Adicionar aos favoritos'}
       title={exibida ? 'Tirar dos favoritos' : 'Adicionar aos favoritos'}
       onClick={() => iniciar(async () => { definir(!exibida); avisar(await favoritarListaAcao(listaId, !exibida)) })}
-      className={botaoIcone}
     >
       <Ic n="star" s={16} fill={exibida} style={{ color: exibida ? '#e0a100' : 'var(--text-3)' }} />
     </button>
@@ -52,12 +49,12 @@ export function MenuLista({ listaId, nome, podeGerir }: { listaId: string; nome:
   }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label="Ações da lista" className={botaoIcone}><Ic n="keyboard_arrow_down" s={16} /></DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48">
+      <DropdownMenuTrigger aria-label="Ações da lista"><Ic n="keyboard_arrow_down" s={16} /></DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
         <DropdownMenuItem onSelect={renomear}>Renomear</DropdownMenuItem>
         <DropdownMenuItem onSelect={duplicar}>Duplicar</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={excluir} className="text-perigo"><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
+        <DropdownMenuItem onSelect={excluir}><Trash2 /> Excluir</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -76,24 +73,24 @@ export function CompartilharDialog({ nome, membros }: { nome: string; membros: {
   }
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger className="b-out">
+      <DialogTrigger>
         <Ic n="share" s={16} /> Compartilhar
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Compartilhar {nome}</DialogTitle>
           <DialogDescription>Quem tem acesso ao espaço desta lista abre o link. Para convidar alguém novo, use Configurações → Usuários.</DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2">
-          <input readOnly aria-label="Link da lista" value={typeof window === 'undefined' ? '' : window.location.href.split('?')[0]} className={`${campo} h-8 flex-1 py-0`} onFocus={(e) => e.currentTarget.select()} />
-          <button type="button" onClick={copiar} className={`${botaoSecundario} gap-1.5`}><Copy className="h-3.5 w-3.5" /> Copiar link</button>
+        <div>
+          <input readOnly aria-label="Link da lista" value={typeof window === 'undefined' ? '' : window.location.href.split('?')[0]} onFocus={(e) => e.currentTarget.select()} />
+          <button type="button" onClick={copiar}><Copy /> Copiar link</button>
         </div>
         <div>
-          <p className="mb-1.5 flex items-center gap-1.5 text-rotulo font-semibold text-texto-2"><Users className="h-3.5 w-3.5" /> Quem tem acesso ({membros.length})</p>
-          <ul className="max-h-56 divide-y divide-borda overflow-y-auto rounded-md border border-borda">
-            {membros.length === 0 && <li className="px-3 py-2 text-rotulo text-texto-3">Todos os administradores e gestores.</li>}
+          <p><Users /> Quem tem acesso ({membros.length})</p>
+          <ul>
+            {membros.length === 0 && <li>Todos os administradores e gestores.</li>}
             {membros.map((m) => (
-              <li key={m.id} className="flex items-center justify-between px-3 py-1.5 text-rotulo"><span className="truncate">{m.nome}</span><span className="text-legenda capitalize text-texto-3">{m.papel}</span></li>
+              <li key={m.id}><span>{m.nome}</span><span>{m.papel}</span></li>
             ))}
           </ul>
         </div>

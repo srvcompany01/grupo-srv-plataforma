@@ -26,7 +26,6 @@ function Cartao({ id, children, suprimirClique }: { id: string; children: ReactN
           e.stopPropagation()
         }
       }}
-      className={isDragging ? 'relative z-10 cursor-grabbing opacity-80 shadow-lg' : undefined}
     >
       {children}
     </li>
@@ -56,10 +55,9 @@ export function GaleriaOrdenavel({ itens, podeOrdenar, hoje }: { itens: Item[]; 
       window.removeEventListener('focus', aoVoltar)
     }
   }, [hoje, router])
-  const classe = 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
 
   if (!podeOrdenar) {
-    return <ul className={classe}>{itens.map((i) => <li key={i.id}>{i.no}</li>)}</ul>
+    return <ul>{itens.map((i) => <li key={i.id}>{i.no}</li>)}</ul>
   }
 
   const soltar = ({ active, over }: DragEndEvent) => {
@@ -77,7 +75,7 @@ export function GaleriaOrdenavel({ itens, podeOrdenar, hoje }: { itens: Item[]; 
   return (
     <DndContext id={idContexto} sensors={sensores} collisionDetection={closestCenter} onDragEnd={soltar}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <ul className={classe}>
+        <ul>
           {ids.map((id) => (
             <Cartao key={id} id={id} suprimirClique={() => acabou.current}>{porId.get(id)!.no}</Cartao>
           ))}

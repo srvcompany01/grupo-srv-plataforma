@@ -26,21 +26,21 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
   const painel = { navegacao, canais: canaisChat.filter((c) => !c.nome.startsWith('dm-')).map((c) => ({ id: c.id, nome: c.nome, naoLidas: c.naoLidas, privado: c.privado })), favoritas, papel: eu.papel, nome: eu.nome, cronometro, chatNaoLidas, tema: lerModoTema(jar.get(COOKIE_TEMA)?.value), fechados: lerFechados(jar.get(COOKIE_NAV_FECHADOS)?.value), ordemInicio: lerOrdem(jar.get(COOKIE_ORDEM_INICIO)?.value) }
   // Cabeçalho do topo e, abaixo dele, a faixa de atalhos (1ª barra), a barra dos espaços (2ª barra) e o conteúdo.
   return (
-    <div className="app-ui flex min-h-dvh bg-[var(--bg-frame)]" data-tema={painel.tema}>
+    <div className="app-ui" data-tema={painel.tema}>
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
       <style>{cssTema(tema)}</style>
       {/* Fonte dos ícones do redesign (Material Symbols Rounded). */}
       {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,300..500,0..1,0&display=block" />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div>
         <CabecalhoTopo painel={painel} />
-        <div className="flex min-h-0 flex-1 max-md:pb-24">
+        <div>
           {/* Barra lateral única: ícones à esquerda e o painel de espaços ao lado, sem moldura; só uma linha separa do conteúdo. */}
-          <div className="sticky top-10 h-[calc(100dvh-40px)] shrink-0 max-md:contents md:flex" style={{ background: 'var(--bg-frame)' }}>
+          <div style={{ background: 'var(--bg-frame)' }}>
             <FaixaAtalhos {...painel} avisos={avisos} naoLidos={naoLidos} euId={eu.id} />
             <BarraLateral modoInicial={lerModoLateral(jar.get(COOKIE_MODO_LATERAL)?.value)} larguraInicial={lerLarguraLateral(jar.get(COOKIE_LARGURA_LATERAL)?.value)} {...painel} />
           </div>
-          <main className="min-w-0 flex-1 bg-white">{children}</main>
+          <main>{children}</main>
         </div>
       </div>
       {painelTarefa}

@@ -17,41 +17,40 @@ export default async function Clientes() {
   return (
     <>
       <Cabecalho trilha={[{ rotulo: 'Clientes' }]} />
-      <main className="flex-1 overflow-auto p-4 sm:p-6">
-        <div className="mb-4 flex items-baseline gap-3">
-          <h1 className="text-lg font-semibold">Clientes</h1>
-          <span className="text-sm text-texto-3">
+      <main>
+        <div>
+          <h1>Clientes</h1>
+          <span>
             {lista.length} {lista.length === 1 ? 'cliente' : 'clientes'} · {pendentes} aguardando aprovação
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-borda bg-white">
-          <div className="hidden grid-cols-[minmax(0,1fr)_140px_440px] gap-4 border-b border-borda px-4 py-2 text-xs font-medium text-texto-3 sm:grid">
+        <div>
+          <div className="hidden">
             <span>Nome</span>
             <span>Pendentes</span>
-            <span className="text-right">Ações</span>
+            <span>Ações</span>
           </div>
-          <ul className="divide-y divide-borda">
+          <ul>
             {lista.map((c) => (
               <li
                 key={c.id}
-                className={`grid gap-2 px-4 py-2.5 transition hover:bg-hover sm:grid-cols-[minmax(0,1fr)_140px_440px] sm:items-center sm:gap-4 ${c.ativo ? '' : 'opacity-55'}`}
               >
-                <Link href={`/admin/clientes/${c.id}`} className="flex min-w-0 items-center gap-2.5">
+                <Link href={`/admin/clientes/${c.id}`}>
                   <Avatar nome={c.nome} />
-                  <span className="truncate font-medium hover:text-marca">{c.nome}</span>
-                  {!c.ativo && <span className="rounded bg-hover px-1.5 text-legenda text-texto-2">desativado</span>}
+                  <span>{c.nome}</span>
+                  {!c.ativo && <span>desativado</span>}
                 </Link>
-                <span className={c.pendentes > 0 ? '' : 'hidden sm:inline'}>
+                <span>
                   {c.pendentes > 0 ? (
-                    <span className="inline-flex h-[22px] items-center rounded-[5px] bg-marca-fundo px-2 text-xs font-semibold text-marca-escura">
+                    <span>
                       {c.pendentes} aguardando
                     </span>
                   ) : (
-                    <span className="hidden text-xs text-texto-3 sm:inline">—</span>
+                    <span className="hidden">—</span>
                   )}
                 </span>
-                <div className="-ml-3 flex flex-wrap gap-0.5 sm:ml-0 sm:justify-end">
+                <div>
                   {c.ativo && <CopiarLink nome={c.nome} url={`${base}/c/${c.token}`} />}
                   <BotaoConfirmar
                     acao={acaoRegenerarToken.bind(null, c.id)}
@@ -69,7 +68,7 @@ export default async function Clientes() {
               </li>
             ))}
           </ul>
-          <div className="border-t border-borda">
+          <div>
             <FormNovoCliente />
           </div>
         </div>

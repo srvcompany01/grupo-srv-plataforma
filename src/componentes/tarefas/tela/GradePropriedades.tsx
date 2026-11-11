@@ -8,7 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popove
 import { formatarDuracao } from '@/dominio/formatar'
 import { type Pessoa, type StatusLista } from '@/dominio/tarefas'
 import { SeletorPrioridade } from '../SeletorPrioridade'
-import { botaoFantasma, campo } from '@/lib/ui'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
 import { SeletorResponsaveis } from '../SeletorResponsaveis'
@@ -17,19 +16,19 @@ import type { Opcao } from './TelaTarefa'
 
 function Linha({ icone: Icone, titulo, children }: { icone: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
   return (
-    <div className="grid min-h-[30px] grid-cols-[108px_1fr] items-center gap-2 text-corpo">
-      <span className="flex items-center gap-2 text-texto-2">
-        <Icone className="h-4 w-4 shrink-0 text-texto-3" />
+    <div>
+      <span>
+        <Icone />
         {titulo}
       </span>
-      <div className="min-w-0">{children}</div>
+      <div>{children}</div>
     </div>
   )
 }
 
 function Vazio({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="rounded px-1.5 py-0.5 text-texto-3 hover:bg-hover">
+    <button type="button" onClick={onClick}>
       Vazio
     </button>
   )
@@ -72,8 +71,8 @@ export function GradePropriedades({
   }
 
   return (
-    <div className="grid gap-x-6 gap-y-1 @2xl:grid-cols-2">
-      <div className="space-y-1">
+    <div>
+      <div>
         <Linha icone={Tag} titulo="Cliente">
           <SeletorTagCliente
             tarefaId={t.id}
@@ -83,13 +82,12 @@ export function GradePropriedades({
           />
         </Linha>
         <Linha icone={Calendar} titulo="Vencimento">
-          <span className="flex items-center gap-1.5">
+          <span>
             <input
               type="date"
               aria-label="Vencimento"
               defaultValue={t.prazo ?? ''}
               onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null, horario: e.target.value ? (t.horario ?? null) : null })}
-              className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
             />
             {t.prazo && (
               <>
@@ -99,11 +97,10 @@ export function GradePropriedades({
                   title="Horário (opcional)"
                   defaultValue={t.horario ?? ''}
                   onChange={(e) => e.target.value !== (t.horario ?? '') && salvar({ prazo: t.prazo, horario: e.target.value || null })}
-                  className={`${campo} h-8 w-28 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
                 />
-                <span className={`whitespace-nowrap text-legenda ${vencida ? 'text-perigo' : 'text-texto-3'}`}>({diaDaSemana(t.prazo)})</span>
-                <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-                  <X className="h-3.5 w-3.5" />
+                <span>({diaDaSemana(t.prazo)})</span>
+                <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento">
+                  <X />
                 </button>
               </>
             )}
@@ -112,10 +109,10 @@ export function GradePropriedades({
 
         <Linha icone={Hourglass} titulo="Estimativa de tempo">
           {editandoEstimativa || t.estimativaMin != null ? (
-            <form onBlur={(e) => salvarEstimativa(e.currentTarget)} onSubmit={(e) => e.preventDefault()} className="flex flex-wrap items-center gap-1">
-              <input name="h" type="number" min={0} autoFocus={editandoEstimativa} defaultValue={horas} aria-label="Horas" className={`${campo} h-8 w-16 py-0`} /> h
-              <input name="m" type="number" min={0} max={59} defaultValue={minutos} aria-label="Minutos" className={`${campo} h-8 w-16 py-0`} /> min
-              {t.estimativaMin != null && <span className="ml-1 text-rotulo text-texto-3">({formatarDuracao(t.estimativaMin * 60)})</span>}
+            <form onBlur={(e) => salvarEstimativa(e.currentTarget)} onSubmit={(e) => e.preventDefault()}>
+              <input name="h" type="number" min={0} autoFocus={editandoEstimativa} defaultValue={horas} aria-label="Horas" /> h
+              <input name="m" type="number" min={0} max={59} defaultValue={minutos} aria-label="Minutos" /> min
+              {t.estimativaMin != null && <span>({formatarDuracao(t.estimativaMin * 60)})</span>}
             </form>
           ) : (
             <Vazio onClick={() => setEditandoEstimativa(true)} />
@@ -123,29 +120,28 @@ export function GradePropriedades({
         </Linha>
 
         <Linha icone={Tag} titulo="Etiquetas">
-          <div className="flex flex-wrap items-center gap-1">
+          <div>
             {t.tags.map((g) => (
-              <span key={g.id} className="rounded px-1.5 py-0.5 text-legenda text-claro" style={{ background: g.cor }}>
+              <span key={g.id} style={{ background: g.cor }}>
                 {g.nome}
               </span>
             ))}
             <Popover>
-              <PopoverTrigger aria-label="Etiquetas" className="rounded px-1.5 py-0.5 text-texto-3 hover:bg-hover">
-                {t.tags.length === 0 ? 'Vazio' : <Tag className="h-3.5 w-3.5" />}
+              <PopoverTrigger aria-label="Etiquetas">
+                {t.tags.length === 0 ? 'Vazio' : <Tag />}
               </PopoverTrigger>
-              <PopoverContent className="w-56 space-y-1 p-2" align="start">
-                {tags.length === 0 && <p className="text-rotulo text-texto-3">Nenhuma etiqueta neste departamento.</p>}
+              <PopoverContent align="start">
+                {tags.length === 0 && <p>Nenhuma etiqueta neste departamento.</p>}
                 {tags.map((g) => {
                   const marcada = t.tags.some((x) => x.id === g.id)
                   return (
                     <button
                       key={g.id}
                       onClick={() => iniciar(async () => void avisar(await definirEtiquetaAcao(t.id, g.id, !marcada)))}
-                      className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-corpo hover:bg-hover"
                     >
-                      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: g.cor }} />
-                      <span className="flex-1 text-left">{g.nome}</span>
-                      {marcada && <Check className="h-3.5 w-3.5 text-marca" />}
+                      <span style={{ background: g.cor }} />
+                      <span>{g.nome}</span>
+                      {marcada && <Check />}
                     </button>
                   )
                 })}
@@ -157,9 +153,8 @@ export function GradePropriedades({
                         if (avisar(await criarEtiquetaAcao(t.id, espacoId, novaTag, '#7b68ee'))) setNovaTag('')
                       })
                     }}
-                    className=" pt-1"
                   >
-                    <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" className="w-full px-1.5 py-1 text-corpo outline-none" />
+                    <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" />
                   </form>
                 )}
               </PopoverContent>
@@ -168,18 +163,18 @@ export function GradePropriedades({
         </Linha>
       </div>
 
-      <div className="space-y-1">
+      <div>
         <Linha icone={User} titulo="Responsáveis">
           <SeletorResponsaveis tarefaId={t.id} atuais={t.responsaveis} equipe={equipe} />
         </Linha>
         <Linha icone={Flag} titulo="Prioridade">
-          <SeletorPrioridade tarefaId={t.id} prioridade={t.prioridade} className="-ml-1.5" />
+          <SeletorPrioridade tarefaId={t.id} prioridade={t.prioridade} />
         </Linha>
         <Linha icone={Timer} titulo="Rastrear tempo">
-          {children ?? <span className="text-texto-3">—</span>}
+          {children ?? <span>—</span>}
         </Linha>
         <Linha icone={t.visivelCliente ? Eye : EyeOff} titulo="Cliente vê?">
-          <button onClick={() => salvar({ visivelCliente: !t.visivelCliente })} disabled={pendente} className={`${botaoFantasma} ${t.visivelCliente ? 'text-sucesso-forte' : ''}`}>
+          <button onClick={() => salvar({ visivelCliente: !t.visivelCliente })} disabled={pendente}>
             {t.visivelCliente ? 'Visível no portal' : 'Só a equipe vê'}
           </button>
         </Linha>

@@ -29,8 +29,8 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
   const passo = lado > 1 ? (extensao * escala) / (lado - 1) : LADO * 0.08
   const bolinha = (Math.min(Math.max(passo * 0.72, LADO * 0.04), LADO * 0.08) / LADO) * 100
   return (
-    <figure className="space-y-1">
-      <div className="@container relative aspect-square w-full overflow-hidden rounded-lg border border-borda bg-[#e8e4da]" role="img" aria-label={rotulo}>
+    <figure>
+      <div role="img" aria-label={rotulo}>
         {tiles.map((t) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiles públicos do OpenStreetMap
           <img
@@ -38,7 +38,7 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
             src={`https://tile.openstreetmap.org/${zoom}/${t.x}/${t.y}.png`}
             alt=""
             loading="lazy"
-            className="absolute max-w-none select-none"
+            className="select-none"
             style={{ left: pct(t.x * tile - origem.x), top: pct(t.y * tile - origem.y), width: pct(tile), height: pct(tile) }}
           />
         ))}
@@ -49,7 +49,6 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
             <span
               key={i}
               title={`${p.posicao ? `${p.posicao}º lugar neste ponto` : 'Fora do top 20 neste ponto'}${noEndereco ? ' (endereço do cliente)' : ''}`}
-              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 font-bold shadow-md ${noEndereco ? 'border-[#1d6fe0] ring-4 ring-[#1d6fe0]/35' : 'border-claro'}`}
               style={{ ...pos(p), width: `${bolinha}%`, height: `${bolinha}%`, fontSize: `${bolinha * 0.42}cqw`, background: c.fundo, color: c.texto }}
             >
               {rotuloPosicao(p.posicao)}
@@ -57,7 +56,7 @@ export function MapaGrade({ centro, pontos, rotulo }: { centro: Ponto; pontos: P
           )
         })}
       </div>
-      <figcaption className="text-micro text-texto-3">Mapa © colaboradores do OpenStreetMap. Anel azul: o ponto no endereço do cliente.</figcaption>
+      <figcaption>Mapa © colaboradores do OpenStreetMap. Anel azul: o ponto no endereço do cliente.</figcaption>
     </figure>
   )
 }
@@ -72,7 +71,7 @@ export function Medidor({ nota }: { nota: number }) {
     return <path d={`M ${100 + 85 * Math.cos(a)} ${100 - 85 * Math.sin(a)} A 85 85 0 0 1 ${100 + 85 * Math.cos(b)} ${100 - 85 * Math.sin(b)}`} stroke={cor} strokeWidth="14" fill="none" />
   }
   return (
-    <svg viewBox="0 0 200 134" className="mx-auto w-full max-w-64" role="img" aria-label={`Nota ${nota} de 100`}>
+    <svg viewBox="0 0 200 134" role="img" aria-label={`Nota ${nota} de 100`}>
       {arco(0, 60, '#d64545')}
       {arco(60, 80, '#eda100')}
       {arco(80, 100, '#1f8a4c')}

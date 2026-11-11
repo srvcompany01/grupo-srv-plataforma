@@ -8,12 +8,10 @@ import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { corDoFormato, edicaoCriaNovaVersao, FORMATOS, ROTULO_APROVACAO, ROTULO_FORMATO } from '@/dominio/conteudo'
 import { TIPOS_ACEITOS } from '@/dominio/midias'
-import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { ConteudoDaTarefa, PublicacaoDoPost, VersaoDoPost } from '@/servicos/conteudo'
 import { BlocoPublicacao, type ContaMeta } from './BlocoPublicacao'
 import { enviarMidia } from './enviarMidia'
 
-const COR_APROVACAO = { rascunho: 'bg-hover text-texto-2', aguardando: 'bg-aviso-fundo text-aviso-forte', aprovado: 'bg-sucesso-fundo text-sucesso-forte', ajuste: 'bg-perigo-fundo text-perigo-forte' } as const
 
 function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: VersaoDoPost; editavel: boolean }) {
   const confirmar = useConfirmar()
@@ -38,17 +36,17 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
   }
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div>
+      <div>
         {versao.midias.map((m) => (
-          <div key={m.id} className="group relative overflow-hidden rounded-lg border border-borda bg-hover">
+          <div key={m.id}>
             {m.tipo === 'imagem' ? (
               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-              <img loading="lazy" decoding="async" src={m.url} alt={m.nome} className="aspect-square w-full object-cover" />
+              <img loading="lazy" decoding="async" src={m.url} alt={m.nome} />
             ) : (
-              <video src={m.url} controls className="aspect-square w-full bg-black object-cover" />
+              <video src={m.url} controls />
             )}
-            <p className="truncate px-2 py-1 text-legenda text-texto-2">{m.nome}</p>
+            <p>{m.nome}</p>
             {editavel && (
               <button
                 type="button"
@@ -60,21 +58,20 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
                     if (avisar(await removerMidiaAcao(m.id), true)) router.refresh()
                   })
                 }}
-                className="absolute right-1 top-1 rounded-md bg-black/55 p-1.5 text-claro opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 />
               </button>
             )}
           </div>
         ))}
         {editavel && (
-          <button type="button" onClick={() => entrada.current?.click()} disabled={progresso !== null} className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-borda-forte text-rotulo text-texto-3 transition hover:bg-hover disabled:opacity-60">
-            <ImagePlus className="h-5 w-5" aria-hidden="true" />
+          <button type="button" onClick={() => entrada.current?.click()} disabled={progresso !== null}>
+            <ImagePlus aria-hidden="true" />
             {progresso === null ? 'Adicionar mídia' : `Enviando ${progresso}%`}
           </button>
         )}
       </div>
-      {versao.midias.length === 0 && !editavel && <p className="text-rotulo text-texto-3">Nenhuma mídia nesta versão.</p>}
+      {versao.midias.length === 0 && !editavel && <p>Nenhuma mídia nesta versão.</p>}
       <input ref={entrada} type="file" multiple accept={Object.keys(TIPOS_ACEITOS).join(',')} className="hidden" onChange={(e) => enviar(e.target.files)} />
     </div>
   )
@@ -98,60 +95,59 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
     })
 
   return (
-    <section className="space-y-4 rounded-lg border border-borda bg-white p-4 shadow-cartao" aria-label="Conteúdo do post">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-corpo font-semibold">Conteúdo do post</h2>
+    <section aria-label="Conteúdo do post">
+      <div>
+        <h2>Conteúdo do post</h2>
         {podeEditar ? (
           <select
             aria-label="Formato do post"
             value={conteudo.formato}
             disabled={pendente}
             onChange={(e) => iniciar(async () => { if (avisar(await alterarFormatoAcao(tarefaId, e.target.value), true)) router.refresh() })}
-            className="cursor-pointer rounded-md border-0 px-2 py-0.5 text-legenda font-semibold text-claro outline-none"
             style={{ background: corDoFormato(conteudo.formato) }}
           >
-            {FORMATOS.map((f) => <option key={f} value={f} className="bg-white text-texto">{ROTULO_FORMATO[f]}</option>)}
+            {FORMATOS.map((f) => <option key={f} value={f}>{ROTULO_FORMATO[f]}</option>)}
           </select>
         ) : (
-          <span className="rounded-md px-2 py-0.5 text-legenda font-semibold text-claro" style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
+          <span style={{ background: corDoFormato(conteudo.formato) }}>{ROTULO_FORMATO[conteudo.formato]}</span>
         )}
-        <span className={`rounded-md px-2 py-0.5 text-legenda font-semibold ${COR_APROVACAO[conteudo.aprovacao]}`}>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
-        <span className="ml-auto text-legenda text-texto-3">Versão {conteudo.versaoAtual}</span>
+        <span>{ROTULO_APROVACAO[conteudo.aprovacao]}</span>
+        <span>Versão {conteudo.versaoAtual}</span>
       </div>
 
       {congelada && (
-        <p className="flex items-start gap-2 rounded-lg bg-aviso-fundo px-3 py-2 text-rotulo text-aviso-forte" role="note">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <p role="note">
+          <TriangleAlert aria-hidden="true" />
           O cliente já respondeu a esta versão. Ao salvar uma alteração, nasce a versão {conteudo.versaoAtual + 1} e o post volta a aguardar aprovação.
         </p>
       )}
 
-      <label className="block space-y-1"><span className={rotulo}>Ideia</span><textarea disabled={!podeEditar} value={ideia} onChange={(e) => setIdeia(e.target.value)} rows={2} className={campo} /></label>
-      <label className="block space-y-1"><span className={rotulo}>Objetivo</span><textarea disabled={!podeEditar} value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={2} className={campo} /></label>
-      <label className="block space-y-1"><span className={rotulo}>Legenda</span><textarea disabled={!podeEditar} value={legenda} onChange={(e) => setLegenda(e.target.value)} rows={6} className={campo} />{hashtagsInstagram.length > 0 && <span className="block text-legenda text-texto-3">Ao publicar no Instagram, as hashtags do cliente que ainda não estão na legenda entram sozinhas no fim: {hashtagsInstagram.join(' ')}</span>}</label>
+      <label><span>Ideia</span><textarea disabled={!podeEditar} value={ideia} onChange={(e) => setIdeia(e.target.value)} rows={2} /></label>
+      <label><span>Objetivo</span><textarea disabled={!podeEditar} value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={2} /></label>
+      <label><span>Legenda</span><textarea disabled={!podeEditar} value={legenda} onChange={(e) => setLegenda(e.target.value)} rows={6} />{hashtagsInstagram.length > 0 && <span>Ao publicar no Instagram, as hashtags do cliente que ainda não estão na legenda entram sozinhas no fim: {hashtagsInstagram.join(' ')}</span>}</label>
       {podeEditar && (
-        <div className="flex justify-end gap-2">
-          {alterado && <button type="button" className={botaoSecundario} onClick={() => { setIdeia(atual.ideia); setObjetivo(atual.objetivo); setLegenda(atual.legenda) }}>Descartar</button>}
-          <button type="button" disabled={pendente || !alterado} onClick={salvar} className={botaoPrimario}>{pendente ? 'Salvando…' : congelada ? 'Salvar como nova versão' : 'Salvar'}</button>
+        <div>
+          {alterado && <button type="button" onClick={() => { setIdeia(atual.ideia); setObjetivo(atual.objetivo); setLegenda(atual.legenda) }}>Descartar</button>}
+          <button type="button" disabled={pendente || !alterado} onClick={salvar}>{pendente ? 'Salvando…' : congelada ? 'Salvar como nova versão' : 'Salvar'}</button>
         </div>
       )}
 
-      <div className="space-y-1">
-        <span className={rotulo}>Mídias da versão {atual.numero}</span>
+      <div>
+        <span>Mídias da versão {atual.numero}</span>
         <Midias tarefaId={tarefaId} versao={atual} editavel={podeEditar && !atual.resposta} />
-        {atual.resposta && <p className="text-legenda text-texto-3">Esta versão já foi respondida; as mídias dela estão congeladas.</p>}
+        {atual.resposta && <p>Esta versão já foi respondida; as mídias dela estão congeladas.</p>}
       </div>
 
       {publicacao && podeEditar && <BlocoPublicacao tarefaId={tarefaId} p={publicacao} conta={conta ?? null} formato={conteudo.formato} aprovacao={conteudo.aprovacao} hoje={hoje} />}
 
       {conteudo.versoes.some((v) => v.resposta || v.numero < conteudo.versaoAtual) && (
-        <div className="space-y-2">
-          <span className={rotulo}>Histórico</span>
-          <ul className="space-y-2">
+        <div>
+          <span>Histórico</span>
+          <ul>
             {conteudo.versoes.map((v) => (
-              <li key={v.id} className="rounded-lg border border-borda px-3 py-2 text-rotulo">
-                <p className="font-semibold">Versão {v.numero}{v.resposta ? ` · ${v.resposta.decisao === 'aprovado' ? 'Aprovada' : 'Ajuste pedido'} por ${v.resposta.nome}` : ' · sem resposta'}</p>
-                {v.resposta?.comentario && <p className="mt-1 text-texto-2">“{v.resposta.comentario}”</p>}
+              <li key={v.id}>
+                <p>Versão {v.numero}{v.resposta ? ` · ${v.resposta.decisao === 'aprovado' ? 'Aprovada' : 'Ajuste pedido'} por ${v.resposta.nome}` : ' · sem resposta'}</p>
+                {v.resposta?.comentario && <p>“{v.resposta.comentario}”</p>}
               </li>
             ))}
           </ul>

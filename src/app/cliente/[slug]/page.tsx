@@ -16,23 +16,23 @@ const quando = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digi
 
 function SeloPost({ p }: { p: PostPortal }) {
   const [texto, cor] = p.status === 'publicado' ? ['Publicado', 'bg-sucesso text-claro'] : p.aprovacao === 'aguardando' ? ['Aguardando sua aprovação', 'bg-aviso text-claro'] : p.aprovacao === 'aprovado' ? ['Aprovado', 'bg-sucesso-fundo text-sucesso-forte'] : ['Ajuste pedido', 'bg-perigo-fundo text-perigo-forte']
-  return <span className={`rounded-md px-2 py-0.5 text-micro font-semibold ${cor}`}>{texto}</span>
+  return <span>{texto}</span>
 }
 
 function CartaoPost({ p, base }: { p: PostPortal; base: string }) {
   const capa = p.midias[0]
   return (
-    <Link href={`${base}/posts/${p.id}`} className={`flex gap-3 rounded-xl border bg-white p-2.5 transition hover:border-borda-forte ${p.aprovacao === 'aguardando' ? 'border-aviso' : 'border-borda'}`}>
-      <span className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-fundo">
-        {capa && (capa.tipo === 'video' ? <video src={capa.url} muted className="h-full w-full object-cover" /> : (
+    <Link href={`${base}/posts/${p.id}`}>
+      <span>
+        {capa && (capa.tipo === 'video' ? <video src={capa.url} muted /> : (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img src={capa.url} alt="" className="h-full w-full object-cover" />
+          <img src={capa.url} alt="" />
         ))}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-corpo font-semibold text-texto">{p.titulo}</span>
-        <span className="block text-legenda capitalize text-texto-3">{ROTULO_FORMATO[p.formato]} · {p.publicarEm ? quando.format(new Date(p.publicarEm)) : 'data a combinar'}</span>
-        <span className="mt-1 block"><SeloPost p={p} /></span>
+      <span>
+        <span>{p.titulo}</span>
+        <span>{ROTULO_FORMATO[p.formato]} · {p.publicarEm ? quando.format(new Date(p.publicarEm)) : 'data a combinar'}</span>
+        <span><SeloPost p={p} /></span>
       </span>
     </Link>
   )
@@ -52,46 +52,46 @@ export default async function PaginaDoCliente({ params, searchParams }: PageProp
   const aguardando = posts.filter((p) => p.aprovacao === 'aguardando')
   const demais = posts.filter((p) => p.aprovacao !== 'aguardando').slice(0, 12)
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-4 py-10">
-      <div className="flex items-center gap-3">
+    <main>
+      <div>
         <Marca tamanho="h-11 w-11 text-lg" />
         <div>
-          <p className="text-legenda font-semibold uppercase tracking-wide text-texto-3">Área do cliente</p>
-          <h1 className="text-xl font-semibold">{cliente.nome}</h1>
+          <p>Área do cliente</p>
+          <h1>{cliente.nome}</h1>
         </div>
       </div>
       {posts.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-borda bg-white p-4" aria-label="Seus posts">
+        <section aria-label="Seus posts">
           <div>
-            <h2 className="text-corpo font-semibold text-texto">Seus posts</h2>
-            <p className="text-legenda text-texto-3">{aguardando.length ? `${aguardando.length} ${aguardando.length === 1 ? 'post espera' : 'posts esperam'} a sua aprovação.` : 'Nada esperando a sua aprovação agora.'}</p>
+            <h2>Seus posts</h2>
+            <p>{aguardando.length ? `${aguardando.length} ${aguardando.length === 1 ? 'post espera' : 'posts esperam'} a sua aprovação.` : 'Nada esperando a sua aprovação agora.'}</p>
           </div>
-          {aguardando.length > 0 && <div className="grid gap-2 sm:grid-cols-2">{aguardando.map((p) => <CartaoPost key={p.id} p={p} base={base} />)}</div>}
+          {aguardando.length > 0 && <div>{aguardando.map((p) => <CartaoPost key={p.id} p={p} base={base} />)}</div>}
           {demais.length > 0 && (
-            <details className="group" open={!aguardando.length}>
-              <summary className="cursor-pointer text-rotulo font-semibold text-texto-2">Aprovados e publicados ({demais.length})</summary>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">{demais.map((p) => <CartaoPost key={p.id} p={p} base={base} />)}</div>
+            <details open={!aguardando.length}>
+              <summary>Aprovados e publicados ({demais.length})</summary>
+              <div>{demais.map((p) => <CartaoPost key={p.id} p={p} base={base} />)}</div>
             </details>
           )}
         </section>
       )}
       {cliente.metaContaId && (
-        <Suspense fallback={<p className="rounded-xl border border-borda bg-white p-4 text-rotulo text-texto-3">Carregando seus anúncios…</p>}>
+        <Suspense fallback={<p>Carregando seus anúncios…</p>}>
           <GaleriaAnuncios contaId={cliente.metaContaId} periodo={periodo} mostrarGasto={false} seletor={<SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />} />
         </Suspense>
       )}
       <BibliotecaAnuncios paginaId={cliente.metaPaginaId} />
-      <section className="space-y-2">
-        <h2 className="text-rotulo font-semibold text-texto-3">Documentos para você</h2>
+      <section>
+        <h2>Documentos para você</h2>
         {docs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-borda p-6 text-center text-corpo text-texto-3">Nenhum documento disponível por enquanto.</p>
+          <p>Nenhum documento disponível por enquanto.</p>
         ) : (
           docs.map((d) => (
-            <Link key={d.id} href={`${base}/documentos/${d.id}`} className="flex items-center gap-3 rounded-lg border border-borda bg-white p-3 hover:border-marca-clara">
-              <FileText className="h-4 w-4 text-texto-3" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-corpo font-semibold text-texto">{d.titulo}</span>
-                <span className="block text-legenda text-texto-3">Atualizado em {dia.format(new Date(d.atualizadoEm))}</span>
+            <Link key={d.id} href={`${base}/documentos/${d.id}`}>
+              <FileText />
+              <span>
+                <span>{d.titulo}</span>
+                <span>Atualizado em {dia.format(new Date(d.atualizadoEm))}</span>
               </span>
             </Link>
           ))

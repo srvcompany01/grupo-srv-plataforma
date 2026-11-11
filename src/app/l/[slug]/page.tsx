@@ -43,23 +43,23 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
   const base = hostEhDaBio((await headers()).get('host'), process.env.BIO_DOMINIO) ? `/${slug}/ir` : `/l/${slug}/ir`
   const botoes = [...(p.temWhatsapp ? [{ id: 'whatsapp', rotulo: p.quiz.aparencia.botaoTexto || TEXTO_PADRAO_BOTAO }] : []), ...p.links]
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-white px-5 py-14 text-black">
+    <main>
       {humano && <Visualizacao origem={origem} />}
-      <div className="flex w-full max-w-sm flex-col items-center gap-8">
-        <div className="flex flex-col items-center gap-4 text-center">
+      <div>
+        <div>
           {p.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.logo} alt="" className="h-28 w-28 rounded-full border border-black/10 object-cover" />
+            <img src={p.logo} alt="" />
           ) : (
-            <span className="flex h-28 w-28 items-center justify-center rounded-full bg-black text-4xl font-semibold text-claro">{p.nome.trim().charAt(0).toUpperCase()}</span>
+            <span>{p.nome.trim().charAt(0).toUpperCase()}</span>
           )}
-          <h1 className="text-xl font-semibold tracking-tight">{p.nome}</h1>
+          <h1>{p.nome}</h1>
         </div>
-        <nav className="flex w-full flex-col gap-3">
+        <nav>
           {botoes.map((b, i) => b.id === 'whatsapp' ? (
             <QuizWhatsapp key={b.id} rotulo={b.rotulo} quiz={p.quiz} origem={origem} destaque={i === 0} />
           ) : (
-            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-md border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
+            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener">
               {b.rotulo}
             </a>
           ))}

@@ -26,7 +26,7 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
   const melhores = [...ig.posts].sort((a, b) => b.interacoes - a.interacoes).slice(0, 6)
   const porSemana = (ig.posts.length / Math.max(1, dias.length)) * 7
   return (
-    <div className="@container space-y-4">
+    <div>
       {seg && <SeguidoresDoPeriodo s={seg} />}
       <Numeros
         itens={[
@@ -41,25 +41,25 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
       />
       <GraficoDiario titulo="Alcance dos posts pela data de publicação" dias={dias} series={[{ nome: 'Posts orgânicos', valores: dias.map((d) => porDia.get(d) ?? 0) }]} formato={(n) => numero.format(n)} tipo="barras" />
       {formatos.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[28rem] text-rotulo">
+        <div>
+          <table>
             <thead>
-              <tr className="border-b border-borda text-left text-legenda text-texto-3">
-                <th className="py-1.5 pr-3 font-medium">Formato</th>
-                <th className="py-1.5 pr-3 text-right font-medium">Posts</th>
-                <th className="py-1.5 pr-3 text-right font-medium">Alcance médio</th>
-                <th className="py-1.5 pr-3 text-right font-medium">Interações médias</th>
-                <th className="py-1.5 text-right font-medium">Engajamento</th>
+              <tr>
+                <th>Formato</th>
+                <th>Posts</th>
+                <th>Alcance médio</th>
+                <th>Interações médias</th>
+                <th>Engajamento</th>
               </tr>
             </thead>
             <tbody>
               {formatos.map((f) => (
-                <tr key={f.formato} className="border-b border-borda/60 last:border-0">
-                  <td className="py-1.5 pr-3 font-medium text-texto"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: COR_FORMATO_IG[f.formato] }} />{f.formato}</span></td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{f.posts}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{numero.format(f.alcance)}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{numero.format(f.interacoes)}</td>
-                  <td className="py-1.5 text-right tabular-nums"><span className="inline-flex items-center gap-1.5">{pct(f.engajamento)} {tomEngajamento(f.engajamento) !== 'neutro' && <SeloTom tom={tomEngajamento(f.engajamento)} />}</span></td>
+                <tr key={f.formato}>
+                  <td><span><span style={{ background: COR_FORMATO_IG[f.formato] }} />{f.formato}</span></td>
+                  <td>{f.posts}</td>
+                  <td>{numero.format(f.alcance)}</td>
+                  <td>{numero.format(f.interacoes)}</td>
+                  <td><span>{pct(f.engajamento)} {tomEngajamento(f.engajamento) !== 'neutro' && <SeloTom tom={tomEngajamento(f.engajamento)} />}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -68,23 +68,23 @@ export function InstagramInsights({ ig, dias, cliquesLinkBio, seguidoresPagos }:
       )}
       {melhores.length > 0 && (
         <div>
-          <p className="mb-2 text-legenda font-semibold text-texto-2">Melhores posts do período</p>
-          <ul className="grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-6">
+          <p>Melhores posts do período</p>
+          <ul>
             {melhores.map((p) => (
-              <li key={p.id} className="overflow-hidden rounded-lg border border-borda bg-white">
-                <a href={p.link} target="_blank" rel="noreferrer" className="block">
-                  <div className="relative aspect-square bg-fundo">
+              <li key={p.id}>
+                <a href={p.link} target="_blank" rel="noreferrer">
+                  <div>
                     {p.imagem && (
                       // eslint-disable-next-line @next/next/no-img-element -- imagem do CDN do Instagram (URL que expira)
-                      <img src={p.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={p.imagem} alt="" loading="lazy" />
                     )}
-                    {p.formato === 'Reels' && <PlayCircle className="absolute right-1.5 top-1.5 h-5 w-5 text-claro drop-shadow" aria-label="Reels" />}
-                    <span className="absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-micro font-semibold text-claro" style={{ background: COR_FORMATO_IG[p.formato] }}>{p.formato}</span>
+                    {p.formato === 'Reels' && <PlayCircle aria-label="Reels" />}
+                    <span style={{ background: COR_FORMATO_IG[p.formato] }}>{p.formato}</span>
                   </div>
-                  <div className="space-y-0.5 p-2">
-                    <p className="flex items-center justify-between text-micro text-texto-3"><span>{quando.format(new Date(p.em))}</span><ExternalLink className="h-3 w-3" /></p>
-                    <p className="flex items-center gap-1 text-rotulo font-semibold tabular-nums text-texto"><Heart className="h-3.5 w-3.5" style={{ color: '#e87ba4' }} aria-hidden />{numero.format(p.interacoes)} interações</p>
-                    <p className="text-micro text-texto-3">{numero.format(p.alcance)} de alcance · {numero.format(p.salvamentos)} salvos</p>
+                  <div>
+                    <p><span>{quando.format(new Date(p.em))}</span><ExternalLink /></p>
+                    <p><Heart style={{ color: '#e87ba4' }} aria-hidden />{numero.format(p.interacoes)} interações</p>
+                    <p>{numero.format(p.alcance)} de alcance · {numero.format(p.salvamentos)} salvos</p>
                   </div>
                 </a>
               </li>

@@ -16,7 +16,7 @@ export function AlternarTema({ inicial, className = '', comRotulo = false, estil
   const icone = modo === 'escuro' ? 'light_mode' : 'dark_mode'
   const rotulo = modo === 'escuro' ? 'Tema claro' : 'Tema escuro'
   return (
-    <button type="button" onClick={() => alternarTemaGlobal()} title={rotulo} aria-label={rotulo} className={className} style={estilo}>
+    <button type="button" onClick={() => alternarTemaGlobal()} title={rotulo} aria-label={rotulo} style={estilo}>
       <Ic n={icone} s={18} />
       {comRotulo && <span>{rotulo}</span>}
     </button>

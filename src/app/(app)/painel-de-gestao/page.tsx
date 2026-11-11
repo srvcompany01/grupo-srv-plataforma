@@ -21,13 +21,13 @@ const pct = (parte: number, total: number) => (total ? Math.round((parte / total
 
 function Metrica({ icone: Icone, rotulo, valor, detalhe, tom }: { icone: typeof ClipboardList; rotulo: string; valor: number; detalhe?: string; tom: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-borda bg-white p-4 shadow-cartao">
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${tom}`}><Icone className="h-6 w-6" aria-hidden="true" /></span>
-      <div className="min-w-0 flex-1">
-        <p className="text-rotulo font-semibold text-texto-2">{rotulo}</p>
-        <p className="font-display text-[40px] font-bold tracking-tight leading-none text-texto">{valor}</p>
+    <div>
+      <span><Icone aria-hidden="true" /></span>
+      <div>
+        <p>{rotulo}</p>
+        <p>{valor}</p>
       </div>
-      {detalhe && <p className="shrink-0 text-right text-rotulo text-texto-3">{detalhe}</p>}
+      {detalhe && <p>{detalhe}</p>}
     </div>
   )
 }
@@ -53,25 +53,25 @@ export default async function PainelDeGestao({ searchParams }: PageProps<'/paine
   const dataExtenso = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Belem', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
   return (
-    <div className="page-shell relatorio">
+    <div>
       <header>
-        <p className="text-rotulo text-texto-3">Visão geral</p>
-        <h1 className="page-title mt-1">Painel de Gestão</h1>
-        <p className="mt-1 text-corpo capitalize text-texto-3">{dataExtenso}</p>
+        <p>Visão geral</p>
+        <h1>Painel de Gestão</h1>
+        <p>{dataExtenso}</p>
       </header>
 
-      <section aria-label="Indicadores" className="grid gap-3 md:grid-cols-3">
+      <section aria-label="Indicadores">
         <Metrica icone={ClipboardList} rotulo="Tarefas no quadro" valor={arvore.length} tom="bg-marca-fundo text-marca" />
         <Metrica icone={Loader} rotulo="Em andamento" valor={emAndamento} detalhe={`${pct(emAndamento, arvore.length)}% do total`} tom="bg-azul-fundo text-azul" />
         <Metrica icone={CircleCheck} rotulo="Concluídas" valor={concluidas} detalhe={`${pct(concluidas, arvore.length)}% do total`} tom="bg-sucesso-fundo text-sucesso" />
       </section>
 
-      <section aria-label="Resumo" className="grid gap-3 lg:grid-cols-2">
+      <section aria-label="Resumo">
         <TabelaResumo titulo="Por departamento" descricao="Onde o trabalho está concentrado" linhas={porDepartamento} href={(l) => `/listas/${l.id}`} />
         <TabelaResumo titulo="Por cliente" descricao="Quanto cada cliente tem em andamento" linhas={porCliente} href={(l) => `/clientes/${l.id}`} clientes />
       </section>
 
-      <div className="space-y-4">
+      <div>
         <AlternadorVisao caminho={CAMINHO} filtros={filtros} />
         <BarraFiltros filtros={filtros} equipe={equipe} status={[]} clientes={clientes} comMes />
         {tarefas.length === 0 ? (

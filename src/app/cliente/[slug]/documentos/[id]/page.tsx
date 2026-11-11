@@ -28,21 +28,21 @@ export default async function DocumentoDoCliente({ params, searchParams }: PageP
   const base = `/cliente/${cliente.slug}`
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl p-4 py-8">
-      <Link href={base} className="mb-4 inline-flex items-center gap-1 text-rotulo text-texto-3 hover:text-texto"><ChevronLeft className="h-4 w-4" /> Voltar</Link>
-      <h1 className="mb-4 text-xl font-bold text-texto">{doc.resumo.titulo}</h1>
-      <div className="flex flex-col gap-4 md:flex-row">
+    <main>
+      <Link href={base}><ChevronLeft /> Voltar</Link>
+      <h1>{doc.resumo.titulo}</h1>
+      <div>
         {ordem.length > 1 && (
-          <nav className="shrink-0 space-y-0.5 md:w-52" aria-label="Páginas">
+          <nav aria-label="Páginas">
             {ordem.map((pg) => (
-              <Link key={pg.id} href={`${base}/documentos/${id}?p=${pg.id}`} style={{ paddingLeft: 8 + pg.nivel * 12 }} className={`block truncate rounded-md py-1.5 pr-2 text-rotulo ${pg.id === escolhida.id ? 'bg-hover font-semibold text-texto' : 'text-texto-2 hover:bg-hover'}`}>
+              <Link key={pg.id} href={`${base}/documentos/${id}?p=${pg.id}`} style={{ paddingLeft: 8 + pg.nivel * 12 }}>
                 {pg.titulo || 'Sem título'}
               </Link>
             ))}
           </nav>
         )}
-        <article className="min-w-0 flex-1 rounded-lg border border-borda bg-white p-6">
-          {pagina.titulo && <h2 className="mb-2 text-[1.6rem] font-bold text-texto">{pagina.titulo}</h2>}
+        <article>
+          {pagina.titulo && <h2>{pagina.titulo}</h2>}
           <LeitorDocumento conteudo={yjsParaJson(pagina.ydoc, pagina.conteudo)} />
         </article>
       </div>

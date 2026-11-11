@@ -26,11 +26,11 @@ export default async function Estrategia({ searchParams }: PageProps<'/estrategi
   const link = (m: Metodo, clienteId = escolhido?.id) => `/estrategia?secao=${m}${clienteId ? `&cliente=${clienteId}` : ''}`
 
   return (
-    <div className="page-shell relatorio">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div>
         <div>
-          <p className="eyebrow">Estratégia do cliente</p>
-          <h1 className="page-title mt-1">{escolhido ? <>Estratégia · <NomeCliente nome={escolhido.nome} /></> : 'Estratégia'}</h1>
+          <p>Estratégia do cliente</p>
+          <h1>{escolhido ? <>Estratégia · <NomeCliente nome={escolhido.nome} /></> : 'Estratégia'}</h1>
         </div>
         <SeletorCliente base={`/estrategia?secao=${secao}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo="" />
       </div>
@@ -47,11 +47,11 @@ async function Cliente({ cliente, secao, link }: { cliente: ClienteDaPlataforma;
   const [est, reais] = await Promise.all([estrategiaDoCliente(sb, clienteId), secao === 'receita' ? numerosReaisDoCliente(sb, cliente, dataDeHoje(new Date())) : null])
   return (
     <>
-      <nav className="flex gap-1 overflow-x-auto border-b border-borda [scrollbar-width:none]" aria-label="Seções da estratégia">
+      <nav aria-label="Seções da estratégia">
         {METODOS.map((m) => (
-          <Link key={m.id} href={link(m.id)} aria-current={secao === m.id ? 'page' : undefined} className={`-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-rotulo font-semibold ${secao === m.id ? 'border-petroleo text-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>
+          <Link key={m.id} href={link(m.id)} aria-current={secao === m.id ? 'page' : undefined}>
             <Ic n={m.icone} s={16} /> {m.rotulo}
-            <span className="rounded-full bg-[var(--bg-active)] px-1.5 text-legenda tabular-nums text-texto-3">{pct(preenchimento(m.id, est[m.id]))}</span>
+            <span>{pct(preenchimento(m.id, est[m.id]))}</span>
           </Link>
         ))}
       </nav>
@@ -63,23 +63,23 @@ async function Cliente({ cliente, secao, link }: { cliente: ClienteDaPlataforma;
 async function Panorama({ clientes, link }: { clientes: { id: string; nome: string }[]; link: (m: Metodo, clienteId?: string) => string }) {
   const todas = await estrategiasDeTodos(await criarClienteServidor())
   return (
-    <section className="est">
-      <div className="est-bloco">
-        <header className="mb-3"><h2 className="text-[15px] font-semibold">Quanto cada cliente já tem construído</h2><p className="text-[12px] text-texto-3">Escolha um cliente acima ou clique numa porcentagem para abrir a seção.</p></header>
-        <div className="overflow-x-auto">
-          <table className="est-tabela">
+    <section>
+      <div>
+        <header><h2>Quanto cada cliente já tem construído</h2><p>Escolha um cliente acima ou clique numa porcentagem para abrir a seção.</p></header>
+        <div>
+          <table>
             <thead><tr><th>Cliente</th>{METODOS.map((m) => <th key={m.id}>{m.curto}</th>)}</tr></thead>
             <tbody>
               {clientes.map((c) => (
                 <tr key={c.id}>
-                  <td><Link href={link('publico', c.id)} className="hover:underline"><NomeCliente nome={c.nome} /></Link></td>
+                  <td><Link href={link('publico', c.id)}><NomeCliente nome={c.nome} /></Link></td>
                   {METODOS.map((m) => {
                     const p = todas[c.id] ? preenchimento(m.id, todas[c.id][m.id]) : 0
                     return (
                       <td key={m.id}>
-                        <Link href={link(m.id, c.id)} className="flex items-center gap-2 tabular-nums">
-                          <span className="est-prog w-16"><span style={{ width: pct(p) }} /></span>
-                          <span className={p ? 'text-texto' : 'text-texto-3'}>{pct(p)}</span>
+                        <Link href={link(m.id, c.id)}>
+                          <span><span style={{ width: pct(p) }} /></span>
+                          <span>{pct(p)}</span>
                         </Link>
                       </td>
                     )

@@ -35,10 +35,10 @@ export function SeletorResponsaveis({ tarefaId, atuais, equipe }: { tarefaId: st
 
   return (
     <Popover open={aberto} onOpenChange={mudarAberto}>
-      <PopoverTrigger disabled={pendente} aria-label="Responsáveis" className="rounded-full hover:opacity-80">
-        {atuais.length ? <Pessoas pessoas={atuais} /> : <UserPlus className="h-5 w-5 text-texto-3" />}
+      <PopoverTrigger disabled={pendente} aria-label="Responsáveis">
+        {atuais.length ? <Pessoas pessoas={atuais} /> : <UserPlus />}
       </PopoverTrigger>
-      <PopoverContent className="w-64 gap-0 p-0 pt-1" align="start">
+      <PopoverContent align="start">
         <TituloMenu>Responsáveis</TituloMenu>
         <Command>
           <CommandInput placeholder="Buscar pessoa…" />
@@ -47,11 +47,11 @@ export function SeletorResponsaveis({ tarefaId, atuais, equipe }: { tarefaId: st
             {opcoesResponsaveis(equipe, atuais).map((p) => (
               <CommandItem key={p.id} value={p.nome} onSelect={() => alternar(p.id)}>
                 <Avatar nome={p.nome || '?'} tamanho="h-5 w-5 text-legenda" />
-                <span className="flex-1">
+                <span>
                   {p.nome}
-                  {p.inativo && <span className="ml-1 text-legenda text-texto-3">(inativo)</span>}
+                  {p.inativo && <span>(inativo)</span>}
                 </span>
-                {marcados.has(p.id) && <Check className="h-4 w-4 text-marca" />}
+                {marcados.has(p.id) && <Check />}
               </CommandItem>
             ))}
           </CommandList>

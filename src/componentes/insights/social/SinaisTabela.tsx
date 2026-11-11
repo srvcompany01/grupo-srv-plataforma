@@ -12,18 +12,18 @@ export function SinaisTabela({ analise }: { analise: Analise }) {
     ...analise.recomendacoes.map((i) => ({ ...i, tipo: 'Recomendação' as const })),
   ].sort((a, b) => ORDEM_TOM[a.tom] - ORDEM_TOM[b.tom])
   return (
-    <CartaoSocial titulo={<>Sinais <span className="ins-sub">· {linhas.length} ativos</span></>} sub="O que os números mostram e o que fazer no orgânico">
-      <div className="overflow-x-auto">
-        <table className="ins-tabela min-w-[32rem]">
-          <thead><tr><th>Sinal</th><th>Tipo</th><th className="text-right">Impacto</th></tr></thead>
+    <CartaoSocial titulo={<>Sinais <span>· {linhas.length} ativos</span></>} sub="O que os números mostram e o que fazer no orgânico">
+      <div>
+        <table>
+          <thead><tr><th>Sinal</th><th>Tipo</th><th>Impacto</th></tr></thead>
           <tbody>
             {linhas.map((l) => {
               const Icone = l.tipo === 'Insight' ? Lightbulb : Target
               return (
                 <tr key={`${l.tipo}-${l.texto}`}>
                   <td style={{ width: '100%' }}>{l.texto}</td>
-                  <td><span className="inline-flex items-center gap-1.5 whitespace-nowrap" style={{ color: 'var(--ins-suave)' }}><Icone className="h-3.5 w-3.5" strokeWidth={1.7} />{l.tipo}</span></td>
-                  <td className="text-right"><span className="ins-selo" data-tom={l.tom === 'bom' ? undefined : l.tom}>{IMPACTO[l.tom]}</span></td>
+                  <td><span style={{ color: 'var(--ins-suave)' }}><Icone strokeWidth={1.7} />{l.tipo}</span></td>
+                  <td><span data-tom={l.tom === 'bom' ? undefined : l.tom}>{IMPACTO[l.tom]}</span></td>
                 </tr>
               )
             })}

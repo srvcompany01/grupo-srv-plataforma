@@ -17,11 +17,11 @@ export function CaixaComentario({ tarefaId, pessoas }: { tarefaId: string; pesso
       placeholder="Escreva um comentário…"
       rotulo="Comentário"
       extras={
-        <div className="flex rounded-md bg-hover p-0.5 text-rotulo">
-          <button type="button" onClick={() => setInterno(true)} className={`rounded px-2 py-0.5 ${interno ? 'bg-white shadow-sm' : 'text-texto-2'}`}>
+        <div>
+          <button type="button" onClick={() => setInterno(true)}>
             Interno
           </button>
-          <button type="button" onClick={() => setInterno(false)} className={`rounded px-2 py-0.5 ${!interno ? 'bg-white text-sucesso-forte shadow-sm' : 'text-texto-2'}`}>
+          <button type="button" onClick={() => setInterno(false)}>
             Visível ao cliente
           </button>
         </div>

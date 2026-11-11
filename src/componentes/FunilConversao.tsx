@@ -27,8 +27,8 @@ export function FunilConversao({ etapas, principal }: { etapas: EtapaFunil[]; /*
   const primeira = validas[0]
   const ultima = validas[validas.length - 1]
   return (
-    <div className="funil">
-      <ol className="funil-etapas">
+    <div>
+      <ol>
         {validas.map((e, i) => {
           const w0 = ws[i]
           const w1 = i < ws.length - 1 ? ws[i + 1] : w0 * 0.82
@@ -36,14 +36,14 @@ export function FunilConversao({ etapas, principal }: { etapas: EtapaFunil[]; /*
           const anterior = validas[i - 1]
           return (
             <li key={e.rotulo}>
-              <div className="funil-rotulo">
+              <div>
                 <b>{e.rotulo}</b>
                 {e.extra && <small>{e.extra}</small>}
               </div>
-              <div className="funil-faixa" style={{ ['--c' as string]: cor, clipPath: `polygon(${(100 - w0) / 2}% 0, ${(100 + w0) / 2}% 0, ${(100 + w1) / 2}% 100%, ${(100 - w1) / 2}% 100%)` }}>
+              <div style={{ ['--c' as string]: cor, clipPath: `polygon(${(100 - w0) / 2}% 0, ${(100 + w0) / 2}% 0, ${(100 + w1) / 2}% 100%, ${(100 - w1) / 2}% 100%)` }}>
                 <span>{numero(e.valor)}</span>
               </div>
-              <div className="funil-taxa">
+              <div>
                 {anterior ? (
                   <>
                     <b>{taxa(anterior.valor, e.valor)}</b>
@@ -57,7 +57,7 @@ export function FunilConversao({ etapas, principal }: { etapas: EtapaFunil[]; /*
           )
         })}
       </ol>
-      <p className="funil-final">
+      <p>
         <span>Conversão principal</span>
         <b>{taxa(primeira.valor, ultima.valor)}</b>
         <small>de {primeira.rotulo.toLowerCase()} até {(principal ?? ultima.rotulo).toLowerCase()} · {primeira.valor > 0 && ultima.valor > 0 ? `1 a cada ${numero(Math.round(primeira.valor / ultima.valor))}` : 'sem conversões no período'}</small>

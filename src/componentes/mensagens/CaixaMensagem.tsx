@@ -147,7 +147,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
   }
 
   return (
-    <div className="space-y-2">
+    <div>
       {gravando && (
         <Gravador
           key={gravando}
@@ -159,7 +159,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
           }}
         />
       )}
-      <div className="controle relative space-y-2 rounded-md border border-borda bg-white p-2 focus-within:border-marca/40">
+      <div>
         {mencao && <SeletorMencao pessoas={sugestoes} indice={Math.min(indice, Math.max(sugestoes.length - 1, 0))} aoEscolher={escolher} />}
         <textarea
           ref={area}
@@ -195,23 +195,22 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
               enviar()
             }
           }}
-          className="max-h-40 w-full resize-none bg-transparent text-corpo outline-none"
         />
         {anexos.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
+          <ul>
             {anexos.map((a) => (
-              <li key={a.chave} className="flex max-w-full items-center gap-1.5 rounded-md border border-borda bg-fundo px-2 py-1 text-rotulo">
-                <FileText className="h-3.5 w-3.5 shrink-0 text-texto-3" />
-                <span className="max-w-[160px] truncate">{a.nome}</span>
-                {!a.anexo && <span className="text-texto-3">{a.pct}%</span>}
-                <button type="button" onClick={() => remover(a.chave)} aria-label={`Remover ${a.nome}`} className="text-texto-3 hover:text-perigo">
-                  <X className="h-3.5 w-3.5" />
+              <li key={a.chave}>
+                <FileText />
+                <span>{a.nome}</span>
+                {!a.anexo && <span>{a.pct}%</span>}
+                <button type="button" onClick={() => remover(a.chave)} aria-label={`Remover ${a.nome}`}>
+                  <X />
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <div className="flex items-center gap-1">
+        <div>
           <input
             ref={entrada}
             type="file"
@@ -226,10 +225,10 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
           <BotaoIcone rotulo="Mencionar pessoa" onClick={abrirMencao} icone={AtSign} />
           <BotaoIcone rotulo="Gravar áudio" onClick={() => setGravando('audio')} icone={Mic} />
           <BotaoIcone rotulo="Gravar vídeo ou tela" onClick={() => setGravando('video')} icone={Video} />
-          <div className="ml-auto flex items-center gap-2">
+          <div>
             {extras}
-            <button type="button" onClick={enviar} disabled={!podeEnviar} aria-label="Enviar" className="rounded-md bg-texto p-1.5 text-claro hover:bg-carbon disabled:opacity-40">
-              <SendHorizontal className="h-4 w-4" />
+            <button type="button" onClick={enviar} disabled={!podeEnviar} aria-label="Enviar">
+              <SendHorizontal />
             </button>
           </div>
         </div>
@@ -240,8 +239,8 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
 
 function BotaoIcone({ rotulo, onClick, icone: Icone }: { rotulo: string; onClick: () => void; icone: typeof Paperclip }) {
   return (
-    <button type="button" onClick={onClick} aria-label={rotulo} title={rotulo} className="rounded p-1.5 text-texto-3 hover:bg-hover hover:text-texto">
-      <Icone className="h-4 w-4" />
+    <button type="button" onClick={onClick} aria-label={rotulo} title={rotulo}>
+      <Icone />
     </button>
   )
 }

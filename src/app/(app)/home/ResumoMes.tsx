@@ -18,10 +18,10 @@ const soma = (ms: MesPerformance[]) => ({
 const variacao = (atual: number, antes: number) => (antes > 0 ? Math.round(((atual - antes) / antes) * 100) : null)
 
 function Delta({ v, inverso }: { v: number | null; inverso?: boolean }) {
-  if (v === null) return <span className="text-legenda text-texto-3">sem mês anterior</span>
+  if (v === null) return <span>sem mês anterior</span>
   const bom = inverso ? v <= 0 : v >= 0
   const Seta = v >= 0 ? ArrowUpRight : ArrowDownRight
-  return <span className={`inline-flex items-center gap-0.5 text-legenda font-medium ${bom ? 'text-texto' : 'text-[#ff7a7e]'}`}><Seta className="h-3 w-3" />{Math.abs(v)}% vs. mês anterior</span>
+  return <span><Seta />{Math.abs(v)}% vs. mês anterior</span>
 }
 
 /** Resultado do mês de todos os clientes ativos (mesmos números do Panorama de Performance) e o que ficou sem lançar. */
@@ -40,30 +40,30 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
     { rotulo: 'Investido', valor: reais(atual.investido), delta: <Delta v={variacao(atual.investido, anterior.investido)} inverso />, icone: Megaphone, destaque: true },
     { rotulo: 'Leads', valor: String(leads), delta: <Delta v={variacao(leads, leadsAntes)} />, icone: Users },
     { rotulo: 'Faturamento', valor: atual.faturamento === null ? '—' : reais(atual.faturamento), delta: <Delta v={atual.faturamento === null || anterior.faturamento === null ? null : variacao(atual.faturamento, anterior.faturamento)} />, icone: Banknote },
-    { rotulo: 'ROAS', valor: ind.roas === null ? '—' : `${ind.roas.toFixed(1).replace('.', ',')}x`, delta: <span className="text-legenda text-texto-3">faturamento ÷ investido</span>, icone: TrendingUp },
+    { rotulo: 'ROAS', valor: ind.roas === null ? '—' : `${ind.roas.toFixed(1).replace('.', ',')}x`, delta: <span>faturamento ÷ investido</span>, icone: TrendingUp },
   ]
   return (
-    <section className="h-full rounded-lg border border-borda bg-white p-3">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-corpo font-semibold">Resultado de {rotuloMesLongo(mes)}</h2>
-        <Link href={`/performance?mes=${mes}`} className="rounded px-2 py-1 text-rotulo text-texto-2 transition hover:bg-hover">Performance</Link>
+    <section>
+      <div>
+        <h2>Resultado de {rotuloMesLongo(mes)}</h2>
+        <Link href={`/performance?mes=${mes}`}>Performance</Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div>
         {tiles.map((t) => {
           const Icone = t.icone
           return (
-            <div key={t.rotulo} className={`rounded-lg border border-borda p-3 ${t.destaque ? 'border-texto bg-texto text-[var(--bg)] [&_*]:!text-inherit' : 'text-texto'}`}>
-              <span className={`mb-2 flex h-7 w-7 items-center justify-center rounded-md ${t.destaque ? 'bg-white/20' : 'bg-[var(--bg-active)] text-texto-2'}`}><Icone className="h-4 w-4" /></span>
-              <p className="text-rotulo opacity-60">{t.rotulo}</p>
-              <p className="text-[1.75rem] font-medium leading-tight tabular-nums">{t.valor}</p>
-              <div className="mt-1">{t.delta}</div>
+            <div key={t.rotulo}>
+              <span><Icone /></span>
+              <p>{t.rotulo}</p>
+              <p>{t.valor}</p>
+              <div>{t.delta}</div>
             </div>
           )
         })}
       </div>
       {semLancar.length > 0 && (
-        <p className="mt-3 rounded-lg bg-[var(--bg-subtle)] px-3 py-2 text-rotulo text-texto-2">
-          <span className="font-medium text-[#ff7a7e]">Faturamento sem lançar:</span>{' '}
+        <p>
+          <span>Faturamento sem lançar:</span>{' '}
           {semLancar.map((c, i) => <span key={c.id}>{i > 0 && ', '}<NomeCliente nome={c.nome} href={`/performance?cliente=${c.id}&mes=${mes}`} /></span>)}
         </p>
       )}
@@ -72,5 +72,5 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
 }
 
 export function ResumoMesCarregando() {
-  return <div className="h-full min-h-56 animate-pulse rounded-lg bg-[var(--skel)]" aria-label="Carregando o resultado do mês" />
+  return <div aria-label="Carregando o resultado do mês" />
 }

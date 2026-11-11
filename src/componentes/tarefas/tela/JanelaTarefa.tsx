@@ -17,7 +17,6 @@ export function JanelaTarefa({ children }: { children: React.ReactNode }) {
           // Clicar na lista atrás não fecha o painel (abrir outra tarefa só troca o conteúdo).
           onInteractOutside={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="@container fixed inset-0 z-40 flex overflow-hidden bg-[var(--bg-subtle)] outline-none md:inset-auto md:top-10 md:right-2 md:bottom-2 md:w-[min(580px,calc(100%-1rem))] md:rounded-[28px] md:shadow-[var(--shadow-panel)]"
         >
           <Janela.Title className="sr-only">Tarefa</Janela.Title>
           <Janela.Description className="sr-only">Detalhes e atividade da tarefa</Janela.Description>
@@ -26,9 +25,8 @@ export function JanelaTarefa({ children }: { children: React.ReactNode }) {
             onClick={() => router.back()}
             aria-label="Fechar tarefa"
             title="Fechar (Esc)"
-            className="absolute top-2 right-2 z-10 rounded-md p-1.5 text-texto-3 hover:bg-hover hover:text-texto"
           >
-            <ChevronsRight className="size-4" />
+            <ChevronsRight />
           </button>
           {children}
         </Janela.Content>
