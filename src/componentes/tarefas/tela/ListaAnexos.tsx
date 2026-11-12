@@ -15,7 +15,7 @@ export function ListaAnexos({ anexos }: { anexos: AnexoComentario[] }) {
   const [ampliado, setAmpliado] = useState<AnexoComentario | null>(null)
   if (anexos.length === 0) return null
   return (
-    <div>
+    <div className="ta-anexos">
       <div>
         {anexos
           .filter((a) => a.tipo === 'arquivo' && a.mime.startsWith('image/'))

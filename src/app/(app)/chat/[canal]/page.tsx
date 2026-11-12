@@ -6,6 +6,7 @@ import { CaixaChat, GerenciarCanal, NovoCanal, type ListaChat } from '@/componen
 import { ConversasDiretas, type PessoaConversa } from '@/componentes/chat/ConversasDiretas'
 import { ItemMensagem } from '@/componentes/chat/ItemMensagem'
 import { EstadoVazio } from '@/componentes/EstadoVazio'
+import './chat.css'
 import { continuacao, referenciasInternas, rotuloDia } from '@/dominio/chat'
 import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
@@ -81,7 +82,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
       return (
         <div key={m.id}>
           {novoDia && (
-            <div>
+            <div className="ch-dia">
               <span />
               <span>{rotuloDia(dia, hoje)}</span>
               <span />
@@ -93,16 +94,16 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
     })
 
   return (
-    <div>
-      <aside className="hidden md:flex" aria-label="Canais">
-        <div>
+    <div className="ch">
+      <aside className="hidden md:flex ch-lado" aria-label="Canais">
+        <div className="ch-lado-cab">
           <p>Chat</p>
           <NovoCanal equipe={outros} />
         </div>
-        <nav>
+        <nav className="ch-lado-nav">
           <p>Canais</p>
           {canaisComuns.map((c) => (
-            <Link key={c.id} href={`/chat/${c.nome}`}>
+            <Link key={c.id} href={`/chat/${c.nome}`} data-ativo={c.id === canal.id ? '' : undefined} data-nao-lida={c.naoLidas > 0 && c.id !== canal.id ? '' : undefined}>
               <IconeCanal c={c} />
               <span>{c.nome}</span>
               {c.naoLidas > 0 && c.id !== canal.id && <span>{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
@@ -113,8 +114,8 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
         </nav>
       </aside>
 
-      <section aria-label={`Canal ${canal.nome}`}>
-        <header>
+      <section aria-label={`Canal ${canal.nome}`} className="ch-conversa">
+        <header className="ch-cab">
           <div>
             <h1>{!interlocutor && <IconeCanal c={canal} />}{tituloCanal}</h1>
             {canal.descricao && <p>{canal.descricao}</p>}
@@ -122,7 +123,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
           <GerenciarCanal canalId={canal.id} privado={canal.privado} membros={membros} equipe={outros} podeGerir={canal.nome !== 'geral' && (canal.criadoPor === eu.id || admin)} />
         </header>
         {/* No celular os canais viram uma faixa rolável. */}
-        <nav aria-label="Canais">
+        <nav aria-label="Canais" className="ch-faixa">
           {canaisComuns.map((c) => (
             <Link key={c.id} href={`/chat/${c.nome}`}>
               <IconeCanal c={c} /> {c.nome}{c.naoLidas > 0 && c.id !== canal.id ? ` (${c.naoLidas})` : ''}
@@ -130,17 +131,17 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
           ))}
           <NovoCanal equipe={outros} />
         </nav>
-        <AoVivo canalId={canal.id} total={mensagens.length + (fio?.respostas.length ?? 0)}>
+        <AoVivo className="ch-mensagens" canalId={canal.id} total={mensagens.length + (fio?.respostas.length ?? 0)}>
           {mensagens.length === 0 ? (
             <p>Nenhuma mensagem em #{canal.nome} ainda. Comece a conversa!</p>
           ) : (
             lista(mensagens, true)
           )}
         </AoVivo>
-        <div>
+        <div className="ch-compositor">
           <CaixaChat canalId={canal.id} canalNome={tituloCanal} pessoas={pessoas} listas={listas} />
         </div>
-        <nav aria-label="Visualizações vinculadas">
+        <nav aria-label="Visualizações vinculadas" className="ch-vinculadas">
           {[{ href: '/inicio', rotulo: 'Minhas tarefas', Icone: ListChecks }, { href: '/agenda', rotulo: 'Agenda', Icone: CalendarDays }, { href: '/documentos', rotulo: 'Documentos', Icone: FileText }].map(({ href, rotulo, Icone }) => (
             <Link key={href} href={href}><Icone />{rotulo}</Link>
           ))}
@@ -148,20 +149,20 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
       </section>
 
       {fio && (
-        <aside aria-label="Tópico">
+        <aside aria-label="Tópico" className="ch-fio">
           <header>
             <p>Tópico <span>· #{canal.nome}</span></p>
             <Link href={base} scroll={false} aria-label="Fechar tópico"><X /></Link>
           </header>
-          <div>
+          <div className="ch-fio-corpo">
             <ItemMensagem m={fio.principal} euId={eu.id} admin={admin} continuacao={false} titulos={titulos} pessoas={pessoas} />
-            <div>
+            <div className="ch-dia">
               <span>{fio.respostas.length} {fio.respostas.length === 1 ? 'resposta' : 'respostas'}</span>
               <span />
             </div>
             {lista(fio.respostas, false)}
           </div>
-          <div>
+          <div className="ch-compositor">
             <CaixaChat canalId={canal.id} paiId={fio.principal.id} canalNome={canal.nome} pessoas={pessoas} />
           </div>
         </aside>

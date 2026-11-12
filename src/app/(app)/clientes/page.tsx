@@ -7,6 +7,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { capasDosClientes, listarCamposCliente, valoresDosClientes } from '@/servicos/clientes-galeria'
 import { clientesTrabalhadosEm, listarClientes } from '@/servicos/clientes-plataforma'
 import { dataDeHoje } from '@/dominio/filtros'
+import './clientes.css'
 import { criarCliente } from './acoes'
 import { CartaoCliente } from './CartaoCliente'
 import { FormCliente } from './FormCliente'
@@ -24,18 +25,18 @@ export default async function Clientes() {
   const podeCriar = eu.papel === 'admin' || eu.papel === 'gestor'
   const camposNaCapa = campos.filter((c) => c.naCapa)
   return (
-    <div>
-      <div>
+    <div className="cl">
+      <div className="cl-topo">
         <div>
           <p>Relacionamento</p>
           <h1>Clientes</h1>
         </div>
-        <Link href="/clientes/relatorio">
+        <Link href="/clientes/relatorio" className="cl-botao">
           <BarChart3 /> Relatório de trabalho
         </Link>
       </div>
       {podeCriar && (
-        <details>
+        <details className="cl-novo">
           <summary>+ Novo cliente</summary>
           <div>
             <FormCliente acao={criarCliente} podeEditar />

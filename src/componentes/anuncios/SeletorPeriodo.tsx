@@ -1,5 +1,7 @@
 'use client'
 
+import './bento.css'
+
 import { CalendarRange } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -26,7 +28,7 @@ export function SeletorPeriodo({ base, periodo, hoje, social = false }: { base: 
     router.push(url({ de, ate, atalho: null }), { scroll: false })
   }
   return (
-    <div>
+    <div className="sp">
       <nav aria-label="Período dos resultados">
         <button type="button" onClick={selecionarHoje} aria-pressed={periodo.atalho === 'hoje'} title={periodo.atalho === 'hoje' ? 'Atualizar dados de hoje' : 'Ver dados de hoje'}>Hoje</button>
         {([['ontem', 'Ontem'], ['semana', 'Esta semana']] as const).map(([a, r]) => <Link key={a} href={url({ de: '', ate: '', atalho: a })} scroll={false} data-on={periodo.atalho === a || undefined}>{r}</Link>)}

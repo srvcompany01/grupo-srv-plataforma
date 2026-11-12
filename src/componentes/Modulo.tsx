@@ -6,7 +6,7 @@ import type { ComponentType, ReactNode } from 'react'
  */
 export function Modulo({ icone: Icone, titulo, descricao, acoes, perigo, children }: { icone?: ComponentType<{ className?: string }>; titulo: string; descricao?: ReactNode; acoes?: ReactNode; perigo?: boolean; children: ReactNode }) {
   return (
-    <section aria-label={titulo}>
+    <section aria-label={titulo} className="modulo" data-perigo={perigo ? '' : undefined}>
       <header>
         <div>
           {Icone && (

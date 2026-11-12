@@ -1,0 +1,33 @@
+/* Anúncios (Leva 1): só vale para esta tela (prefixo an-). As peças dos cartões ficam em componentes/anuncios/bento.css. */
+.an { min-height: 100%; }
+.an-corpo { padding: 0 16px 56px; }
+.an-cab { min-height: 56px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 8px 0; }
+.an-cab p { margin: 0; font-size: 12px; color: var(--text-3); }
+.an-cab h1 { font-size: 18px; font-weight: 600; }
+.an-cab h1 a { color: var(--client); font-weight: 700; text-decoration: none; }
+.an-filtros { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.an-aviso { margin: 0 0 12px; padding: 10px 14px; border-radius: var(--r-linha); background: var(--bg-subtle); font-size: 13px; }
+.an-conteudo { display: flex; flex-direction: column; gap: 16px; }
+.an-conteudo > section.modulo, .an-conteudo > div > section.modulo { margin: 0; }
+
+/* grade de cartões: 2 por linha; o gráfico, os totais e as tabelas ocupam a linha toda */
+.an-bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.an-bento > .bn-cartao:nth-child(2), .an-bento > .an-largo { grid-column: 1 / -1; }
+.an-bento table { width: 100%; min-width: 720px; font-size: 13px; }
+.an-bento .bn-cartao > div:has(> table) { overflow-x: auto; }
+.an-bento th { font-size: 12px; font-weight: 500; color: var(--text-3); white-space: nowrap; }
+.an-bento td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.an-bento td:first-child { font-weight: 600; }
+.an-bento tbody tr { border-top: 1px solid var(--border-soft); }
+.an-bento td a { color: var(--client); font-weight: 700; text-decoration: none; }
+.an-bento td a:hover { text-decoration: underline; }
+.an-bento th:not(:first-child), .an-bento td:not(:first-child) { text-align: right; }
+.an-bento .bn-cartao li > span[aria-hidden] { width: 22px; height: 22px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; }
+.an-bento .bn-cartao > div > ul > li { display: flex; align-items: center; gap: 10px; min-height: 36px; font-size: 13px; }
+.an-bento .bn-cartao > div > ul > li > div { flex: 1; min-width: 0; }
+.an-bento .bn-cartao > div > ul > li > div p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.an-bento .bn-cartao > div > ul > li > div p:last-child:not(:only-child) { font-size: 11px; color: var(--text-3); }
+.an-bento details > summary { margin-top: 6px; font-size: 12px; color: var(--client); }
+
+@media (max-width: 1100px) { .an-bento { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 767px) { .an-corpo { padding: 0 8px 56px; } }

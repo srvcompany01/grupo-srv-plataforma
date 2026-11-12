@@ -45,8 +45,8 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
   }
 
   return (
-    <div>
-      <div>
+    <div className="ta-cab">
+      <div className="ta-barra">
         <CircleDot />
         <Link href={`/listas/${t.lista.id}`}>{t.lista.nome}</Link>
         <span>/</span>
@@ -85,19 +85,19 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
       </div>
 
       {t.pai ? (
-        <Link href={`/tarefas/${t.pai.id}`}>
+        <Link href={`/tarefas/${t.pai.id}`} className="ta-pai">
           Subtarefa de <span />
           <span>{t.pai.titulo}</span>
         </Link>
       ) : (
         t.paiId && (
-          <Link href={`/tarefas/${t.paiId}`}>
+          <Link href={`/tarefas/${t.paiId}`} className="ta-pai">
             Subtarefa de uma tarefa mãe
           </Link>
         )
       )}
 
-      <div style={{ gap: 0 }}>
+      <div className="ta-status">
         {(() => {
           const atual = status.find((x) => x.id === t.statusId)
           const proximo = status[status.findIndex((x) => x.id === t.statusId) + 1]
@@ -130,9 +130,10 @@ export function CabecalhoTarefa({ tarefa: t, listas, status, podeGerir, emJanela
           if (titulo.trim() && titulo !== t.titulo) iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, { titulo })))
         }}
         aria-label="Título"
+        className="ta-titulo"
       />
 
-      <div>
+      <div className="ta-meta">
         {t.lista.clienteNome && <><NomeCliente nome={t.lista.clienteNome} arroba href={t.lista.clienteId ? `/clientes/${t.lista.clienteId}` : undefined} /></>}
         {t.lista.mes && `${t.lista.clienteNome ? ' · ' : ''}${rotuloMes(t.lista.mes)}`}
       </div>

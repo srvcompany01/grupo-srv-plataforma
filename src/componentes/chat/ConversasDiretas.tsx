@@ -20,12 +20,12 @@ export function ConversasDiretas({ pessoas }: { pessoas: PessoaConversa[] }) {
     })
   }
   return (
-    <div>
+    <div className="ch-dms">
       {pessoas.map((p) => (
-        <button key={p.id} type="button" disabled={pendente} onClick={() => abrir(p)}>
+        <button key={p.id} type="button" disabled={pendente} data-ativo={p.aberta ? '' : undefined} onClick={() => abrir(p)}>
           <span>
             {p.nome.slice(0, 1).toUpperCase()}
-            <span aria-label={p.situacao === 'ativo' ? 'online' : p.situacao === 'ocioso' ? 'ausente' : 'offline'} />
+            <span data-situacao={p.situacao} aria-label={p.situacao === 'ativo' ? 'online' : p.situacao === 'ocioso' ? 'ausente' : 'offline'} />
           </span>
           <span>{p.nome}</span>
           {p.naoLidas > 0 && !p.aberta && <span>{p.naoLidas > 99 ? '99+' : p.naoLidas}</span>}

@@ -25,7 +25,7 @@ export function SecaoRecorrencia({ tarefaId, prazo, hoje, regra }: { tarefaId: s
     })
 
   return (
-    <div>
+    <div className="ta-rec">
       <div>
         <Repeat />
         {regra ? (

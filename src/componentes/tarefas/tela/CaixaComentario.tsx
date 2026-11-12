@@ -18,10 +18,10 @@ export function CaixaComentario({ tarefaId, pessoas }: { tarefaId: string; pesso
       rotulo="Comentário"
       extras={
         <div>
-          <button type="button" onClick={() => setInterno(true)}>
+          <button type="button" aria-pressed={interno} onClick={() => setInterno(true)}>
             Interno
           </button>
-          <button type="button" onClick={() => setInterno(false)}>
+          <button type="button" aria-pressed={!interno} onClick={() => setInterno(false)}>
             Visível ao cliente
           </button>
         </div>

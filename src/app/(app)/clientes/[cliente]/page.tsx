@@ -28,6 +28,7 @@ import { listarEquipe } from '@/servicos/usuarios'
 import { BibliotecaAnuncios } from '@/componentes/BibliotecaAnuncios'
 import { Modulo } from '@/componentes/Modulo'
 import { LinkDoCliente } from '@/componentes/LinkDoCliente'
+import '../clientes.css'
 import { editarCliente } from '../acoes'
 import { FormCliente } from '../FormCliente'
 import { CamposCliente } from './CamposCliente'
@@ -106,16 +107,16 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
   ]
 
   return (
-    <div>
-      <div>
+    <div className="cd">
+      <div className="cd-topo">
         <Link href="/clientes">Clientes</Link>
         <span>/</span>
         <h2>{cliente.nome}</h2>
         <span>{ROTULO_STATUS_CLIENTE[cliente.status]}</span>
       </div>
-      <div>
-      <div>
-        <aside className="hidden lg:block" aria-label="Clientes">
+      <div className="cd-corpo">
+      <div className="cd-grade">
+        <aside className="hidden lg:block cd-lista" aria-label="Clientes">
           {lista.map((c) => (
             <Link key={c.id} href={`/clientes/${c.id}${aba === 'visao' ? '' : `?aba=${aba}`}`}>
               <span>{c.nome}</span>
@@ -123,26 +124,26 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
             </Link>
           ))}
         </aside>
-        <div>
-          <nav aria-label="Seções do cliente">
+        <div className="cd-main">
+          <nav aria-label="Seções do cliente" className="cd-abas">
             {ABAS.map((a) => (
               <Link key={a.id} href={a.id === 'visao' ? `/clientes/${id}` : `/clientes/${id}?aba=${a.id}`} aria-current={aba === a.id ? 'page' : undefined}>{a.rotulo}</Link>
             ))}
           </nav>
           {aba === 'visao' && (
-            <div>
-              <div>
-                <Suspense fallback={<div><p>Alcance 30 dias</p><p>…</p></div>}>
+            <div className="cd-visao">
+              <div className="cd-ind">
+                <Suspense fallback={<div className="cd-kpi"><p>Alcance 30 dias</p><p>…</p></div>}>
                   <AlcanceIndicador paginaId={cliente.metaPaginaId} hoje={hoje} />
                 </Suspense>
                 {indicadores.map((i) => (
-                  <div key={i.rotulo}>
+                  <div key={i.rotulo} className="cd-kpi" data-vermelho={i.vermelho ? '' : undefined}>
                     <p><span style={{ background: i.cor }}><Ic n={i.icone} s={14} fill /></span><span>{i.rotulo}</span></p>
                     <p>{i.valor}</p>
                   </div>
                 ))}
               </div>
-      <header>
+      <header className="cd-capa">
         <div style={{ background: cliente.cor }}>
           {capa?.url ? (
             // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
@@ -168,9 +169,9 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
         </div>
         {podeGerir && <div><SeletorCapa clienteId={id} temCapa={!!capa?.url} /><SeletorLogo clienteId={id} temLogo={!!capa?.logo} /></div>}
       </header>
-              <div>
-                <div>
-                  <section>
+              <div className="cd-cols">
+                <div className="cd-col1">
+                  <section className="cd-card">
                     <div><span>Entregas do mês</span><Link href={`/clientes/${id}?aba=tarefas`}>Abrir na lista</Link></div>
                     {doMes.length === 0 && <p>Nenhuma entrega com vencimento neste mês.</p>}
                     {doMes.slice(0, 8).map((t) => (
@@ -182,12 +183,12 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
                       </Link>
                     ))}
                   </section>
-                  <section>
+                  <section className="cd-card">
                     <div>
                       <span>Entregas por semana</span>
                       <span><span><span style={{ width: 8, height: 8, borderRadius: 2, background: 'repeating-linear-gradient(135deg, var(--hachura) 0 2px, transparent 2px 6px)' }} />Planejado</span><span><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--text)' }} />Entregue</span></span>
                     </div>
-                    <div style={{ height: 140 }}>
+                    <div className="cd-barras" style={{ height: 140 }}>
                       {semanasDoMes.map((w) => (
                         <div key={w.l}>
                           <div style={{ height: 90 }}>
@@ -203,7 +204,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
                     <CamposCliente clienteId={id} campos={campos} valores={valores[id] ?? {}} podeEditar={podeGerir} />
                   </Modulo>
                 </div>
-                <div>
+                <div className="cd-col2">
                     <BibliotecaAnuncios paginaId={cliente.metaPaginaId} semPagina={podeGerir ? 'Cole o link da Biblioteca de Anúncios do cliente no cadastro para ver os anúncios ativos dele por aqui e no portal.' : undefined} />
                 </div>
               </div>
@@ -335,7 +336,7 @@ async function AlcanceIndicador({ paginaId, hoje }: { paginaId: string | null; h
   const r = paginaId ? await instagramDoCliente(paginaId, atalhoPeriodo(30, hoje), false).catch(() => null) : null
   const valor = r && !('erro' in r) ? r.alcance.toLocaleString('pt-BR') : '—'
   return (
-    <div>
+    <div className="cd-kpi">
       <p><span style={{ background: '#1d6fe0' }}><Ic n="donut_large" s={14} fill /></span><span>Alcance 30 dias</span></p>
       <p>{valor}</p>
     </div>

@@ -3,6 +3,7 @@
 import { ChevronsRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Dialog as Janela } from 'radix-ui'
+import './tarefa.css'
 
 /**
  * Painel lateral flutuante (580px) para a rota interceptada da tarefa: a lista continua interativa atrás.
@@ -14,6 +15,7 @@ export function JanelaTarefa({ children }: { children: React.ReactNode }) {
     <Janela.Root open modal={false} onOpenChange={(aberto) => !aberto && router.back()}>
       <Janela.Portal>
         <Janela.Content
+          className="ta-janela"
           // Clicar na lista atrás não fecha o painel (abrir outra tarefa só troca o conteúdo).
           onInteractOutside={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -24,6 +26,7 @@ export function JanelaTarefa({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => router.back()}
             aria-label="Fechar tarefa"
+            className="ta-fechar"
             title="Fechar (Esc)"
           >
             <ChevronsRight />

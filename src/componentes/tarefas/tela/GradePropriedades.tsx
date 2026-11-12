@@ -16,7 +16,7 @@ import type { Opcao } from './TelaTarefa'
 
 function Linha({ icone: Icone, titulo, children }: { icone: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
   return (
-    <div>
+    <div className="ta-linha">
       <span>
         <Icone />
         {titulo}
@@ -71,7 +71,7 @@ export function GradePropriedades({
   }
 
   return (
-    <div>
+    <div className="ta-grade">
       <div>
         <Linha icone={Tag} titulo="Cliente">
           <SeletorTagCliente

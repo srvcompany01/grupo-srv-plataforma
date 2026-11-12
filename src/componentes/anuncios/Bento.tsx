@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import './bento.css'
 
 /**
  * Peças visuais da aba Anúncios (estilo "bento": cartões brancos sobre fundo cinza, números grandes, barras
@@ -12,7 +13,7 @@ export const corDaVez = (i: number) => PALETA[i % PALETA.length]
 
 export function Cartao({ titulo, sub, acoes, id, className = '', children }: { titulo?: ReactNode; sub?: ReactNode; acoes?: ReactNode; id?: string; className?: string; children: ReactNode }) {
   return (
-    <section id={id}>
+    <section id={id} className={`bn-cartao ${className}`}>
       {(titulo || acoes) && (
         <header>
           <div>
@@ -29,11 +30,11 @@ export function Cartao({ titulo, sub, acoes, id, className = '', children }: { t
 
 /** Variação contra o período anterior: seta e % (verde quando melhora, laranja quando piora). */
 export function Variacao({ atual, anterior, menorMelhor = false }: { atual: number; anterior: number | null; menorMelhor?: boolean }) {
-  if (anterior === null || !Number.isFinite(anterior) || anterior === 0) return <span>sem comparação</span>
+  if (anterior === null || !Number.isFinite(anterior) || anterior === 0) return <span className="bn-var">sem comparação</span>
   const v = ((atual - anterior) / anterior) * 100
   const bom = menorMelhor ? v <= 0 : v >= 0
   return (
-    <span>
+    <span className="bn-var" data-ruim={bom ? undefined : ''}>
       <b>{v >= 0 ? '↗' : '↘'} {Math.abs(v).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</b> vs período anterior
     </span>
   )
@@ -42,7 +43,7 @@ export function Variacao({ atual, anterior, menorMelhor = false }: { atual: numb
 /** Número grande com rótulo em cima e variação embaixo (coluna de totais da referência). */
 export function Kpi({ rotulo, valor, extra }: { rotulo: string; valor: string; extra?: ReactNode }) {
   return (
-    <div>
+    <div className="bn-kpi">
       <p>{rotulo}</p>
       <p>{valor}</p>
       {extra}
@@ -58,18 +59,18 @@ const rotuloDia = (d: string, poucos: boolean) => (poucos ? DIA_SEMANA[new Date(
  * cinza); passar o mouse num dia colore aquele dia e mostra o balão com os valores.
  */
 export function BarrasDiarias({ dias, series, formato }: { dias: string[]; series: { nome: string; cor: string; valores: number[] }[]; formato: (n: number) => string }) {
-  if (!dias.length) return <p>Sem dados por dia no período.</p>
+  if (!dias.length) return <p className="bn-vazio">Sem dados por dia no período.</p>
   const totais = dias.map((_, i) => series.reduce((s, x) => s + (x.valores[i] ?? 0), 0))
   const maior = Math.max(1, ...totais)
   const pico = totais.indexOf(Math.max(...totais))
   const poucos = dias.length <= 7
   const passo = Math.max(1, Math.ceil(dias.length / 7))
   return (
-    <div role="img" aria-label={`Por dia: ${dias.map((d, i) => `${rotuloDia(d, false)} ${formato(totais[i])}`).join(', ')}`}>
-      <div aria-hidden>
+    <div className="bn-barras" role="img" aria-label={`Por dia: ${dias.map((d, i) => `${rotuloDia(d, false)} ${formato(totais[i])}`).join(', ')}`}>
+      <div aria-hidden className="bn-eixo">
         {[1, 0.5, 0].map((f) => <span key={f}><i>{formato(maior * f)}</i></span>)}
       </div>
-      <div>
+      <div className="bn-colunas">
         {dias.map((d, i) => (
           <div key={d} data-pico={i === pico && totais[i] > 0 ? '' : undefined} data-lado={i >= dias.length / 2 ? 'esq' : undefined} tabIndex={0}>
             <div>
@@ -92,7 +93,7 @@ export function BarrasDiarias({ dias, series, formato }: { dias: string[]; serie
 
 export function Legenda({ itens }: { itens: { nome: string; cor: string }[] }) {
   return (
-    <span>
+    <span className="bn-legenda">
       {itens.map((i) => <span key={i.nome}><i style={{ background: i.cor }} />{i.nome}</span>)}
     </span>
   )
@@ -101,9 +102,9 @@ export function Legenda({ itens }: { itens: { nome: string; cor: string }[] }) {
 /** Barra única dividida em fatias hachuradas coloridas, com a legenda e o % de cada uma (a "análise de custos"). */
 export function BarraSegmentada({ itens, formato }: { itens: { rotulo: string; valor: number; cor: string }[]; formato: (n: number) => string }) {
   const total = itens.reduce((s, i) => s + i.valor, 0)
-  if (!total) return <p>Nada investido no período.</p>
+  if (!total) return <p className="bn-vazio">Nada investido no período.</p>
   return (
-    <div>
+    <div className="bn-seg">
       <div>
         {itens.filter((i) => i.valor > 0).map((i) => <span key={i.rotulo} title={`${i.rotulo}: ${formato(i.valor)}`} style={{ flexGrow: i.valor, ['--c' as string]: i.cor }} />)}
       </div>
@@ -125,7 +126,7 @@ export function BarraSegmentada({ itens, formato }: { itens: { rotulo: string; v
 export function Trilho({ valor, max, cor = COR.verde, esquerda, direita }: { valor: number; max: number; cor?: string; esquerda: ReactNode; direita: ReactNode }) {
   const pct = max > 0 ? Math.min(100, (valor / max) * 100) : 0
   return (
-    <div>
+    <div className="bn-trilho">
       <div><span style={{ width: `${pct}%`, ['--c' as string]: cor }} /></div>
       <div><span>{esquerda}</span><span>{direita}</span></div>
     </div>
@@ -146,7 +147,7 @@ export function Medidor({ pct, centro, legenda }: { pct: number | null; centro: 
     return `M${p(a0, R)} A${R},${R} 0 0 1 ${p(a1, R)} L${p(a1, r)} A${r},${r} 0 0 0 ${p(a0, r)} Z`
   }
   return (
-    <div>
+    <div className="bn-medidor">
       <svg viewBox="0 0 200 104" role="img" aria-label={`${centro}: ${pct === null ? 'sem dados' : `${Math.round(pct)}%`}`}>
         {Array.from({ length: n }, (_, k) => (
           <path key={k} d={gomo(k)} fill={k < cheios ? `color-mix(in oklab, ${COR.amarelo}, ${COR.verde} ${Math.round((k / (n - 1)) * 100)}%)` : 'var(--anu-trilho)'} />
@@ -160,9 +161,9 @@ export function Medidor({ pct, centro, legenda }: { pct: number | null; centro: 
 
 /** Linhas com barra de progresso (o "acompanhamento de metas"): nome, valor/referência e uma observação. */
 export function Progressos({ itens, vazio }: { itens: { id: string; nome: ReactNode; valor: number; max: number; direita: string; obs?: ReactNode; cor: string; icone?: ReactNode }[]; vazio: string }) {
-  if (!itens.length) return <p>{vazio}</p>
+  if (!itens.length) return <p className="bn-vazio">{vazio}</p>
   return (
-    <ul>
+    <ul className="bn-prog">
       {itens.map((i) => (
         <li key={i.id}>
           {i.icone && <span>{i.icone}</span>}

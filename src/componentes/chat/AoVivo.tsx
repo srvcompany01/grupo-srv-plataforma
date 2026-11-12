@@ -37,7 +37,7 @@ export function AoVivo({ canalId, total, children, className }: { canalId: strin
   }, [total])
 
   return (
-    <div ref={caixa} onScroll={(e) => { const el = e.currentTarget; noFim.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120 }}>
+    <div ref={caixa} className={className} onScroll={(e) => { const el = e.currentTarget; noFim.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120 }}>
       {children}
     </div>
   )

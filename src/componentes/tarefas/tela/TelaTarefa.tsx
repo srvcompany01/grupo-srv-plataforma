@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import './tarefa.css'
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/tabs'
 import type { DefinicaoCampo } from '@/dominio/personalizacao'
 import type { Pessoa, StatusLista } from '@/dominio/tarefas'
@@ -62,29 +63,29 @@ export function TelaTarefa(p: PropsTela) {
   }
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
-    <div>
+    <div className="ta">
       <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
         <TabsList>
           <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
           <TabsTrigger value="atividade">Atividade</TabsTrigger>
         </TabsList>
       </Tabs>
-      <div>
-        <div className={aba === 'detalhes' ? undefined : 'hidden'}>
+      <div className="ta-corpo">
+        <div className={aba === 'detalhes' ? 'ta-detalhes' : 'hidden'}>
           <CabecalhoTarefa tarefa={t} listas={p.listas} status={p.status} podeGerir={p.podeGerir} emJanela={p.emJanela} />
           <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} tagsCliente={p.tagsCliente} podeGerir={p.podeGerir} hoje={p.hoje}>
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
           </GradePropriedades>
           <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.cada}-${p.recorrencia?.frequencia}-${p.recorrencia?.ativa}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} />
           {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} />}
-          <div>
+          <div className="ta-descricao">
             <span>Descrição</span>
             <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />
           </div>
           <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
-        <aside className={aba === 'atividade' ? undefined : 'hidden'}>
+        <aside className={aba === 'atividade' ? 'ta-atividade' : 'hidden'}>
           <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<CaixaComentario tarefaId={t.id} pessoas={p.pessoas} />} />
         </aside>
       </div>

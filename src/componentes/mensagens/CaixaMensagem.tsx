@@ -1,5 +1,7 @@
 'use client'
 
+import './caixa.css'
+
 import { AtSign, FileText, Mic, Paperclip, SendHorizontal, Video, X } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -147,7 +149,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
   }
 
   return (
-    <div>
+    <div className="cx">
       {gravando && (
         <Gravador
           key={gravando}
@@ -159,7 +161,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
           }}
         />
       )}
-      <div>
+      <div className="cx-caixa">
         {mencao && <SeletorMencao pessoas={sugestoes} indice={Math.min(indice, Math.max(sugestoes.length - 1, 0))} aoEscolher={escolher} />}
         <textarea
           ref={area}
@@ -210,7 +212,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
             ))}
           </ul>
         )}
-        <div>
+        <div className="cx-barra">
           <input
             ref={entrada}
             type="file"
@@ -225,7 +227,7 @@ export function CaixaMensagem({ pessoas, preparar, aoEnviar, placeholder, rotulo
           <BotaoIcone rotulo="Mencionar pessoa" onClick={abrirMencao} icone={AtSign} />
           <BotaoIcone rotulo="Gravar áudio" onClick={() => setGravando('audio')} icone={Mic} />
           <BotaoIcone rotulo="Gravar vídeo ou tela" onClick={() => setGravando('video')} icone={Video} />
-          <div>
+          <div className="cx-direita">
             {extras}
             <button type="button" onClick={enviar} disabled={!podeEnviar} aria-label="Enviar">
               <SendHorizontal />

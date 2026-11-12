@@ -21,7 +21,7 @@ export function TextoMensagem({ texto, titulos }: { texto: string; titulos: Reco
     <p>
       {segmentarTexto(texto).map((s, i) =>
         s.tipo === 'mencao' ? (
-          <span key={i}>@{s.nome}</span>
+          <span key={i} className="mencao">@{s.nome}</span>
         ) : (
           trechosDoTexto(s.valor).map((t, j) =>
             t.tipo === 'texto' ? (
@@ -62,17 +62,17 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
   }
 
   return (
-    <div>
-      <div>
+    <div className="ch-msg" data-continuacao={continuacao ? '' : undefined}>
+      <div className="ch-msg-av">
         {continuacao ? (
           <span>{hora.format(new Date(m.criadoEm))}</span>
         ) : (
           <Avatar nome={m.autorNome || '?'} tamanho="h-8 w-8 text-legenda" />
         )}
       </div>
-      <div>
+      <div className="ch-msg-corpo">
         {!continuacao && (
-          <div>
+          <div className="ch-msg-cab">
             <span>{m.autorNome || 'Alguém'}</span>
             <span title={quando.format(new Date(m.criadoEm))}>{hora.format(new Date(m.criadoEm))}</span>
           </div>
@@ -93,7 +93,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
         )}
         <ListaAnexos anexos={m.anexos} />
         {hrefFio && m.respostas.total > 0 && (
-          <Link href={hrefFio} scroll={false}>
+          <Link href={hrefFio} scroll={false} className="ch-msg-fio">
             <span>{m.respostas.autores.slice(0, 3).map((a) => <Avatar key={a.nome} nome={a.nome || '?'} tamanho="h-5 w-5 text-[9px] ring-2 ring-claro" />)}</span>
             <span>{m.respostas.total} {m.respostas.total === 1 ? 'resposta' : 'respostas'}</span>
             {m.respostas.ultima && <span>última {quando.format(new Date(m.respostas.ultima))}</span>}
@@ -101,7 +101,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
         )}
       </div>
       {!editando && (
-        <div className="ao-passar">
+        <div className="ao-passar ch-msg-acoes">
           {hrefFio && <Link href={hrefFio} scroll={false} title="Responder em tópico" aria-label="Responder em tópico"><MessageSquareReply /></Link>}
           {meu && <button type="button" onClick={() => setEditando(true)} title="Editar" aria-label="Editar mensagem"><Pencil /></button>}
           {(meu || admin) && <button type="button" onClick={excluir} disabled={pendente} title="Excluir" aria-label="Excluir mensagem"><Trash2 /></button>}

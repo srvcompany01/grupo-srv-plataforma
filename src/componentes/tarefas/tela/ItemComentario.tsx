@@ -16,7 +16,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   return (
-    <div>
+    <div className="ta-coment">
       <Avatar nome={c.autorNome || '?'} tamanho="h-7 w-7 text-legenda" />
       <div>
         <div>
@@ -54,7 +54,7 @@ export function ItemComentario({ c, meu }: { c: Comentario; meu: boolean }) {
             <p>
               {segmentarTexto(c.texto).map((s, i) =>
                 s.tipo === 'mencao' ? (
-                  <span key={i}>
+                  <span key={i} className="mencao">
                     @{s.nome}
                   </span>
                 ) : (

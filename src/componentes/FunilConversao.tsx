@@ -6,6 +6,8 @@
 
 import type { ResumoInstagram } from '@/dominio/insights'
 
+import './anuncios/bento.css'
+
 export type EtapaFunil = { rotulo: string; valor: number; extra?: string }
 
 const CORES = ['#5b8def', '#4aa3df', '#2bb5a4', '#56c271', '#8cc63f', '#e9b949', '#f5a35c']
@@ -27,7 +29,7 @@ export function FunilConversao({ etapas, principal }: { etapas: EtapaFunil[]; /*
   const primeira = validas[0]
   const ultima = validas[validas.length - 1]
   return (
-    <div>
+    <div className="fn">
       <ol>
         {validas.map((e, i) => {
           const w0 = ws[i]

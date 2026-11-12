@@ -1,5 +1,7 @@
 'use client'
 
+import '../anuncios/bento.css'
+
 import { useRouter } from 'next/navigation'
 
 /** Escolhe entre o panorama (todos os clientes) e um cliente só; mantém o período escolhido. */
@@ -10,7 +12,7 @@ export function SeletorCliente({ base, clientes, atual, consultaPeriodo, social 
     router.push(q ? `${base}${base.includes('?') ? '&' : '?'}${q}` : base)
   }
   return (
-    <label>
+    <label className="sc">
       {!social && <span>Cliente</span>}
       <select value={atual ?? ''} onChange={(e) => ir(e.target.value)} aria-label="Cliente">
         <option value="">Todos os clientes (panorama)</option>

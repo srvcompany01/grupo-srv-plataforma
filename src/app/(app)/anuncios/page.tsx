@@ -1,6 +1,7 @@
 import { BarChart3, Bot, ChevronRight, ImagePlus, Megaphone, PlugZap, Search, SlidersHorizontal, Target } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import './anuncios.css'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
@@ -77,21 +78,21 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const carregando = (titulo: string, texto: string) => <Cartao titulo={titulo}><p>{texto}</p></Cartao>
 
   return (
-    <div>
-      <div>
-        <header>
+    <div className="an">
+      <div className="an-corpo">
+        <header className="an-cab">
           <div>
             <p>Tráfego pago · {rotuloPeriodo(periodo)}</p>
             <h1>{escolhido ? <>Anúncios · <NomeCliente nome={escolhido.nome} href={`/clientes/${escolhido.id}`} /></> : 'Anúncios'}</h1>
           </div>
-          <div>
+          <div className="an-filtros">
             <SeletorCliente base="/anuncios" clientes={comAnuncios.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
             {seletorPeriodo}
           </div>
         </header>
-        {aviso && <p>{aviso}</p>}
+        {aviso && <p className="an-aviso">{aviso}</p>}
 
-        <div>
+        <div className="an-conteudo">
           {propostas.length > 0 && (
             <Modulo icone={Bot} titulo={`Pedidos da IA aguardando aprovação (${propostas.length})`} descricao="Ativar e mudar orçamento pela IA só acontece depois que admin ou gestor aprova">
               <Propostas propostas={propostas} podeGerir={podeGerir} mostrarCliente={!escolhido} />
@@ -218,8 +219,8 @@ async function VisaoCliente({ cliente, periodo, googleConectado }: { cliente: Cl
   ]
 
   return (
-    <>
-      <Cartao titulo={<span>{reais.format(total)}</span>} sub={<>Investido no período · <Variacao atual={total} anterior={anterior ? soma(anterior, 'gasto') : null} /></>} acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
+    <div className="an-bento">
+      <Cartao className="an-largo" titulo={<span>{reais.format(total)}</span>} sub={<>Investido no período · <Variacao atual={total} anterior={anterior ? soma(anterior, 'gasto') : null} /></>} acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
         {d.erros.length > 0 && <p>{d.erros.join(' · ')}</p>}
         <BarrasDiarias dias={dias} formato={(n) => reaisCurto.format(n)} series={[{ nome: 'Meta', cor: COR.verde, valores: dias.map((x) => meta.get(x)?.gasto ?? 0) }, { nome: 'Google Ads', cor: COR.amarelo, valores: dias.map((x) => goog.get(x)?.gasto ?? 0) }]} />
       </Cartao>
@@ -270,7 +271,7 @@ async function VisaoCliente({ cliente, periodo, googleConectado }: { cliente: Cl
         />
       </Cartao>
 
-      <Cartao titulo="Funil dos anúncios" sub="Do anúncio visto até a conversa ou o lead, com a conversão de cada etapa (Meta: soma dos anúncios do período)">
+      <Cartao className="an-largo" titulo="Funil dos anúncios" sub="Do anúncio visto até a conversa ou o lead, com a conversão de cada etapa (Meta: soma dos anúncios do período)">
         <div>
           <div>
             <h3>Meta</h3>
@@ -294,7 +295,7 @@ async function VisaoCliente({ cliente, periodo, googleConectado }: { cliente: Cl
           )}
         </div>
       </Cartao>
-    </>
+    </div>
   )
 }
 
@@ -415,8 +416,8 @@ async function Panorama({ clientes, periodo, googleConectado }: { clientes: Clie
   const vazio = <span>—</span>
 
   return (
-    <>
-      <Cartao titulo={<span>{reais.format(totalMeta + totalGoogle)}</span>} sub="Investido no período, todos os clientes" acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
+    <div className="an-bento">
+      <Cartao className="an-largo" titulo={<span>{reais.format(totalMeta + totalGoogle)}</span>} sub="Investido no período, todos os clientes" acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
         <BarrasDiarias
           dias={dias}
           formato={(n) => reaisCurto.format(n)}
@@ -462,7 +463,7 @@ async function Panorama({ clientes, periodo, googleConectado }: { clientes: Clie
         />
       </Cartao>
 
-      <Cartao titulo="Todos os clientes" sub={`Meta (conta inteira) e Google Ads · ${rotuloPeriodo(periodo)} · clique no cliente para ver tudo o que ele roda`}>
+      <Cartao className="an-largo" titulo="Todos os clientes" sub={`Meta (conta inteira) e Google Ads · ${rotuloPeriodo(periodo)} · clique no cliente para ver tudo o que ele roda`}>
         {linhas.length === 0 ? (
           <p>Nenhum cliente com conta de anúncios no cadastro. Preencha a conta do Meta e/ou do Google Ads na página do cliente.</p>
         ) : (
@@ -503,6 +504,6 @@ async function Panorama({ clientes, periodo, googleConectado }: { clientes: Clie
         )}
         <p>Passe o mouse em &quot;erro&quot; para ver o motivo.</p>
       </Cartao>
-    </>
+    </div>
   )
 }

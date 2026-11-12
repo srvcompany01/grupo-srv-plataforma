@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import './inicio.css'
 import { Ic } from '@/componentes/app/Ic'
+import { ChipCliente } from '@/componentes/NomeCliente'
 import { EditorVencimento } from '@/componentes/tarefas/EditorVencimento'
 import { SeletorStatus } from '@/componentes/tarefas/SeletorStatus'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
@@ -36,48 +38,47 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
   const emAtraso = todas.filter((t) => !t.concluidaEm && t.prazo && t.prazo < hoje).length
 
   return (
-    <div>
-      <header>
+    <div className="mt">
+      <header className="mt-topo">
         <h1>Minhas tarefas</h1>
-        <span>{abertas} abertas · <span>{emAtraso} em atraso</span></span>
-        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} role="switch" aria-checked={comConcluidas}>
+        <span className="mt-resumo">{abertas} abertas · <b data-atraso={emAtraso > 0 ? '' : undefined}>{emAtraso} em atraso</b></span>
+        <Link href={comConcluidas ? '/inicio' : '/inicio?concluidas=1'} className="mt-publicadas">
           Mostrar publicadas
-          <span><span /></span>
+          <span role="switch" aria-checked={comConcluidas}><span /></span>
         </Link>
       </header>
-      <div>
       {tarefas.length === 0 ? (
-        <div style={{ padding: '60px 16px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 320, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}><Ic n="task_alt" s={20} /></div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Nada atribuído a você</div>
-            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>Quando alguém atribuir uma tarefa ou post, ele aparece aqui organizado por vencimento.</div>
+        <div className="mt-vazio">
+          <div>
+            <span><Ic n="task_alt" s={20} /></span>
+            <p>Nada atribuído a você</p>
+            <p>Quando alguém atribuir uma tarefa ou post, ele aparece aqui organizado por vencimento.</p>
           </div>
         </div>
       ) : (
-        <div style={{ maxWidth: 1200, padding: '4px 16px 80px', overflowX: 'auto' }}>
+        <div className="mt-corpo">
           {GRUPOS.map((g) => ({ ...g, tarefas: planas.filter((t) => grupoDePrazo(t.prazo, t.concluidaEm, hoje) === g.id) })).filter((g) => g.tarefas.length).map((g) => (
-            <details key={g.id} open style={{ marginTop: 10 }}>
-              <summary style={{ height: 32, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', listStyle: 'none' }}>
-                <Ic n="expand_more" s={16} style={{ color: 'var(--text-3)' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: g.id === 'atrasadas' ? 'var(--red)' : undefined }}>{g.nome}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{g.tarefas.length}</span>
+            <details key={g.id} open className="mt-grupo">
+              <summary data-atrasadas={g.id === 'atrasadas' ? '' : undefined}>
+                <Ic n="expand_more" s={16} />
+                <span>{g.nome}</span>
+                <span>{g.tarefas.length}</span>
               </summary>
-              <div style={{ minWidth: 760 }}>
+              <div className="mt-rolagem">
                 {g.tarefas.map((t) => {
                   const opcoes = statusPorLista[t.listaId] ?? []
                   const atrasada = !!t.prazo && t.prazo < hoje && !t.concluidaEm
                   return (
-                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px minmax(240px,1fr) 200px 136px 90px 96px', height: 36, alignItems: 'center', borderBottom: '1px solid var(--border-soft)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} /></div>
-                      <Link href={`/tarefas/${t.id}`} scroll={false} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 12 }}>
-                        <span style={{ fontSize: 13 }}>{t.titulo}</span>
-                        {t.clienteNome && <span style={{ flex: 'none', height: 18, display: 'inline-flex', alignItems: 'center', padding: '0 6px', borderRadius: 4, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.clienteNome}</span>}
+                    <div key={t.id} className="mt-linha">
+                      <div className="mt-c-status"><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} /></div>
+                      <Link href={`/tarefas/${t.id}`} scroll={false} className="mt-titulo">
+                        <span>{t.titulo}</span>
+                        {t.clienteNome && <ChipCliente nome={t.clienteNome} cor={t.clienteCor ?? undefined} />}
                       </Link>
-                      <span style={{ fontSize: 12, color: 'var(--text-3)', paddingRight: 8 }}>{t.listaNome}</span>
-                      <div><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} comNome /></div>
-                      <div style={{ color: atrasada ? 'var(--red)' : undefined, fontSize: 13 }}><EditorVencimento tarefaId={t.id} prazo={t.prazo} concluida={!!t.concluidaEm} hoje={hoje} /></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--text-2)', padding: '0 6px' }}><Ic n="flag" s={15} fill style={{ color: COR_PRIO[t.prioridade] }} />{ROTULO_PRIORIDADE[t.prioridade]}</div>
+                      <span className="mt-lista">{t.listaNome}</span>
+                      <div className="mt-c-selo"><SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={opcoes} comNome /></div>
+                      <div className="mt-c-prazo" data-atrasada={atrasada ? '' : undefined}><EditorVencimento tarefaId={t.id} prazo={t.prazo} concluida={!!t.concluidaEm} hoje={hoje} /></div>
+                      <div className="mt-prio"><Ic n="flag" s={15} fill style={{ color: COR_PRIO[t.prioridade] }} />{ROTULO_PRIORIDADE[t.prioridade]}</div>
                     </div>
                   )
                 })}
@@ -86,7 +87,6 @@ export default async function MinhasTarefas({ searchParams }: PageProps<'/inicio
           ))}
         </div>
       )}
-      </div>
     </div>
   )
 }

@@ -1,0 +1,54 @@
+/* Minhas tarefas (Leva 1): só vale para esta tela (prefixo mt-). Trocar o design = trocar este arquivo e as classes mt-*. */
+.mt { min-height: 100%; }
+.mt-topo { height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+.mt-topo h1 { margin: 0; font-size: 14px; font-weight: 600; }
+.mt-resumo { flex: 1; font-size: 12px; color: var(--text-3); }
+.mt-resumo b { font-weight: 400; }
+.mt-resumo b[data-atraso] { color: var(--red); font-weight: 600; }
+.mt-publicadas { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); text-decoration: none; white-space: nowrap; }
+
+.mt-corpo { max-width: 1200px; padding: 4px 16px 80px; }
+.mt-grupo { margin-top: 10px; }
+.mt-grupo > summary { height: 32px; display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.mt-grupo > summary::-webkit-details-marker { display: none; }
+.mt-grupo > summary > span:first-child { color: var(--text-3); transition: transform var(--t-rapido); }
+.mt-grupo:not([open]) > summary > span:first-child { transform: rotate(-90deg); }
+.mt-grupo > summary > span:nth-child(2) { font-size: 13px; font-weight: 600; }
+.mt-grupo > summary[data-atrasadas] > span:nth-child(2) { color: var(--red); }
+.mt-grupo > summary > span:nth-child(3) { font-size: 12px; color: var(--text-3); }
+.mt-rolagem { overflow-x: auto; }
+
+.mt-linha {
+  min-width: 760px; height: 36px; display: grid; grid-template-columns: 28px minmax(240px, 1fr) 200px 136px 90px 96px; align-items: center;
+  border-radius: var(--r-linha); transition: background var(--t-rapido);
+}
+.mt-linha:hover { background: var(--bg-hover); }
+.mt-c-status { display: flex; justify-content: center; }
+.mt-c-status :is(button, [data-slot$='trigger']) { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.mt-titulo { min-width: 0; display: flex; align-items: center; gap: 8px; padding-right: 12px; text-decoration: none; color: var(--text); }
+.mt-titulo > span:first-child { min-width: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-titulo:hover > span:first-child { color: #d80d12; }
+.mt-lista { padding-right: 8px; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-c-selo, .mt-c-prazo { min-width: 0; height: 100%; display: flex; align-items: center; padding: 0 3px; font-size: 13px; }
+.mt-c-selo > *, .mt-c-prazo > * { max-width: 100%; }
+.mt-c-selo [data-slot$='trigger'], .mt-c-prazo button {
+  height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 3px; border: 0; border-radius: 10px; background: transparent;
+  color: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden;
+}
+.mt-c-selo [data-slot$='trigger']:hover, .mt-c-prazo button:hover { background: var(--bg-active); }
+.mt-c-prazo[data-atrasada] { color: var(--red); }
+.mt-prio { display: flex; align-items: center; gap: 4px; padding: 0 6px; font-size: 13px; color: var(--text-2); white-space: nowrap; }
+
+.mt-vazio { padding: 60px 16px; display: flex; justify-content: center; }
+.mt-vazio > div { max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.mt-vazio > div > span { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-ctl); background: var(--bg-subtle); color: var(--text-2); }
+.mt-vazio p { margin: 0; font-size: 13px; color: var(--text-2); }
+.mt-vazio p:first-of-type { font-size: 14px; font-weight: 600; color: var(--text); }
+
+/* celular: status · título · vencimento */
+@media (max-width: 767px) {
+  .mt-corpo { padding: 4px 8px 80px; }
+  .mt-linha { min-width: 0; grid-template-columns: 28px 1fr 64px; }
+  .mt-lista, .mt-c-selo, .mt-prio { display: none; }
+  .mt-titulo > .chip-cliente { display: none; }
+}

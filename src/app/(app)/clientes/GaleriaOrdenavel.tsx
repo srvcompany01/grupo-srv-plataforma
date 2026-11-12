@@ -57,7 +57,7 @@ export function GaleriaOrdenavel({ itens, podeOrdenar, hoje }: { itens: Item[]; 
   }, [hoje, router])
 
   if (!podeOrdenar) {
-    return <ul>{itens.map((i) => <li key={i.id}>{i.no}</li>)}</ul>
+    return <ul className="cl-grade">{itens.map((i) => <li key={i.id}>{i.no}</li>)}</ul>
   }
 
   const soltar = ({ active, over }: DragEndEvent) => {
@@ -75,7 +75,7 @@ export function GaleriaOrdenavel({ itens, podeOrdenar, hoje }: { itens: Item[]; 
   return (
     <DndContext id={idContexto} sensors={sensores} collisionDetection={closestCenter} onDragEnd={soltar}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <ul>
+        <ul className="cl-grade">
           {ids.map((id) => (
             <Cartao key={id} id={id} suprimirClique={() => acabou.current}>{porId.get(id)!.no}</Cartao>
           ))}

@@ -58,8 +58,8 @@ export function PainelAtividade({
   }, [comentarios.length])
 
   return (
-    <div>
-      <div>
+    <div className="ta-ativ">
+      <div className="ta-ativ-cab">
         <h2>Atividade</h2>
         <button
           onClick={() => {
@@ -90,7 +90,7 @@ export function PainelAtividade({
         </div>
       )}
 
-      <div ref={rolagem}>
+      <div ref={rolagem} className="ta-ativ-lista">
         {itens.length === 0 && <p>{busca || filtro !== 'tudo' ? 'Nada encontrado.' : 'Nenhuma atividade ainda.'}</p>}
         {visiveis.map((i, n) => (
           <div key={i.chave}>
@@ -102,7 +102,7 @@ export function PainelAtividade({
             {i.tipo === 'comentario' ? (
               <ItemComentario c={i.item} meu={i.item.autorId === euId} />
             ) : (
-              <div>
+              <div className="ta-evento">
                 <span>• {descreverAtividade(i.item, nomes)}</span>
                 <span>{formatarDataAtividade(new Date(i.em))}</span>
               </div>
@@ -111,7 +111,7 @@ export function PainelAtividade({
         ))}
       </div>
 
-      <div>{rodape}</div>
+      <div className="ta-ativ-rodape">{rodape}</div>
     </div>
   )
 }

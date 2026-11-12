@@ -9,12 +9,12 @@ export type InfoCartao = { id: string; nome: string; texto: string; cor?: string
 export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }: { cliente: Pick<Cliente, 'id' | 'nome' | 'cor' | 'status' | 'interno'>; capa?: Capa; info: InfoCartao[]; trabalhadoHoje?: boolean }) {
   return (
     // O botão fica ao lado do link (não dentro dele), por cima da capa.
-    <div>
+    <div className="cl-cartao">
     <BotaoTrabalhado clienteId={c.id} nome={c.nome} marcado={trabalhadoHoje} />
     <Link
       href={`/clientes/${c.id}`}
     >
-      <div style={{ background: c.cor }}>
+      <div className="cl-capa" style={{ background: c.cor }}>
         {capa?.url ? (
           // eslint-disable-next-line @next/next/no-img-element -- origem externa (Unsplash) ou URL assinada do R2
           <img src={capa.url} alt="" width={640} height={360} loading="lazy" />
@@ -23,22 +23,22 @@ export function CartaoCliente({ cliente: c, capa, info, trabalhadoHoje = false }
         )}
         {capa?.logo && (
           // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
-          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" />
+          <img src={capa.logo} alt={`Logo de ${c.nome}`} width={56} height={56} loading="lazy" className="cl-logo" />
         )}
         {capa?.credito && <span>{capa.credito}</span>}
       </div>
-      <div>
+      <div className="cl-info">
         <div>
           <h2>{c.nome}</h2>
           {c.interno && <span>Interno</span>}
         </div>
         {/* Mesmo canto do cartão (arredondado, mais quadradinho que uma pílula). */}
         {c.status === 'ativo' ? (
-          <span>
+          <span className="cl-status" data-ativo>
             <span aria-hidden="true">✅</span> Ativo
           </span>
         ) : (
-          <span title={ROTULO_STATUS_CLIENTE[c.status]}>
+          <span className="cl-status" title={ROTULO_STATUS_CLIENTE[c.status]}>
             <span aria-hidden="true">❌</span> Inativo
           </span>
         )}

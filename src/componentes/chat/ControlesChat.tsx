@@ -23,7 +23,7 @@ export function CaixaChat({ canalId, paiId, canalNome, pessoas, listas = [] }: {
   const escolhida = opcoes.find((l) => l.id === listaId)?.id ?? opcoes[0]?.id ?? ''
   const modos = paiId ? ([['mensagem', 'Mensagem']] as const) : ([['mensagem', 'Mensagem'], ['tarefa', 'Tarefa'], ['post', 'Post']] as const)
   return (
-    <div>
+    <div className="ch-caixa">
       {modos.length > 1 && (
         <div role="tablist" aria-label="Tipo de envio">
           {modos.map(([valor, rotuloModo]) => (
