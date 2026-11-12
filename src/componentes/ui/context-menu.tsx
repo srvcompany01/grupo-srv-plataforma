@@ -10,7 +10,7 @@ function ContextMenuContent({ className, ...props }: React.ComponentProps<typeof
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
-        {...props}
+        className={className} {...props}
       />
     </ContextMenuPrimitive.Portal>
   )
@@ -19,13 +19,13 @@ function ContextMenuContent({ className, ...props }: React.ComponentProps<typeof
 function ContextMenuItem({ className, variant = "default", ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Item> & { variant?: "default" | "destructive" }) {
   return (
     <ContextMenuPrimitive.Item
-      {...props}
+      className={className} {...props}
     />
   )
 }
 
 function ContextMenuSeparator({ className, ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Separator>) {
-  return <ContextMenuPrimitive.Separator {...props} />
+  return <ContextMenuPrimitive.Separator className={className} {...props} />
 }
 
 export { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator }

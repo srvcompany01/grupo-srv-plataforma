@@ -60,11 +60,11 @@ export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo', ouvir = 
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} style={variante === 'dock' ? undefined : { padding: 0 }}>
+      <PopoverTrigger className="cs-sino" aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} style={variante === 'dock' ? undefined : { padding: 0 }}>
         <Ic n="notifications" s={variante === 'dock' ? 22 : 18} />
         {selo && <span />}
       </PopoverTrigger>
-      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align={variante === 'dock' ? 'end' : 'end'}>
+      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align="end" className="cs-avisos">
         <div>
           <p>Alertas</p>
           <div role="tablist">

@@ -52,7 +52,7 @@ export default async function Insights({ searchParams }: PageProps<'/insights'>)
         <h1>Insights</h1>
         <SeletorCliente social base={aba === 'geral' ? '/insights' : `/insights?aba=${aba}`} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
         <span />
-        <span className="hidden" style={{ color: 'var(--ins-suave)' }}>{periodo.atalho === 'hoje' ? 'dados de hoje, ao vivo' : 'atualiza a cada hora'}</span>
+        <span className="hidden xl:inline" style={{ color: 'var(--ins-suave)' }}>{periodo.atalho === 'hoje' ? 'dados de hoje, ao vivo' : 'atualiza a cada hora'}</span>
         {aba === 'geral' && <SeletorPeriodo social base={escolhido ? `/insights?cliente=${escolhido.id}` : '/insights'} periodo={periodo} hoje={hoje} />}
       </header>
       <div>

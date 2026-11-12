@@ -66,7 +66,7 @@ export default async function PostsDoCliente({ params }: PageProps<'/admin/clien
                           <Icone nome="calendario" />
                           {formatarData(p.dataPrevista)}
                         </span>
-                        <span className="hidden">v{p.versaoAtual}</span>
+                        <span className="hidden sm:inline">v{p.versaoAtual}</span>
                       </Link>
                     </li>
                   ))}

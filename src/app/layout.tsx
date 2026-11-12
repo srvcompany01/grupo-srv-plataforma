@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { ConfirmarProvider } from '@/componentes/ConfirmarProvider'
 import './globals.css'
+import '@/componentes/ui/base.css'
 
 
 export const metadata: Metadata = {

@@ -9,7 +9,7 @@ export default async function LayoutAdmin({ children }: LayoutProps<'/admin'>) {
   await exigirAdmin()
   return (
     <div>
-      <aside className="hidden">
+      <aside className="hidden sm:flex">
         <Link href="/admin" aria-label="Início">
           <Marca />
         </Link>

@@ -115,7 +115,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
       </div>
       <div>
       <div>
-        <aside className="hidden" aria-label="Clientes">
+        <aside className="hidden lg:block" aria-label="Clientes">
           {lista.map((c) => (
             <Link key={c.id} href={`/clientes/${c.id}${aba === 'visao' ? '' : `?aba=${aba}`}`}>
               <span>{c.nome}</span>
@@ -251,7 +251,7 @@ export default async function Cliente({ params, searchParams }: PageProps<'/clie
                     <li key={t.id}>
                       <Link href={`/tarefas/${t.id}`}>
                         <span>{t.titulo}</span>
-                        <span className="hidden">{t.listaNome}</span>
+                        <span className="hidden sm:block">{t.listaNome}</span>
                         <span>{nomeStatus(t)}</span>
                         <span>{t.prazo ? t.prazo.split('-').reverse().slice(0, 2).join('/') : '—'}</span>
                       </Link>

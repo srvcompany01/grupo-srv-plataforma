@@ -122,7 +122,7 @@ export default async function Artigo({ params }: PageProps<'/blog/[slug]'>) {
       )}
 
       <div>
-        <aside className="hidden">
+        <aside className="hidden lg:block">
           {indice.length > 1 && (
             <nav aria-label="Neste artigo">
               <p>Neste artigo</p>

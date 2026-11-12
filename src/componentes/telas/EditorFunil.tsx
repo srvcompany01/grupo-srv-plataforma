@@ -269,7 +269,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
               return (
                 <button key={tipo} type="button" onClick={() => adicionar(tipo)} title={`Adicionar ${INFO_NO[tipo].rotulo}`}>
                   <span style={{ background: INFO_NO[tipo].cor }}><Icone /></span>
-                  <span className="hidden">{INFO_NO[tipo].rotulo}</span>
+                  <span className="hidden xl:inline">{INFO_NO[tipo].rotulo}</span>
                 </button>
               )
             })}
@@ -282,7 +282,7 @@ export function EditorFunil({ id, titulo, dadosIniciais }: { id: string; titulo:
           )}
         </div>
 
-        <aside className="hidden" aria-label="Detalhes">
+        <aside className="hidden md:block" aria-label="Detalhes">
           {selecionadoNo ? (
             <>
               <h2>Etapa</h2>

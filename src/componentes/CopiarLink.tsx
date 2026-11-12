@@ -23,7 +23,7 @@ export function CopiarLink({ nome, url }: { nome: string; url: string }) {
       ) : (
         <>
           <span>Copiar link</span>
-          <span className="hidden">Copiar mensagem com link</span>
+          <span className="hidden sm:inline">Copiar mensagem com link</span>
         </>
       )}
     </button>

@@ -37,7 +37,7 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -55,7 +55,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        {...props}
+        className={className} {...props}
       >
         {children}
         {showCloseButton && (
@@ -79,7 +79,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -95,7 +95,7 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
-      {...props}
+      className={className} {...props}
     >
       {children}
       {showCloseButton && (
@@ -114,7 +114,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -126,7 +126,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      {...props}
+      className={className} {...props}
     />
   )
 }

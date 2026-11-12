@@ -23,7 +23,7 @@ function Command({
   return (
     <CommandPrimitive
       data-slot="command"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -48,6 +48,7 @@ function CommandDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <DialogContent
+        className={className}
         showCloseButton={showCloseButton}
       >
         {children}
@@ -65,7 +66,7 @@ function CommandInput({
       <InputGroup>
         <CommandPrimitive.Input
           data-slot="command-input"
-          {...props}
+          className={className} {...props}
         />
         <InputGroupAddon>
           <SearchIcon />
@@ -82,7 +83,7 @@ function CommandList({
   return (
     <CommandPrimitive.List
       data-slot="command-list"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -94,7 +95,7 @@ function CommandEmpty({
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -106,7 +107,7 @@ function CommandGroup({
   return (
     <CommandPrimitive.Group
       data-slot="command-group"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -118,7 +119,7 @@ function CommandSeparator({
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -131,7 +132,7 @@ function CommandItem({
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
-      {...props}
+      className={className} {...props}
     >
       {children}
       <CheckIcon />
@@ -146,7 +147,7 @@ function CommandShortcut({
   return (
     <span
       data-slot="command-shortcut"
-      {...props}
+      className={className} {...props}
     />
   )
 }

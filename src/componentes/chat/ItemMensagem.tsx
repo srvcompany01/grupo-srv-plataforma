@@ -101,7 +101,7 @@ export function ItemMensagem({ m, euId, admin, continuacao, titulos, hrefFio, pe
         )}
       </div>
       {!editando && (
-        <div className="hidden">
+        <div className="ao-passar">
           {hrefFio && <Link href={hrefFio} scroll={false} title="Responder em tópico" aria-label="Responder em tópico"><MessageSquareReply /></Link>}
           {meu && <button type="button" onClick={() => setEditando(true)} title="Editar" aria-label="Editar mensagem"><Pencil /></button>}
           {(meu || admin) && <button type="button" onClick={excluir} disabled={pendente} title="Excluir" aria-label="Excluir mensagem"><Trash2 /></button>}

@@ -23,7 +23,7 @@ export default async function Usuarios() {
           <thead>
             <tr>
               <th>Pessoa</th>
-              <th className="hidden">Departamentos / cliente</th>
+              <th className="hidden md:table-cell">Departamentos / cliente</th>
               <th>Papel</th>
               <th />
             </tr>
@@ -40,7 +40,7 @@ export default async function Usuarios() {
                     </div>
                   </div>
                 </td>
-                <td className="hidden">
+                <td className="hidden md:table-cell">
                   {u.cliente
                     ? u.cliente.nome
                     : u.espacos.map((e) => `${e.nome}${e.papel === 'gestor' ? ' (gestor)' : ''}`).join(', ') || '—'}

@@ -13,7 +13,7 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -43,7 +43,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -55,7 +55,7 @@ function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -67,7 +67,7 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      {...props}
+      className={className} {...props}
     />
   )
 }

@@ -178,8 +178,8 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           {tarefa.filhos.length > 0 && (
             <span><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
           )}
-          {tarefa.paiTitulo && <span className="hidden" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
-          {ctx.mostrarLista && <span className="hidden" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
+          {tarefa.paiTitulo && <span className="hidden lg:inline" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
+          {ctx.mostrarLista && <span className="hidden xl:inline" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
           <button
             type="button"
             onClick={() => {

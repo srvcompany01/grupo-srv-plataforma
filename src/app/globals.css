@@ -160,3 +160,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001s !important; transition-duration: .001s !important; }
 }
+
+/* Ações que só aparecem ao passar o mouse (ou com foco) na linha: o "⋯" da árvore, das mensagens etc. */
+.ao-passar { display: none; }
+:hover > .ao-passar, :focus-within > .ao-passar, .ao-passar[data-state='open'], .ao-passar[aria-expanded='true'] { display: inline-flex; }

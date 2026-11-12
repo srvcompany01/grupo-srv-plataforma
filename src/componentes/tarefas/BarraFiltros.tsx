@@ -202,7 +202,7 @@ export function BarraFiltros({
           e.preventDefault()
           aplicar({ busca: String(new FormData(e.currentTarget).get('busca') ?? '').trim() })
         }}
-        className="hidden"
+        className="hidden lg:block"
       >
         <Ic n="search" s={15} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', pointerEvents: 'none' }} />
         <input

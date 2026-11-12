@@ -39,7 +39,7 @@ function TooltipContent({
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
-        {...props}
+        className={className} {...props}
       >
         {children}
         <TooltipPrimitive.Arrow />

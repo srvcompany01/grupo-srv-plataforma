@@ -16,7 +16,7 @@ export function Cabecalho({ trilha, acoes }: { trilha: Passo[]; acoes?: ReactNod
       <nav>
         {trilha.map((p, i) => (
           <span key={i}>
-            {i > 0 && <Icone nome="seta" className="hidden" />}
+            {i > 0 && <Icone nome="seta" className="hidden sm:block" />}
             {p.href ? (
               <Link href={p.href}>
                 {i === anterior && <Icone nome="voltar" />}

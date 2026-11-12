@@ -49,12 +49,12 @@ export default async function LayoutBlog({ children }: { children: React.ReactNo
             <Image src="/marca/simbolo.png" alt="" width={32} height={32} />
             <span>Grupo SRV <span>Blog</span></span>
           </Link>
-          <nav className="hidden" aria-label="Categorias">
+          <nav className="hidden lg:flex" aria-label="Categorias">
             {cats.map((c) => <Link key={c.id} href={`/blog/categoria/${c.slug}`}>{c.nome}</Link>)}
           </nav>
           <div>
             <Link href="/blog/busca" aria-label="Buscar no blog"><Search /></Link>
-            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=cabecalho`}><span className="hidden">Fale com um especialista</span><span>Fale conosco</span></Link>
+            <Link href={`${LANDING_PADRAO}?utm_source=blog&utm_medium=cabecalho`}><span className="hidden sm:inline">Fale com um especialista</span><span>Fale conosco</span></Link>
           </div>
         </div>
         <nav aria-label="Categorias">

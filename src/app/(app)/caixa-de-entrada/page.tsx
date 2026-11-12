@@ -27,7 +27,7 @@ export default async function CaixaDeEntrada() {
     <div>
       <header>
         <h1><Ic n="move_to_inbox" s={16} style={{ color: 'var(--text-2)' }} /> Caixa de entrada</h1>
-        <span className="hidden">vídeos que chegam e viram posts</span>
+        <span className="hidden sm:inline">vídeos que chegam e viram posts</span>
         <Link href="/caixa-de-entrada/configuracoes"><Ic n="settings" s={16} />Configurações</Link>
       </header>
       <AreaDeEntrada arvore={arvore} clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))} itens={itens} driveConfigurado={driveConfigurado()} emailDaConta={emailDaContaDoDrive()} />

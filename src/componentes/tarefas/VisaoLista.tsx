@@ -396,7 +396,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           {camposNaFaixa.length > 0 && (
             <button type="button" disabled={gravandoFaixa} onClick={() => void limparFaixa()}><Trash2 /> Limpar</button>
           )}
-          <span className="hidden">Ctrl+V cola · Delete limpa · Esc sai</span>
+          <span className="hidden md:inline">Ctrl+V cola · Delete limpa · Esc sai</span>
           <button type="button" aria-label="Fechar seleção" onClick={() => setFaixa(null)}><X /></button>
         </div>
       )}

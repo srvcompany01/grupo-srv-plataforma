@@ -127,29 +127,29 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
       <div style={{ height: 40, padding: '0 10px 0 12px' }}>
         <nav aria-label="Localização da lista" style={{ gap: 2, flexBasis: 160 }}>
           {lista.espaco.id ? (
-            <Link href={`/espacos/${lista.espaco.id}`} className="hidden" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
+            <Link href={`/espacos/${lista.espaco.id}`} className="hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
               <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="check_circle" s={12} fill w={500} /></span>
               {lista.espaco.nome}
             </Link>
           ) : (
-            <span className="hidden" style={{ height: 24, padding: '0 6px' }}>Itens soltos</span>
+            <span className="hidden md:inline-flex" style={{ height: 24, padding: '0 6px' }}>Itens soltos</span>
           )}
-          {lista.pasta && <><span className="hidden">/</span><span className="hidden" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}><Ic n="folder" s={16} style={{ color: '#1d6fe0' }} />{lista.pasta.nome}</span></>}
-          <span className="hidden">/</span>
+          {lista.pasta && <><span className="hidden md:inline">/</span><span className="hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}><Ic n="folder" s={16} style={{ color: '#1d6fe0' }} />{lista.pasta.nome}</span></>}
+          <span className="hidden md:inline">/</span>
           <span style={{ width: 16, height: 16, flex: 'none', marginLeft: 6, borderRadius: '50%', background: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--bg)' }} /></span>
           <h1 style={{ fontWeight: 600, fontSize: 14, padding: '0 4px 0 6px', whiteSpace: 'nowrap' }}>{lista.nome}</h1>
           <EstrelaLista listaId={id} favorita={favorita} />
           <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
         </nav>
         <div>
-          <div className="hidden">
+          <div className="hidden xl:flex">
             {membrosDoEspaco.slice(0, 2).map((m, i) => (
               <span key={m.id} title={m.nome} style={{ width: 22, height: 22, marginLeft: i ? -6 : 0, borderRadius: '50%', background: i ? '#0d9488' : '#d80d12', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>{m.nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
             ))}
             {membrosDoEspaco.length > 2 && <span style={{ width: 22, height: 22, marginLeft: -6, borderRadius: '50%', background: 'var(--bg-active)', color: 'var(--text-2)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>+{membrosDoEspaco.length - 2}</span>}
           </div>
           <CompartilharDialog nome={lista.nome} membros={membrosDoEspaco} />
-          <div className="hidden">
+          <div className="hidden xl:flex">
             {lista.podeGerir && <GerenciarCampos listaId={id} espacoId={lista.espaco.id} camposDaLista={camposDaLista} camposDoEspaco={camposDoEspaco} />}
             {lista.podeGerir && <EditorStatus listaId={id} status={lista.status} />}
             

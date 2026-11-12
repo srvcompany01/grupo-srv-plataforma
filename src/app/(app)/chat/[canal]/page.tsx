@@ -94,7 +94,7 @@ export default async function PaginaCanal({ params, searchParams }: PageProps<'/
 
   return (
     <div>
-      <aside className="hidden" aria-label="Canais">
+      <aside className="hidden md:flex" aria-label="Canais">
         <div>
           <p>Chat</p>
           <NovoCanal equipe={outros} />

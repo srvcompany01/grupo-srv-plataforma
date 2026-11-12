@@ -327,7 +327,7 @@ function PainelIAInterno() {
             <button type="submit" disabled={carregando || !texto.trim()} aria-label="Enviar"><ArrowUp /></button>
           </div>
         </div>
-        <p className="hidden">Enter envia · Shift+Enter nova linha</p>
+        <p className="hidden sm:block">Enter envia · Shift+Enter nova linha</p>
       </form>
     </section>
   )

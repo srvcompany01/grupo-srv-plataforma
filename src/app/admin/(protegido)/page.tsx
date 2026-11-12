@@ -26,7 +26,7 @@ export default async function Clientes() {
         </div>
 
         <div>
-          <div className="hidden">
+          <div className="hidden sm:grid">
             <span>Nome</span>
             <span>Pendentes</span>
             <span>Ações</span>
@@ -47,7 +47,7 @@ export default async function Clientes() {
                       {c.pendentes} aguardando
                     </span>
                   ) : (
-                    <span className="hidden">—</span>
+                    <span className="hidden sm:inline">—</span>
                   )}
                 </span>
                 <div>

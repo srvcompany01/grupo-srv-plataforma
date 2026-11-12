@@ -20,7 +20,7 @@ export function IndicadorCronometro({ cronometro }: { cronometro: CronometroAtiv
   }, [ativo])
   if (!cronometro) return null
   return (
-    <div>
+    <div className="cs-crono">
       <span />
       <Link href={`/tarefas/${cronometro.tarefaId}`} title={cronometro.tarefaTitulo}>
         <span>{cronometro.tarefaTitulo || 'Tarefa'}</span>

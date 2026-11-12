@@ -75,7 +75,7 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       fixa={!!lista.slug}
       style={{ paddingLeft: 6 + nivel * 14 }}
     >
-      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')}>
+      <Link href={href} draggable={false} title={[lista.nome, detalhe].filter(Boolean).join(' · ')} aria-current={caminho === href ? 'page' : undefined}>
         <span><span style={{ width: 7, height: 7, borderRadius: 2, background: lista.cor }} /></span>
         <span>{lista.nome}</span>
         {detalhe && <span>{detalhe}</span>}
@@ -121,8 +121,8 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         style={{ paddingLeft: 6 + nivel * 14 }}
       >
         <button type="button" aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'} onClick={() => alternar(espaco.id)}><Ic n={aberto ? 'expand_more' : 'chevron_right'} s={16} /></button>
-        <span style={{ width: 18, height: 18, flex: 'none', borderRadius: 4, background: espaco.cor, color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{espaco.nome.slice(0, 1).toUpperCase()}</span>
-        <Link href={href} draggable={false}>{espaco.nome}</Link>
+        <span className="cs-esp-ladrilho" style={{ background: espaco.cor }}>{espaco.nome.slice(0, 1).toUpperCase()}</span>
+        <Link href={href} draggable={false} aria-current={caminho === href ? 'page' : undefined}>{espaco.nome}</Link>
         {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
       </LinhaNavegacao>
@@ -197,7 +197,7 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
   }
 
   const link = (href: string, rotulo: string, icone: string, contador = 0) => (
-    <Link href={href} draggable={false}>
+    <Link href={href} draggable={false} aria-current={caminho === href || caminho.startsWith(`${href}/`) ? 'page' : undefined}>
       <Ic n={icone} s={16} />
       <span>{rotulo}</span>
       {contador > 0 && <span>{contador > 99 ? '99+' : contador}</span>}
@@ -207,11 +207,11 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
   return (
     <Recolhidos.Provider value={recolhimento}>
     <DestinosMover.Provider value={destinos}>
-    <div style={{ color: 'var(--text)' }}>
-      <div style={{ height: 40, gap: 2, padding: '0 6px 0 8px' }}>
-        <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>Início</span>
+    <div className="cs-espacos">
+      <div className="cs-esp-topo">
+        <span className="cs-esp-titulo">Início</span>
         <DropdownMenu>
-          <DropdownMenuTrigger title="Criar" aria-label="Criar" style={{ height: 26, display: 'flex', alignItems: 'center', gap: 2, padding: '0 6px 0 8px', marginRight: 2, border: 0, borderRadius: 12, background: 'var(--bg-subtle)', color: 'var(--text)', cursor: 'pointer' }}><Ic n="add" s={16} /><Ic n="expand_more" s={14} style={{ color: 'var(--text-2)' }} /></DropdownMenuTrigger>
+          <DropdownMenuTrigger title="Criar" aria-label="Criar" className="cs-criar"><Ic n="add" s={16} /><Ic n="expand_more" s={14} style={{ color: 'var(--text-2)' }} /></DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem asChild><Link href="/inicio"><Ic n="task_alt" s={16} /> Tarefa</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/agendamentos"><Ic n="add_photo_alternate" s={16} /> Post</Link></DropdownMenuItem>
@@ -223,7 +223,7 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
         </DropdownMenu>
         {acaoTopo}
       </div>
-      <div style={{ padding: '6px 6px 12px', gap: 1 }}>
+      <div className="cs-esp-corpo">
         {!comAtalhos && ['home', 'tarefas', 'agenda', 'agendamentos', 'reunioes'].map((id) => atalhos.find((a) => a.id === id)).filter((a): a is Atalho => !!a).map((a) => <div key={a.id}>{link(a.href, a.rotulo, ICONE_MS[a.id] ?? 'apps', a.contador)}</div>)}
         {comAtalhos && (
           <ListaOrdenavel
@@ -233,25 +233,25 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
           />
         )}
 
-        <button type="button" onClick={() => setFavAberto((v) => !v)} style={{ marginTop: 10 }}>
+        <button type="button" className="cs-secao" onClick={() => setFavAberto((v) => !v)}>
           <Ic n={favAberto ? 'expand_more' : 'chevron_right'} s={14} />Favoritos
         </button>
         {favAberto && favoritas.map((f) => <div key={f.id}>{link(`/listas/${f.id}`, f.nome, 'list_alt')}</div>)}
-        {favAberto && favoritas.length === 0 && <p>Clique na estrela de uma lista para fixá-la aqui.</p>}
+        {favAberto && favoritas.length === 0 && <p className="cs-vazio">Clique na estrela de uma lista para fixá-la aqui.</p>}
 
         <DndContext id="navegacao-lateral" sensors={sensores} collisionDetection={closestCenter} onDragStart={() => setArrastando(true)} onDragCancel={() => setArrastando(false)} onDragEnd={concluirMovimento}>
           <SortableContext items={itensOrdenaveis} strategy={verticalListSortingStrategy}>
-            <div style={{ height: 28, gap: 2, paddingLeft: 8, marginTop: 10 }}>
-              <span style={{ flex: 1 }}>Espaços</span>
-              <button type="button" aria-label="Buscar espaços" title="Buscar espaços (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))} style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="search" s={15} /></button>
-              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" title="Novo espaço" style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', borderRadius: 4, color: 'var(--text-3)', cursor: 'pointer' }}><Ic n="add" s={15} /></button>} />}
+            <div className="cs-secao">
+              <span>Espaços</span>
+              <button type="button" className="cs-mini" aria-label="Buscar espaços" title="Buscar espaços (⌘K)" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_PALETA))}><Ic n="search" s={15} /></button>
+              {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" className="cs-mini" title="Novo espaço"><Ic n="add" s={15} /></button>} />}
             </div>
-            <nav style={{ gap: 1 }}>
-              {arvore.length === 0 && <p>Nenhum espaço disponível.</p>}
+            <nav className="cs-arvore">
+              {arvore.length === 0 && <p className="cs-vazio">Nenhum espaço disponível.</p>}
               {arvore.map((espaco) => <Espaco key={espaco.id} espaco={espaco} nivel={0} podeGerir={papel === 'admin' || papel === 'gestor'} podeEditarEspaco={papel === 'admin'} podeArrastar={podeArrastar} />)}
             </nav>
             {(navegacao.pastasRaiz.length > 0 || navegacao.listasRaiz.length > 0) && (
-              <nav style={{ gap: 1 }}>
+              <nav className="cs-arvore">
                 {navegacao.pastasRaiz.map((pasta) => <Pasta key={pasta.id} pasta={pasta} nivel={0} contexto={null} pastas={navegacao.pastasRaiz} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
                 {navegacao.listasRaiz.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={0} podeGerir={papel === 'admin'} podeArrastar={podeArrastar} />)}
               </nav>
@@ -259,24 +259,24 @@ export function PainelEspacos({ navegacao, canais = [], favoritas = [], papel, n
             <ZonaRaiz visivel={arrastando} />
           </SortableContext>
         </DndContext>
-        {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button"><Ic n="add" s={16} />Novo espaço</button>} />}
+        {papel === 'admin' && <CriarEspacoDialog pais={arvore.map((espaco) => ({ id: espaco.id, nome: espaco.nome }))} trigger={<button type="button" className="cs-mais"><Ic n="add" s={16} />Novo espaço</button>} />}
 
-        <div style={{ marginTop: 10 }}>Canais</div>
+        <div className="cs-secao"><span>Canais</span></div>
         {canais.map((c) => (
-          <Link key={c.id} href={`/chat/${c.nome}`}>
+          <Link key={c.id} href={`/chat/${c.nome}`} aria-current={caminho === `/chat/${c.nome}` ? 'page' : undefined}>
             <Ic n={c.privado ? 'lock' : 'tag'} s={16} />
             <span>{c.nome}</span>
             {c.naoLidas > 0 && <span>{c.naoLidas > 99 ? '99+' : c.naoLidas}</span>}
           </Link>
         ))}
-        <Link href="/chat"><Ic n="add" s={16} />Adicionar canal</Link>
+        <Link href="/chat" className="cs-mais"><Ic n="add" s={16} />Adicionar canal</Link>
       </div>
 
-      <div style={{ padding: 6, gap: 2 }}>
+      <div className="cs-esp-pe">
         <IndicadorCronometro cronometro={cronometro} />
         {!comAtalhos && (
           <>
-            <Link href="/chat"><Ic n="forum" s={16} /><span>Mensagens diretas</span>{chatNaoLidas > 0 && <span style={{ minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: '#d80d12', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{chatNaoLidas > 99 ? '99+' : chatNaoLidas}</span>}</Link>
+            <Link href="/chat"><Ic n="forum" s={16} /><span>Mensagens diretas</span>{chatNaoLidas > 0 && <span className="cs-selo">{chatNaoLidas > 99 ? '99+' : chatNaoLidas}</span>}</Link>
             <Link href="/config/personalizacao"><Ic n="tune" s={16} />Personalizar a barra lateral</Link>
           </>
         )}
@@ -372,9 +372,12 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
 
   return (
     <>
-      {recolhida && <div aria-hidden="true" className="hidden" onMouseEnter={abrir} />}
+      {recolhida && <div aria-hidden="true" className="hidden lg:block" onMouseEnter={abrir} />}
       <aside
         ref={asideRef}
+        className="cs-painel"
+        data-solto={recolhida || undefined}
+        data-aberta={aberta || undefined}
         style={{ '--lat-w': `${largura}px` } as CSSProperties}
         onMouseEnter={recolhida ? abrir : undefined}
         onMouseLeave={recolhida ? fecharComAtraso : undefined}
@@ -384,7 +387,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         <PainelEspacos
           {...props}
           acaoTopo={
-            <button type="button" onClick={() => trocarModo(recolhida ? 'fixa' : 'recolhida')} aria-pressed={!recolhida} aria-label={recolhida ? 'Fixar barra lateral' : 'Desafixar barra lateral'} title={recolhida ? 'Fixar barra lateral' : 'Desafixar (recolhe sozinha e aparece ao passar o mouse na faixa)'} style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, background: recolhida ? 'transparent' : 'var(--bg-active)', borderRadius: 8, color: recolhida ? 'var(--text-2)' : 'var(--text)', cursor: 'pointer' }}>
+            <button type="button" onClick={() => trocarModo(recolhida ? 'fixa' : 'recolhida')} aria-pressed={!recolhida} aria-label={recolhida ? 'Fixar barra lateral' : 'Desafixar barra lateral'} title={recolhida ? 'Fixar barra lateral' : 'Desafixar (recolhe sozinha e aparece ao passar o mouse na faixa)'} className="cs-mini" data-on={!recolhida || undefined}>
               <Ic n="push_pin" s={16} fill={!recolhida} />
             </button>
           }
@@ -392,6 +395,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         {!recolhida && (
           <button
             type="button"
+            className="cs-alca"
             role="separator"
             aria-orientation="vertical"
             aria-label="Ajustar largura da barra lateral"

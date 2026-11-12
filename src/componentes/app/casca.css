@@ -1,0 +1,266 @@
+/*
+ * Casca da área logada (Leva 1, item 2): topo de 40px, faixa de ícones vermelha, painel lateral fixável e redimensionável
+ * e o conteúdo num cartão branco de canto 28. Peça comum: vale para todas as telas internas.
+ * Celular (<768px): a faixa vira a barra de baixo; tablet (<1024px): o painel lateral abre numa gaveta pelo botão Espaços.
+ */
+
+.cs-moldura { height: 100dvh; display: flex; flex-direction: column; background: var(--bg-frame); color: var(--text); }
+
+/* ── Topo ── */
+.cs-topo {
+  height: var(--h-topo); flex: none; position: relative; z-index: 5;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 360px) minmax(0, 1fr); align-items: center; gap: 8px; padding: 0 8px;
+}
+.cs-empresa {
+  justify-self: start; min-width: 0; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 4px;
+  border: 0; border-radius: 10px; background: var(--bg-subtle); cursor: pointer; transition: background var(--t-rapido);
+}
+.cs-empresa:hover { background: var(--bg-hover); }
+.cs-empresa > span:last-child { color: var(--text-3); }
+.cs-empresa-s {
+  width: 22px; height: 22px; flex: none; display: flex; align-items: center; justify-content: center;
+  border-radius: 7px; background: #d80d12; color: #fff; font-size: 13px; font-weight: 800;
+}
+.cs-empresa-nome { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-busca {
+  grid-column: 2; width: 100%; min-width: 0; height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 5px 0 10px;
+  border: 1px solid transparent; border-radius: 14px; background: var(--bg-subtle); color: var(--text-3); cursor: text;
+  transition: border-color var(--t-rapido);
+}
+.cs-busca:hover { border-color: var(--border-strong); }
+.cs-busca > span:nth-child(2) { flex: 1; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-busca kbd { font: 11px/1 var(--font-ui); padding: 3px 5px; border-radius: 8px; background: var(--bg); color: var(--text-2); }
+.cs-topo-dir { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 2px; min-width: 0; }
+.cs-emma {
+  height: 30px; margin-right: 6px; display: flex; align-items: center; gap: 6px; padding: 0 12px 0 3px; border: 0; border-radius: 15px;
+  background: var(--bg-subtle); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: background 150ms, color 150ms, box-shadow 150ms;
+}
+.cs-emma:hover { box-shadow: 0 0 0 3px rgba(216, 13, 18, .12); }
+.cs-emma-av {
+  width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ff5a5f, #d80d12 60%, #8a0609); color: #fff; box-shadow: 0 0 0 2px rgba(216, 13, 18, .15);
+}
+.cs-ico {
+  width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px;
+  background: transparent; color: var(--text-2); text-decoration: none; cursor: pointer; transition: background var(--t-rapido), color var(--t-rapido);
+}
+.cs-ico:hover { background: var(--bg-hover); color: var(--text); }
+.cs-perfil { margin-left: 8px; display: flex; }
+.cs-perfil [data-slot='dropdown-menu-trigger'] { display: flex; align-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.cs-perfil [data-slot='dropdown-menu-trigger'] > span:first-child { width: 28px !important; height: 28px !important; font-size: 11px !important; }
+
+/* ── Corpo: faixa + painel + conteúdo ── */
+.cs-corpo { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 8px; }
+.cs-lateral { display: flex; gap: 8px; min-height: 0; flex: none; }
+.cs-conteudo {
+  flex: 1; min-width: 0; min-height: 0; position: relative; overflow: auto;
+  border-radius: var(--r-conteudo); background: var(--bg);
+}
+
+/* ── Faixa de ícones ── */
+.cs-faixa {
+  width: 64px; flex: none; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0 10px;
+  border-radius: 22px; background: var(--rail-bg); box-shadow: var(--rail-shadow); color: #fff; overflow: hidden;
+}
+.cs-faixa-modulos {
+  flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  overflow-y: auto; scrollbar-width: none;
+}
+.cs-faixa-modulos::-webkit-scrollbar { display: none; }
+.cs-faixa-modulos > div, .cs-faixa-modulos > div > div { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
+.cs-faixa-pe { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; }
+.cs-faixa :is(.cs-faixa-modulos, .cs-faixa-pe) :is(a, button) {
+  position: relative; width: 46px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0;
+  border: 0; border-radius: 16px; background: transparent; color: #fff; text-decoration: none; cursor: pointer;
+  transition: background 140ms, color 140ms, box-shadow 180ms;
+}
+.cs-faixa-pe :is(a, button) { width: 44px; border-radius: 14px; }
+.cs-faixa :is(.cs-faixa-modulos, .cs-faixa-pe) :is(a, button):hover { background: rgba(255, 255, 255, .16); }
+.cs-faixa :is(a, button) > svg { width: 23px; height: 23px; stroke-width: 1.5; }
+.cs-faixa :is(a, button) > span[aria-hidden] { font-size: 23px !important; font-variation-settings: 'wght' 300; }
+.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) { background: #fff; color: #d80d12; box-shadow: 0 4px 14px rgba(40, 0, 4, .28); }
+/* contador (chat, avisos): ponto branco no canto */
+.cs-faixa :is(a, button) > span:not([aria-hidden]):empty, .cs-faixa :is(a, button) > span[aria-label] {
+  position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #b80c12;
+}
+.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) > span[aria-label] { background: #d80d12; box-shadow: 0 0 0 2px #fff; }
+
+/* menus que abrem ao lado da faixa (Redes, Mais) */
+.cs-pop {
+  position: fixed; left: 84px; z-index: 60; width: 260px; max-height: 72vh; overflow: auto; padding: 6px;
+  border-radius: var(--r-painel); background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-pop);
+  animation: srv-entra var(--t-medio) ease-out;
+}
+.cs-pop > div { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.cs-pop a:hover { background: var(--bg-hover) !important; }
+.cs-pop svg { width: 16px; height: 16px; color: var(--text-2); flex: none; }
+
+/* ── Painel lateral ── */
+.cs-painel { width: var(--lat-w, 256px); flex: none; position: relative; display: flex; min-height: 0; }
+.cs-painel[data-solto]:not([data-aberta]) { display: none; }
+.cs-painel[data-solto][data-aberta] {
+  position: fixed; top: 48px; bottom: 8px; left: 84px; z-index: 45; border-radius: var(--r-conteudo);
+  background: var(--bg-elev); box-shadow: var(--shadow-pop); overflow: hidden;
+}
+.cs-alca {
+  position: absolute; top: 0; bottom: 0; right: -10px; z-index: 2; width: 12px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; cursor: col-resize; transition: background var(--t-rapido);
+}
+.cs-alca:hover, .cs-alca:active { background: rgba(127, 127, 127, .16); }
+
+.cs-espacos { width: 100%; min-height: 0; display: flex; flex-direction: column; color: var(--text); }
+.cs-esp-topo { height: 40px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px 0 14px; }
+.cs-esp-titulo { flex: 1; font-size: 14px; font-weight: 600; }
+.cs-criar {
+  height: 26px; display: flex; align-items: center; gap: 2px; padding: 0 6px 0 8px; margin-right: 2px; border: 0; border-radius: 12px;
+  background: var(--bg-subtle); color: var(--text); cursor: pointer;
+}
+.cs-criar:hover { background: var(--bg-hover); }
+.cs-mini {
+  width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text-3); cursor: pointer;
+}
+.cs-mini:hover { background: var(--bg-hover); color: var(--text); }
+.cs-mini[data-on] { background: var(--bg-active); color: var(--text); }
+
+.cs-esp-corpo { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; padding: 6px 6px 12px; }
+.cs-esp-pe { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 6px; }
+
+/* linhas simples (atalhos de Início, favoritos, canais, rodapé) */
+:is(.cs-esp-corpo, .cs-esp-pe) > a, :is(.cs-esp-corpo, .cs-esp-pe) > div:not([class]) > a, .cs-esp-corpo > button.cs-mais {
+  height: 28px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text); font-size: 13px; text-align: left; text-decoration: none; cursor: pointer;
+  transition: background var(--t-rapido);
+}
+:is(.cs-esp-corpo, .cs-esp-pe) a:hover, .cs-esp-corpo > button.cs-mais:hover { background: var(--bg-hover); }
+:is(.cs-esp-corpo, .cs-esp-pe) a[aria-current='page'] { background: var(--bg-active); font-weight: 600; }
+:is(.cs-esp-corpo, .cs-esp-pe) a > span[aria-hidden] { color: var(--text-2); }
+:is(.cs-esp-corpo, .cs-esp-pe) a > span[aria-hidden] + span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(.cs-esp-corpo, .cs-esp-pe) a > span[aria-hidden] + span + span:not(.cs-selo) { font-size: 12px; color: var(--text-3); }
+.cs-mais { color: var(--text-3) !important; }
+.cs-mais:hover { color: var(--text-2) !important; }
+
+.cs-secao {
+  height: 28px; flex: none; width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 4px; padding: 0 4px 0 8px;
+  border: 0; background: transparent; color: var(--text-3); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  text-align: left;
+}
+button.cs-secao { padding-left: 4px; cursor: pointer; }
+button.cs-secao:hover { color: var(--text-2); }
+.cs-secao > span:not([aria-hidden]) { flex: 1; }
+.cs-vazio { margin: 0; padding: 4px 8px; font-size: 12px; color: var(--text-3); }
+.cs-selo {
+  min-width: 16px; height: 16px; margin-left: auto; padding: 0 4px; display: flex; align-items: center; justify-content: center;
+  border-radius: 16px; background: #d80d12; color: #fff; font-size: 10px; font-weight: 700;
+}
+
+/* árvore de espaços, pastas e listas (LinhaNavegacao) */
+.cs-arvore { display: flex; flex-direction: column; gap: 1px; }
+.cs-linha {
+  height: 28px; display: flex; align-items: center; gap: 6px; padding-right: 4px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  transition: background var(--t-rapido);
+}
+.cs-linha:hover { background: var(--bg-hover); }
+.cs-linha:has(> a[aria-current='page']) { background: var(--bg-active); font-weight: 600; }
+.cs-linha > button:first-child {
+  width: 16px; height: 16px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0; border: 0;
+  background: transparent; color: var(--text-3); cursor: pointer;
+}
+.cs-linha > a, .cs-linha > span:not([aria-hidden]):not(.cs-esp-ladrilho) {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; color: var(--text); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cs-linha > a > span:first-child:has(> span) { width: 16px; flex: none; display: flex; justify-content: center; }
+.cs-linha > a > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cs-linha > a > span:nth-child(3) { font-size: 12px; color: var(--text-3); }
+.cs-linha > span[aria-hidden] { color: var(--text-2); }
+.cs-esp-ladrilho {
+  width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; color: #fff; font-size: 10px; font-weight: 700;
+}
+/* ações da linha (criar, personalizar, ⋯): só ao passar o mouse */
+.cs-linha > :is(button, [data-slot$='trigger']):not(:first-child) {
+  display: none; width: 20px; height: 20px; flex: none; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-3); cursor: pointer;
+}
+.cs-linha:hover > :is(button, [data-slot$='trigger']):not(:first-child), .cs-linha > [aria-expanded='true'] { display: inline-flex; }
+.cs-linha > :is(button, [data-slot$='trigger']):not(:first-child):hover { background: var(--bg-active); color: var(--text); }
+.cs-linha svg { width: 15px; height: 15px; }
+
+/* cronômetro no pé do painel */
+.cs-crono { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 8px; margin-bottom: 2px; border-radius: 12px; background: var(--red-soft); color: var(--red); }
+.cs-crono > span:first-child { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--red); animation: srv-pulso 1.2s infinite; }
+.cs-crono > a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; font-size: 12px; }
+.cs-crono > a > span:first-child { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-crono > a > span:last-child { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cs-crono > button { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
+.cs-crono svg { width: 14px; height: 14px; }
+
+/* ── Avisos (sino) ── */
+.cs-sino { position: relative; }
+.cs-sino > span:not([aria-hidden]) { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #b80c12; }
+.cs-avisos { width: 360px; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.cs-avisos > div:first-child { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+.cs-avisos > div:first-child > p { flex: 1; margin: 0; font-size: 14px; font-weight: 600; }
+.cs-avisos [role='tablist'] { display: flex; padding: 2px; border-radius: 12px; background: var(--bg-active); }
+.cs-avisos [role='tab'] { height: 24px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 12px; cursor: pointer; }
+.cs-avisos [role='tab'][data-on] { background: var(--bg); font-weight: 600; box-shadow: 0 1px 3px rgba(17, 17, 19, .12); }
+.cs-avisos > p { margin: 0; padding: 24px 12px; text-align: center; color: var(--text-3); }
+.cs-avisos > div:nth-child(2) { max-height: 380px; overflow: auto; padding: 0 4px; }
+.cs-avisos > div:nth-child(2) > button {
+  width: 100%; display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px; border: 0; border-radius: 12px; background: transparent;
+  color: var(--text-2); text-align: left; cursor: pointer;
+}
+.cs-avisos > div:nth-child(2) > button:hover { background: var(--bg-hover); }
+.cs-avisos > div:nth-child(2) > button[data-nova] { color: var(--text); }
+.cs-avisos > div:nth-child(2) > button > span:first-child { width: 28px; height: 28px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--bg-subtle); color: var(--text-2); }
+.cs-avisos > div:nth-child(2) > button > span:first-child[data-erro] { background: var(--warn-soft); color: var(--warn); }
+.cs-avisos > div:nth-child(2) > button > span:nth-child(2) { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; }
+.cs-avisos > div:nth-child(2) > button > span:last-child { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.cs-avisos > div:nth-child(2) > button > span:last-child > span { width: 7px; height: 7px; border-radius: 50%; background: #d80d12; }
+.cs-avisos > button:last-child { margin: 6px; height: 30px; border: 0; border-radius: 10px; background: var(--bg-subtle); font-size: 12px; cursor: pointer; }
+.cs-avisos > button:last-child:disabled { opacity: .5; cursor: default; }
+
+/* ── Celular: barra de baixo ── */
+.cs-dock-cel { display: none; }
+.cs-so-cel { display: none !important; }
+
+@media (max-width: 1023px) {
+  .cs-painel { display: none !important; }
+}
+@media (max-width: 767px) {
+  .cs-topo { display: flex; }
+  .cs-empresa-nome, .cs-busca, .cs-so-desk, .cs-emma-nome { display: none !important; }
+  .cs-so-cel { display: flex !important; }
+  .cs-topo-dir { margin-left: auto; }
+  .cs-emma { padding: 0 3px; margin-right: 2px; }
+  .cs-corpo { padding: 0; }
+  .cs-lateral .cs-faixa { display: none; }
+  .cs-conteudo { border-radius: 0; padding-bottom: 72px; }
+  .cs-dock-cel {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: calc(64px + env(safe-area-inset-bottom));
+    padding: 0 8px env(safe-area-inset-bottom); display: flex; align-items: center; justify-content: space-around;
+    background: var(--bg-elev); box-shadow: 0 -4px 20px rgba(17, 17, 19, .08);
+  }
+  .cs-dock-cel > :is(a, button) {
+    flex: 1; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border: 0; background: transparent; color: var(--text-2); font-size: 11px; text-decoration: none; cursor: pointer;
+  }
+  .cs-dock-cel > :is(a, button) > span { position: relative; display: flex; }
+  .cs-dock-cel > :is(a, button) svg { width: 22px; height: 22px; }
+  .cs-dock-cel > [data-ativo] { color: #d80d12; font-weight: 600; }
+  .cs-dock-cel > button[title^='Emma'] {
+    flex: none; width: 52px; height: 52px; margin-top: -18px; border-radius: 50%; color: #fff;
+    background: radial-gradient(circle at 30% 30%, #ff5a5f, #d80d12 60%, #8a0609); box-shadow: 0 6px 18px rgba(216, 13, 18, .35);
+  }
+  .cs-dock-cel span[aria-label] { position: absolute; top: -2px; right: -4px; width: 8px; height: 8px; border-radius: 50%; background: #d80d12; }
+}
+.cs-cel-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.cs-cel-grade > :is(a, button) {
+  min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px;
+  border: 0; border-radius: 16px; background: var(--bg-subtle); color: var(--text); font-size: 12px; text-align: center; text-decoration: none; cursor: pointer;
+}
+.cs-cel-grade > [data-ativo] { background: var(--red-soft); color: var(--red); font-weight: 600; }
+.cs-cel-grade svg { width: 22px; height: 22px; }
+.cs-cel-pe { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }

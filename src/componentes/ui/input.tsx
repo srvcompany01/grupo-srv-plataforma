@@ -5,7 +5,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
     <input
       type={type}
       data-slot="input"
-      {...props}
+      className={className} {...props}
     />
   )
 }

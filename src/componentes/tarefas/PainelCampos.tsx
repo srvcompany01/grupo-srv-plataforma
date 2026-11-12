@@ -71,7 +71,7 @@ function LinhaMostrada({ linha, aoAlternar, aoConfigurar }: { linha: Linha; aoAl
       <span {...(linha.travada ? {} : attributes)} {...(linha.travada ? {} : listeners)} aria-label="Arrastar para reordenar"><Ic n="drag_indicator" s={16} /></span>
       <span>{linha.icone}</span>
       <span>{linha.nome}</span>
-      {aoConfigurar && <button type="button" onClick={aoConfigurar} aria-label={`Configurar ${linha.nome}`} title="Configurar campo" className="hidden"><Ic n="edit" s={15} /></button>}
+      {aoConfigurar && <button type="button" onClick={aoConfigurar} aria-label={`Configurar ${linha.nome}`} title="Configurar campo" className="ao-passar"><Ic n="edit" s={15} /></button>}
       <Toggle ligado aoAlternar={aoAlternar} desabilitado={linha.travada} rotuloA11y={`Ocultar ${linha.nome}`} />
     </div>
   )

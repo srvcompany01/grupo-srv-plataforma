@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <main>
       <div>
-        <section className="hidden">
+        <section className="hidden md:flex lg:p-14">
           <div>
             <Marca tamanho="h-9 w-9 text-sm" />
             <div>

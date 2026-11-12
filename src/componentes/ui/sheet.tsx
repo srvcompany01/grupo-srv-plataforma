@@ -35,7 +35,7 @@ function SheetOverlay({
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -56,7 +56,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={side}
-        {...props}
+        className={className} {...props}
       >
         {children}
         {showCloseButton && (
@@ -80,7 +80,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -89,7 +89,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-footer"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -101,7 +101,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -113,7 +113,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      {...props}
+      className={className} {...props}
     />
   )
 }

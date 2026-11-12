@@ -1,7 +1,6 @@
 'use client'
 
 import { Ellipsis, LayoutGrid, Menu, Share2, Sparkles, UserPlus } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -54,6 +53,10 @@ export function FaixaAtalhos({ avisos, naoLidos, euId, ...props }: PropsNavegaca
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc) }
   }, [popAberto])
+  // A faixa rola sozinha até o módulo ativo quando a tela muda.
+  useEffect(() => {
+    dock.current?.querySelector('.cs-faixa-modulos [aria-current="page"], .cs-faixa-modulos [data-ativo]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [caminho])
   const abrirPop = (tipo: 'redes' | 'mais') => (e: React.MouseEvent<HTMLButtonElement>) => setPop(popAberto?.tipo === tipo ? null : { caminho, topo: e.currentTarget.getBoundingClientRect().top, tipo })
 
   const item = ({ id, href, rotulo, contador, Icone }: Atalho) => {
@@ -75,28 +78,22 @@ export function FaixaAtalhos({ avisos, naoLidos, euId, ...props }: PropsNavegaca
   return (
     <>
       <DockCelular atalhos={atalhos} ativoEm={ativoEm} caminho={caminho} papel={papel} tema={tema} nome={props.nome} avisos={avisos} naoLidos={naoLidos} euId={euId} aoEspacos={() => setGavetaEm(caminho)} />
-      <nav ref={dock} aria-label="Navegação" className="dock">
-        {/* Bloco 1: logo */}
-        <div>
-          <Link href="/home" title="Home" aria-label="Home"><Image src="/marca/simbolo.png" alt="" width={30} height={30} priority /></Link>
-        </div>
-        {/* Bloco 2: módulos (reordenáveis); "Mais" abre os demais */}
-        <div>
+      <nav ref={dock} aria-label="Navegação" className="dock cs-faixa">
+        {/* Módulos (reordenáveis); "Mais" abre os demais. Rola sozinho até o item ativo. */}
+        <div className="cs-faixa-modulos">
           <ListaOrdenavel cookie={COOKIE_ORDEM_INICIO} ordemInicial={ordemInicio} itens={soltosTopo.map((a) => ({ id: a.id, no: item(a) }))} />
           <button type="button" onClick={abrirPop('redes')} title="Redes sociais" aria-label="Redes sociais" aria-expanded={popAberto?.tipo === 'redes'} aria-haspopup="menu" data-ativo={emRedes || undefined}><Share2 /></button>
           <button type="button" onClick={abrirPop('mais')} title="Mais módulos" aria-label="Mais módulos" aria-expanded={popAberto?.tipo === 'mais'} aria-haspopup="menu" data-ativo={emMais || undefined}><Ellipsis /></button>
         </div>
-        <div />
-        {/* Bloco 3: avisos, perfil, convidar, tema e configurações */}
-        <div>
+        {/* Pé fixo: avisos, convidar, tema e configurações (o perfil fica no topo). */}
+        <div className="cs-faixa-pe">
           <SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} variante="dock" />
-          <MenuPerfil nome={props.nome} papel={papel} lado="right" />
           {papel === 'admin' && <Link href="/config/usuarios" title="Convidar" aria-label="Convidar"><UserPlus /></Link>}
           <AlternarTema inicial={tema} />
           {config && item(config)}
         </div>
         {popAberto?.tipo === 'redes' && (
-          <div role="menu" aria-label="Redes sociais" style={{ top: Math.max(56, Math.min(popAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)) }}>
+          <div role="menu" aria-label="Redes sociais" className="cs-pop" style={{ top: Math.max(56, Math.min(popAberto.topo - 8, (typeof window === 'undefined' ? 700 : window.innerHeight) - 440)) }}>
             <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Redes sociais</p>
             <Link href="/redes" role="menuitem" style={{ height: 34, display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', borderRadius: 4, fontSize: 13, fontWeight: caminho === '/redes' ? 600 : 500, background: caminho === '/redes' ? 'var(--bg-active)' : 'transparent', color: 'var(--text)', textDecoration: 'none' }}><Ic n="grid_view" s={20} style={{ color: 'var(--text-2)' }} />Visão geral</Link>
             <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 6px' }} />
@@ -113,7 +110,7 @@ export function FaixaAtalhos({ avisos, naoLidos, euId, ...props }: PropsNavegaca
           </div>
         )}
         {popAberto?.tipo === 'mais' && (
-          <div role="menu" aria-label="Mais módulos" style={{ width: 320, bottom: 16, top: 'auto' }}>
+          <div role="menu" aria-label="Mais módulos" className="cs-pop" style={{ width: 320, bottom: 16, top: 'auto' }}>
             <p style={{ padding: '6px 8px 4px', fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Módulos</p>
             <ListaOrdenavel
               cookie={COOKIE_ORDEM_INICIO}
@@ -160,7 +157,7 @@ function DockCelular({ atalhos, ativoEm, caminho, papel, tema, nome, avisos, nao
   }
   const [home, tarefas, chat] = fixos
   return (
-    <nav aria-label="Navegação">
+    <nav aria-label="Navegação" className="cs-dock-cel">
       {home && botao(home)}
       {tarefas && botao(tarefas)}
       {comIA && <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_IA))} aria-label="Abrir a Emma, assistente" title="Emma, a assistente"><Sparkles size={26} strokeWidth={1.6} /></button>}
@@ -171,7 +168,7 @@ function DockCelular({ atalhos, ativoEm, caminho, papel, tema, nome, avisos, nao
       <Sheet open={maisEm === caminho} onOpenChange={(aberta) => setMaisEm(aberta ? caminho : null)}>
         <SheetContent side="bottom">
           <SheetTitle>Todos os módulos</SheetTitle>
-          <div>
+          <div className="cs-cel-grade">
             {atalhos.map(({ id, href, rotulo, Icone }) => (
               <Link key={id} href={href} data-ativo={ativoEm(href) || undefined}><Icone />{rotulo}</Link>
             ))}
@@ -179,7 +176,7 @@ function DockCelular({ atalhos, ativoEm, caminho, papel, tema, nome, avisos, nao
             <button type="button" onClick={aoEspacos}><LayoutGrid />Espaços</button>
             <AlternarTema inicial={tema} comRotulo />
           </div>
-          <div><SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} ouvir={false} /><MenuPerfil nome={nome} papel={papel} lado="top" comNome /></div>
+          <div className="cs-cel-pe"><SinoAvisos avisos={avisos} naoLidos={naoLidos} euId={euId} ouvir={false} /><MenuPerfil nome={nome} papel={papel} lado="top" comNome /></div>
         </SheetContent>
       </Sheet>
     </nav>

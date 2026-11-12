@@ -27,7 +27,7 @@ function PopoverContent({
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
-        {...props}
+        className={className} {...props}
       />
     </PopoverPrimitive.Portal>
   )
@@ -43,7 +43,7 @@ function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="popover-header"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -52,7 +52,7 @@ function PopoverTitle({ className, ...props }: React.ComponentProps<"h2">) {
   return (
     <div
       data-slot="popover-title"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -64,7 +64,7 @@ function PopoverDescription({
   return (
     <p
       data-slot="popover-description"
-      {...props}
+      className={className} {...props}
     />
   )
 }

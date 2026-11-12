@@ -45,7 +45,7 @@ export function ArvorePaginas({ documentoId, paginas, atualId, podeEditar }: { d
             <span>{p.titulo || 'Sem título'}</span>
           </Link>
           {podeEditar && (
-            <span className="hidden">
+            <span className="ao-passar">
               <button type="button" title="Adicionar subpágina" aria-label="Adicionar subpágina" onClick={() => criar(p.id)}><Plus /></button>
               {paginas.length > 1 && <button type="button" title="Excluir página" aria-label="Excluir página" onClick={() => excluir(p)}><Trash2 /></button>}
             </span>

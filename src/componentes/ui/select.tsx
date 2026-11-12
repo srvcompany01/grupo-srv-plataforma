@@ -17,7 +17,7 @@ function SelectGroup({
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -40,7 +40,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      {...props}
+      className={className} {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
@@ -64,7 +64,7 @@ function SelectContent({
         data-align-trigger={position === "item-aligned"}
         position={position}
         align={align}
-        {...props}
+        className={className} {...props}
       >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
@@ -85,7 +85,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -98,7 +98,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      {...props}
+      className={className} {...props}
     >
       <span>
         <SelectPrimitive.ItemIndicator>
@@ -117,7 +117,7 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -129,7 +129,7 @@ function SelectScrollUpButton({
   return (
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
-      {...props}
+      className={className} {...props}
     >
       <ChevronUpIcon
       />
@@ -144,7 +144,7 @@ function SelectScrollDownButton({
   return (
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
-      {...props}
+      className={className} {...props}
     >
       <ChevronDownIcon
       />

@@ -13,8 +13,8 @@ export function EsqueletoPagina({ linhas = 8 }: { linhas?: number }) {
           <div key={i}>
             <Esqueleto />
             <Esqueleto />
-            <Esqueleto className="hidden" />
-            <Esqueleto className="hidden" />
+            <Esqueleto className="hidden sm:block" />
+            <Esqueleto className="hidden md:block" />
           </div>
         ))}
       </div>

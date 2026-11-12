@@ -1,0 +1,139 @@
+/*
+ * Peças comuns do design SRV 2026 (camada 2): botões, campos, menus, popovers, diálogos, gavetas, dicas e interruptores.
+ * Valem em toda a plataforma, inclusive nos menus que abrem fora da área logada. Mudar aqui muda todas as telas.
+ * Sem bordas de 1px: separação por fundo (--bg-subtle) e sombra só no que flutua (--shadow-pop).
+ */
+
+/* ── Botões (componentes/ui/button) ── */
+[data-slot='button'] {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: var(--h-ctl); padding: 0 12px; border: 0; border-radius: var(--r-ctl);
+  background: var(--bg-subtle); color: var(--text); font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  transition: background var(--t-rapido), color var(--t-rapido);
+}
+[data-slot='button']:hover { background: var(--bg-hover); }
+[data-slot='button']:disabled { opacity: .5; cursor: default; }
+[data-slot='button'] svg { width: 16px; height: 16px; flex: none; }
+[data-slot='button'][data-variant='default'] { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+[data-slot='button'][data-variant='default']:hover { background: var(--primary-hover); }
+[data-slot='button'][data-variant='ghost'], [data-slot='button'][data-variant='link'] { background: transparent; color: var(--text-2); }
+[data-slot='button'][data-variant='ghost']:hover { background: var(--bg-hover); color: var(--text); }
+[data-slot='button'][data-variant='link'] { color: var(--client); padding: 0; height: auto; }
+[data-slot='button'][data-variant='destructive'] { background: var(--red-soft); color: var(--red); font-weight: 600; }
+[data-slot='button'][data-size='sm'], [data-slot='button'][data-size='xs'] { height: 24px; padding: 0 8px; font-size: 12px; }
+[data-slot='button'][data-size='lg'] { height: 36px; padding: 0 16px; }
+[data-slot='button'][data-size^='icon'] { width: var(--h-ctl); padding: 0; }
+[data-slot='button'][data-size='icon-sm'], [data-slot='button'][data-size='icon-xs'] { width: 24px; height: 24px; }
+
+/* ── Campos ── */
+[data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger'], [data-slot='command-input-wrapper'] {
+  width: 100%; min-height: var(--h-ctl); padding: 0 10px; border: 1px solid transparent; border-radius: var(--r-ctl);
+  background: var(--bg-subtle); color: var(--text); font-size: 13px; outline: none;
+  transition: border-color var(--t-rapido), box-shadow var(--t-rapido);
+}
+[data-slot='textarea'] { padding: 8px 10px; line-height: 1.5; resize: vertical; }
+[data-slot='input']:focus, [data-slot='textarea']:focus, [data-slot='select-trigger']:focus-visible {
+  border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-ring); outline: none;
+}
+[data-slot='input']::placeholder, [data-slot='textarea']::placeholder { color: var(--text-3); }
+[data-slot='select-trigger'] { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; cursor: pointer; }
+[data-slot='select-trigger'] svg { width: 14px; height: 14px; color: var(--text-3); }
+
+[data-slot='checkbox'] {
+  width: 14px; height: 14px; flex: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong); border-radius: var(--r-check); background: var(--bg); color: var(--on-primary); cursor: pointer;
+}
+[data-slot='checkbox'][data-state='checked'] { background: var(--primary); border-color: var(--primary); }
+[data-slot='checkbox'] svg { width: 12px; height: 12px; }
+
+/* Interruptor (componentes/ui/interruptor e qualquer role=switch): 28×16, bolinha 12. */
+[role='switch'] {
+  position: relative; width: 28px; height: 16px; flex: none; padding: 0; border: 0; border-radius: var(--r-pill);
+  background: var(--border-strong); cursor: pointer; transition: background 150ms;
+}
+[role='switch'][aria-checked='true'] { background: var(--primary); }
+[role='switch']:disabled { opacity: .5; cursor: default; }
+[role='switch'] > span { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); transition: left 150ms; }
+[role='switch'][aria-checked='true'] > span { left: 14px; }
+
+/* ── O que flutua: menus, popovers, seleções, dicas ── */
+[data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'], [data-slot='context-menu-content'],
+[data-slot='select-content'], [data-slot='popover-content'], [data-slot='command'] {
+  z-index: 50; min-width: 200px; max-height: var(--radix-dropdown-menu-content-available-height, 70vh); overflow: auto;
+  padding: 4px; border-radius: var(--r-painel); background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-pop);
+  font-size: 13px; animation: srv-entra var(--t-medio) ease-out;
+}
+[data-slot='popover-content'] { padding: 12px; width: 320px; max-width: calc(100vw - 16px); }
+[data-slot='dropdown-menu-item'], [data-slot='dropdown-menu-checkbox-item'], [data-slot='dropdown-menu-radio-item'],
+[data-slot='dropdown-menu-sub-trigger'], [data-slot='context-menu-item'], [data-slot='select-item'], [data-slot='command-item'] {
+  position: relative; display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border-radius: 8px;
+  color: var(--text); text-decoration: none; cursor: pointer; outline: none; user-select: none;
+}
+:is([data-slot='dropdown-menu-item'], [data-slot='dropdown-menu-checkbox-item'], [data-slot='dropdown-menu-radio-item'], [data-slot='dropdown-menu-sub-trigger'], [data-slot='context-menu-item'], [data-slot='select-item'], [data-slot='command-item']):is([data-highlighted], [data-selected='true'], :hover) { background: var(--bg-hover); }
+:is([data-slot='dropdown-menu-item'], [data-slot='context-menu-item'])[data-variant='destructive'] { color: var(--red); }
+[data-disabled]:is([data-slot$='-item']) { opacity: .5; pointer-events: none; }
+:is([data-slot$='-item'], [data-slot='dropdown-menu-sub-trigger']) svg, :is([data-slot$='-item']) .material-symbols { width: 16px; height: 16px; flex: none; color: var(--text-2); }
+:is([data-slot='dropdown-menu-checkbox-item'], [data-slot='dropdown-menu-radio-item'], [data-slot='select-item']) { padding-right: 28px; }
+:is([data-slot='dropdown-menu-checkbox-item-indicator'], [data-slot='dropdown-menu-radio-item-indicator']) { position: absolute; right: 8px; display: flex; }
+[data-slot='dropdown-menu-label'], [data-slot='select-label'], [data-slot='command-group'] [cmdk-group-heading] {
+  padding: 6px 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3);
+}
+[data-slot='dropdown-menu-separator'], [data-slot='context-menu-separator'], [data-slot='select-separator'], [data-slot='command-separator'] {
+  height: 1px; margin: 4px -4px; background: var(--border-soft);
+}
+[data-slot='dropdown-menu-shortcut'], [data-slot='command-shortcut'] { margin-left: auto; font-size: 11px; color: var(--text-3); }
+
+[data-slot='tooltip-content'] {
+  z-index: 70; max-width: 280px; padding: 5px 8px; border-radius: 8px; background: var(--primary); color: var(--on-primary);
+  font-size: 12px; line-height: 1.35; animation: srv-entra var(--t-rapido) ease-out;
+}
+
+/* ── Diálogos e gavetas ── */
+[data-slot='dialog-overlay'], [data-slot='sheet-overlay'] { position: fixed; inset: 0; z-index: 50; background: rgba(10, 10, 12, .35); }
+[data-slot='dialog-content'] {
+  position: fixed; left: 50%; top: 50%; z-index: 51; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; gap: 14px; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto;
+  padding: 20px; border-radius: var(--r-secao); background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-pop);
+  animation: srv-entra var(--t-medio) ease-out;
+}
+[data-slot='dialog-header'], [data-slot='sheet-header'] { display: flex; flex-direction: column; gap: 4px; }
+[data-slot='dialog-title'], [data-slot='sheet-title'] { margin: 0; font-size: 16px; font-weight: 600; }
+[data-slot='dialog-description'], [data-slot='sheet-description'] { margin: 0; font-size: 13px; color: var(--text-2); }
+[data-slot='dialog-footer'], [data-slot='sheet-footer'] { display: flex; justify-content: flex-end; gap: 8px; }
+[data-slot='dialog-close'], [data-slot='sheet-close'] { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: var(--text-2); cursor: pointer; }
+[data-slot='dialog-close']:hover, [data-slot='sheet-close']:hover { background: var(--bg-hover); }
+[data-slot='dialog-close'] svg, [data-slot='sheet-close'] svg { width: 18px; height: 18px; }
+[data-slot='sheet-content'] {
+  position: fixed; z-index: 51; display: flex; flex-direction: column; gap: 12px; overflow: auto; padding: 16px;
+  background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-pop);
+}
+[data-slot='sheet-content'][data-side='left'] { top: 0; bottom: 0; left: 0; width: min(320px, 88vw); border-radius: 0 var(--r-secao) var(--r-secao) 0; }
+[data-slot='sheet-content'][data-side='right'] { top: 0; bottom: 0; right: 0; width: min(420px, 92vw); border-radius: var(--r-secao) 0 0 var(--r-secao); }
+[data-slot='sheet-content'][data-side='bottom'] { left: 0; right: 0; bottom: 0; max-height: 85dvh; border-radius: var(--r-secao) var(--r-secao) 0 0; }
+
+/* ── Abas e selos ── */
+[data-slot='tabs-list'] { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: var(--bg-subtle); }
+[data-slot='tabs-trigger'] {
+  height: 30px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--text-2);
+  font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+[data-slot='tabs-trigger'][data-state='active'] { background: var(--bg); color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(17, 17, 19, .14); }
+[data-slot='badge'] {
+  display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--r-tag);
+  background: var(--bg-active); color: var(--text-2); font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+[data-slot='badge'][data-variant='default'] { background: var(--primary); color: var(--on-primary); }
+[data-slot='badge'][data-variant='destructive'] { background: var(--red-soft); color: var(--red); }
+
+@keyframes srv-entra { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+[data-slot='dialog-content'] { animation-name: srv-entra-centro; }
+@keyframes srv-entra-centro { from { opacity: 0; transform: translate(-50%, -48%) scale(.98); } }
+/* "Sair" do menu do perfil é um botão de formulário dentro do menu: mesmo visual de item. */
+[data-slot='dropdown-menu-content'] form > button {
+  width: 100%; display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--red); cursor: pointer; text-align: left;
+}
+[data-slot='dropdown-menu-content'] form > button:hover { background: var(--bg-hover); }
+[data-slot='dropdown-menu-content'] form > button svg { width: 16px; height: 16px; }
+[data-slot='dropdown-menu-label'] p { margin: 0; }
+[data-slot='dropdown-menu-label'] p + p { font-weight: 400; text-transform: none; letter-spacing: 0; }

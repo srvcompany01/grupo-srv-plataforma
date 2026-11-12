@@ -57,7 +57,7 @@ export function VisualizadorMidia({
                 type="button"
                 aria-label="Anterior"
                 onClick={() => irPara(atual - 1)}
-                className="hidden"
+                className="hidden sm:block"
               >
                 ‹
               </button>
@@ -67,7 +67,7 @@ export function VisualizadorMidia({
                 type="button"
                 aria-label="Próxima"
                 onClick={() => irPara(atual + 1)}
-                className="hidden"
+                className="hidden sm:block"
               >
                 ›
               </button>

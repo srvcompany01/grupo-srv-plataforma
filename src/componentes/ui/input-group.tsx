@@ -12,7 +12,7 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="input-group"
       role="group"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -54,7 +54,7 @@ function InputGroupAddon({
         }
         e.currentTarget.parentElement?.querySelector("input")?.focus()
       }}
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -90,7 +90,7 @@ function InputGroupButton({
       type={type}
       data-size={size}
       variant={variant}
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -98,7 +98,7 @@ function InputGroupButton({
 function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -110,7 +110,7 @@ function InputGroupInput({
   return (
     <Input
       data-slot="input-group-control"
-      {...props}
+      className={className} {...props}
     />
   )
 }
@@ -122,7 +122,7 @@ function InputGroupTextarea({
   return (
     <Textarea
       data-slot="input-group-control"
-      {...props}
+      className={className} {...props}
     />
   )
 }

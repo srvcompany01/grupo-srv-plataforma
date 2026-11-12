@@ -50,7 +50,7 @@ export function AtalhosFixados() {
     if (nome) gravar([...itens, { nome, href: atual }])
   }
   return (
-    <nav aria-label="Atalhos fixados" className="hidden" style={{ flex: '1 1 0', minWidth: 0, alignItems: 'center', gap: 6, marginLeft: 6, overflowX: 'auto', scrollbarWidth: 'none', color: 'var(--text-2)' }}>
+    <nav aria-label="Atalhos fixados" className="hidden md:flex" style={{ flex: '1 1 0', minWidth: 0, alignItems: 'center', gap: 6, marginLeft: 6, overflowX: 'auto', scrollbarWidth: 'none', color: 'var(--text-2)' }}>
       {itens.map((i) => (
         <span key={i.href} style={{ position: 'relative', display: 'flex', flex: 'none' }}>
           <Link href={i.href} data-ativo={i.href === atual || undefined}>

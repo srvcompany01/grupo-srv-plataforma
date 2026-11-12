@@ -113,12 +113,14 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
             {...ouvintes}
             // Links e imagens são arrastados pelo navegador por padrão e "roubam" o gesto do dnd-kit.
             onDragStart={(e) => e.preventDefault()}
+            className={['cs-linha', className].filter(Boolean).join(' ')}
+            data-tipo={tipo}
             style={{ ...style, transform: CSS.Transform.toString(transform), transition }}
           >
             {children}
             {(podeEditar || podeExcluir) && (
               <DropdownMenu>
-                <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="hidden"><MoreHorizontal /></DropdownMenuTrigger>
+                <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="ao-passar"><MoreHorizontal /></DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   {podeEditar && <DropdownMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</DropdownMenuItem>}
                   {podeEditar && <DropdownMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</DropdownMenuItem>}
