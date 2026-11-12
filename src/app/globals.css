@@ -1,10 +1,162 @@
 /*
- * Design zerado (2026-11): a plataforma está sem visual próprio até o layout novo do Claude Design entrar.
- * Fica só o Tailwind (variáveis padrão e utilitários) SEM o reset de base, para o navegador desenhar botões,
- * campos e títulos do jeito padrão e as telas continuarem utilizáveis.
- * Classes que o código usa para funcionar e devem continuar existindo: app-ui, dock, sr-only, hidden, select-none,
- * documento, artigo-blog, descricao e mencao (editores de texto).
+ * Design SRV 2026 (Leva 1 do Claude Design). Três camadas:
+ *   1. Este arquivo: só tokens (cores, raios, tipografia) e o básico do corpo. Mudar aqui muda a plataforma inteira.
+ *   2. Peças comuns (casca, botões, menus): componentes/app/casca.css e componentes/ui.
+ *   3. Cada tela: arquivo .module.css na pasta dela, que só vale para ela (trocar uma tela não mexe nas outras).
+ * Tema claro em :root (vale também para menus e diálogos abertos fora da área logada); escuro quando a área logada
+ * tem data-tema="escuro" (botão sol/lua). Cores de status, prioridade e o vermelho SRV são dados: iguais nos dois temas.
  */
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
+
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* marca */
+  --brand-red: #d80d12;
+  --brand-black: #111113;
+
+  /* superfícies (sem bordas de 1px: separação por fundo e espaço) */
+  --bg: #ffffff;
+  --bg-frame: #ffffff;
+  --bg-subtle: #f6f5f2;
+  --bg-hover: #efeeea;
+  --bg-active: #e7e5e0;
+  --bg-elev: #ffffff;
+  --border: #e8e6e1;
+  --border-soft: #f0eeea;
+  --border-strong: #d1d1d6;
+
+  /* texto */
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #83838c;
+
+  /* ação e destaques */
+  /* cor de ação e de destaque escolhidas pelo admin em Configurações → Personalização (só no tema claro) */
+  --primary: var(--tema-acao, #111113);
+  --primary-hover: color-mix(in srgb, var(--primary), #fff 14%);
+  --on-primary: #ffffff;
+  --red: var(--tema-acento, #d80d12);
+  --red-soft: color-mix(in srgb, var(--red) 9%, #fff);
+  --client: #1d6fe0;
+  --client-soft: #eaf2fd;
+  --sel: #edf4fe;
+  --focus: #1d6fe0;
+  --focus-ring: rgba(29, 111, 224, .22);
+  --ok: #16a34a;
+  --ok-soft: color-mix(in srgb, #16a34a 10%, transparent);
+  --warn: #e08a00;
+  --warn-soft: color-mix(in srgb, #e08a00 10%, transparent);
+
+  /* efeitos */
+  --hatch: #d6d3cc;
+  --hachura: var(--hatch);
+  --card-sheen: linear-gradient(transparent, transparent);
+  --shadow-pop: 0 8px 24px rgba(17, 17, 19, .10), 0 1px 3px rgba(17, 17, 19, .06);
+  --shadow-panel: -6px 0 20px rgba(17, 17, 19, .06);
+  --skel: #ececef;
+
+  /* faixa de ícones (vermelho em degradê) */
+  --rail-bg: linear-gradient(180deg, #e01a20 0%, #b80c12 38%, #7a0a10 72%, #4a070b 100%);
+  --rail-shadow: 0 10px 28px rgba(122, 10, 16, .28);
+
+  /* status e prioridade (dados) */
+  --st-pendente: #8b8b94;
+  --st-progresso: #5b5bd6;
+  --st-aprovacao: #8b5cf6;
+  --st-aprovado: #16a34a;
+  --st-publicado: #0d9488;
+  --pr-urgente: #d80d12;
+  --pr-alta: #e08a00;
+  --pr-normal: #1d6fe0;
+  --pr-baixa: #8b8b94;
+
+  /* raios */
+  --r-check: 3px;
+  --r-tag: 8px;
+  --r-ctl: 12px;
+  --r-linha: 12px;
+  --r-painel: 16px;
+  --r-kpi: 20px;
+  --r-secao: 24px;
+  --r-conteudo: 28px;
+  --r-pill: 999px;
+
+  /* alturas */
+  --h-topo: 40px;
+  --h-cabecalho: 40px;
+  --h-abas: 52px;
+  --h-barra: 44px;
+  --h-linha: 36px;
+  --h-ctl: 28px;
+
+  /* movimento */
+  --t-rapido: 120ms;
+  --t-medio: 180ms;
+  --t-largura: 250ms;
+
+  color-scheme: light;
+}
+
+body:has(.app-ui[data-tema='escuro']) {
+  --bg: #161618;
+  --bg-frame: #0c0c0e;
+  --bg-subtle: #111113;
+  --bg-hover: #202023;
+  --bg-active: #28282c;
+  --bg-elev: #1c1c1f;
+  --border: #2a2a2e;
+  --border-soft: #212124;
+  --border-strong: #3b3b41;
+  --text: #ededef;
+  --text-2: #a8a8b0;
+  --text-3: #7a7a83;
+  --primary: #f4f4f5;
+  --primary-hover: #dcdce0;
+  --on-primary: #111113;
+  --red: #ff5a5e;
+  --red-soft: #3a1517;
+  /* #1d6fe0 fica abaixo de 4,5:1 sobre #161618 */
+  --client: #4d8ff0;
+  --client-soft: #14233a;
+  --sel: #15233a;
+  --focus: #4d8ff0;
+  --focus-ring: rgba(77, 143, 240, .3);
+  --ok: #4ade80;
+  --ok-soft: #12291a;
+  --warn: #fbbf24;
+  --warn-soft: #2d2310;
+  --hatch: #34343a;
+  --card-sheen: linear-gradient(155deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%);
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, .55), 0 0 0 1px #2a2a2e;
+  --shadow-panel: -8px 0 24px rgba(0, 0, 0, .4);
+  --skel: #232326;
+  color-scheme: dark;
+}
+
+/* Animação do círculo de status (preenchimento por --p). */
+@property --p { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg-frame);
+  -webkit-font-smoothing: antialiased;
+}
+:where(button, input, textarea, select) { font: inherit; color: inherit; }
+:where(a) { color: inherit; }
+:where(button, a, [role='button'], input, textarea, select):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+@keyframes srv-pulso { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@keyframes srv-pop { 0% { transform: scale(.5); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001s !important; transition-duration: .001s !important; }
+}

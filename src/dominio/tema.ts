@@ -87,5 +87,5 @@ export function variaveisTema(tema: Tema): Record<string, string> {
 }
 
 export function cssTema(tema: Tema): string {
-  return `body:has(.app-ui){${Object.entries(variaveisTema(tema)).map(([k, v]) => `${k}:${v}`).join(';')}}`
+  return `:root:has(.app-ui){${Object.entries(variaveisTema(tema)).map(([k, v]) => `${k}:${v}`).join(';')}}`
 }
