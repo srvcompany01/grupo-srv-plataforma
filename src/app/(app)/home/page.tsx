@@ -1,3 +1,4 @@
+import './home.css'
 import { ArrowRight, ChevronRight, PartyPopper, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -96,17 +97,17 @@ export default async function Home() {
   ]
 
   return (
-    <div>
-      <header>
+    <div className="hm">
+      <header className="hm-topo">
         <h1><Ic n="home" s={16} style={{ color: 'var(--text-2)' }} /> Home</h1>
         <span>{formatar(hoje, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
       </header>
-      <div>
+      <div className="hm-corpo">
         <BoasVindas nome={eu.nome} atrasadas={atrasadas} hoje={paraHoje} semana={semana} />
 
-        <div>
+        <div className="hm-blocos">
           {blocos.map((b) => (
-            <Link key={b.rotulo} href={b.href}>
+            <Link className="hm-bloco" data-vermelho={b.vermelho || undefined} key={b.rotulo} href={b.href}>
               <p><span style={{ background: b.cor }}><Ic n={b.icone} s={14} fill /></span><span>{b.rotulo}</span></p>
               <p>{b.valor}</p>
               <p>{b.meta}</p>
@@ -115,25 +116,25 @@ export default async function Home() {
         </div>
 
         {atencao.length > 0 && (
-          <ul>
+          <ul className="hm-atencao">
             {atencao.map((a, i) => (
               <li key={i}><Link href={a.href}><TriangleAlert />{a.texto}</Link></li>
             ))}
           </ul>
         )}
 
-        <div>
-          <section>
-            <div>
+        <div className="hm-grade">
+          <section className="hm-cartao hm-panorama">
+            <div className="hm-cab">
               <h2>Panorama dos clientes</h2>
               <Link href="/clientes">Ver Clientes</Link>
             </div>
             {clientesEmFoco.length === 0 ? (
               <p>Sem tarefas de clientes para mostrar.</p>
             ) : (
-              <div>
-                <div>
-                  <div>
+              <div className="hm-rolagem">
+                <div className="hm-tabela">
+                  <div className="hm-th">
                     <span>Cliente</span><span>Responsável</span><span>Abertas</span><span>Em atraso</span><span>Aprovação</span><span>Próx. entrega</span><span>Progresso do mês</span>
                   </div>
                   {clientesEmFoco.map((l) => {
@@ -141,14 +142,14 @@ export default async function Home() {
                     const pronto = l.total ? Math.round((l.concluidas / l.total) * 100) : 0
                     const prox = proximaEntrega(l.id)
                     return (
-                      <Link key={l.id} href={`/clientes/${l.id}`}>
+                      <Link className="hm-tr" key={l.id} href={`/clientes/${l.id}`}>
                         <span><NomeCliente nome={l.nome} />{c && c.status !== 'ativo' && <span>{ROTULO_STATUS_CLIENTE[c.status]}</span>}</span>
                         <span>{responsavelDe(l.id)}</span>
                         <span>{l.total - l.concluidas}</span>
                         <span>{l.atrasadas}</span>
                         <span>{aprovacaoDe(l.id)}</span>
                         <span>{prox ? formatar(prox, { day: '2-digit', month: 'short' }) : '—'}</span>
-                        <span title={`${pronto}% concluído`}>
+                        <span className="hm-prog" title={`${pronto}% concluído`}>
                           <span><span style={{ width: `${pronto}%` }} /></span>
                           <span>{pronto}%</span>
                         </span>
@@ -160,16 +161,16 @@ export default async function Home() {
             )}
           </section>
 
-          <div>
-            <section>
-              <div>
+          <div className="hm-lado">
+            <section className="hm-cartao">
+              <div className="hm-cab">
                 <h2>Agenda de hoje</h2>
                 <Link href="/agenda" aria-label="Abrir a agenda"><ChevronRight /></Link>
               </div>
               {proximos.length === 0 ? (
                 <p>Nenhum compromisso nos próximos {DIAS_A_FRENTE} dias.</p>
               ) : (
-                <ul>
+                <ul className="hm-agenda">
                   {proximos.map((e) => (
                     <li key={e.id}>
                       <span>{e.diaInteiro ? 'Dia todo' : horaLocal(e.inicio)}</span>
@@ -180,20 +181,20 @@ export default async function Home() {
               )}
             </section>
 
-            <section>
-              <div>
+            <section className="hm-cartao">
+              <div className="hm-cab">
                 <h2>Minhas tarefas</h2>
                 <Link href="/inicio" aria-label="Ver todas as tarefas"><ArrowRight /></Link>
               </div>
               {lista.length === 0 ? (
                 <p>Nada urgente por enquanto.</p>
               ) : (
-                <ul>
+                <ul className="hm-tarefas">
                   {lista.map((t) => {
                     const atrasada = !!t.prazo && t.prazo < hoje
                     return (
                       <li key={t.id}>
-                        <Link href={`/tarefas/${t.id}`}>
+                        <Link className="hm-tarefa" data-atrasada={atrasada || undefined} href={`/tarefas/${t.id}`}>
                           <span />
                           <span>{t.titulo}</span>
                           <ChipCliente nome={t.clienteNome} />
@@ -212,7 +213,7 @@ export default async function Home() {
           <ResumoMes clientes={ativos} mes={mes} hoje={hoje} />
         </Suspense>
 
-        <section aria-label="Calendário do mês">
+        <section className="hm-cartao hm-cal" aria-label="Calendário do mês">
           <div>
             <div>
               <p>{formatar(`${mes}-01`, { month: 'long', year: 'numeric' })}</p>

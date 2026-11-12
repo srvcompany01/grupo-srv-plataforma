@@ -43,12 +43,12 @@ export async function ResumoMes({ clientes, mes, hoje }: { clientes: Cliente[]; 
     { rotulo: 'ROAS', valor: ind.roas === null ? '—' : `${ind.roas.toFixed(1).replace('.', ',')}x`, delta: <span>faturamento ÷ investido</span>, icone: TrendingUp },
   ]
   return (
-    <section>
-      <div>
+    <section className="hm-cartao hm-resumo">
+      <div className="hm-cab">
         <h2>Resultado de {rotuloMesLongo(mes)}</h2>
         <Link href={`/performance?mes=${mes}`}>Performance</Link>
       </div>
-      <div>
+      <div className="hm-resumo-tiles">
         {tiles.map((t) => {
           const Icone = t.icone
           return (

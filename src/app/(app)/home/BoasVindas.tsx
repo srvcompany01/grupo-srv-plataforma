@@ -14,5 +14,5 @@ export function BoasVindas({ nome, atrasadas, hoje, semana }: { nome: string; at
   const hora = agora ? Number(new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: FUSO }).format(agora)) % 24 : 12
   const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
   const resumo = atrasadas + hoje + semana === 0 ? 'Nada pendente nos próximos 7 dias.' : `${atrasadas} atrasada${atrasadas === 1 ? '' : 's'}, ${hoje} para hoje e ${semana} nos próximos 7 dias.`
-  return <p><b>{saudacao}, {nome.split(' ')[0]}.</b> {resumo}</p>
+  return <p className="hm-boas"><b>{saudacao}, {nome.split(' ')[0]}.</b> {resumo}</p>
 }

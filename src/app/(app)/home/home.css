@@ -1,0 +1,74 @@
+/* Home (Leva 1): só vale para esta tela (prefixo hm-). Trocar o design da Home = trocar este arquivo e as classes hm-*. */
+.hm { min-height: 100%; }
+.hm-topo { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.hm-topo h1 { flex: 1; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.hm-topo span { font-size: 12px; color: var(--text-3); }
+.hm-corpo { display: flex; flex-direction: column; gap: 16px; padding: 16px 20px 48px; }
+.hm-boas { margin: 0; font-size: 13px; color: var(--text-2); }
+.hm-boas b { font-weight: 400; }
+
+.hm-blocos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.hm-bloco {
+  display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: var(--r-secao); background: var(--bg-subtle);
+  color: var(--text); text-decoration: none; border: 1px solid transparent; transition: border-color var(--t-rapido);
+}
+.hm-bloco:hover { border-color: var(--border-strong); }
+.hm-bloco > p { margin: 0; }
+.hm-bloco > p:first-child { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.hm-bloco > p:first-child > span:first-child { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; }
+.hm-bloco > p:nth-child(2) { font-size: 20px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.hm-bloco[data-vermelho] > p:nth-child(2) { color: var(--red); }
+.hm-bloco > p:nth-child(3) { font-size: 12px; color: var(--text-3); }
+
+.hm-atencao { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hm-atencao a { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: var(--r-pill); background: var(--warn-soft); color: var(--text); font-size: 12px; text-decoration: none; }
+.hm-atencao svg { width: 14px; height: 14px; color: var(--warn); }
+
+.hm-grade { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 16px; align-items: start; }
+.hm-lado { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.hm-cartao { min-width: 0; overflow: hidden; border-radius: var(--r-secao); background: var(--card-sheen), var(--bg-subtle); }
+.hm-cartao h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.hm-cab { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+.hm-cab h2 { flex: 1; }
+.hm-cab a { font-size: 12px; color: var(--client); text-decoration: none; display: inline-flex; align-items: center; }
+.hm-lado .hm-cab a { color: var(--text-2); }
+.hm-cab svg { width: 16px; height: 16px; }
+.hm-cartao > p { margin: 0; padding: 16px; font-size: 13px; color: var(--text-3); }
+
+.hm-rolagem { overflow-x: auto; padding: 0 16px 8px; }
+.hm-tabela { min-width: 680px; }
+.hm-th, .hm-tr { display: grid; grid-template-columns: minmax(170px, 1.4fr) 140px 64px 72px 80px 96px minmax(110px, 1fr); align-items: center; gap: 0; }
+.hm-th { height: 28px; font-size: 12px; color: var(--text-3); }
+.hm-tr { height: 40px; font-size: 14px; color: var(--text); text-decoration: none; border-radius: 12px; transition: background var(--t-rapido); }
+.hm-tr:hover { background: var(--bg-hover); }
+.hm-tr > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.hm-tr > span:nth-child(4):not(:empty) { color: var(--red); }
+.hm-tr > span:nth-child(n+3):nth-child(-n+6) { color: var(--text-2); }
+.hm-tr > span:nth-child(4) { font-weight: 500; }
+.hm-prog { display: flex; align-items: center; gap: 8px; }
+.hm-prog > span:first-child { flex: 1; height: 4px; border-radius: 2px; background: var(--bg-active); overflow: hidden; }
+.hm-prog > span:first-child > span { display: block; height: 100%; background: var(--text); }
+.hm-prog > span:last-child { width: 36px; text-align: right; font-size: 12px; color: var(--text-3); }
+
+.hm-agenda, .hm-tarefas { list-style: none; margin: 0; padding: 0 8px 8px; }
+.hm-agenda li { display: flex; gap: 12px; padding: 8px; }
+.hm-agenda li > span:first-child { width: 44px; flex: none; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hm-agenda li > span:last-child { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 14px; }
+.hm-agenda li > span:last-child > span:last-child { font-size: 12px; color: var(--text-3); }
+.hm-tarefa { height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 12px; color: var(--text); text-decoration: none; font-size: 14px; transition: background var(--t-rapido); }
+.hm-tarefa:hover { background: var(--bg-hover); }
+.hm-tarefa > span:first-child { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--st-progresso); }
+.hm-tarefa > span:nth-child(2) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-tarefa > span:last-child { flex: none; width: 52px; text-align: right; font-size: 13px; color: var(--text-3); }
+.hm-tarefa[data-atrasada] > span:last-child { color: var(--red); }
+
+.hm-resumo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; padding: 0 16px 16px; }
+.hm-resumo-tiles > div { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r-kpi); background: var(--bg); }
+.hm-resumo-tiles p { margin: 0; }
+.hm-resumo-tiles p:first-of-type { font-size: 12px; color: var(--text-3); }
+.hm-resumo-tiles p:nth-of-type(2) { font-size: 20px; font-weight: 600; }
+.hm-cal { padding-bottom: 12px; }
+.hm-cal > div { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px; }
+.hm-cal p { margin: 0; font-size: 13px; }
+
+@media (max-width: 1100px) { .hm-grade { grid-template-columns: minmax(0, 1fr); } }
