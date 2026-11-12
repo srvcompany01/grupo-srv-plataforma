@@ -93,8 +93,8 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   const selecionada = ctx.selecionadas?.has(tarefa.id) ?? false
   // Cada célula leva `data-celula` (a lista descobre por ele onde o mouse está) e ganha destaque quando está na faixa.
   const noFaixa = (colunaId: string) => !!ctx.faixa?.linhas.has(tarefa.id) && ctx.faixa.colunas.has(colunaId)
-  const marca = (colunaId: string) => ({ 'data-celula': colunaId })
-  const realce = (colunaId: string) => (noFaixa(colunaId) ? ' bg-[var(--sel)] ring-1 ring-inset ring-[var(--focus)]/30' : '')
+  const marca = (colunaId: string) => ({ 'data-celula': colunaId, 'data-faixa': noFaixa(colunaId) || undefined, className: 'ls-celula' })
+  
   const celula = (colunaId: string) => {
     if (colunaId.startsWith('campo:')) {
       const definicao = (ctx.camposPersonalizados ?? []).find((campo) => `campo:${campo.id}` === colunaId)
@@ -144,7 +144,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div data-linha={tarefa.id} className="ls-linha" data-nivel={nivel} data-sel={selecionada || undefined} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
         <div>
           <input
             type="checkbox"
@@ -162,10 +162,11 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
           )}
         </div>
         <div><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} /></div>
-        <div {...marca('nome')} style={{ padding: '0 12px 0 2px', paddingLeft: 2 + nivel * 18 }}>
-          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} style={{ fontSize: 13 }}>
+        <div {...marca('nome')} className="ls-nome" style={{ paddingLeft: 2 + nivel * 22 }}>
+          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="ls-titulo">
             {tarefa.titulo.trim() || <span>Sem título</span>}
           </Link>
+          {nivel > 0 && <Ic n="arrow_forward" s={14} className="ls-seta" />}
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente
               compacto
@@ -176,7 +177,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             />
           )}
           {tarefa.filhos.length > 0 && (
-            <span><Ic n="subdirectory_arrow_right" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
+            <span className="ls-subs"><Ic n="account_tree" s={13} />{tarefa.filhos.filter((f) => f.concluidaEm).length}/{tarefa.filhos.length}</span>
           )}
           {tarefa.paiTitulo && <span className="hidden lg:inline" title={`Subtarefa de ${tarefa.paiTitulo}`}>↳ {tarefa.paiTitulo}</span>}
           {ctx.mostrarLista && <span className="hidden xl:inline" title={tarefa.listaNome}>{tarefa.listaNome}</span>}
@@ -188,7 +189,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             }}
             aria-label={`Adicionar subtarefa em ${tarefa.titulo}`}
             title="Adicionar subtarefa"
-            style={{ width: 22, height: 22, borderRadius: 4, color: 'var(--text-3)' }}
+            className="ls-add-sub"
           >
             <Ic n="subdirectory_arrow_right" s={14} />
           </button>
@@ -196,9 +197,10 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         {colunas.map(celula)}
       </div>
       {aberta && tarefa.filhos.map((f) => <LinhaTarefa key={f.id} tarefa={f} nivel={nivel + 1} ctx={ctx} euId={euId} />)}
-      {aberta && !criandoSubtarefa && (
+      {aberta && nivel === 0 && tarefa.filhos.length > 0 && !criandoSubtarefa && (
         <button
           type="button"
+          className="ls-adicionar"
           onClick={() => setCriandoSubtarefa(true)}
           style={{ paddingLeft: 50 + nivel * 18 }}
         >

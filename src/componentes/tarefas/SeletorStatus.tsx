@@ -3,11 +3,9 @@
 import { useTransition } from 'react'
 import { Ic } from '@/componentes/app/Ic'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
-import { iconeDoStatus } from '@/dominio/status-icone'
 import type { StatusLista } from '@/dominio/tarefas'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
-import { IconeStatus } from './IconeStatus'
 
 export function SeletorStatus({
   tarefaId,
@@ -29,9 +27,8 @@ export function SeletorStatus({
         data-redondo={comNome ? undefined : true}
         aria-label={`Status: ${atual?.nome ?? ''}`}
         title={atual?.nome}
-        style={comNome ? { background: `color-mix(in srgb, ${atual?.cor ?? '#8b8b94'} 16%, transparent)` } : undefined}
       >
-        {comNome ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: atual?.cor ?? '#8b8b94' }} /><span>{atual?.nome ?? '—'}</span></> : <IconeStatus info={iconeDoStatus(opcoes, statusId)} cor={atual?.cor ?? '#8b8b94'} tracejado={false} />}
+        {comNome ? <span className="selo-status" data-pendente={atual?.categoria === 'todo' || undefined} style={{ background: atual?.categoria === 'todo' ? undefined : atual?.cor ?? '#8b8b94' }}><span aria-hidden="true" />{atual?.nome ?? '—'}</span> : <CirculoStatus opcoes={opcoes} statusId={statusId} cor={atual?.cor ?? '#8b8b94'} />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Status</DropdownMenuLabel>
@@ -47,5 +44,17 @@ export function SeletorStatus({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** Círculo de 14px: aro na cor do status, preenchido por dentro conforme o status avança; no último, disco com visto. */
+function CirculoStatus({ opcoes, statusId, cor }: { opcoes: StatusLista[]; statusId: string; cor: string }) {
+  const i = Math.max(0, opcoes.findIndex((s) => s.id === statusId))
+  const ultimo = opcoes.length > 1 && i === opcoes.length - 1
+  const p = opcoes.length > 1 ? (i / (opcoes.length - 1)) * 100 : 0
+  return (
+    <span className="circulo-status" style={{ '--c': cor, '--p': `${p}%` } as React.CSSProperties}>
+      {ultimo && <span className="circulo-status-ok"><Ic n="check" s={11} w={700} /></span>}
+    </span>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { Ic } from '@/componentes/app/Ic'
 import { useOptimistic, useState, useTransition } from 'react'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -11,7 +12,7 @@ import { avisar } from './avisar'
 export function Prazo({ prazo, horario, concluida, hoje }: { prazo: string | null; horario?: string | null; concluida: boolean; hoje: string }) {
   if (!prazo) return <span>—</span>
   const atrasada = !concluida && prazo < hoje
-  return <span>{formatarPrazo(prazo, horario)}</span>
+  return <span className="prazo" data-atrasada={atrasada || undefined}><Ic n="event" s={15} />{formatarPrazo(prazo, horario)}</span>
 }
 
 /**

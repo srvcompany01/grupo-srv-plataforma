@@ -4,7 +4,7 @@ export type LimiteColuna = { largura: number; minima: number; maxima: number }
 export const COLUNAS_PADRAO = [
   { id: 'responsavel', nome: 'Responsável', padrao: true, largura: 110, minima: 80, maxima: 320 },
   { id: 'prazo', nome: 'Vencimento', padrao: true, largura: 156, minima: 92, maxima: 260 },
-  { id: 'prioridade', nome: 'Prioridade', padrao: true, largura: 44, minima: 36, maxima: 120 },
+  { id: 'prioridade', nome: 'Prioridade', padrao: true, largura: 100, minima: 36, maxima: 120 },
   { id: 'status', nome: 'Status', padrao: false, largura: 150, minima: 110, maxima: 320 },
   { id: 'tagcliente', nome: 'Tag do cliente', padrao: false, largura: 150, minima: 100, maxima: 320 },
   { id: 'etiquetas', nome: 'Etiquetas', padrao: false, largura: 180, minima: 100, maxima: 480 },

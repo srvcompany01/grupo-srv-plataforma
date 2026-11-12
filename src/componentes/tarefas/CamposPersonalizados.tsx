@@ -1,5 +1,6 @@
 'use client'
 
+import { Ic } from '@/componentes/app/Ic'
 import { ChevronDown, ExternalLink, Save } from 'lucide-react'
 import { useState, useTransition, type ReactNode } from 'react'
 import { salvarValorCampo } from '@/app/(app)/acoes-campos'
@@ -18,8 +19,25 @@ function paraTexto(valor: Json | null | undefined) {
   return valor == null ? '' : String(valor)
 }
 
+/** Ícone de cada valor da Máquina de Conteúdo (protótipo da Leva 1); os demais valores usam um ponto na cor da opção. */
+const ICONE_OPCAO: Record<string, [string, string]> = {
+  'Desejo': ['favorite', '#e11d48'], 'Autoridade': ['school', '#7c3aed'], 'Identificação': ['diversity_3', '#e0620d'], 'Transformação': ['autorenew', '#1d6fe0'],
+  'Prova Social': ['groups', '#0d9488'], 'Curiosidade': ['visibility', '#b45309'], 'Crescer Seguidores': ['trending_up', '#16a34a'], 'Gerar Autoridade': ['workspace_premium', '#7c3aed'],
+  'Gerar Venda': ['payments', '#e08a00'], 'Engajamento': ['favorite', '#db2777'], 'Alcance': ['donut_large', '#1d6fe0'], 'Conversão': ['shopping_bag', '#16a34a'],
+  'Institucional': ['apartment', '#71717a'], 'Fria': ['ac_unit', '#1d6fe0'], 'Quente': ['local_fire_department', '#e0620d'], 'Reels': ['movie', '#d80d12'],
+  'Carrossel': ['view_carousel', '#7c3aed'], 'Estático': ['image', '#0d9488'], 'Stories': ['amp_stories', '#db2777'],
+}
+const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+const ICONE_POR_CHAVE = new Map(Object.entries(ICONE_OPCAO).map(([k, v]) => [semAcento(k), v]))
+
 function Pilula({ nome, cor }: { nome: string; cor: string }) {
-  return <span style={{ background: `${cor}22` }}><span style={{ background: cor }} /><span>{nome}</span></span>
+  const ic = ICONE_POR_CHAVE.get(semAcento(nome))
+  return (
+    <span className="pilula-opcao">
+      {ic ? <Ic n={ic[0]} s={15} fill style={{ color: ic[1] }} /> : <span className="pilula-opcao-ponto" style={{ background: cor }} />}
+      <span>{nome}</span>
+    </span>
+  )
 }
 
 /** Escolha de opções coloridas: uma (lista suspensa) ou várias (rótulos). */

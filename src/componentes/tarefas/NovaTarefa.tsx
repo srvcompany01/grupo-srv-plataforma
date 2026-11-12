@@ -35,7 +35,7 @@ export function NovaTarefa({
 
   if (!aberta) {
     return (
-      <button onClick={() => setAberta(true)} style={{ paddingLeft: recuo ?? 50 }}>
+      <button className="ls-adicionar" onClick={() => setAberta(true)} style={{ paddingLeft: recuo ?? 50 }}>
         <Ic n="add" s={16} /> {paiId ? 'Adicionar subtarefa' : 'Adicionar tarefa'}
       </button>
     )
@@ -50,6 +50,7 @@ export function NovaTarefa({
           onCriada?.()
         })
       }}
+      className="ls-nova"
       style={{ paddingLeft: recuo ?? 50 }}
     >
       <input

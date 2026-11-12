@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import './lista.css'
 import { notFound } from 'next/navigation'
 import { ListaConteudoToggle } from '@/componentes/conteudo/ListaConteudoToggle'
 import { NovoPostDialog } from '@/componentes/conteudo/NovoPostDialog'
@@ -123,9 +124,9 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
   const coresStatus = Object.fromEntries(lista.status.map((item) => [item.id, item.cor]))
 
   return (
-    <div>
-      <div style={{ height: 40, padding: '0 10px 0 12px' }}>
-        <nav aria-label="Localização da lista" style={{ gap: 2, flexBasis: 160 }}>
+    <div className="ls-pagina">
+      <div className="ls-topo">
+        <nav aria-label="Localização da lista" className="ls-caminho">
           {lista.espaco.id ? (
             <Link href={`/espacos/${lista.espaco.id}`} className="hidden md:inline-flex" style={{ height: 24, padding: '0 6px', borderRadius: 4 }}>
               <span style={{ width: 16, height: 16, borderRadius: 4, background: lista.espaco.cor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="check_circle" s={12} fill w={500} /></span>
@@ -141,7 +142,7 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
           <EstrelaLista listaId={id} favorita={favorita} />
           <MenuLista listaId={id} nome={lista.nome} podeGerir={lista.podeGerir} />
         </nav>
-        <div>
+        <div className="ls-topo-acoes">
           <div className="hidden xl:flex">
             {membrosDoEspaco.slice(0, 2).map((m, i) => (
               <span key={m.id} title={m.nome} style={{ width: 22, height: 22, marginLeft: i ? -6 : 0, borderRadius: '50%', background: i ? '#0d9488' : '#d80d12', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>{m.nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
@@ -159,19 +160,19 @@ export async function PaginaLista({ id, caminho, sp, rotuloPainel }: { id: strin
       </div>
       {abas && vistaAtual ? <AbasDaLista listaId={id} caminho={caminho} visoes={abas} atualId={vistaAtual.id} euId={eu.id} podeGerir={lista.podeGerir} /> : <AlternadorVisao caminho={caminho} filtros={filtros} visoes={['lista', 'calendario', 'kanban', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']} abas />}
       {filtros.visao !== 'documentos' && filtros.visao !== 'painel' && (
-      <div style={{ height: 44, padding: '0 10px 0 12px', color: 'var(--text-2)' }}>
-        <div style={{ scrollbarWidth: 'none' }}>
+      <div className="ls-barra">
+        <div className="ls-barra-in">
           <BarraFiltros filtros={filtros} equipe={equipe} status={lista.status} tags={tags} comAgrupamento={filtros.visao === 'lista'} camposAgrupaveis={camposAgrupaveis.map((campo) => ({ id: campo.id, nome: campo.nome }))} />
           <FiltrosSalvos listaId={id} filtros={filtros} salvos={filtrosSalvos} />
           <ModoEu caminho={caminho} filtros={filtros} euId={eu.id} />
           <PainelVisao caminho={caminho} filtros={filtros} euId={eu.id} camposAgrupaveis={camposAgrupaveis.map((c) => ({ id: c.id, nome: c.nome }))} />
           <SalvarVisao listaId={id} caminho={caminho} params={atual} alterada={alterada} temSalva={vistaAtual ? vistaAtual.params !== '' : salva !== null} vistaId={vistaAtual?.id} />
           {tipo === 'conteudo' && (<><div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px', flex: 'none' }} /><NovoPostDialog listaId={id} clientes={tagsCliente.map((c) => ({ id: c.id, nome: c.nome }))} maes={maes} /></>)}
-          <div><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
+          <div className="ls-criar"><CriarTarefaTopo listaId={id} euId={eu.id} status={lista.status} modelos={modelosDeTarefa} /></div>
         </div>
       </div>
       )}
-      <main>
+      <main className="ls-corpo">
         {filtros.visao === 'lista' && <VisaoLista grupos={grupos} ctx={ctx} criarEm={agrupamento === 'status' || agrupamento === 'nenhum' ? id : undefined} euId={eu.id} chaveLarguras={`lista:${id}`} />}
         {filtros.visao === 'calendario' && <VisaoCalendario tarefas={tarefas} hoje={hoje} mesInicial={lista.mes} coresStatus={coresStatus} caminho={caminho} filtros={filtros} campos={camposDaLista} equipe={equipe} />}
         {filtros.visao === 'tabela' && <VisaoTabela tarefas={arvore} ctx={ctx} />}

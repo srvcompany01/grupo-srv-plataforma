@@ -1,5 +1,4 @@
 import { textoSobreCor, type IconeStatusInfo } from '@/dominio/status-icone'
-import { IconeStatus } from './IconeStatus'
 
 /**
  * Título de um grupo (status, prioridade, mês, cliente…): pílula compacta, em maiúsculas, na cor do grupo.
@@ -11,12 +10,13 @@ export function EtiquetaGrupo({ nome, cor, icone, contagem }: { nome: string; co
   return (
     <span>
       <span
-        style={claro ? { background: `${cor}29`, color: texto } : { background: cor, color: texto }}
+        className="etiqueta-grupo"
+        style={claro ? { background: 'var(--bg-active)', color: 'var(--text-2)' } : { background: cor, color: texto }}
       >
-        {icone && <IconeStatus info={icone} cor={claro ? cor : texto} fundo={claro ? '#ffffff' : cor} />}
+        <span className="etiqueta-grupo-aro" aria-hidden="true" />
         <span>{nome}</span>
       </span>
-      {contagem !== undefined && <span>{contagem}</span>}
+      {contagem !== undefined && <span className="etiqueta-grupo-n">{contagem}</span>}
     </span>
   )
 }

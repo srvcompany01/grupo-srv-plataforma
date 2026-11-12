@@ -11,7 +11,7 @@ export function IconeStatus({ info, cor, fundo = '#ffffff', className = 'h-3.5 w
   const x = 8 + raio * Math.sin(ang)
   const y = 8 - raio * Math.cos(ang)
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={className} width={14} height={14}>
       {categoria === 'done' ? (
         <>
           <circle cx="8" cy="8" r="7" fill={cor} />

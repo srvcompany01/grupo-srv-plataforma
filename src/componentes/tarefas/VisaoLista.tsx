@@ -55,11 +55,12 @@ function CabecalhoColuna({ children, colunaId, className = '', onPointerDown, on
   onReset: (id: string) => void
 }) {
   return (
-    <span>
+    <span className="ls-cab-col">
       <span>{children}</span>
       <button
         type="button"
         role="separator"
+        className="ls-redim"
         aria-orientation="vertical"
         aria-label={`Redimensionar coluna ${typeof children === 'string' ? children : colunaId}`}
         title="Arraste para redimensionar. Duplo clique restaura a largura."
@@ -383,9 +384,9 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   ) : null
 
   return (
-    <div ref={(el) => { raiz.current = el; definirRaiz(el) }}>
+    <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="ls">
       {faixa && !selecionadas.size && (
-        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa>
+        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="ls-lote">
           <span>
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
@@ -402,7 +403,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       )}
       {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
-        <div>
+        <div className="ls-lote">
           <span>{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
           <button type="button" disabled={excluindo} onClick={excluirSelecionadas}><Trash2 />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
@@ -424,14 +425,14 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       />
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {colunasOcultas && grupos[0]?.semCabecalho && <div>{colunasOcultas}</div>}
-      <div>
+      <div className="ls-rolagem">
         <div style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
-        <section key={g.id} style={{ marginTop: indice === 0 ? 0 : 4 }}>
+        <section key={g.id} className="ls-grupo">
           {!g.semCabecalho && (
-            <div>
+            <div className="ls-grupo-cab">
               <button onClick={() => alternar(g.id)}>
-                <span style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
+                <span className="ls-chev"><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
                 <EtiquetaGrupo nome={g.nome} cor={g.cor} icone={g.icone} contagem={g.tarefas.length} />
               </button>
               <span />
@@ -441,7 +442,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+              <div className="ls-cab" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
                 <span><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" /></span><span /><span />
                 <CabecalhoColuna colunaId="nome" {...propsRedimensionamento}>Nome</CabecalhoColuna>
                 {colunas.map((colunaId) => {

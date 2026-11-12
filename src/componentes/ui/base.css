@@ -137,3 +137,39 @@
 [data-slot='dropdown-menu-content'] form > button svg { width: 16px; height: 16px; }
 [data-slot='dropdown-menu-label'] p { margin: 0; }
 [data-slot='dropdown-menu-label'] p + p { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+/* Avatar de pessoa (iniciais sobre a cor da pessoa); tamanho vem das classes de altura e largura do Tailwind. */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; border-radius: 50%;
+  color: #fff; font-size: 10px; font-weight: 700; box-shadow: 0 0 0 2px var(--bg);
+}
+/* Cliente = bolinha + pílula com o nome em negrito azul. */
+.chip-cliente { display: inline-flex; align-items: center; gap: 6px; flex: none; min-width: 0; max-width: 100%; }
+/* Etiqueta de grupo (status, prioridade, mês…): selo 22px, maiúsculas, aro de 10px. */
+.etiqueta-grupo {
+  height: 22px; display: inline-flex; align-items: center; gap: 5px; padding: 0 9px 0 6px; border-radius: var(--r-tag);
+  font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
+}
+.etiqueta-grupo-aro { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 2px solid currentColor; }
+.etiqueta-grupo-n { margin-left: 6px; font-size: 12px; color: var(--text-3); }
+
+/* Círculo de status (14px): aro na cor, preenchimento cônico animado conforme o status avança; último = disco com visto. */
+.circulo-status {
+  position: relative; width: 14px; height: 14px; flex: none; display: inline-block; border-radius: 50%;
+  border: 2px solid var(--c); background: conic-gradient(var(--c) var(--p), transparent 0); transition: --p 450ms ease;
+}
+.circulo-status-ok { position: absolute; inset: -2px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c); color: #fff; animation: srv-pop 320ms ease-out; }
+/* Selo de status (22px, maiúsculas, aro de 10px): fundo na cor do status; Pendente em cinza. */
+.selo-status {
+  height: 22px; display: inline-flex; align-items: center; gap: 5px; padding: 0 9px 0 6px; border-radius: var(--r-tag);
+  color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
+}
+.selo-status[data-pendente] { background: var(--bg-active); color: var(--text-2); }
+.selo-status > span { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 2px solid currentColor; }
+/* Pílula de valor de campo (Gatilho, Objetivo, Pauta, Formato…). */
+.pilula-opcao { background: var(--bg-subtle); height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: var(--r-tag); font-size: 13px; white-space: nowrap; }
+.pilula-opcao-ponto { width: 8px; height: 8px; flex: none; border-radius: 50%; }
+/* Vencimento: atrasado em vermelho. */
+.prazo { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--text-2); }
+.prazo > span[aria-hidden] { color: var(--text-3); }
+.prazo[data-atrasada], .prazo[data-atrasada] > span[aria-hidden] { color: var(--red); }

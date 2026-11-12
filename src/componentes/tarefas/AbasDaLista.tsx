@@ -98,8 +98,8 @@ export function AbasDaLista({ listaId, caminho, visoes, atualId, euId, podeGerir
 
   return (
     <>
-      <nav role="tablist" aria-label="Visualizações da lista">
-        <div>
+      <nav role="tablist" aria-label="Visualizações da lista" className="ls-abas">
+        <div className="ls-abas-capsula">
         <Link href={`/listas/${listaId}/canal`}><IconeVisao visao="canal" />Canal</Link>
         {fixadas.map((v) => tab(v, false))}
         <DndContext id={idDnd} sensors={sensores} collisionDetection={closestCenter} onDragEnd={soltar}>

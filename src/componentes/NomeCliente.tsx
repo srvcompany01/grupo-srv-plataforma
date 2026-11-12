@@ -17,7 +17,7 @@ const iniciais = (nome: string) => nome.split(/\s+/).filter(Boolean).slice(0, 2)
 /** Cliente em "bolinha + pílula": avatar redondo de 22px (iniciais sobre a cor do cliente; no futuro, a logo) e a pílula com o nome em negrito azul. */
 export function ChipCliente({ nome, cor = '#87909e', className = '' }: { nome: string; cor?: string; className?: string }) {
   return (
-    <span>
+    <span className={`chip-cliente ${className}`}>
       <span title={nome} aria-hidden="true" style={{ width: 22, height: 22, flex: 'none', borderRadius: '50%', background: cor, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--bg), 0 0 0 3px var(--border-soft)' }}>{iniciais(nome)}</span>
       <span style={{ height: 22, display: 'inline-flex', alignItems: 'center', padding: '0 10px', borderRadius: 999, background: 'var(--client-soft)', color: 'var(--client)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>{nome}</span>
     </span>
