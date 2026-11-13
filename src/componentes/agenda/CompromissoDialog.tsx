@@ -77,18 +77,18 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
   return (
     <Dialog open={aberto} onOpenChange={(a) => { setAberto(a); if (a && compromisso) setF(paraEntrada(compromisso)) }}>
       {compromisso ? (
-        <DialogTrigger style={estilo}>{children}</DialogTrigger>
+        <DialogTrigger className={className} style={estilo}>{children}</DialogTrigger>
       ) : (
-        <DialogTrigger><Plus /> Novo compromisso</DialogTrigger>
+        <DialogTrigger className="ag-novo"><Plus /> Compromisso</DialogTrigger>
       )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{compromisso ? (podeEditar ? 'Editar compromisso' : 'Compromisso') : 'Novo compromisso'}</DialogTitle>
           <DialogDescription>{podeEditar ? 'Quem vê o compromisso também o recebe no Google Agenda, se tiver conectado.' : 'Só quem criou pode alterar este compromisso.'}</DialogDescription>
         </DialogHeader>
-        <fieldset disabled={!podeEditar || pendente}>
+        <fieldset className="ag-form" disabled={!podeEditar || pendente}>
           <input value={f.titulo} onChange={(e) => mudar({ titulo: e.target.value })} placeholder="Título (ex.: Reunião de pauta)" maxLength={120} autoFocus aria-label="Título" />
-          <div>
+          <div className="ag-linha">
           <label>
             Categoria
             <select value={f.categoriaId ?? ''} onChange={(e) => mudar({ categoriaId: e.target.value || null })}>
@@ -104,7 +104,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
             </select>
           </label>
           </div>
-          <div>
+          <div className="ag-bloco">
             <p>Tags</p>
             {todasTags.length > 0 && (
               <div>
@@ -130,7 +130,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
               </div>
             )}
           </div>
-          <div>
+          <div className="ag-linha">
             <label>
               Data
               <input type="date" value={f.data} onChange={(e) => mudar({ data: e.target.value })} />
@@ -148,10 +148,10 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
               </>
             )}
           </div>
-          <label>
+          <label className="ag-check">
             <input type="checkbox" checked={f.diaInteiro} onChange={(e) => mudar({ diaInteiro: e.target.checked })} /> Dia inteiro
           </label>
-          <div>
+          <div className="ag-linha">
             <label>
               Repetir (compromisso fixo)
               <select value={f.repetir} onChange={(e) => mudar({ repetir: e.target.value as EntradaCompromisso['repetir'] })}>
@@ -165,7 +165,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
               </label>
             )}
           </div>
-          <div>
+          <div className="ag-bloco">
             <p>Quem vê</p>
             <div role="group" aria-label="Quem vê">
               {visibilidades.map((v) => (
@@ -177,7 +177,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
             {!podeCompartilhar && !compromisso && <p>Compromissos para a equipe são criados pelo admin ou gestor.</p>}
           </div>
           {f.visibilidade === 'selecionados' && (
-            <div>
+            <div className="ag-pessoas">
               {equipe.map((p) => (
                 <label key={p.id}>
                   <input type="checkbox" checked={f.pessoas.includes(p.id)} onChange={() => alternarPessoa(p.id)} /> {p.nome}
@@ -188,7 +188,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
           <textarea value={f.descricao} onChange={(e) => mudar({ descricao: e.target.value })} placeholder="Descrição, link da reunião…" maxLength={2000} aria-label="Descrição" />
         </fieldset>
         {podeEditar && (
-          <div>
+          <div className="ag-rodape">
             {compromisso ? (
               <div>
                 <button type="button" disabled={pendente} onClick={excluir}>{compromisso.repetir === 'nunca' ? 'Excluir' : 'Excluir todos'}</button>

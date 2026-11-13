@@ -15,6 +15,7 @@ import { listarClientes } from '@/servicos/clientes-plataforma'
 import { eventosDoGoogle, googleConfigurado, statusGoogle } from '@/servicos/google-agenda'
 import { listarEquipe } from '@/servicos/usuarios'
 import { NomeCliente } from '@/componentes/NomeCliente'
+import './agenda.css'
 
 type Visao = 'dia' | 'semana' | 'mes'
 
@@ -107,11 +108,11 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   /** Abre o compromisso (ou o evento no Google). O conteúdo e o estilo mudam conforme a visão. */
   const abrir = (o: Ocorrencia, className: string, estilo: CSSProperties, conteudo: ReactNode) =>
     o.compromisso ? (
-      <CompromissoDialog {...dialogo} compromisso={o.compromisso} dia={dataLocal(o.inicio)} podeEditar={podeMexer(o.compromisso.criadoPor)} estilo={estilo}>
+      <CompromissoDialog {...dialogo} compromisso={o.compromisso} dia={dataLocal(o.inicio)} podeEditar={podeMexer(o.compromisso.criadoPor)} className={className} estilo={estilo}>
         {conteudo}
       </CompromissoDialog>
     ) : (
-      <a href={o.google!.link} target="_blank" rel="noreferrer" style={estilo} title="Evento do seu Google Agenda">
+      <a href={o.google!.link} target="_blank" rel="noreferrer" className={className} style={estilo} title="Evento do seu Google Agenda">
         {conteudo}
       </a>
     )
@@ -119,9 +120,9 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Dia: lista ----------
   const visaoDia = () => {
     const lista = doDia(todas, data)
-    if (!lista.length) return <p>Nenhum compromisso neste dia.</p>
+    if (!lista.length) return <p className="ag-vazio">Nenhum compromisso neste dia.</p>
     return (
-      <ul>
+      <ul className="ag-dia">
         {lista.map((o) => {
           const c = o.compromisso
           const categoria = c?.categoriaId ? categoriaPorId.get(c.categoriaId) : undefined
@@ -131,21 +132,21 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
           const criador = c && (c.criadoPor === eu.id ? 'você' : nomes.get(c.criadoPor) ?? 'outra pessoa')
           return (
             <li key={o.id}>
-              {abrir(o, 'flex w-full gap-3 px-3 py-2.5 text-left hover:bg-hover', {}, (
+              {abrir(o, 'ag-dia-item', {}, (
                 <>
-                  <span>{horario(o)}</span>
-                  <span style={{ background: corDe(o) }} />
-                  <span>
-                    <span>{o.titulo}</span>
-                    <span>
+                  <span className="ag-dia-hora">{horario(o)}</span>
+                  <span className="ag-dia-cor" style={{ background: corDe(o) }} />
+                  <span className="ag-dia-corpo">
+                    <span className="ag-dia-titulo">{o.titulo}</span>
+                    <span className="ag-dia-meta">
                       {categoria && <span style={{ color: categoria.cor }}>{categoria.nome}</span>}
                       {cliente && <NomeCliente nome={cliente} />}
                       {Icone && <span><Icone /> criado por {criador}</span>}
                       {!c && <span>Google Agenda</span>}
                     </span>
-                    {c?.descricao && <span>{c.descricao}</span>}
+                    {c?.descricao && <span className="ag-dia-desc">{c.descricao}</span>}
                     {tagsDoItem.length > 0 && (
-                      <span>
+                      <span className="ag-dia-tags">
                         {tagsDoItem.map((t) => <span key={t.id} style={{ background: t.cor }}>{t.nome}</span>)}
                       </span>
                     )}
@@ -162,87 +163,87 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   // ---------- Semana: grade de horas ----------
   const minutosAgora = (agora.getTime() - instante(hoje).getTime()) / 60_000
   const visaoSemana = () => (
-    <div>
-      <div>
-        <div>
-          <span />
-          {dias.map((dia, i) => (
-            <Link key={dia} href={url({ visao: 'dia', data: dia })} style={{ height: 48 }}>
-              <span>{SEMANA[i]}</span>
-              <span>{Number(dia.slice(8))}</span>
-            </Link>
-          ))}
-        </div>
-        <div>
-          <span>Tarefas</span>
-          {dias.map((dia) => (
-            <ul key={dia}>
-              {doDia(todas, dia).filter((o) => o.diaInteiro).map((o) => (
-                <li key={o.id}>{abrir(o, 'block w-full truncate rounded px-1 py-0.5 text-left text-micro font-medium text-claro', { background: corDe(o) }, o.titulo)}</li>
-              ))}
-            </ul>
-          ))}
-        </div>
-        <RolarAoAbrir topo={7 * HORA_PX}>
-          <div style={{ height: 24 * HORA_PX }}>
-            <div>
-              {HORAS.slice(1).map((h) => <span key={h} style={{ top: h * HORA_PX }}>{String(h).padStart(2, '0')}:00</span>)}
-            </div>
-            {dias.map((dia) => (
-              <div key={dia}>
-                {HORAS.slice(1).map((h) => <span key={h} style={{ top: h * HORA_PX }} />)}
-                {blocosDoDia(todas, dia).map((b) => {
-                  const cor = corDe(b.ocorrencia)
-                  const altura = Math.max(((b.ate - b.de) / 60) * HORA_PX, 18)
-                  const estilo: CSSProperties = {
-                    top: (b.de / 60) * HORA_PX,
-                    height: altura - 2,
-                    left: `calc(${(b.coluna / b.colunas) * 100}% + 2px)`,
-                    width: `calc(${100 / b.colunas}% - 4px)`,
-                    background: `color-mix(in srgb, ${cor} 16%, transparent)`,
-                    border: `1px solid color-mix(in srgb, ${cor} 45%, transparent)`,
-                    borderLeftColor: cor,
-                  }
-                  return (
-                    <div key={b.ocorrencia.id}>
-                      {abrir(b.ocorrencia, 'absolute overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left hover:brightness-95', estilo, (
-                        <>
-                          <span>{b.ocorrencia.titulo}</span>
-                          {altura >= 34 && <span>{horario(b.ocorrencia)}</span>}
-                        </>
-                      ))}
-                    </div>
-                  )
-                })}
-                {dia === hoje && (
-                  <span style={{ top: (minutosAgora / 60) * HORA_PX }}>
-                    <span />
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </RolarAoAbrir>
+    <div className="ag-semana">
+      <div className="ag-grade ag-cab">
+        <span />
+        {dias.map((dia, i) => (
+          <Link key={dia} href={url({ visao: 'dia', data: dia })} data-hoje={dia === hoje ? '' : undefined}>
+            <span>{SEMANA[i]}</span>
+            <span>{Number(dia.slice(8))}</span>
+          </Link>
+        ))}
       </div>
+      <div className="ag-grade ag-tarefas">
+        <span>Tarefas</span>
+        {dias.map((dia) => (
+          <ul key={dia}>
+            {doDia(todas, dia).filter((o) => o.diaInteiro).map((o) => (
+              <li key={o.id}>{abrir(o, 'ag-chip', { background: corDe(o) }, o.titulo)}</li>
+            ))}
+          </ul>
+        ))}
+      </div>
+      <RolarAoAbrir topo={7 * HORA_PX - 12} className="ag-rolagem">
+        <div className="ag-grade ag-horas" style={{ height: 24 * HORA_PX }}>
+          <div className="ag-regua">
+            {HORAS.slice(1).map((h) => <span key={h} style={{ top: h * HORA_PX }}>{String(h).padStart(2, '0')}:00</span>)}
+          </div>
+          {dias.map((dia) => (
+            <div key={dia} className="ag-coluna" data-hoje={dia === hoje ? '' : undefined}>
+              {HORAS.slice(1).map((h) => <span key={h} className="ag-linha-hora" style={{ top: h * HORA_PX }} />)}
+              {blocosDoDia(todas, dia).map((b) => {
+                const cor = corDe(b.ocorrencia)
+                const altura = Math.max(((b.ate - b.de) / 60) * HORA_PX, 18)
+                const cliente = b.ocorrencia.compromisso?.clienteId ? nomeCliente.get(b.ocorrencia.compromisso.clienteId) : undefined
+                const estilo: CSSProperties = {
+                  top: (b.de / 60) * HORA_PX,
+                  height: altura - 2,
+                  left: `calc(${(b.coluna / b.colunas) * 100}% + 2px)`,
+                  width: `calc(${100 / b.colunas}% - 4px)`,
+                  background: `color-mix(in srgb, ${cor} 16%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${cor} 45%, transparent)`,
+                  borderLeftColor: cor,
+                }
+                return (
+                  <div key={b.ocorrencia.id}>
+                    {abrir(b.ocorrencia, 'ag-evento', estilo, (
+                      <>
+                        <span className="ag-ev-titulo">{b.ocorrencia.titulo}</span>
+                        {altura >= 48 && cliente && <span className="ag-ev-cliente">{cliente}</span>}
+                        {altura >= 34 && <span className="ag-ev-hora">{horario(b.ocorrencia)}</span>}
+                      </>
+                    ))}
+                  </div>
+                )
+              })}
+              {dia === hoje && (
+                <span className="ag-agora" style={{ top: (minutosAgora / 60) * HORA_PX }}>
+                  <span />
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </RolarAoAbrir>
     </div>
   )
 
   // ---------- Mês ----------
   const visaoMes = () => (
-    <div>
-      {SEMANA.map((d) => <div key={d}>{d}</div>)}
+    <div className="ag-mes">
+      {SEMANA.map((d) => <div key={d} className="ag-mes-sem">{d}</div>)}
       {dias.map((dia) => {
         const lista = doDia(todas, dia)
         const fora = !dia.startsWith(mes)
         return (
-          <div key={dia}>
+          <div key={dia} className="ag-mes-dia" data-fora={fora ? '' : undefined} data-hoje={dia === hoje ? '' : undefined}>
             <Link href={url({ visao: 'dia', data: dia })}>
               {Number(dia.slice(8))}
             </Link>
             <ul>
               {lista.slice(0, 3).map((o) => (
                 <li key={o.id}>
-                  {abrir(o, 'flex w-full min-w-0 items-center gap-1 rounded px-0.5 text-left hover:bg-hover', o.diaInteiro ? { background: corDe(o) } : {}, (
+                  {abrir(o, 'ag-mes-item', o.diaInteiro ? { background: corDe(o) } : {}, (
                     o.diaInteiro ? (
                       <span>{o.titulo}</span>
                     ) : (
@@ -255,7 +256,7 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
                 </li>
               ))}
             </ul>
-            {lista.length > 3 && <Link href={url({ visao: 'dia', data: dia })}>+{lista.length - 3} mais</Link>}
+            {lista.length > 3 && <Link className="ag-mais" href={url({ visao: 'dia', data: dia })}>+{lista.length - 3} mais</Link>}
           </div>
         )
       })}
@@ -263,21 +264,20 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
   )
 
   return (
-    <div>
-      <header>
-        <div>
-          <h1><CalendarDays /> Agenda</h1>
+    <div className="ag">
+      <header className="ag-topo">
+        <div className="ag-topo-esq">
+          <h1><CalendarDays /> {titulo}</h1>
           <nav aria-label="Período">
             <Link href={url({ data: passo(-1) })} aria-label="Anterior"><ChevronLeft /></Link>
             <Link href={url({ data: hoje })}>Hoje</Link>
             <Link href={url({ data: passo(1) })} aria-label="Próximo"><ChevronRight /></Link>
           </nav>
-          <span>{titulo}</span>
         </div>
-        <div>
-          <nav aria-label="Visão">
+        <div className="ag-topo-dir">
+          <nav aria-label="Visão" className="ag-visoes">
             {VISOES.map((v) => (
-              <Link key={v.valor} href={url({ visao: v.valor })}>{v.rotulo}</Link>
+              <Link key={v.valor} href={url({ visao: v.valor })} aria-current={v.valor === visao ? 'page' : undefined}>{v.rotulo}</Link>
             ))}
           </nav>
           {googleConfigurado() && <BotaoGoogle email={google ? google.email : null} />}
@@ -285,8 +285,8 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
         </div>
       </header>
 
-      <div>
-        <aside>
+      <div className="ag-corpo">
+        <aside className="ag-lado">
           <PainelEtiquetas
             tipo="categoria"
             titulo="Categorias"
@@ -297,14 +297,14 @@ export default async function Agenda({ searchParams }: PageProps<'/agenda'>) {
             ]}
           />
           <PainelEtiquetas tipo="tag" titulo="Tags" linhas={tags.map((t) => ({ item: t, podeExcluir: podeMexer(t.criadoPor) }))} />
-          <p>
+          <p className="ag-legenda">
             <span><Lock /> só você</span>
             <span><Users /> toda a equipe</span>
             <span><UserCheck /> pessoas selecionadas</span>
           </p>
         </aside>
-        <main>
-          {aviso && <p>{aviso}</p>}
+        <main className="ag-principal">
+          {aviso && <p className="ag-aviso">{aviso}</p>}
           {visao === 'dia' ? visaoDia() : visao === 'semana' ? visaoSemana() : visaoMes()}
         </main>
       </div>

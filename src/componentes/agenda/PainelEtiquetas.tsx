@@ -41,7 +41,7 @@ export function PainelEtiquetas({ tipo, titulo, linhas, extras = [] }: { tipo: '
     )
 
   return (
-    <div>
+    <div className="ag-painel">
       <p>{titulo}</p>
       <ul>
         {linhas.map(({ item, podeExcluir, href, visivel }) => (
@@ -69,7 +69,7 @@ export function PainelEtiquetas({ tipo, titulo, linhas, extras = [] }: { tipo: '
         ))}
         {linhas.length === 0 && extras.length === 0 && <li>Nenhuma ainda.</li>}
       </ul>
-      <div>
+      <div className="ag-nova">
         <div>
           <input value={nome} onChange={(e) => setNome(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && nome.trim()) criar() }} placeholder={tipo === 'tag' ? 'Nova tag' : 'Nova categoria'} maxLength={40} aria-label={`Nome da nova ${rotulo}`} />
           <button type="button" onClick={criar} disabled={pendente || !nome.trim()}>Criar</button>

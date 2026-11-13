@@ -8,5 +8,5 @@ export function RolarAoAbrir({ topo, className, children }: { topo: number; clas
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = topo
   }, [topo])
-  return <div ref={ref}>{children}</div>
+  return <div ref={ref} className={className}>{children}</div>
 }
