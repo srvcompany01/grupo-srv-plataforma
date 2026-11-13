@@ -12,6 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Ic } from './Ic'
 import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
+import { PainelAtalhos } from './PainelAtalhos'
+import { painelDoCaminho } from './paineis'
 import { MenuPerfil } from './MenuPerfil'
 import { ICONE_MS, atalhosDoInicio, type Atalho } from './atalhos'
 import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
@@ -298,6 +300,13 @@ function gravarPreferencia(chave: string, valor: string) {
   document.cookie = `${chave}=${valor}; path=/; max-age=31536000; samesite=lax`
 }
 
+/** Painel do módulo aberto (opções e atalhos dele); fora dos módulos com painel próprio, o painel de Início (espaços). */
+export function PainelModulo(props: PropsPainel & { acaoTopo?: ReactNode; comAtalhos?: boolean }) {
+  const painel = painelDoCaminho(usePathname())
+  if (!painel) return <PainelEspacos {...props} />
+  return <PainelAtalhos painel={painel} papel={props.papel} canais={props.canais} chatNaoLidas={props.chatNaoLidas} cronometro={props.cronometro} acaoTopo={props.acaoTopo} />
+}
+
 /** Barra lateral do desktop, abaixo do cabeçalho: recolhível e redimensionável. */
 export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPainel & { modoInicial: ModoLateral; larguraInicial: number }) {
   const [modo, setModo] = useState(modoInicial)
@@ -384,7 +393,7 @@ export function BarraLateral({ modoInicial, larguraInicial, ...props }: PropsPai
         onFocus={recolhida ? abrir : undefined}
         onBlur={recolhida ? (evento) => !evento.currentTarget.contains(evento.relatedTarget) && fecharComAtraso() : undefined}
       >
-        <PainelEspacos
+        <PainelModulo
           {...props}
           acaoTopo={
             <button type="button" onClick={() => trocarModo(recolhida ? 'fixa' : 'recolhida')} aria-pressed={!recolhida} aria-label={recolhida ? 'Fixar barra lateral' : 'Desafixar barra lateral'} title={recolhida ? 'Fixar barra lateral' : 'Desafixar (recolhe sozinha e aparece ao passar o mouse na faixa)'} className="cs-mini" data-on={!recolhida || undefined}>

@@ -14,7 +14,7 @@ import type { Aviso } from '@/servicos/avisos'
 import { AlternarTema } from './AlternarTema'
 import { EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { GRUPOS_FAIXA, NO_TOPO, atalhosDoInicio, estaEm, type Atalho } from './atalhos'
-import { PainelEspacos, type PropsPainel } from './BarraLateral'
+import { PainelModulo, type PropsPainel } from './BarraLateral'
 import { Ic } from './Ic'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { MenuPerfil } from './MenuPerfil'
@@ -130,7 +130,7 @@ export function FaixaAtalhos({ avisos, naoLidos, euId, ...props }: PropsNavegaca
         <Sheet open={gavetaEm === caminho} onOpenChange={(aberta) => setGavetaEm(aberta ? caminho : null)}>
           <SheetContent side="left">
             <SheetTitle className="sr-only">Espaços</SheetTitle>
-            <PainelEspacos {...props} papel={papel} chatNaoLidas={chatNaoLidas} ordemInicio={ordemInicio} tema={tema} />
+            <PainelModulo {...props} papel={papel} chatNaoLidas={chatNaoLidas} ordemInicio={ordemInicio} tema={tema} />
           </SheetContent>
         </Sheet>
       </nav>

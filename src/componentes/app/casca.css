@@ -58,10 +58,11 @@
   border-radius: var(--r-conteudo); background: var(--bg);
 }
 
-/* ── Faixa de ícones ── */
+/* ── Faixa de ícones: preta, ícones vermelhos, sem efeitos ── */
 .cs-faixa {
-  width: 64px; flex: none; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0 10px;
-  border-radius: 22px; background: var(--rail-bg); box-shadow: var(--rail-shadow); color: #fff; overflow: hidden;
+  --faixa-fundo: #0b0b0c; --faixa-icone: #e5232a; --faixa-hover: #1c1c1f; --faixa-ativo: #d80d12;
+  width: 60px; flex: none; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0 10px;
+  border-radius: 20px; background: var(--faixa-fundo); color: var(--faixa-icone); overflow: hidden;
 }
 .cs-faixa-modulos {
   flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -69,22 +70,21 @@
 }
 .cs-faixa-modulos::-webkit-scrollbar { display: none; }
 .cs-faixa-modulos > div, .cs-faixa-modulos > div > div { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
-.cs-faixa-pe { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; }
+.cs-faixa-pe { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 8px; }
 .cs-faixa :is(.cs-faixa-modulos, .cs-faixa-pe) :is(a, button) {
-  position: relative; width: 46px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0;
-  border: 0; border-radius: 16px; background: transparent; color: #fff; text-decoration: none; cursor: pointer;
-  transition: background 140ms, color 140ms, box-shadow 180ms;
+  position: relative; width: 42px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0;
+  border: 0; border-radius: 14px; background: transparent; color: var(--faixa-icone); text-decoration: none; cursor: pointer;
+  transition: background var(--t-rapido);
 }
-.cs-faixa-pe :is(a, button) { width: 44px; border-radius: 14px; }
-.cs-faixa :is(.cs-faixa-modulos, .cs-faixa-pe) :is(a, button):hover { background: rgba(255, 255, 255, .16); }
-.cs-faixa :is(a, button) > svg { width: 23px; height: 23px; stroke-width: 1.5; }
-.cs-faixa :is(a, button) > span[aria-hidden] { font-size: 23px !important; font-variation-settings: 'wght' 300; }
-.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) { background: #fff; color: #d80d12; box-shadow: 0 4px 14px rgba(40, 0, 4, .28); }
+.cs-faixa :is(.cs-faixa-modulos, .cs-faixa-pe) :is(a, button):hover { background: var(--faixa-hover); }
+.cs-faixa :is(a, button) > svg { width: 22px; height: 22px; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.cs-faixa :is(a, button) > span[aria-hidden] { font-size: 22px !important; font-variation-settings: 'wght' 300; }
+.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) { background: var(--faixa-ativo); color: #fff; }
 /* contador (chat, avisos): ponto branco no canto */
 .cs-faixa :is(a, button) > span:not([aria-hidden]):empty, .cs-faixa :is(a, button) > span[aria-label] {
-  position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #b80c12;
+  position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--faixa-fundo);
 }
-.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) > span[aria-label] { background: #d80d12; box-shadow: 0 0 0 2px #fff; }
+.cs-faixa :is(a, button):is([data-ativo], [aria-current='page']) > span[aria-label] { box-shadow: 0 0 0 2px var(--faixa-ativo); }
 
 /* menus que abrem ao lado da faixa (Redes, Mais) */
 .cs-pop {
@@ -128,12 +128,14 @@
 .cs-esp-pe { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 6px; }
 
 /* linhas simples (atalhos de Início, favoritos, canais, rodapé) */
-:is(.cs-esp-corpo, .cs-esp-pe) > a, :is(.cs-esp-corpo, .cs-esp-pe) > div:not([class]) > a, .cs-esp-corpo > button.cs-mais {
+:is(.cs-esp-corpo, .cs-esp-pe) > a, :is(.cs-esp-corpo, .cs-esp-pe) > div:not([class]) > a, .cs-grupo > a, .cs-esp-corpo > button.cs-mais {
   height: 28px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 8px;
   background: transparent; color: var(--text); font-size: 13px; text-align: left; text-decoration: none; cursor: pointer;
   transition: background var(--t-rapido);
 }
 :is(.cs-esp-corpo, .cs-esp-pe) a:hover, .cs-esp-corpo > button.cs-mais:hover { background: var(--bg-hover); }
+.cs-grupo { display: flex; flex-direction: column; gap: 1px; }
+.cs-grupo > a { height: 32px; }
 :is(.cs-esp-corpo, .cs-esp-pe) a[aria-current='page'] { background: var(--bg-active); font-weight: 600; }
 :is(.cs-esp-corpo, .cs-esp-pe) a > span[aria-hidden] { color: var(--text-2); }
 :is(.cs-esp-corpo, .cs-esp-pe) a > span[aria-hidden] + span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -199,7 +201,7 @@ button.cs-secao:hover { color: var(--text-2); }
 
 /* ── Avisos (sino) ── */
 .cs-sino { position: relative; }
-.cs-sino > span:not([aria-hidden]) { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #b80c12; }
+.cs-sino > span:not([aria-hidden]) { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #0b0b0c; }
 .cs-avisos { width: 360px; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
 .cs-avisos > div:first-child { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
 .cs-avisos > div:first-child > p { flex: 1; margin: 0; font-size: 14px; font-weight: 600; }
