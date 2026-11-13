@@ -6,6 +6,7 @@ import { PainelIA } from '@/componentes/app/PainelIA'
 import { papelPodeUsarIA } from '@/ia/acesso'
 import { Presenca } from '@/componentes/time/Presenca'
 import { Toaster } from '@/componentes/ui/sonner'
+import { COOKIE_COR_BARRA, cssBarra, lerCorBarra } from '@/dominio/barra'
 import { cssTema } from '@/dominio/tema'
 import '@/componentes/app/casca.css'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, COOKIE_TEMA, lerFechados, lerOrdem, lerLarguraLateral, lerModoLateral, lerModoTema } from '@/dominio/tema-lateral'
@@ -30,6 +31,8 @@ export default async function LayoutApp({ children, painel: painelTarefa }: { ch
     <div className="app-ui" data-tema={painel.tema}>
       {/* Cores escolhidas pelo admin em Configurações → Personalização (valores já validados como #rrggbb). */}
       <style>{cssTema(tema)}</style>
+      {/* Cor da faixa de ícones escolhida pela pessoa (Configurações → Personalização; fica no cookie). */}
+      <style>{cssBarra(lerCorBarra(jar.get(COOKIE_COR_BARRA)?.value))}</style>
       {/* Fonte dos ícones (Material Symbols Rounded, a mesma do protótipo). */}
       {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,300..500,0..1,0&display=block" />
