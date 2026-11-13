@@ -282,3 +282,8 @@ button.cs-secao:hover { color: var(--text-2); }
 .cb-hex small { font-weight: 400; color: var(--red); }
 .cb-padrao { align-self: flex-start; height: 28px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 12px; cursor: pointer; }
 .cb-padrao:hover { background: var(--bg-hover); }
+
+/* No Chat a própria página já traz a coluna de conversas (canais e mensagens diretas): o painel lateral some no desktop para não duplicar. */
+@media (min-width: 1024px) {
+  .cs-painel:has(.cs-espacos[data-painel='chat']) { display: none !important; }
+}
