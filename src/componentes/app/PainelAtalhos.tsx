@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { sair } from '@/app/(auth)/login/acoes'
 import type { CronometroAtivo } from '@/servicos/tempo'
+import { EVENTO_ABRIR_ATALHOS } from './AtalhosGlobais'
 import { Ic } from './Ic'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import type { ItemPainel, PainelModulo } from './paineis'
@@ -70,6 +72,12 @@ export function PainelAtalhos({ painel, papel, canais = [], chatNaoLidas = 0, cr
       </div>
       <div className="cs-esp-pe">
         <IndicadorCronometro cronometro={cronometro} />
+        {painel.sair && (
+          <div className="cs-conta">
+            <button type="button" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_ATALHOS))}><Ic n="keyboard" s={18} />Atalhos de teclado</button>
+            <form action={sair}><button><Ic n="logout" s={18} />Sair</button></form>
+          </div>
+        )}
       </div>
     </div>
   )

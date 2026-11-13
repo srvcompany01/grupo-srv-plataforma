@@ -5,7 +5,7 @@
  */
 export type ItemPainel = { rotulo: string; href: string; icone: string; visao?: string; admin?: boolean; /** Só fica ativo no caminho exato (não nos de baixo dele). */ exato?: boolean }
 export type SecaoPainel = { titulo?: string; itens: ItemPainel[] }
-export type PainelModulo = { id: string; titulo: string; /** Caminhos (prefixos) que ativam este painel. */ rotas: string[]; secoes: SecaoPainel[]; /** Mostra os canais do chat. */ canais?: boolean }
+export type PainelModulo = { id: string; titulo: string; /** Caminhos (prefixos) que ativam este painel. */ rotas: string[]; secoes: SecaoPainel[]; /** Mostra os canais do chat. */ canais?: boolean; /** Mostra "Atalhos de teclado" e "Sair" no pé do painel. */ sair?: boolean }
 
 export const PAINEIS: PainelModulo[] = [
   {
@@ -118,23 +118,32 @@ export const PAINEIS: PainelModulo[] = [
   },
   {
     id: 'config',
-    titulo: 'Configurações',
+    titulo: 'Todas as configurações',
     rotas: ['/config'],
+    sair: true,
     secoes: [
       {
+        titulo: 'Administrador',
         itens: [
-          { rotulo: 'Geral', href: '/config', icone: 'settings', exato: true },
-          { rotulo: 'Usuários', href: '/config/usuarios', icone: 'manage_accounts' },
-          { rotulo: 'Espaços', href: '/config/espacos', icone: 'format_list_bulleted' },
-          { rotulo: 'Campos', href: '/config/campos', icone: 'tune' },
-          { rotulo: 'Campos de clientes', href: '/config/campos-clientes', icone: 'storefront' },
-          { rotulo: 'Formulários', href: '/config/formularios', icone: 'assignment' },
-          { rotulo: 'Integrações', href: '/config/integracoes', icone: 'extension' },
+          { rotulo: 'Pessoas', href: '/config/usuarios', icone: 'person' },
           { rotulo: 'Personalização', href: '/config/personalizacao', icone: 'palette' },
           { rotulo: 'Design', href: '/config/design', icone: 'brush' },
           { rotulo: 'Custos', href: '/config/custos', icone: 'receipt_long' },
           { rotulo: 'Armazenamento', href: '/config/armazenamento', icone: 'cloud' },
         ],
+      },
+      {
+        titulo: 'Recursos',
+        itens: [
+          { rotulo: 'Campos personalizados', href: '/config/campos', icone: 'tune' },
+          { rotulo: 'Campos de clientes', href: '/config/campos-clientes', icone: 'storefront' },
+          { rotulo: 'Formulários', href: '/config/formularios', icone: 'assignment' },
+          { rotulo: 'Espaços', href: '/config/espacos', icone: 'grid_view' },
+        ],
+      },
+      {
+        titulo: 'Integrações',
+        itens: [{ rotulo: 'Integrações e API', href: '/config/integracoes', icone: 'extension' }],
       },
     ],
   },
