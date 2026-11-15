@@ -210,6 +210,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
+        'Tarefas recorrentes: a tarefa com regra é o MODELO e a regra diz quando nascem as cópias (ver_recorrencia, definir_recorrencia, pausar_recorrencia). Frequência: diaria, dias_uteis, semanal (com diasSemana, 1=segunda a 7=domingo), mensal (no dia do mês ou na mesma posição da semana). Pode ter fim (terminaEm ou maximo de vezes), criar "na data programada" (cron diário) ou "ao concluir" a anterior, e copiar responsáveis (sem copiar, fica só o primeiro: toda tarefa precisa de um), subtarefas, etiquetas e campos. A cópia guarda o vínculo com o modelo (modeloDaSerie em ver_recorrencia). Para parar de vez use a tela da tarefa (Repetir > Parar série); aqui só dá para pausar.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
         'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Vencimento das tarefas = data + horário opcional (horario HH:MM); nos posts de conteúdo, agendar_post grava o vencimento da tarefa com o mesmo dia e horário do agendamento. Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
         'Estratégia do cliente (aba Estratégia e aba Estratégia na página do cliente): 5 métodos por cliente — publico (persona, mapa de empatia, dores/problemas/desafios/medos/desejos/objeções, jobs to be done, nível de consciência de Schwartz, gatilhos, canais, linguagem), jornada (Descoberta → Atração → Consideração → Ação → Apologia: como acontece, como influenciar, conversão entre etapas e checklists simples/complexo), posicionamento (big idea, círculo dourado, declaração de posicionamento, proposta de valor, slogan, manifesto, arquétipos, tom de voz em 4 escalas 0–4, valores, somos/não somos, pilares, mensagens, universo de palavras), receita (Arquitetura de Receita/bowtie: Consciência, Educação, Seleção, Compromisso, Onboarding, Impacto, Expansão com volume, conversão, tempo e ações, mais ticket, CAC, LTV, churn, receita e meta) e swot (forças, fraquezas, oportunidades, ameaças e a matriz cruzada TOWS). estrategia_cliente lê tudo com o rótulo de cada chave; salvar_estrategia_cliente altera só as chaves enviadas (texto ou lista vazia apaga). Use a estratégia (público, tom de voz, palavras) ao escrever conteúdo e anúncios do cliente. Na seção receita, a tela oferece copiar para a gravata os números reais do último mês fechado (impressões, leads, vendas, CAC e ticket); pela IA, os mesmos números vêm de performance_cliente e entram com salvar_estrategia_cliente.',
@@ -1747,6 +1748,85 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null)
       return { ok: true, lancado: formatarDuracao(a.minutos * 60) }
+    },
+  }),
+
+  definir({
+    nome: 'ver_recorrencia',
+    descricao: 'Mostra a regra de repetição de uma tarefa-modelo (frequência, dias, fim, modo de criação, o que copia, quantas cópias já foram criadas e as próximas datas). Se a tarefa for uma cópia de série, devolve também o modelo (modeloDaSerie).',
+    escrita: false,
+    entrada: { tarefaId: id('Id da tarefa (modelo ou cópia)') },
+    executar: async ({ sb }, a) => {
+      const rec = await import('@/servicos/recorrencias')
+      const dom = await import('@/dominio/recorrencia')
+      const [regra, serie] = await Promise.all([rec.buscarRecorrencia(sb, a.tarefaId), rec.buscarSerieDaTarefa(sb, a.tarefaId)])
+      return {
+        regra: regra && {
+          ...regra,
+          resumo: dom.resumirRecorrencia(regra),
+          pausada: !regra.ativa,
+          proximasDatas: dom.proximasDatas(regra, 5),
+        },
+        modeloDaSerie: serie && { id: serie.modeloId, titulo: serie.modeloTitulo, regraAtiva: !!serie.regra?.ativa, copiasCriadas: serie.criadas },
+      }
+    },
+  }),
+
+  definir({
+    nome: 'definir_recorrencia',
+    descricao: 'Cria ou altera a repetição de uma tarefa (a tarefa vira o modelo). frequencia: diaria, dias_uteis, semanal ou mensal. Semanal aceita diasSemana (1=segunda ... 7=domingo; sem eles usa o dia do inicio). Mensal aceita modoMensal: dia_do_mes (padrão) ou posicao_na_semana (ex.: 4ª segunda-feira, pelo dia do inicio). Fim: terminaEm (data) ou maximo (vezes). criar: na_data (padrão, o sistema cria a cópia no dia, com antecedenciaDias de antecedência) ou ao_concluir (cria a próxima quando a atual é concluída). Depois da primeira cópia o inicio e o contador não mudam. As cópias já criadas não são alteradas.',
+    escrita: true,
+    entrada: {
+      tarefaId: id('Id da tarefa-modelo'),
+      frequencia: z.enum(['diaria', 'dias_uteis', 'semanal', 'mensal']),
+      cada: z.number().int().min(1).max(365).optional().describe('A cada N dias/semanas/meses (padrão 1; ignorado em dias_uteis)'),
+      diasSemana: z.array(z.number().int().min(1).max(7)).min(1).max(7).optional().describe('Só em semanal: 1=segunda ... 7=domingo'),
+      modoMensal: z.enum(['dia_do_mes', 'posicao_na_semana']).optional(),
+      inicio: data('Primeiro vencimento (padrão: o vencimento da tarefa, ou hoje)').optional(),
+      terminaEm: data('Última data possível').nullable().optional(),
+      maximo: z.number().int().min(1).max(1000).nullable().optional().describe('Máximo de vezes'),
+      criar: z.enum(['na_data', 'ao_concluir']).optional(),
+      antecedenciaDias: z.number().int().min(0).max(60).optional().describe('Dias de antecedência na criação (só em na_data)'),
+      copiarResponsaveis: z.boolean().optional().describe('Padrão true. Sem copiar, fica só o primeiro responsável'),
+      copiarSubtarefas: z.boolean().optional().describe('Padrão true'),
+      copiarEtiquetasECampos: z.boolean().optional().describe('Padrão true'),
+    },
+    executar: async ({ sb }, a) => {
+      const rec = await import('@/servicos/recorrencias')
+      const dom = await import('@/dominio/recorrencia')
+      const atual = await rec.buscarRecorrencia(sb, a.tarefaId)
+      const tarefa = await tarefas.buscarTarefa(sb, a.tarefaId)
+      const frequencia = ({ diaria: 'daily', dias_uteis: 'weekdays', semanal: 'weekly', mensal: 'monthly' } as const)[a.frequencia]
+      const regra: import('@/dominio/recorrencia').RegraRecorrencia = {
+        frequencia,
+        cada: frequencia === 'weekdays' ? 1 : (a.cada ?? 1),
+        antecedencia: a.criar === 'ao_concluir' ? 0 : (a.antecedenciaDias ?? atual?.antecedencia ?? 0),
+        ativa: atual?.ativa ?? true,
+        primeiroPrazo: a.inicio ?? atual?.primeiroPrazo ?? tarefa?.prazo ?? dataDeHoje(new Date()),
+        diasSemana: frequencia === 'weekly' ? (a.diasSemana ?? null) : null,
+        modoMensal: a.modoMensal === 'posicao_na_semana' ? 'weekday_position' : 'day',
+        terminaEm: a.terminaEm === undefined ? (atual?.terminaEm ?? null) : a.terminaEm,
+        maximo: a.maximo === undefined ? (atual?.maximo ?? null) : a.maximo,
+        modoCriacao: a.criar === 'ao_concluir' ? 'on_complete' : 'schedule',
+        copiarResponsaveis: a.copiarResponsaveis ?? atual?.copiarResponsaveis ?? true,
+        copiarSubtarefas: a.copiarSubtarefas ?? atual?.copiarSubtarefas ?? true,
+        copiarCampos: a.copiarEtiquetasECampos ?? atual?.copiarCampos ?? true,
+      }
+      const erro = dom.validarRecorrencia(regra)
+      if (erro) throw new Error(erro)
+      await rec.definirRecorrencia(sb, a.tarefaId, regra)
+      return { ok: true, resumo: dom.resumirRecorrencia(regra), proximasDatas: dom.proximasDatas({ ...regra, geradas: atual?.geradas ?? 0 }, 3) }
+    },
+  }),
+
+  definir({
+    nome: 'pausar_recorrencia',
+    descricao: 'Pausa (pausada=true) ou retoma (pausada=false) a repetição de uma tarefa-modelo. Pausada, nenhuma tarefa nova é criada; as já criadas não mudam.',
+    escrita: true,
+    entrada: { tarefaId: id('Id da tarefa-modelo'), pausada: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/recorrencias')).pausarRecorrencia(sb, a.tarefaId, !a.pausada)
+      return { ok: true, pausada: a.pausada }
     },
   }),
 

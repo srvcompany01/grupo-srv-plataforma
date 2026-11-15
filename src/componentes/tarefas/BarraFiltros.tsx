@@ -16,12 +16,13 @@ import {
   DropdownMenuTrigger,
 } from '@/componentes/ui/dropdown-menu'
 import { AGRUPAMENTOS_BASICOS, ROTULO_AGRUPAMENTO } from '@/dominio/agrupamento'
-import { type FiltroPrazo, type Filtros } from '@/dominio/filtros'
+import { type FiltroPrazo, type FiltroRecorrencia, type Filtros } from '@/dominio/filtros'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
 import { PRIORIDADES, ROTULO_PRIORIDADE } from '@/dominio/tarefas'
 
 type Opcao = { id: string; nome: string }
 
+const ROTULO_RECORRENCIA: Record<FiltroRecorrencia, string> = { todas: 'Todas', recorrentes: 'Só recorrentes', nao: 'Não recorrentes' }
 const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   atrasadas: 'Atrasadas',
   hoje: 'Hoje',
@@ -109,10 +110,11 @@ export function BarraFiltros({
     ? (camposAgrupaveis.find((campo) => `campo:${campo.id}` === filtros.agrupamento)?.nome ?? ROTULO_AGRUPAMENTO.status)
     : ROTULO_AGRUPAMENTO[filtros.agrupamento as keyof typeof ROTULO_AGRUPAMENTO]
 
-  const nFiltros = filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length + (filtros.prazo ? 1 : 0) + (filtros.mes ? 1 : 0)
+  const nFiltros = filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length + (filtros.prazo ? 1 : 0) + (filtros.recorrencia !== 'todas' ? 1 : 0) + (filtros.mes ? 1 : 0)
   const algum =
     filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length > 0 ||
     !!filtros.prazo ||
+    filtros.recorrencia !== 'todas' ||
     !!filtros.mes ||
     !!filtros.busca
 
@@ -189,6 +191,19 @@ export function BarraFiltros({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger className={`${botao} ${filtros.recorrencia !== 'todas' ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
+          {filtros.recorrencia === 'todas' ? 'Recorrência' : ROTULO_RECORRENCIA[filtros.recorrencia]}
+          <ChevronDown className="h-3 w-3" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuRadioGroup value={filtros.recorrencia} onValueChange={(v) => aplicar({ recorrencia: v as FiltroRecorrencia })}>
+            {(Object.keys(ROTULO_RECORRENCIA) as FiltroRecorrencia[]).map((r) => (
+              <DropdownMenuRadioItem key={r} value={r}>{ROTULO_RECORRENCIA[r]}</DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {comMes && (
         <input
           type="month"
@@ -220,7 +235,7 @@ export function BarraFiltros({
       </form>
       {algum && (
         <button
-          onClick={() => aplicar({ responsaveis: [], status: [], prioridades: [], tags: [], clientes: [], prazo: null, mes: null, busca: '' })}
+          onClick={() => aplicar({ responsaveis: [], status: [], prioridades: [], tags: [], clientes: [], prazo: null, recorrencia: 'todas', mes: null, busca: '' })}
           className={`${botao} border-transparent text-texto-3 hover:text-texto`}
         >
           <X className="h-3 w-3" /> Limpar

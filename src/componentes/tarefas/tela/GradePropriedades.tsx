@@ -1,7 +1,7 @@
 'use client'
 
 import { diaDaSemana } from '@/dominio/prazo'
-import { Calendar, Check, X, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
+import { Calendar, Check, X, Eye, EyeOff, Flag, Hourglass, Repeat, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
@@ -43,6 +43,7 @@ export function GradePropriedades({
   tagsCliente,
   podeGerir,
   hoje,
+  repetir,
   children,
 }: {
   tarefa: TarefaCompleta
@@ -52,6 +53,8 @@ export function GradePropriedades({
   tagsCliente: Opcao[]
   podeGerir: boolean
   hoje: string
+  /** Conteúdo da linha "Repetir" (logo abaixo do vencimento). */
+  repetir?: React.ReactNode
   /** Conteúdo da célula "Rastrear tempo". */
   children?: React.ReactNode
 }) {
@@ -109,6 +112,7 @@ export function GradePropriedades({
             )}
           </span>
         </Linha>
+        {repetir && <Linha icone={Repeat} titulo="Repetir">{repetir}</Linha>}
 
         <Linha icone={Hourglass} titulo="Estimativa de tempo">
           {editandoEstimativa || t.estimativaMin != null ? (

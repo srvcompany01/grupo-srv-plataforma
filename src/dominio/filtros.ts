@@ -3,6 +3,9 @@ import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
+/** Filtro de recorrência: todas, só as de séries (modelo e cópias) ou só as que não repetem. */
+export const RECORRENCIAS = ['todas', 'recorrentes', 'nao'] as const
+export type FiltroRecorrencia = (typeof RECORRENCIAS)[number]
 export const VISOES = ['lista', 'kanban', 'calendario', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
 /** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
@@ -15,6 +18,7 @@ export type Filtros = {
   prioridades: Prioridade[]
   tags: string[]
   prazo: FiltroPrazo | null
+  recorrencia: FiltroRecorrencia
   clientes: string[]
   /** YYYY-MM-01 */
   mes: string | null
@@ -57,6 +61,7 @@ export function lerFiltros(sp: Params): Filtros {
     prioridades: lista(sp, 'prio').filter((p): p is Prioridade => de(PRIORIDADES, p)),
     tags: lista(sp, 'tag'),
     prazo: de(PRAZOS, prazo) ? prazo : null,
+    recorrencia: de(RECORRENCIAS, valor(sp, 'rec')) ? (valor(sp, 'rec') as FiltroRecorrencia) : 'todas',
     clientes: lista(sp, 'cliente'),
     mes: /^\d{4}-(0[1-9]|1[0-2])-01$/.test(mes) ? mes : null,
     busca: valor(sp, 'busca').trim().slice(0, 120),
@@ -81,6 +86,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   por('tag', f.tags)
   por('cliente', f.clientes)
   if (f.prazo) sp.set('prazo', f.prazo)
+  if (f.recorrencia !== 'todas') sp.set('rec', f.recorrencia)
   if (f.mes) sp.set('mes', f.mes)
   if (f.busca) sp.set('busca', f.busca)
   if (f.visao !== 'lista') sp.set('visao', f.visao)
@@ -96,7 +102,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
 }
 
 /** Campos que formam um "filtro salvo" (o resto da URL é visão: tipo, grupo, calendário). */
-const CAMPOS_FILTRO = ['responsaveis', 'status', 'prioridades', 'tags', 'prazo', 'clientes', 'mes', 'busca', 'semConcluidas', 'logica'] as const
+const CAMPOS_FILTRO = ['responsaveis', 'status', 'prioridades', 'tags', 'prazo', 'recorrencia', 'clientes', 'mes', 'busca', 'semConcluidas', 'logica'] as const
 
 /** Só a parte "filtro" de uma visualização, em texto (query string). */
 export function filtrosEmTexto(f: Filtros): string {

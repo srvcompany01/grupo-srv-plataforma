@@ -4,7 +4,7 @@ import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarComentarios, pessoasDaTarefa } from '@/servicos/comentarios'
-import { buscarRecorrencia } from '@/servicos/recorrencias'
+import { buscarRecorrencia, buscarSerieDaTarefa, contarCopias } from '@/servicos/recorrencias'
 import { buscarConteudo, buscarPublicacao } from '@/servicos/conteudo'
 import { contaDaPagina } from '@/servicos/publicacao-meta'
 import { buscarLista, listarListasVisiveis, listarTags } from '@/servicos/listas'
@@ -21,7 +21,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
   const sb = await criarClienteServidor()
   const tarefa = await buscarTarefa(sb, id)
   if (!tarefa) notFound()
-  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo, recorrencia] = await Promise.all([
+  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo, recorrencia, serie, copiasCriadas] = await Promise.all([
     buscarLista(sb, tarefa.lista.id),
     listarEquipe(sb),
     listarTags(sb, tarefa.lista.espacoId),
@@ -35,6 +35,8 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
     listarClientes(sb),
     buscarConteudo(sb, id).catch(() => null), // sem a migration de conteúdo a tarefa abre normalmente
     buscarRecorrencia(sb, id).catch(() => null), // idem para a migration de recorrências
+    buscarSerieDaTarefa(sb, id).catch(() => null),
+    contarCopias(sb, id).catch(() => 0),
   ])
   // Post de conteúdo: agendamento na Meta e a Página/Instagram do cliente.
   const publicacao = conteudo ? await buscarPublicacao(sb, id) : null
@@ -66,6 +68,8 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       contaMeta={contaMeta}
       hashtagsInstagram={hashtagsInstagram}
       recorrencia={recorrencia}
+      serie={serie}
+      copiasCriadas={copiasCriadas}
     />
   )
 }

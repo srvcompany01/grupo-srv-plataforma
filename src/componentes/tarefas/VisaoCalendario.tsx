@@ -1,13 +1,15 @@
 'use client'
 
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck, SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, PackageCheck, Repeat, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { Fragment, useMemo, useState, useTransition } from 'react'
 import { atualizarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { ehSubtarefa, tarefasDoCalendario } from '@/dominio/calendario'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { type Filtros, type NivelCalendario } from '@/dominio/filtros'
+import { dataCurtaBr, ocorrenciasNoIntervalo } from '@/dominio/recorrencia'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/componentes/ui/tooltip'
 import { corDaOpcao, formatarValorCampo, type DefinicaoCampo } from '@/dominio/personalizacao'
 import type { Pessoa, TarefaResumo } from '@/dominio/tarefas'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
@@ -126,6 +128,22 @@ export function VisaoCalendario({
     }
     return mapa
   }, [tarefas])
+  // Próximas ocorrências previstas das séries ativas "na data programada" (bloco tracejado, só no intervalo visível, 1 por dia por série).
+  const fantasmas = useMemo(() => {
+    const mapa = new Map<string, { modeloId: string; titulo: string }[]>()
+    if (niveis === 'subtarefas') return mapa
+    const de = dias[0].iso
+    const ate = dias[dias.length - 1].iso
+    for (const t of todas) {
+      const r = t.recorrencia
+      if (!r || r.tipo !== 'modelo' || !r.ativa || !r.regra || r.regra.modoCriacao !== 'schedule' || t.paiId) continue
+      for (const data of ocorrenciasNoIntervalo(r.regra, de, ate)) {
+        if (data < hoje) continue
+        mapa.set(data, [...(mapa.get(data) ?? []), { modeloId: t.id, titulo: t.titulo }])
+      }
+    }
+    return mapa
+  }, [todas, dias, niveis, hoje])
   const semData = tarefas.filter((tarefa) => !tarefa.prazo)
   const emAtraso = tarefas.filter((tarefa) => tarefa.prazo && tarefa.prazo < hoje && !tarefa.concluidaEm)
   const [ano, mes] = anoMes.split('-').map(Number)
@@ -245,6 +263,20 @@ export function VisaoCalendario({
                         )}</Arrastavel>
                       )
                     })}
+                    {(fantasmas.get(dia.iso) ?? []).map((f) => (
+                      <TooltipProvider key={f.modeloId}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link href={`/tarefas/${f.modeloId}`} scroll={false} draggable={false} className="flex min-h-[22px] items-center gap-1 rounded border border-dashed border-borda-forte bg-transparent px-1.5 py-0.5 text-[12px] text-texto-2">
+                              <Repeat className="h-3 w-3 shrink-0" aria-hidden="true" />
+                              <span className="truncate">{f.titulo}</span>
+                              <span className="sr-only">Prevista: será criada em {dataCurtaBr(dia.iso)}</span>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>Prevista · será criada em {dataCurtaBr(dia.iso)}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
                     {itens.length > 4 && (
                       <button type="button" onClick={() => alternarDia(dia.iso)} className="block w-full px-1 text-left text-legenda font-medium text-texto-3 hover:text-marca">
                         {diasAbertos.has(dia.iso) ? 'Mostrar menos' : `+${itens.length - 4} itens`}

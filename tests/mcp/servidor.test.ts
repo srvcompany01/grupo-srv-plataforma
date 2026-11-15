@@ -120,3 +120,29 @@ it('P3: listar_comentarios_redes com atualizar=true recusa token de leitura (gra
   const leitura = (await (await conectar('read')).listTools()).tools.map((t) => t.name)
   expect(leitura).not.toContain('atualizar_comentarios_redes')
 })
+
+it('recorrência: pausar_recorrencia pausa pelo banco e definir_recorrencia valida a regra', async () => {
+  const atualizacoes: unknown[] = []
+  const sb = {
+    from: () => ({ update: (campos: unknown) => { atualizacoes.push(campos); return { eq: async () => ({ error: null, count: 1 }) } } }),
+  } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const tarefaId = '00000000-0000-4000-8000-000000000001'
+  const r = await cli.callTool({ name: 'pausar_recorrencia', arguments: { tarefaId, pausada: true } })
+  expect(r.isError).toBeFalsy()
+  expect(atualizacoes).toEqual([{ active: false }])
+  // Fim antes do início: a regra é recusada antes de tocar no banco.
+  const ruim = await cli.callTool({ name: 'definir_recorrencia', arguments: { tarefaId, frequencia: 'diaria', inicio: '2026-11-20', terminaEm: '2026-11-10' } })
+  expect(ruim.isError).toBe(true)
+})
+
+it('recorrência: as ferramentas são de leitura/escrita certas e a plataforma descreve a regra', () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('ver_recorrencia').escrita).toBe(false)
+  expect(por('definir_recorrencia').escrita).toBe(true)
+  expect(por('pausar_recorrencia').escrita).toBe(true)
+  expect(FERRAMENTAS.some((f) => /exclu|apagar|remover_recorrencia|parar_recorrencia/.test(f.nome) && /recorrencia/.test(f.nome))).toBe(false)
+})

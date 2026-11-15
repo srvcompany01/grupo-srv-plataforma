@@ -1,4 +1,5 @@
 import { idsDaArvore } from '@/dominio/arvore-tarefa'
+import { resumirRecorrencia, type Frequencia, type ModoCriacao, type ModoMensal } from '@/dominio/recorrencia'
 import { passaPeloOu, prazoEm, type Filtros } from '@/dominio/filtros'
 import { posicaoEntre } from '@/dominio/posicao'
 import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
@@ -9,7 +10,8 @@ import { dados } from './resultado'
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
-const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, due_time, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes,
+const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, due_time, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes, recurrence_source_id,
+  serie:task_recurrences(active, frequency, every, weekdays, month_mode, anchor_date, generated, ends_on, max_count, create_mode),
   criador:profiles!tasks_created_by_fkey(full_name),
   time_entries(duration_seconds),
   clients(id, name, color),
@@ -53,7 +55,7 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtrosPedidos
   if (filtros.prazo === 'atrasadas') q = q.is('completed_at', null)
 
   const linhas = dados(await q.order('position').limit(2000)) as unknown as LinhaResumo[]
-  const tarefas = linhas.map(paraResumo)
+  const tarefas = linhas.map(paraResumo).filter((t) => filtrosPedidos.recorrencia === 'todas' || (filtrosPedidos.recorrencia === 'recorrentes') === !!t.recorrencia)
   return ou ? tarefas.filter((t) => passaPeloOu(t, filtrosPedidos, hoje)) : tarefas
 }
 
@@ -80,6 +82,25 @@ type LinhaResumo = {
   estimate_minutes: number | null
   criador: { full_name: string } | null
   time_entries: { duration_seconds: number | null }[]
+  recurrence_source_id?: string | null
+  serie?: { active: boolean; frequency: string; every: number; weekdays: number[] | null; month_mode: string; anchor_date: string; generated: number; ends_on: string | null; max_count: number | null; create_mode: string } | null
+}
+
+/** Indicador de recorrência da linha: modelo (tem regra) ou cópia de uma série. */
+function resumoDaSerie(t: LinhaResumo): TarefaResumo['recorrencia'] {
+  if (t.serie) {
+    const resumo = resumirRecorrencia({
+      frequencia: t.serie.frequency as Frequencia, cada: t.serie.every, primeiroPrazo: t.serie.anchor_date,
+      diasSemana: t.serie.weekdays, modoMensal: t.serie.month_mode as ModoMensal,
+    })
+    const regra = {
+      frequencia: t.serie.frequency as Frequencia, cada: t.serie.every, primeiroPrazo: t.serie.anchor_date, diasSemana: t.serie.weekdays,
+      modoMensal: t.serie.month_mode as ModoMensal, geradas: t.serie.generated, terminaEm: t.serie.ends_on, maximo: t.serie.max_count,
+      modoCriacao: t.serie.create_mode as ModoCriacao,
+    }
+    return { tipo: 'modelo', ativa: t.serie.active, resumo, regra }
+  }
+  return t.recurrence_source_id ? { tipo: 'copia', ativa: true, resumo: 'Parte de uma série' } : null
 }
 
 function paraResumo(t: LinhaResumo): TarefaResumo {
@@ -99,6 +120,7 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     inicio: t.start_date,
     estimativaMin: t.estimate_minutes,
     criadoPorNome: t.criador?.full_name ?? '',
+    recorrencia: resumoDaSerie(t),
     tempoSeg: (t.time_entries ?? []).reduce((s, x) => s + (x.duration_seconds ?? 0), 0),
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',

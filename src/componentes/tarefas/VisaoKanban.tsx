@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { IndicadorRecorrencia } from './IndicadorRecorrencia'
 import { CalendarDays, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
@@ -160,6 +161,7 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
           <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
           <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
+            <IndicadorRecorrencia recorrencia={tarefa.recorrencia} />
         {!!tarefa.comentarios && (
           <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>
             <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />

@@ -1727,9 +1727,9 @@ export type Database = {
         ]
       }
       task_recurrences: {
-        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string }
-        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string }
-        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string }
+        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string; copy_assignees: boolean; copy_fields: boolean; copy_subtasks: boolean; create_mode: string; ends_on: string | null; max_count: number | null; month_mode: string; weekdays: number[] | null }
+        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string; copy_assignees?: boolean; copy_fields?: boolean; copy_subtasks?: boolean; create_mode?: string; ends_on?: string | null; max_count?: number | null; month_mode?: string; weekdays?: number[] | null }
+        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string; copy_assignees?: boolean; copy_fields?: boolean; copy_subtasks?: boolean; create_mode?: string; ends_on?: string | null; max_count?: number | null; month_mode?: string; weekdays?: number[] | null }
         Relationships: [
           {
             foreignKeyName: "task_recurrences_task_id_fkey"
@@ -1783,6 +1783,7 @@ export type Database = {
           id: string
           list_id: string
           parent_task_id: string | null
+          recurrence_source_id: string | null
           position: string
           priority: string
           start_date: string | null
@@ -1804,6 +1805,7 @@ export type Database = {
           id?: string
           list_id: string
           parent_task_id?: string | null
+          recurrence_source_id?: string | null
           position: string
           priority?: string
           start_date?: string | null
@@ -1825,6 +1827,7 @@ export type Database = {
           id?: string
           list_id?: string
           parent_task_id?: string | null
+          recurrence_source_id?: string | null
           position?: string
           priority?: string
           start_date?: string | null

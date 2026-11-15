@@ -1,71 +1,161 @@
 'use client'
 
-import { Repeat } from 'lucide-react'
+import { MoreHorizontal, Pause, Repeat } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { definirRecorrenciaAcao } from '@/app/(app)/tarefas/acoes'
-import { descreverRecorrencia, FREQUENCIAS, type Frequencia, type Recorrencia } from '@/dominio/recorrencia'
-import { botaoFantasma, botaoSecundario, campo } from '@/lib/ui'
+import { toast } from 'sonner'
+import { definirRecorrenciaAcao, pausarRecorrenciaAcao } from '@/app/(app)/tarefas/acoes'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { Button } from '@/componentes/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/componentes/ui/sheet'
+import { resumirRecorrencia, textoProxima, type Recorrencia, type RegraRecorrencia } from '@/dominio/recorrencia'
 import { avisar } from '../avisar'
+import { FormularioRecorrencia } from './FormularioRecorrencia'
+import { useCelular } from './useCelular'
 
-/** "Repetir": a tarefa vira modelo e o sistema cria uma cópia a cada período (cron diário). */
-export function SecaoRecorrencia({ tarefaId, prazo, hoje, regra }: { tarefaId: string; prazo: string | null; hoje: string; regra: Recorrencia | null }) {
+const MENSAGEM_ERRO = 'Não foi possível salvar a repetição. Tente de novo.'
+
+/** Linha "Repetir" da tarefa-modelo: resumo da regra, menu da série e o formulário (Popover no desktop, Sheet no celular). */
+export function SecaoRecorrencia({
+  tarefaId,
+  prazo,
+  hoje,
+  regra,
+  criadas,
+}: {
+  tarefaId: string
+  prazo: string | null
+  hoje: string
+  regra: Recorrencia | null
+  /** Cópias já criadas pela série. */
+  criadas: number
+}) {
+  const router = useRouter()
+  const celular = useCelular()
+  const confirmar = useConfirmar()
   const [aberto, setAberto] = useState(false)
-  const [frequencia, setFrequencia] = useState<Frequencia>(regra?.frequencia ?? 'weekly')
-  const [cada, setCada] = useState(regra?.cada ?? 1)
-  const [antecedencia, setAntecedencia] = useState(regra?.antecedencia ?? 0)
-  const [primeiroPrazo, setPrimeiroPrazo] = useState(regra?.primeiroPrazo ?? prazo ?? hoje)
+  const [erro, setErro] = useState<string | null>(null)
   const [pendente, iniciar] = useTransition()
 
-  const salvar = (ativa: boolean) =>
+  function salvar(nova: RegraRecorrencia) {
+    setErro(null)
     iniciar(async () => {
-      if (avisar(await definirRecorrenciaAcao(tarefaId, { frequencia, cada, antecedencia, ativa, primeiroPrazo }), true)) setAberto(false)
+      const r = await definirRecorrenciaAcao(tarefaId, nova)
+      if (r?.erro) {
+        setErro(MENSAGEM_ERRO)
+        avisar(r)
+        return
+      }
+      avisar(r, true)
+      setAberto(false)
+      router.refresh()
     })
-  const remover = () =>
+  }
+
+  function pausar(pausada: boolean) {
     iniciar(async () => {
-      if (avisar(await definirRecorrenciaAcao(tarefaId, null), true)) setAberto(false)
+      const r = await pausarRecorrenciaAcao(tarefaId, pausada)
+      if (!avisar(r)) return
+      if (pausada) toast('Repetição pausada. Nenhuma tarefa nova será criada.', { action: { label: 'Desfazer', onClick: () => void pausarRecorrenciaAcao(tarefaId, false).then(() => router.refresh()) } })
+      else toast.success('Repetição retomada.')
+      router.refresh()
     })
+  }
+
+  async function parar() {
+    const existentes = criadas === 0 ? 'Nenhuma tarefa foi criada ainda.' : criadas === 1 ? 'A tarefa já criada continua na lista.' : `As ${criadas} tarefas já criadas continuam na lista.`
+    if (!(await confirmar({ titulo: 'Parar esta série?', descricao: `Nenhuma tarefa nova será criada. ${existentes}`, confirmar: 'Parar série', perigo: true }))) return
+    iniciar(async () => {
+      if (avisar(await definirRecorrenciaAcao(tarefaId, null), true)) router.refresh()
+    })
+  }
+
+  const formulario = (
+    <FormularioRecorrencia
+      inicial={regra}
+      geradas={regra?.geradas ?? 0}
+      prazoDaTarefa={prazo}
+      hoje={hoje}
+      salvando={pendente}
+      erro={erro}
+      aoSalvar={salvar}
+      aoCancelar={() => setAberto(false)}
+      celular={celular}
+    />
+  )
+
+  const proxima = regra ? textoProxima(regra) : null
+  const valor = regra ? (
+    <span className="flex flex-wrap items-center gap-x-1.5 text-corpo text-texto">
+      <span>{resumirRecorrencia(regra)}</span>
+      {!regra.ativa && (
+        <span className="inline-flex items-center gap-1 rounded-sm border border-borda-forte px-1 text-legenda font-semibold text-texto-2"><Pause className="h-3 w-3" aria-hidden="true" />Pausada</span>
+      )}
+      <span className="w-full text-rotulo text-texto-2 md:w-auto">
+        {[regra.ativa ? proxima : null, `${criadas} ${criadas === 1 ? 'criada' : 'criadas'}`].filter(Boolean).join(' · ')}
+      </span>
+    </span>
+  ) : (
+    <span className="text-corpo text-texto-2">Não se repete</span>
+  )
+
+  const gatilho = (
+    <button type="button" onClick={() => setAberto(true)} aria-label={regra ? `Editar repetição: ${resumirRecorrencia(regra)}` : 'Repetir tarefa'} className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
+      <Repeat className="h-[15px] w-[15px] shrink-0 text-texto-3" aria-hidden="true" />
+      {valor}
+    </button>
+  )
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-corpo">
-        <Repeat className="h-4 w-4 text-texto-3" />
-        {regra ? (
-          <span>
-            {descreverRecorrencia(regra)}
-            {!regra.ativa && <span className="text-texto-3"> (pausada)</span>}
-            <span className="text-texto-3"> · {regra.geradas} {regra.geradas === 1 ? 'cópia criada' : 'cópias criadas'}</span>
-          </span>
-        ) : (
-          <span className="text-texto-3">Não se repete</span>
-        )}
-        <button type="button" className={botaoFantasma} onClick={() => setAberto((a) => !a)}>{regra ? 'Editar' : 'Repetir…'}</button>
-      </div>
-      {aberto && (
-        <div className="flex flex-wrap items-end gap-3 rounded-xl  p-3 text-corpo">
-          <label className="space-y-1">
-            <span className="block text-texto-2">A cada</span>
-            <span className="flex items-center gap-1.5">
-              <input type="number" min={1} max={365} value={cada} onChange={(e) => setCada(Number(e.target.value))} className={`${campo} h-8 w-16 py-0`} />
-              <select value={frequencia} onChange={(e) => setFrequencia(e.target.value as Frequencia)} className={`${campo} h-8 w-28 py-0`}>
-                {FREQUENCIAS.map((f) => <option key={f.valor} value={f.valor}>{cada === 1 ? f.singular : f.plural}</option>)}
-              </select>
-            </span>
-          </label>
-          {!regra && (
-            <label className="space-y-1">
-              <span className="block text-texto-2">Primeiro vencimento</span>
-              <input type="date" value={primeiroPrazo} onChange={(e) => setPrimeiroPrazo(e.target.value)} className={`${campo} h-8 w-36 py-0`} />
-            </label>
-          )}
-          <label className="space-y-1">
-            <span className="block text-texto-2">Criar com (dias de antecedência)</span>
-            <input type="number" min={0} max={60} value={antecedencia} onChange={(e) => setAntecedencia(Number(e.target.value))} className={`${campo} h-8 w-20 py-0`} />
-          </label>
-          <button type="button" disabled={pendente} className={botaoSecundario} onClick={() => salvar(true)}>{regra && !regra.ativa ? 'Salvar e retomar' : 'Salvar'}</button>
-          {regra?.ativa && <button type="button" disabled={pendente} className={botaoFantasma} onClick={() => salvar(false)}>Pausar</button>}
-          {regra && <button type="button" disabled={pendente} className={botaoFantasma} onClick={remover}>Remover</button>}
-        </div>
+    <div className="flex flex-wrap items-center gap-1">
+      {celular ? (
+        <>
+          {gatilho}
+          <Sheet open={aberto} onOpenChange={setAberto}>
+            <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-[var(--r-panel)] p-4">
+              <SheetTitle>Repetir tarefa</SheetTitle>
+              <SheetDescription className="sr-only">Defina quando as próximas tarefas serão criadas.</SheetDescription>
+              {aberto && formulario}
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : (
+        <Popover open={aberto} onOpenChange={setAberto}>
+          <PopoverTrigger asChild>{gatilho}</PopoverTrigger>
+          <PopoverContent align="start" className="max-h-[80vh] w-[360px] overflow-y-auto rounded-lg p-4 shadow-[var(--shadow-pop)]">
+            <p className="mb-3 text-destaque font-semibold text-texto">Repetir tarefa</p>
+            {formulario}
+          </PopoverContent>
+        </Popover>
+      )}
+      {regra && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-sm" aria-label="Opções da repetição" disabled={pendente}><MoreHorizontal /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => setAberto(true)}>Editar repetição</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => pausar(regra.ativa)}>{regra.ativa ? 'Pausar repetição' : 'Retomar repetição'}</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-perigo-forte" onSelect={() => void parar()}>Parar série</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   )
 }
+
+/** Linha do cabeçalho de uma cópia: "Parte de uma série semanal · Ver tarefa modelo". */
+export function AvisoDaSerie({ modeloId, regra }: { modeloId: string; regra: Recorrencia | null }) {
+  const tipo = regra ? ({ daily: 'diária', weekdays: 'de dias úteis', weekly: 'semanal', monthly: 'mensal' } as const)[regra.frequencia] : null
+  return (
+    <p className="flex items-center gap-1.5 text-rotulo text-texto-2">
+      <Repeat className="h-3.5 w-3.5" aria-hidden="true" />
+      <span>Parte de uma série{tipo ? ` ${tipo}` : ''} ·</span>
+      <a href={`/tarefas/${modeloId}`} className="underline underline-offset-2 hover:text-texto">Ver tarefa modelo</a>
+    </p>
+  )
+}
+

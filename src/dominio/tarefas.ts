@@ -1,3 +1,4 @@
+import type { Recorrencia } from './recorrencia'
 import type { Json } from '@/infra/supabase/tipos'
 
 export const PRIORIDADES = ['urgente', 'alta', 'normal', 'baixa'] as const
@@ -56,6 +57,14 @@ export type TarefaResumo = {
   tempoSeg?: number
   /** Só no modo "subtarefas como tarefas principais": título da tarefa-mãe de origem. */
   paiTitulo?: string
+  /** Tarefa-modelo de uma repetição (tem regra) ou cópia criada por ela. */
+  recorrencia?: {
+    tipo: 'modelo' | 'copia'
+    ativa: boolean
+    resumo: string
+    /** Só no modelo: o que o calendário precisa para mostrar as próximas ocorrências previstas. */
+    regra?: Pick<Recorrencia, 'frequencia' | 'cada' | 'primeiroPrazo' | 'diasSemana' | 'modoMensal' | 'geradas' | 'terminaEm' | 'maximo' | 'modoCriacao'>
+  } | null
 }
 
 export type No<T> = T & { filhos: No<T>[] }

@@ -17,6 +17,7 @@ describe('filtros', () => {
       prioridades: [],
       tags: [],
       prazo: null,
+      recorrencia: 'todas',
       clientes: [],
       mes: null,
       busca: '',
@@ -36,6 +37,14 @@ describe('filtros', () => {
     const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', busca: 'roteiro', visao: 'calendario', grupo: 'mes', niveis: 'maes', semconcl: '1' })
     const sp = Object.fromEntries(escreverFiltros(f))
     expect(lerFiltros(sp)).toEqual(f)
+  })
+
+  it('filtro de recorrência: ida e volta e valor desconhecido volta a "todas"', () => {
+    const f = lerFiltros({ rec: 'recorrentes' })
+    expect(f.recorrencia).toBe('recorrentes')
+    expect(Object.fromEntries(escreverFiltros(f))).toEqual({ rec: 'recorrentes' })
+    expect(lerFiltros({ rec: 'xyz' }).recorrencia).toBe('todas')
+    expect(filtrosEmTexto(lerFiltros({ rec: 'nao' }))).toBe('rec=nao')
   })
 
   it('mês inválido é ignorado', () => {

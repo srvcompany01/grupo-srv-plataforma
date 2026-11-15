@@ -9,7 +9,7 @@ import { rotulo } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios'
 import type { ItemAtividade, TarefaCompleta } from '@/servicos/tarefas'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
-import { SecaoRecorrencia } from './SecaoRecorrencia'
+import { AvisoDaSerie, SecaoRecorrencia } from './SecaoRecorrencia'
 import type { Recorrencia } from '@/dominio/recorrencia'
 import { SecaoConteudo } from '@/componentes/conteudo/SecaoConteudo'
 import type { ConteudoDaTarefa, PublicacaoDoPost } from '@/servicos/conteudo'
@@ -50,6 +50,10 @@ export type PropsTela = {
   /** Hashtags fixas do cliente no Instagram (entram sozinhas na publicação). */
   hashtagsInstagram?: string[]
   recorrencia: Recorrencia | null
+  /** Se a tarefa é cópia de uma série: o modelo e a regra dele. */
+  serie: { modeloId: string; modeloTitulo: string; regra: Recorrencia | null; criadas: number } | null
+  /** Quantas cópias a regra desta tarefa já criou. */
+  copiasCriadas: number
 }
 
 /** Tela da tarefa: coluna principal rolável + coluna Atividade (400px; aba abaixo de lg). */
@@ -73,10 +77,19 @@ export function TelaTarefa(p: PropsTela) {
       <div className="grid min-h-0 flex-1 @4xl:grid-cols-[1fr_400px]">
         <div className={`min-h-0 space-y-6 overflow-y-auto p-4 @2xl:px-6 ${aba === 'detalhes' ? '' : 'hidden @4xl:block'}`}>
           <CabecalhoTarefa tarefa={t} listas={p.listas} status={p.status} podeGerir={p.podeGerir} emJanela={p.emJanela} />
-          <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} tagsCliente={p.tagsCliente} podeGerir={p.podeGerir} hoje={p.hoje}>
+          {p.serie && <AvisoDaSerie modeloId={p.serie.modeloId} regra={p.serie.regra} />}
+          <GradePropriedades
+            tarefa={t}
+            status={p.status}
+            equipe={p.equipe}
+            tags={p.tags}
+            tagsCliente={p.tagsCliente}
+            podeGerir={p.podeGerir}
+            hoje={p.hoje}
+            repetir={!p.serie && <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.geradas}-${p.recorrencia?.ativa}-${p.recorrencia?.frequencia}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} criadas={p.copiasCriadas} />}
+          >
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
           </GradePropriedades>
-          <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.cada}-${p.recorrencia?.frequencia}-${p.recorrencia?.ativa}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} />
           {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} />}
           <div className="space-y-1">
             <span className={rotulo}>Descrição</span>
