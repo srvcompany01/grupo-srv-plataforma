@@ -57,6 +57,8 @@ export type TarefaResumo = {
   tempoSeg?: number
   /** Só no modo "subtarefas como tarefas principais": título da tarefa-mãe de origem. */
   paiTitulo?: string
+  /** Pontos do cliente ainda em aberto na prova visual do post. */
+  provaAbertos?: number
   /** Tarefa-modelo de uma repetição (tem regra) ou cópia criada por ela. */
   recorrencia?: {
     tipo: 'modelo' | 'copia'

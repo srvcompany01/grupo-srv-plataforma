@@ -210,6 +210,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
+        'Prova visual: o cliente marca pontos na imagem ou instantes do vídeo de cada versão do post pelo link. ver_prova_visual lista os comentários (com respostas); responder_prova_visual e resolver_prova_visual só respondem e resolvem os pontos do cliente (a agência não cria marcações). Depois que o cliente responde à versão (aprova ou pede ajuste) os comentários dela ficam só para leitura para ele.',
         'Tempo faturável: cada registro de tempo tem a marca faturável (padrão: faturável). definir_tempo_faturavel muda a marca; resumo_tempo_faturavel (só admin e gestor) soma por cliente e pessoa num período, com os mesmos filtros da tela Tempo (Relatórios).',
         'Tarefas recorrentes: a tarefa com regra é o MODELO e a regra diz quando nascem as cópias (ver_recorrencia, definir_recorrencia, pausar_recorrencia). Frequência: diaria, dias_uteis, semanal (com diasSemana, 1=segunda a 7=domingo), mensal (no dia do mês ou na mesma posição da semana). Pode ter fim (terminaEm ou maximo de vezes), criar "na data programada" (cron diário) ou "ao concluir" a anterior, e copiar responsáveis (sem copiar, fica só o primeiro: toda tarefa precisa de um), subtarefas, etiquetas e campos. A cópia guarda o vínculo com o modelo (modeloDaSerie em ver_recorrencia). Para parar de vez use a tela da tarefa (Repetir > Parar série); aqui só dá para pausar.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
@@ -1749,6 +1750,53 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null, a.faturavel ?? true)
       return { ok: true, lancado: formatarDuracao(a.minutos * 60) }
+    },
+  }),
+
+  definir({
+    nome: 'ver_prova_visual',
+    descricao: 'Comentários do cliente na prova visual de um post (marcações na imagem ou no instante do vídeo), por versão: número, autor, local, texto, respostas e se está resolvido. abertos = quantos ainda esperam a agência.',
+    escrita: false,
+    entrada: { tarefaId: id('Id da tarefa do post') },
+    executar: async ({ sb }, a) => {
+      const dom = await import('@/dominio/prova-visual')
+      const todos = await (await import('@/servicos/prova-visual')).comentariosDoPost(sb, a.tarefaId)
+      const versoes = [...new Set(todos.map((c) => c.versaoId))]
+      return {
+        abertos: dom.contarAbertos(todos),
+        versoes: versoes.map((v) => ({
+          versaoId: v,
+          comentarios: dom.numerarComentarios(todos.filter((c) => c.versaoId === v)).map((c) => ({
+            id: c.id, numero: c.numero, autor: c.autor, texto: c.texto, local: dom.descreverLocal(c, []), midia: c.midia, x: c.x, y: c.y, segundo: c.segundo, resolvido: !!c.resolvidoEm,
+            respostas: c.respostas.map((r) => ({ id: r.id, autor: r.autor, daAgencia: r.autorTipo === 'equipe', texto: r.texto })),
+          })),
+        })),
+      }
+    },
+  }),
+
+  definir({
+    nome: 'responder_prova_visual',
+    descricao: 'A agência responde a um ponto do cliente na prova visual (comentarioId vem de ver_prova_visual). Não cria marcação nova.',
+    escrita: true,
+    entrada: { comentarioId: id('Id do comentário do cliente'), texto: z.string().min(1).max(2000) },
+    executar: async ({ sb }, a) => {
+      const { data, error } = await sb.from('content_review_comments').select('id, version_id, task_id').eq('id', a.comentarioId).is('parent_id', null).maybeSingle()
+      if (error) throw error
+      if (!data) throw new Error('Comentário não encontrado.')
+      await (await import('@/servicos/prova-visual')).responderComentario(sb, { id: data.id, versaoId: data.version_id, tarefaId: data.task_id }, a.texto)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'resolver_prova_visual',
+    descricao: 'Marca como resolvido (resolvido=true) ou reabre (false) um ponto do cliente na prova visual.',
+    escrita: true,
+    entrada: { comentarioId: id('Id do comentário do cliente'), resolvido: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/prova-visual')).resolverComentario(sb, a.comentarioId, a.resolvido)
+      return { ok: true, resolvido: a.resolvido }
     },
   }),
 

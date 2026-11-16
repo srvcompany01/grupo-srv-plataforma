@@ -50,6 +50,8 @@ export type PropsTela = {
   /** Hashtags fixas do cliente no Instagram (entram sozinhas na publicação). */
   hashtagsInstagram?: string[]
   recorrencia: Recorrencia | null
+  /** Prova visual: comentários do cliente nas versões do post. */
+  revisao?: import('@/servicos/prova-visual').ComentarioProvaComResolvedor[]
   /** Se a tarefa é cópia de uma série: o modelo e a regra dele. */
   serie: { modeloId: string; modeloTitulo: string; regra: Recorrencia | null; criadas: number } | null
   /** Quantas cópias a regra desta tarefa já criou. */
@@ -90,7 +92,7 @@ export function TelaTarefa(p: PropsTela) {
           >
             <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
           </GradePropriedades>
-          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} />}
+          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} revisao={p.revisao} titulo={t.titulo} />}
           <div className="space-y-1">
             <span className={rotulo}>Descrição</span>
             <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />

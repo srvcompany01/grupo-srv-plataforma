@@ -244,6 +244,12 @@ export type Database = {
           },
         ]
       }
+      content_review_comments: {
+        Row: { author_kind: string; author_name: string; author_user_id: string | null; body: string; created_at: string; id: string; media_index: number | null; parent_id: string | null; resolved_at: string | null; resolved_by: string | null; task_id: string; version_id: string; video_second: number | null; x_pct: number | null; y_pct: number | null }
+        Insert: { author_kind: string; author_name: string; author_user_id?: string | null; body: string; created_at?: string; id?: string; media_index?: number | null; parent_id?: string | null; resolved_at?: string | null; resolved_by?: string | null; task_id: string; version_id: string; video_second?: number | null; x_pct?: number | null; y_pct?: number | null }
+        Update: { author_kind?: string; author_name?: string; author_user_id?: string | null; body?: string; created_at?: string; id?: string; media_index?: number | null; parent_id?: string | null; resolved_at?: string | null; resolved_by?: string | null; task_id?: string; version_id?: string; video_second?: number | null; x_pct?: number | null; y_pct?: number | null }
+        Relationships: []
+      }
       content_responses: {
         Row: { comment: string; created_at: string; decision: string; id: string; responder_name: string; task_id: string; version_id: string }
         Insert: { comment?: string; created_at?: string; decision: string; id?: string; responder_name: string; task_id: string; version_id: string }

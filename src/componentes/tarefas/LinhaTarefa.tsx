@@ -11,7 +11,7 @@ import { type No, type Pessoa, type StatusLista, type TarefaResumo } from '@/dom
 import { CelulaCampoPersonalizado } from './CamposPersonalizados'
 import { EditorVencimento, Prazo } from './EditorVencimento'
 import type { PropsGerenciarCampos } from './GerenciarCampos'
-import { IndicadorRecorrencia } from './IndicadorRecorrencia'
+import { IndicadorProva, IndicadorRecorrencia } from './IndicadorRecorrencia'
 import { NovaTarefa } from './NovaTarefa'
 import { SeletorPrioridade } from './SeletorPrioridade'
 import { SeletorResponsaveis } from './SeletorResponsaveis'
@@ -169,6 +169,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
             {tarefa.titulo.trim() || <span className="italic text-texto-3">Sem título</span>}
           </Link>
           <IndicadorRecorrencia recorrencia={tarefa.recorrencia} />
+          <IndicadorProva abertos={tarefa.provaAbertos} />
           {!colunas.includes('tagcliente') && (
             <SeletorTagCliente
               compacto

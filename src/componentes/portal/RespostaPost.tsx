@@ -11,7 +11,7 @@ import { botaoFantasma, botaoPrimario, campo } from '@/lib/ui'
 const CHAVE_NOME = 'srv-cliente-nome'
 
 /** Aprovar ou pedir ajuste (com o que mudar). Sem login: pede o nome de quem responde (fica lembrado no navegador). */
-export function RespostaPost({ slug, tarefaId, quando }: { slug: string; tarefaId: string; quando: string | null }) {
+export function RespostaPost({ slug, tarefaId, quando, abertos = 0 }: { slug: string; tarefaId: string; quando: string | null; abertos?: number }) {
   const [nome, setNome] = useState(() => {
     try {
       return typeof window === 'undefined' ? '' : (localStorage.getItem(CHAVE_NOME) ?? '')
@@ -32,7 +32,10 @@ export function RespostaPost({ slug, tarefaId, quando }: { slug: string; tarefaI
   const [pendente, iniciar] = useTransition()
   const responder = (decisao: 'aprovado' | 'ajuste') => iniciar(async () => { if (avisar(await responderPostAcao(slug, tarefaId, decisao, texto, nome), true)) router.refresh() })
   const aprovar = async () => {
-    if (!(await confirmar({ titulo: 'Aprovar este post?', descricao: quando ? `Ele será publicado ${quando}.` : 'A equipe vai publicar no dia combinado.', confirmar: 'Aprovar' }))) return
+    const ok = abertos > 0
+      ? await confirmar({ titulo: `Aprovar com ${abertos} ${abertos === 1 ? 'comentário aberto' : 'comentários abertos'}?`, descricao: 'A agência vai ver os comentários, mas o post será marcado como aprovado.', confirmar: 'Aprovar mesmo assim' })
+      : await confirmar({ titulo: 'Aprovar este post?', descricao: quando ? `Ele será publicado ${quando}.` : 'A equipe vai publicar no dia combinado.', confirmar: 'Aprovar' })
+    if (!ok) return
     responder('aprovado')
   }
 
@@ -47,7 +50,7 @@ export function RespostaPost({ slug, tarefaId, quando }: { slug: string; tarefaI
     return (
       <div className="space-y-2">
         {campoNome}
-        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} autoFocus placeholder="O que você quer mudar? (texto, imagem, horário…)" className={campo} maxLength={2000} />
+        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} autoFocus placeholder="O que você quer mudar? (texto, imagem, horário…) Os comentários marcados na imagem já vão junto." className={campo} maxLength={2000} />
         <div className="flex gap-2">
           <button type="button" className={botaoPrimario} disabled={pendente || !texto.trim() || !nome.trim()} onClick={() => responder('ajuste')}><PencilLine className="h-4 w-4" /> Enviar pedido de ajuste</button>
           <button type="button" className={botaoFantasma} onClick={() => setAjuste(false)}>Voltar</button>

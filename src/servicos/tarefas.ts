@@ -5,6 +5,7 @@ import { posicaoEntre } from '@/dominio/posicao'
 import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
+import { abertosPorTarefa } from './prova-visual'
 import { dados } from './resultado'
 
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
@@ -56,6 +57,12 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtrosPedidos
 
   const linhas = dados(await q.order('position').limit(2000)) as unknown as LinhaResumo[]
   const tarefas = linhas.map(paraResumo).filter((t) => filtrosPedidos.recorrencia === 'todas' || (filtrosPedidos.recorrencia === 'recorrentes') === !!t.recorrencia)
+  // Prova visual: pontos do cliente em aberto (falha silenciosa se a migração ainda não existe).
+  const abertos = await abertosPorTarefa(sb, tarefas.map((t) => t.id)).catch(() => new Map<string, number>())
+  for (const t of tarefas) {
+    const n = abertos.get(t.id)
+    if (n) t.provaAbertos = n
+  }
   return ou ? tarefas.filter((t) => passaPeloOu(t, filtrosPedidos, hoje)) : tarefas
 }
 

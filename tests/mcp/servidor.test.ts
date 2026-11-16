@@ -163,3 +163,11 @@ it('tempo faturável: ferramentas com a escrita certa e o resumo recusa período
   const invertido = await cli.callTool({ name: 'resumo_tempo_faturavel', arguments: { de: '2026-11-30', ate: '2026-11-01' } })
   expect(invertido.isError).toBe(true)
 })
+
+it('prova visual: a agência só lê, responde e resolve (sem criar marcação nem apagar)', () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('ver_prova_visual').escrita).toBe(false)
+  expect(por('responder_prova_visual').escrita).toBe(true)
+  expect(por('resolver_prova_visual').escrita).toBe(true)
+  expect(FERRAMENTAS.filter((f) => /prova_visual/.test(f.nome)).map((f) => f.nome).sort()).toEqual(['resolver_prova_visual', 'responder_prova_visual', 'ver_prova_visual'])
+})

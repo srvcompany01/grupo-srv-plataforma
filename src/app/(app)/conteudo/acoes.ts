@@ -10,6 +10,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as conteudo from '@/servicos/conteudo'
+import * as prova from '@/servicos/prova-visual'
 import * as tarefas from '@/servicos/tarefas'
 import { instante } from '@/dominio/agenda'
 import { lerCollabs, type Alvo, type ModoPublicacao } from '@/dominio/publicacao'
@@ -151,4 +152,15 @@ export async function publicarAgoraAcao(tarefaId: string, alvos: Alvo[], textoCo
 export async function cancelarAgendamentoAcao(tarefaId: string): Promise<Resultado> {
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
   return executar((sb) => conteudo.cancelarAgendamento(sb, tarefaId), 'Agendamento cancelado.')
+}
+
+/** Prova visual: a agência só responde e resolve os pontos do cliente (não cria marcações). */
+export async function responderProvaAcao(comentarioId: string, versaoId: string, tarefaId: string, texto: string): Promise<Resultado> {
+  if (!UUID.test(comentarioId) || !UUID.test(versaoId) || !UUID.test(tarefaId)) return { erro: 'Comentário inválido.' }
+  return executar((sb) => prova.responderComentario(sb, { id: comentarioId, versaoId, tarefaId }, texto), 'Resposta enviada.')
+}
+
+export async function resolverProvaAcao(comentarioId: string, resolvido: boolean): Promise<Resultado> {
+  if (!UUID.test(comentarioId)) return { erro: 'Comentário inválido.' }
+  return executar((sb) => prova.resolverComentario(sb, comentarioId, resolvido), resolvido ? 'Comentário resolvido' : 'Comentário reaberto')
 }

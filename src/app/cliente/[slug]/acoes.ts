@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import type { Resultado } from '@/servicos/acao'
 import { clientePorLink, responderPost } from '@/servicos/portal-conteudo'
+import { comentarComoCliente } from '@/servicos/prova-visual-portal'
+import type { EntradaComentario } from '@/dominio/prova-visual'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -22,5 +24,23 @@ export async function responderPostAcao(slug: string, tarefaId: string, decisao:
   } catch (e) {
     console.error(e)
     return { erro: e instanceof Error && e.message ? e.message : 'Não foi possível enviar a resposta.' }
+  }
+}
+
+/**
+ * Prova visual: o cliente comenta num ponto, num instante ou em geral (ou responde à agência).
+ * O servidor resolve o cliente pelo link e a versão pela tarefa; o banco recusa se a versão já foi respondida.
+ */
+export async function comentarProvaAcao(slug: string, tarefaId: string, entrada: EntradaComentario & { paiId?: string | null }): Promise<Resultado> {
+  if (!UUID.test(tarefaId) || (entrada.paiId && !UUID.test(entrada.paiId))) return { erro: 'Post inválido.' }
+  const cliente = await clientePorLink(slug)
+  if (!cliente) return { erro: 'Link inválido.' }
+  try {
+    await comentarComoCliente(cliente.id, tarefaId, { ...entrada, nome: entrada.nome.trim().slice(0, 80) })
+    revalidatePath(`/cliente/${cliente.slug}`, 'layout')
+    return { ok: 'Comentário enviado' }
+  } catch (e) {
+    console.error(e)
+    return { erro: e instanceof Error && e.message ? e.message : 'Não foi possível enviar. Verifique a conexão e tente de novo.' }
   }
 }

@@ -5,6 +5,7 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarComentarios, pessoasDaTarefa } from '@/servicos/comentarios'
 import { buscarRecorrencia, buscarSerieDaTarefa, contarCopias } from '@/servicos/recorrencias'
+import { comentariosDoPost } from '@/servicos/prova-visual'
 import { buscarConteudo, buscarPublicacao } from '@/servicos/conteudo'
 import { contaDaPagina } from '@/servicos/publicacao-meta'
 import { buscarLista, listarListasVisiveis, listarTags } from '@/servicos/listas'
@@ -39,6 +40,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
     contarCopias(sb, id).catch(() => 0),
   ])
   // Post de conteúdo: agendamento na Meta e a Página/Instagram do cliente.
+  const revisao = conteudo ? await comentariosDoPost(sb, id).catch(() => []) : []
   const publicacao = conteudo ? await buscarPublicacao(sb, id) : null
   const contaMeta = publicacao?.cliente?.paginaId ? await contaDaPagina(publicacao.cliente.paginaId) : null
   const hashtagsInstagram = publicacao?.cliente?.id ? await hashtagsDoCliente(sb, publicacao.cliente.id, 'instagram').catch(() => []) : []
@@ -68,6 +70,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       contaMeta={contaMeta}
       hashtagsInstagram={hashtagsInstagram}
       recorrencia={recorrencia}
+      revisao={revisao}
       serie={serie}
       copiasCriadas={copiasCriadas}
     />
