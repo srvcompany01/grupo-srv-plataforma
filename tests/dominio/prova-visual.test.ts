@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   contarAbertos,
   descreverLocal,
+  lerEntradaDoPortal,
+  validarLocalNaMidia,
   formatarInstante,
   moverMira,
   numerarComentarios,
@@ -130,5 +132,34 @@ describe('limite público e leitura paginada', () => {
   it('cursor (created_at, id): sem cursor não filtra; com cursor pega o que vem depois, com desempate pelo id', () => {
     expect(filtroDeCursor(null)).toBeNull()
     expect(filtroDeCursor({ criadoEm: '2026-11-24T10:00:00+00:00', id: 'abc' })).toBe('created_at.gt.2026-11-24T10:00:00+00:00,and(created_at.eq.2026-11-24T10:00:00+00:00,id.gt.abc)')
+  })
+})
+
+describe('B1: pedido do navegador e mídia real', () => {
+  const bom = { texto: 'Trocar a cor', nome: 'Maria', midia: 0, x: 10, y: 20, segundo: null, paiId: null }
+
+  it('aceita o formato certo (campos opcionais ausentes viram null)', () => {
+    expect(lerEntradaDoPortal(bom)).toEqual({ entrada: bom })
+    expect(lerEntradaDoPortal({ texto: 'oi', nome: 'Ana' })).toEqual({ entrada: { texto: 'oi', nome: 'Ana', midia: null, x: null, y: null, segundo: null, paiId: null } })
+  })
+
+  it('pedido malformado vira mensagem, nunca exceção', () => {
+    const ruins: unknown[] = [null, undefined, 'texto', 42, [], {}, { texto: 1, nome: 'a' }, { ...bom, nome: undefined }, { ...bom, x: '10' }, { ...bom, y: NaN }, { ...bom, x: Infinity }, { ...bom, midia: '0' },
+      { ...bom, segundo: -Infinity, midia: 1 }, { ...bom, paiId: 'não-é-uuid' }, { ...bom, paiId: 7 }, { ...bom, midia: 1.5 }, { ...bom, x: 101 }, { ...bom, segundo: 99_999, midia: 1 }]
+    for (const r of ruins) {
+      expect(() => lerEntradaDoPortal(r)).not.toThrow()
+      expect(lerEntradaDoPortal(r)).toHaveProperty('erro')
+    }
+  })
+
+  it('o local precisa existir na versão e o instante só vale em vídeo', () => {
+    const midias = [{ tipo: 'imagem' as const }, { tipo: 'video' as const }]
+    expect(validarLocalNaMidia({ midia: null, x: null, y: null, segundo: null }, [])).toBeNull()
+    expect(validarLocalNaMidia({ midia: 0, x: 10, y: 10, segundo: null }, midias)).toBeNull()
+    expect(validarLocalNaMidia({ midia: 1, x: null, y: null, segundo: 12 }, midias)).toBeNull()
+    expect(validarLocalNaMidia({ midia: 49, x: 10, y: 10, segundo: null }, midias)).toBe('Essa mídia não existe nesta versão.')
+    expect(validarLocalNaMidia({ midia: 0, x: null, y: null, segundo: 100 }, midias)).toBe('O instante só vale para vídeo.')
+    // o portal só mostra 10 mídias
+    expect(validarLocalNaMidia({ midia: 10, x: 1, y: 1, segundo: null }, Array.from({ length: 12 }, () => ({ tipo: 'imagem' as const })))).toBe('Essa mídia não existe nesta versão.')
   })
 })

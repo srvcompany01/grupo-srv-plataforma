@@ -1,5 +1,5 @@
 import 'server-only'
-import { validarComentario, type ComentarioProva, type EntradaComentario } from '@/dominio/prova-visual'
+import { validarComentario, validarLocalNaMidia, type ComentarioProva, type EntradaComentario, type MidiaDaVersao } from '@/dominio/prova-visual'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { LimiteCompartilhado } from '@/dominio/limite'
 import type { Supabase } from '@/infra/supabase/servidor'
@@ -68,6 +68,14 @@ export async function comentarComoCliente(clienteId: string, tarefaId: string, e
   const admin = criarClienteAdmin()
   const { data: versao, error } = await admin.from('content_versions').select('id').eq('task_id', tarefaId).eq('number', post.current_version).single()
   if (error) throw error
+  // O local precisa existir na versão: mídia (como o portal as mostra) e, para instante, ser vídeo.
+  if (!e.paiId && e.midia !== null) {
+    const { data: midias, error: erroMidias } = await admin.from('content_media').select('kind, arquivado_em').eq('version_id', versao.id).order('position')
+    if (erroMidias) throw erroMidias
+    const lista: MidiaDaVersao[] = (midias ?? []).map((m) => ({ tipo: !m.arquivado_em && m.kind === 'video' ? 'video' : 'imagem' }))
+    const problema = validarLocalNaMidia(e, lista)
+    if (problema) throw new Error(problema)
+  }
   if (e.paiId) {
     const { data: pai } = await admin.from('content_review_comments').select('id').eq('id', e.paiId).eq('task_id', tarefaId).eq('version_id', versao.id).maybeSingle()
     if (!pai) throw new Error('Comentário não encontrado.')

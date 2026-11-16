@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { comoUsuario, criarBanco, ler, type Banco } from '../ajuda/banco'
 import { adicionarMembro, criarCliente, criarLista, criarUsuario, idEspaco, vincularUsuarioCliente } from '../ajuda/cenario'
 
+/** Duas mídias na versão: a 0 é imagem e a 1 é vídeo (o portal as mostra nessa ordem). */
+export async function semearMidias(db: Banco, tarefa: string, versao: string) {
+  await db.query(`insert into content_media (version_id, task_id, position, kind, r2_key, original_name, size_bytes) values ($1, $2, 0, 'imagem', 'conteudo/a.jpg', 'a.jpg', 10), ($1, $2, 1, 'video', 'conteudo/b.mp4', 'b.mp4', 10)`, [versao, tarefa])
+}
+
 async function base(db: Banco) {
   const espaco = await idEspaco(db, 'Conteúdo')
   const aurora = await criarCliente(db, 'Aurora')
@@ -20,6 +25,7 @@ async function base(db: Banco) {
   )
   const versao = (await db.query<{ id: string }>(`select id from content_versions where task_id = $1 and number = 1`, [tarefa])).rows[0].id
   await db.query(`update content_posts set approval = 'aguardando' where task_id = $1`, [tarefa])
+  await semearMidias(db, tarefa, versao)
   return { ana, intruso, cli, outro, tarefa, versao, aurora, lista }
 }
 
@@ -117,6 +123,30 @@ describe('prova visual: regras do banco', () => {
     await comoUsuario(db, c.ana, (tx) => tx.query(`update content_review_comments set resolved_at = null where id = $1`, [id]))
     expect((await db.query(`select resolved_at, resolved_by from content_review_comments where id = $1`, [id])).rows).toEqual([{ resolved_at: null, resolved_by: null }])
     await expect(comoUsuario(db, c.ana, (tx) => tx.query(`update content_review_comments set body = 'outro' where id = $1`, [id]))).rejects.toThrow(/resolver ou reabrir/)
+  })
+})
+
+describe('B1: o local confere com a mídia real da versão', () => {
+  it('mídia que não existe, instante em imagem, instante além do teto e vídeo arquivado (vira imagem) são recusados', async () => {
+    const db = await criarBanco()
+    const c = await base(db) // mídia 0 = imagem, mídia 1 = vídeo
+    await expect(comentar(db, c, { media: 49 })).rejects.toThrow(/mídia não existe/)
+    await expect(comentar(db, c, { media: 2 })).rejects.toThrow(/mídia não existe/)
+    await expect(comentar(db, c, { media: 0, x: null, y: null, segundo: 100 })).rejects.toThrow(/só vale para vídeo/)
+    await expect(comentar(db, c, { media: 1, x: null, y: null, segundo: 20_000 })).rejects.toThrow(/segundo_max|check/)
+    await db.query(`update content_media set arquivado_em = now() where position = 1`) // vídeo arquivado: o portal o mostra como imagem
+    await expect(comentar(db, c, { media: 1, x: null, y: null, segundo: 5 })).rejects.toThrow(/só vale para vídeo/)
+    await comentar(db, c, { media: 1 }) // mas um ponto na mídia 1 (agora imagem) continua válido
+  })
+
+  it('instante em vídeo e ponto em qualquer mídia existente passam; só as 10 primeiras mídias existem para o cliente', async () => {
+    const db = await criarBanco()
+    const c = await base(db)
+    await comentar(db, c, { media: 1, x: null, y: null, segundo: 12.5 })
+    await comentar(db, c, { media: 0 })
+    for (let p = 2; p < 12; p++) await db.query(`insert into content_media (version_id, task_id, position, kind, r2_key, original_name, size_bytes) values ($1, $2, $3, 'imagem', 'conteudo/x.jpg', 'x.jpg', 10)`, [c.versao, c.tarefa, p])
+    await comentar(db, c, { media: 9 })
+    await expect(comentar(db, c, { media: 10 })).rejects.toThrow(/mídia não existe/)
   })
 })
 

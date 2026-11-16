@@ -6,7 +6,7 @@ import { clientePorLink, responderPost } from '@/servicos/portal-conteudo'
 import { headers } from 'next/headers'
 import { ipDoPedido, limitesDoComentario } from '@/dominio/limite'
 import { comentarComoCliente, dentroDosLimites } from '@/servicos/prova-visual-portal'
-import type { EntradaComentario } from '@/dominio/prova-visual'
+import { lerEntradaDoPortal } from '@/dominio/prova-visual'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -33,8 +33,12 @@ export async function responderPostAcao(slug: string, tarefaId: string, decisao:
  * Prova visual: o cliente comenta num ponto, num instante ou em geral (ou responde à agência).
  * O servidor resolve o cliente pelo link e a versão pela tarefa; o banco recusa se a versão já foi respondida.
  */
-export async function comentarProvaAcao(slug: string, tarefaId: string, entrada: EntradaComentario & { paiId?: string | null }): Promise<Resultado> {
-  if (!UUID.test(tarefaId) || (entrada.paiId && !UUID.test(entrada.paiId))) return { erro: 'Post inválido.' }
+export async function comentarProvaAcao(slug: string, tarefaId: string, bruto: unknown): Promise<Resultado> {
+  if (typeof slug !== 'string' || typeof tarefaId !== 'string' || !UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  // Nada do navegador é confiável: forma, tipos e números finitos são conferidos aqui (e de novo no banco).
+  const lido = lerEntradaDoPortal(bruto)
+  if ('erro' in lido) return { erro: lido.erro }
+  const entrada = lido.entrada
   const cliente = await clientePorLink(slug)
   if (!cliente) return { erro: 'Link inválido.' }
   // Limite compartilhado (no banco) por link+post e por IP: o link é público e qualquer portador poderia encher a prova visual.

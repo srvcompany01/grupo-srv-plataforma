@@ -94,6 +94,11 @@ export function moverMira(mira: { x: number; y: number }, tecla: string, shift: 
 
 // ---------------------------------------------------------------- validação
 
+/** Teto do instante de um vídeo (3 h). A duração real do vídeo não é guardada no banco, então este é o limite possível. */
+export const SEGUNDO_MAXIMO = 10_800
+/** Quantas mídias o portal mostra por post (as demais não existem para o cliente). */
+export const MIDIAS_NO_PORTAL = 10
+
 export type EntradaComentario = { texto: string; nome: string; midia: number | null; x: number | null; y: number | null; segundo: number | null }
 
 /** Mensagem de erro (pt-BR) ou `null`. Vale no navegador e de novo no servidor. */
@@ -106,7 +111,7 @@ export function validarComentario(e: EntradaComentario): string | null {
   if (e.x !== null && (e.x < 0 || e.x > 100 || e.y! < 0 || e.y! > 100)) return 'Ponto fora da mídia.'
   if (e.midia !== null && (!Number.isInteger(e.midia) || e.midia < 0 || e.midia > 49)) return 'Mídia inválida.'
   if ((e.x !== null || e.segundo !== null) && e.midia === null) return 'Escolha a mídia do comentário.'
-  if (e.segundo !== null && (!Number.isFinite(e.segundo) || e.segundo < 0 || e.segundo > 86_400)) return 'Instante inválido.'
+  if (e.segundo !== null && (!Number.isFinite(e.segundo) || e.segundo < 0 || e.segundo > SEGUNDO_MAXIMO)) return 'Instante inválido.'
   return null
 }
 
@@ -118,4 +123,47 @@ export function tempoRelativo(iso: string, agoraMs: number): string {
   if (seg < 86_400) return `há ${Math.floor(seg / 3600)} h`
   const dias = Math.floor(seg / 86_400)
   return `há ${dias} ${dias === 1 ? 'dia' : 'dias'}`
+}
+
+// ---------------------------------------------------------------- pedido vindo do navegador (nada é confiável)
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const numero = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+export type EntradaDoPortal = EntradaComentario & { paiId: string | null }
+
+/**
+ * Converte o que chegou do navegador (qualquer coisa: objeto fora do formato, texto no lugar de número, NaN, Infinity)
+ * numa entrada tipada, ou devolve a mensagem de erro. Nunca lança.
+ */
+export function lerEntradaDoPortal(bruto: unknown): { entrada: EntradaDoPortal } | { erro: string } {
+  if (typeof bruto !== 'object' || bruto === null || Array.isArray(bruto)) return { erro: 'Comentário inválido.' }
+  const o = bruto as Record<string, unknown>
+  if (typeof o.texto !== 'string' || typeof o.nome !== 'string') return { erro: 'Comentário inválido.' }
+  const opcional = (v: unknown): number | null | undefined => (v === null || v === undefined ? null : numero(v) ? v : undefined)
+  const midia = opcional(o.midia)
+  const x = opcional(o.x)
+  const y = opcional(o.y)
+  const segundo = opcional(o.segundo)
+  if (midia === undefined || x === undefined || y === undefined || segundo === undefined) return { erro: 'Ponto ou instante inválido.' }
+  const paiId = o.paiId === null || o.paiId === undefined ? null : typeof o.paiId === 'string' && UUID.test(o.paiId) ? o.paiId : undefined
+  if (paiId === undefined) return { erro: 'Comentário inválido.' }
+  const entrada: EntradaDoPortal = { texto: o.texto, nome: o.nome, midia, x, y, segundo, paiId }
+  const erro = validarComentario(entrada)
+  return erro ? { erro } : { entrada }
+}
+
+export type MidiaDaVersao = { tipo: 'imagem' | 'video' }
+
+/**
+ * Confere o local do comentário com as mídias reais da versão (as que o portal mostra, na ordem): a mídia precisa existir
+ * e o instante só vale em vídeo. A duração do vídeo não está no banco, então só o teto geral vale.
+ */
+export function validarLocalNaMidia(e: Pick<EntradaComentario, 'midia' | 'x' | 'y' | 'segundo'>, midias: MidiaDaVersao[]): string | null {
+  if (e.midia === null) return null
+  const visiveis = midias.slice(0, MIDIAS_NO_PORTAL)
+  const alvo = visiveis[e.midia]
+  if (!alvo) return 'Essa mídia não existe nesta versão.'
+  if (e.segundo !== null && alvo.tipo !== 'video') return 'O instante só vale para vídeo.'
+  return null
 }
