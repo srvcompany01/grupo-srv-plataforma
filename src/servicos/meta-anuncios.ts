@@ -124,15 +124,14 @@ type DetalheConjunto = { id: string; destination_type?: string; campaign?: { eff
 /**
  * Destino do conjunto e status/objetivo da campanha, pelos ids (vale para pausados, arquivados e excluídos). A listagem
  * `act/adsets` ou `act/campaigns` filtrada por DELETED/ARCHIVED falhava calada na Meta e deixava tudo sem destino.
- * Lotes de 50; se um lote falhar, pede um a um.
+ * Consultas individuais, com no máximo 10 em paralelo. A Meta retirou o GET /?ids=… das versões suportadas.
  */
 async function detalhesDosConjuntos(ids: string[], cacheSeg = CACHE): Promise<Map<string, DetalheConjunto>> {
   const r = new Map<string, DetalheConjunto>()
   const fields = 'destination_type,campaign{effective_status,objective}'
-  for (let i = 0; i < ids.length; i += 50) {
-    const lote = ids.slice(i, i + 50)
-    const d = await meta<Record<string, DetalheConjunto>>('', { ids: lote.join(','), fields }, cacheSeg)
-    const itens = 'erro' in d ? await Promise.all(lote.map((id) => meta<DetalheConjunto>(id, { fields }, cacheSeg))) : Object.values(d)
+  for (let i = 0; i < ids.length; i += 10) {
+    const lote = ids.slice(i, i + 10)
+    const itens = await Promise.all(lote.map((id) => meta<DetalheConjunto>(id, { fields }, cacheSeg)))
     for (const x of itens) if (!('erro' in x)) r.set(x.id, x)
   }
   return r

@@ -50,7 +50,7 @@ export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>)
   const aviso = typeof sp.google === 'string' ? AVISO_GOOGLE[sp.google] : undefined
   return <div className="an"><div className="an-corpo">
     <header className="an-cab"><div><span className="an-eyebrow"><i />Tráfego pago</span><h1>Anúncios{escolhido && <span> · {escolhido.nome}</span>}</h1><p>Resultados claros. Campanhas sob controle.</p></div><NovaCampanha key={escolhido?.id ?? 'todos'} clientes={clientes.map(c => ({ id: c.id, nome: c.nome }))} clienteInicial={escolhido?.id ?? null} /></header>
-    <FiltrosAnuncios key={`${escolhido?.id}:${periodo.de}:${periodo.ate}:${canal}:${aba}`} clientes={clientes.map(c => ({ id: c.id, nome: c.nome }))} cliente={escolhido?.id ?? null} periodo={periodo} hoje={hoje} canal={canal} aba={aba} />
+    <FiltrosAnuncios clientes={clientes.map(c => ({ id: c.id, nome: c.nome }))} cliente={escolhido?.id ?? null} periodo={periodo} hoje={hoje} canal={canal} aba={aba} />
     {aviso && <p className="an-aviso" role="status">{aviso}</p>}
     <nav className="an-tabs" aria-label="Seções de anúncios">{ABAS.map(([a, rotulo]) => <Link key={a} href={link(ctx, a)} scroll={false} prefetch={false} aria-current={aba === a ? 'page' : undefined}>{rotulo}{a === 'aprovacoes' && <span>{propostas.length}</span>}</Link>)}</nav>
     <Suspense key={`${escolhido?.id}:${periodo.de}:${periodo.ate}:${canal}:${aba}`} fallback={<Carregando />}><Resultados ctx={ctx} /></Suspense>
