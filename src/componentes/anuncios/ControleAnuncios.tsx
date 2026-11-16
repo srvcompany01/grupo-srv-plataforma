@@ -15,7 +15,7 @@ const NIVEL = { campanha: 'campanha', conjunto: 'conjunto', anuncio: 'anúncio' 
 type Plataforma = 'meta' | 'google'
 type Nivel = keyof typeof NIVEL
 
-function useAlterar(clienteId: string) {
+export function useAlterar(clienteId: string) {
   const [pendente, iniciar] = useTransition()
   const alterar = (p: { plataforma: Plataforma; nivel: Nivel; objetoId: string; acao: 'pausar' | 'ativar' | 'orcamento'; valor?: number }) =>
     iniciar(async () => { avisar(await alterarAnuncioAcao(clienteId, p), true) })
@@ -23,7 +23,7 @@ function useAlterar(clienteId: string) {
 }
 
 /** Liga/desliga. Ligar começa a gastar: pede confirmação. */
-function Interruptor({ ligado, nome, desabilitado, aoMudar }: { ligado: boolean; nome: string; desabilitado: boolean; aoMudar: (ligar: boolean) => void }) {
+export function Interruptor({ ligado, nome, desabilitado, aoMudar }: { ligado: boolean; nome: string; desabilitado: boolean; aoMudar: (ligar: boolean) => void }) {
   return (
     <button
       type="button"
@@ -71,7 +71,7 @@ function Orcamento({ valor, total, desabilitado, aoSalvar }: { valor: number | n
 
 function SeloStatus({ status }: { status: string }) {
   const cor = status === 'ACTIVE' || status === 'ENABLED' ? 'bg-sucesso-fundo text-sucesso-forte' : ['DISAPPROVED', 'WITH_ISSUES'].includes(status) ? 'bg-perigo-fundo text-perigo-forte' : status === 'PENDING_REVIEW' || status === 'IN_PROCESS' ? 'bg-aviso-fundo text-aviso-forte' : 'bg-fundo text-texto-3'
-  return <span className={`rounded-full px-1.5 py-0.5 text-micro font-semibold ${cor}`}>{ROTULO_STATUS[status] ?? status}</span>
+  return <span className={`rounded-md px-1.5 py-0.5 text-micro font-semibold ${cor}`}>{ROTULO_STATUS[status] ?? status}</span>
 }
 
 function LinhaMeta({ o, clienteId, podeGerir, nivel, abertos, alternar }: { o: ObjetoMetaTela; clienteId: string; podeGerir: boolean; nivel: number; abertos: Set<string>; alternar: (id: string) => void }) {
@@ -86,7 +86,7 @@ function LinhaMeta({ o, clienteId, podeGerir, nivel, abertos, alternar }: { o: O
               <button type="button" onClick={() => alternar(o.id)} aria-expanded={aberto} aria-label={aberto ? 'Recolher' : 'Expandir'} className="rounded p-0.5 text-texto-3 hover:bg-hover"><ChevronRight className={`h-3.5 w-3.5 transition-transform ${aberto ? 'rotate-90' : ''}`} /></button>
             ) : <span className="w-4.5" />}
             {/* eslint-disable-next-line @next/next/no-img-element -- miniatura da Meta */}
-            {o.miniatura && <img src={o.miniatura} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}
+            {o.miniatura && <img loading="lazy" decoding="async" src={o.miniatura} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}
             <div className="min-w-0">
               <p className={`truncate ${nivel === 0 ? 'font-semibold' : ''}`} title={o.nome}>{o.nome}</p>
               <p className="flex items-center gap-1.5 text-micro text-texto-3">
@@ -245,7 +245,7 @@ export function Criativos({ clienteId, criativos }: { clienteId: string; criativ
             <li key={c.id} className={`overflow-hidden rounded-lg border border-borda bg-white ${pendente ? 'opacity-60' : ''}`}>
               <div className="flex aspect-square items-center justify-center bg-fundo">
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2 */}
-                {c.tipo === 'imagem' ? <img src={c.url} alt={c.nome} className="h-full w-full object-cover" /> : <video src={c.url} className="h-full w-full object-cover" muted preload="metadata" />}
+                {c.tipo === 'imagem' ? <img loading="lazy" decoding="async" src={c.url} alt={c.nome} className="h-full w-full object-cover" /> : <video src={c.url} className="h-full w-full object-cover" muted preload="metadata" />}
               </div>
               <div className="flex items-center gap-1 px-2 py-1.5">
                 {c.tipo === 'video' && <Film className="h-3.5 w-3.5 shrink-0 text-texto-3" aria-label="Vídeo" />}

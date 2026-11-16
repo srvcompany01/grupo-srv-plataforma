@@ -14,10 +14,10 @@ export function VisaoCarga({ tarefas, hoje }: { tarefas: TarefaResumo[]; hoje: s
   const fimDeSemana = (d: string) => [0, 6].includes(new Date(`${d}T00:00:00Z`).getUTCDay())
   const celula = 'px-2 py-2 text-center text-rotulo tabular-nums'
   return (
-    <div className="overflow-x-auto rounded-lg border border-borda bg-white">
+    <div className="overflow-x-auto rounded-xl  bg-white">
       <table className="w-full min-w-[960px] border-collapse">
         <thead>
-          <tr className="border-b border-borda bg-[var(--bg-subtle)] text-[11px] font-medium text-texto-3">
+          <tr className=" bg-[var(--bg-subtle)] text-[11px] font-medium text-texto-3">
             <th className="px-3 py-2 text-left">Pessoa</th>
             <th className={`${celula} text-perigo`}>Atrasadas</th>
             {dias.map((d) => <th key={d} className={`${celula} capitalize ${d === hoje ? 'font-semibold text-[var(--red)]' : ''}`}>{dia(d)}</th>)}
@@ -28,7 +28,7 @@ export function VisaoCarga({ tarefas, hoje }: { tarefas: TarefaResumo[]; hoje: s
         </thead>
         <tbody>
           {linhas.map((l) => (
-            <tr key={l.pessoa?.id ?? 'sem'} className="h-11 border-b border-borda-fraca last:border-0">
+            <tr key={l.pessoa?.id ?? 'sem'} className="h-11  last:border-0">
               <td className="px-3 py-2 text-corpo font-medium text-texto">{l.pessoa?.nome ?? 'Sem responsável'}</td>
               <td className={`${celula} ${l.atrasadas ? 'font-semibold text-perigo' : 'text-texto-3'}`}>{l.atrasadas || '–'}</td>
               {l.dias.map((n, i) => (

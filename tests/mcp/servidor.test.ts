@@ -98,7 +98,7 @@ it('P2-5: lancar_tempo chama lancar_tempo no banco com os minutos', async () => 
   await cli.connect(a)
   const r = await cli.callTool({ name: 'lancar_tempo', arguments: { tarefaId: '00000000-0000-4000-8000-000000000001', data: '2026-10-23', minutos: 90 } })
   expect(r.isError).toBeFalsy()
-  expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined }]])
+  expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined, p_faturavel: true }]])
 })
 
 it('P2-6: cancelar_agendamento_post explica quando o post não está agendado', async () => {
@@ -119,4 +119,55 @@ it('P3: listar_comentarios_redes com atualizar=true recusa token de leitura (gra
   expect((r.content as { text: string }[])[0].text).toMatch(/token de escrita/)
   const leitura = (await (await conectar('read')).listTools()).tools.map((t) => t.name)
   expect(leitura).not.toContain('atualizar_comentarios_redes')
+})
+
+it('recorrência: pausar_recorrencia pausa pelo banco e definir_recorrencia valida a regra', async () => {
+  const atualizacoes: unknown[] = []
+  const sb = {
+    from: () => ({ update: (campos: unknown) => { atualizacoes.push(campos); return { eq: async () => ({ error: null, count: 1 }) } } }),
+  } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const tarefaId = '00000000-0000-4000-8000-000000000001'
+  const r = await cli.callTool({ name: 'pausar_recorrencia', arguments: { tarefaId, pausada: true } })
+  expect(r.isError).toBeFalsy()
+  expect(atualizacoes).toEqual([{ active: false }])
+  // Fim antes do início: a regra é recusada antes de tocar no banco.
+  const ruim = await cli.callTool({ name: 'definir_recorrencia', arguments: { tarefaId, frequencia: 'diaria', inicio: '2026-11-20', terminaEm: '2026-11-10' } })
+  expect(ruim.isError).toBe(true)
+})
+
+it('recorrência: as ferramentas são de leitura/escrita certas e a plataforma descreve a regra', () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('ver_recorrencia').escrita).toBe(false)
+  expect(por('definir_recorrencia').escrita).toBe(true)
+  expect(por('pausar_recorrencia').escrita).toBe(true)
+  expect(FERRAMENTAS.some((f) => /exclu|apagar|remover_recorrencia|parar_recorrencia/.test(f.nome) && /recorrencia/.test(f.nome))).toBe(false)
+})
+
+it('tempo faturável: ferramentas com a escrita certa e o resumo recusa período invertido', async () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('resumo_tempo_faturavel').escrita).toBe(false)
+  expect(por('definir_tempo_faturavel').escrita).toBe(true)
+  const chamadas: unknown[] = []
+  const sb = { rpc: async (nome: string, args: unknown) => { chamadas.push([nome, args]); return { error: null } } } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const registroId = '00000000-0000-4000-8000-000000000002'
+  expect((await cli.callTool({ name: 'definir_tempo_faturavel', arguments: { registroId, faturavel: false } })).isError).toBeFalsy()
+  expect(chamadas).toEqual([['definir_faturavel', { p_id: registroId, p_faturavel: false }]])
+  const invertido = await cli.callTool({ name: 'resumo_tempo_faturavel', arguments: { de: '2026-11-30', ate: '2026-11-01' } })
+  expect(invertido.isError).toBe(true)
+})
+
+it('prova visual: a agência só lê, responde e resolve (sem criar marcação nem apagar)', () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('ver_prova_visual').escrita).toBe(false)
+  expect(por('responder_prova_visual').escrita).toBe(true)
+  expect(por('resolver_prova_visual').escrita).toBe(true)
+  expect(FERRAMENTAS.filter((f) => /prova_visual/.test(f.nome)).map((f) => f.nome).sort()).toEqual(['resolver_prova_visual', 'responder_prova_visual', 'ver_prova_visual'])
 })

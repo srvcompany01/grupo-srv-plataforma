@@ -30,13 +30,13 @@ export default async function Clientes() {
           <p className="eyebrow">Relacionamento</p>
           <h1 className="page-title mt-1">Clientes</h1>
         </div>
-        <Link href="/clientes/relatorio" className="flex items-center gap-1.5 rounded-full border border-borda px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
+        <Link href="/clientes/relatorio" className="flex items-center gap-1.5 rounded-md border border-borda px-3 py-1.5 text-rotulo font-semibold text-texto-2 transition hover:bg-hover hover:text-texto">
           <BarChart3 className="h-3.5 w-3.5" /> Relatório de trabalho
         </Link>
       </div>
       {podeCriar && (
         <details className="group">
-          <summary className="w-fit cursor-pointer rounded-full bg-texto px-4 py-2 text-corpo font-semibold text-claro transition hover:bg-carbon">+ Novo cliente</summary>
+          <summary className="w-fit cursor-pointer rounded-md bg-texto px-4 py-2 text-corpo font-semibold text-claro transition hover:bg-carbon">+ Novo cliente</summary>
           <div className="mt-2">
             <FormCliente acao={criarCliente} podeEditar />
           </div>

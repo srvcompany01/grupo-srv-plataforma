@@ -50,8 +50,8 @@ function OpcaoCriacao({ icone: Icone, nome, descricao, cor, onClick, seta = fals
     >
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center" style={{ color: cor }}><Icone className="h-[18px] w-[18px]" /></span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 text-destaque font-medium text-[#292a2d]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-rotulo text-[#8b8c91]">Em breve</span>}</span>
-        {descricao && <span className="mt-0.5 block text-legenda leading-[1.45] text-[#77787d]">{descricao}</span>}
+        <span className="flex items-center gap-2 text-destaque font-medium text-[var(--text)]">{nome}{indisponivel && <span className="rounded bg-[#ececef] px-1.5 py-0.5 text-legenda font-semibold uppercase tracking-rotulo text-[#8b8c91]">Em breve</span>}</span>
+        {descricao && <span className="mt-0.5 block text-legenda leading-[1.45] text-[var(--text-2)]">{descricao}</span>}
       </span>
       {seta && <ChevronRight className="mt-0.5 h-4 w-4 text-[#98999d]" />}
     </button>
@@ -157,20 +157,20 @@ export function CriarEstruturaDialog({
       <Popover open={menuAberto} onOpenChange={setMenuAberto}>
         <PopoverTrigger asChild>{trigger ?? <GatilhoPadrao rotulo={`Adicionar em ${espaco?.nome ?? 'Itens soltos'}`}><Plus className="h-3.5 w-3.5" /></GatilhoPadrao>}</PopoverTrigger>
         <PopoverContent side="right" align="start" sideOffset={9} className="w-[300px] gap-0 overflow-hidden rounded-lg border border-[#dedee1] bg-white p-0 shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
-          <div className="px-4 pb-2 pt-4"><p className="text-rotulo font-medium text-[#77787d]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
+          <div className="px-4 pb-2 pt-4"><p className="text-rotulo font-medium text-[var(--text-2)]">Criar em {espaco?.nome ?? 'Itens soltos'}</p></div>
           <div className="px-2 pb-2">
-            <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="#5f6368" onClick={() => abrirCriador('lista')} />
-            <OpcaoCriacao icone={FolderPlus} nome="Pasta" descricao="Agrupe listas, documentos e muito mais" cor="#5f6368" onClick={() => abrirCriador('pasta')} />
+            <OpcaoCriacao icone={ListPlus} nome="Lista" descricao="Acompanhe tarefas, projetos, pessoas e muito mais" cor="var(--text-2)" onClick={() => abrirCriador('lista')} />
+            <OpcaoCriacao icone={FolderPlus} nome="Pasta" descricao="Agrupe listas, documentos e muito mais" cor="var(--text-2)" onClick={() => abrirCriador('pasta')} />
           </div>
-          <div className="border-t border-[#ececef] px-2 py-2">
+          <div className="border-t border-[var(--border-soft)] px-2 py-2">
             <OpcaoCriacao icone={FileText} nome="Documento" cor="#168ff5" indisponivel />
             <OpcaoCriacao icone={BarChart3} nome="Painéis" cor="#ae48ca" indisponivel />
             <OpcaoCriacao icone={PenTool} nome="Quadro branco" cor="#eaaa16" indisponivel />
             <OpcaoCriacao icone={ClipboardCheck} nome="Formulário" cor="#7058eb" indisponivel />
           </div>
-          <div className="border-t border-[#ececef] px-2 py-2">
-            <OpcaoCriacao icone={FileInput} nome="Importações" cor="#77787d" seta indisponivel />
-            <OpcaoCriacao icone={Sparkles} nome="Modelos" cor="#77787d" indisponivel />
+          <div className="border-t border-[var(--border-soft)] px-2 py-2">
+            <OpcaoCriacao icone={FileInput} nome="Importações" cor="var(--text-2)" seta indisponivel />
+            <OpcaoCriacao icone={Sparkles} nome="Modelos" cor="var(--text-2)" indisponivel />
           </div>
         </PopoverContent>
       </Popover>

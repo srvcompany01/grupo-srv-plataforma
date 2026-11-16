@@ -1,5 +1,6 @@
 'use server'
 
+import { ESTRATEGIAS_TESTE, type EstrategiaTeste } from '@/dominio/publicacao'
 import { revalidatePath } from 'next/cache'
 import { FORMATOS, type Formato } from '@/dominio/conteudo'
 import { TIPOS_ACEITOS, TAMANHO_MAXIMO } from '@/dominio/midias'
@@ -9,6 +10,8 @@ import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as conteudo from '@/servicos/conteudo'
+import * as prova from '@/servicos/prova-visual'
+import { cursorValido } from '@/dominio/limite'
 import * as tarefas from '@/servicos/tarefas'
 import { instante } from '@/dominio/agenda'
 import { lerCollabs, type Alvo, type ModoPublicacao } from '@/dominio/publicacao'
@@ -77,7 +80,7 @@ export async function prepararEnvioMidiaAcao(tarefaId: string, a: { nome: string
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
   if (!TIPOS_ACEITOS[a.mime]) return { erro: 'Formato não aceito. Use JPG, PNG, WEBP, MP4 ou MOV.' }
   if (!Number.isInteger(a.tamanho) || a.tamanho < 1) return { erro: 'Arquivo vazio.' }
-  if (a.tamanho > TAMANHO_MAXIMO) return { erro: 'Arquivo acima de 1 GB.' }
+  if (a.tamanho > TAMANHO_MAXIMO) return { erro: 'Arquivo acima de 4 GB.' }
   try {
     const sb = await criarClienteServidor()
     if (!(await conteudo.buscarConteudo(sb, tarefaId))) return { erro: 'Você não tem permissão para isso.' }
@@ -106,21 +109,22 @@ const HORA = /^([01]\d|2[0-3]):[0-5]\d$/
  * Agenda o post. Modo "aprovacao": vai para o portal do cliente (se ainda é rascunho) e só publica depois que ele aprovar.
  * Modo "direto": publica no horário sem aprovação.
  */
-export async function agendarPostAcao(tarefaId: string, a: { data: string; hora: string; alvos: Alvo[]; modo: ModoPublicacao; collabs?: string }): Promise<Resultado> {
+export async function agendarPostAcao(tarefaId: string, a: { data: string; hora: string; alvos: Alvo[]; modo: ModoPublicacao; collabs?: string; teste?: EstrategiaTeste | null }): Promise<Resultado> {
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
   if (!DATA.test(a.data) || !HORA.test(a.hora)) return { erro: 'Informe o dia e a hora da publicação.' }
   if (a.modo !== 'aprovacao' && a.modo !== 'direto') return { erro: 'Modo inválido.' }
+  if (a.teste && !ESTRATEGIAS_TESTE.includes(a.teste)) return { erro: 'Escolha como liberar o Reels de teste.' }
   const collabs = a.collabs === undefined ? undefined : lerCollabs(String(a.collabs))
   if (collabs && 'erro' in collabs) return collabs
   await exigirEquipe()
   const sb = await criarClienteServidor()
-  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, a.alvos, collabs)
+  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, a.alvos, collabs, a.teste ?? null)
   if (problema) return { erro: problema }
   const post = await conteudo.buscarConteudo(sb, tarefaId)
   if (a.modo === 'aprovacao' && post?.aprovacao === 'ajuste') return { erro: 'O cliente pediu ajuste: edite o post (nasce a versão nova, que volta para ele) e agende de novo.' }
   const enviarAoCliente = a.modo === 'aprovacao' && post?.aprovacao === 'rascunho'
   const r = await tentar(
-    () => conteudo.agendarPost(sb, tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.alvos, modo: a.modo, enviarAoCliente, collabs }),
+    () => conteudo.agendarPost(sb, tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.alvos, modo: a.modo, enviarAoCliente, collabs, teste: a.teste ?? null }),
     enviarAoCliente ? 'Enviado para aprovação do cliente. Publica no horário depois que ele aprovar.' : a.modo === 'aprovacao' && post?.aprovacao !== 'aprovado' ? 'Agendado: publica no horário depois da aprovação do cliente.' : 'Agendado.',
   )
   revalidatePath('/', 'layout')
@@ -128,15 +132,16 @@ export async function agendarPostAcao(tarefaId: string, a: { data: string; hora:
 }
 
 /** Publica já, sem esperar o horário nem a aprovação (a equipe assume). */
-export async function publicarAgoraAcao(tarefaId: string, alvos: Alvo[], textoCollabs?: string): Promise<Resultado> {
+export async function publicarAgoraAcao(tarefaId: string, alvos: Alvo[], textoCollabs?: string, teste: EstrategiaTeste | null = null): Promise<Resultado> {
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  if (teste && !ESTRATEGIAS_TESTE.includes(teste)) return { erro: 'Escolha como liberar o Reels de teste.' }
   const collabs = textoCollabs === undefined ? undefined : lerCollabs(String(textoCollabs))
   if (collabs && 'erro' in collabs) return collabs
   await exigirEquipe()
   const sb = await criarClienteServidor()
-  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, alvos, collabs)
+  const problema = await conteudo.problemaParaPublicar(sb, tarefaId, alvos, collabs, teste)
   if (problema) return { erro: problema }
-  const r = await tentar(() => conteudo.agendarPost(sb, tarefaId, { em: new Date().toISOString(), alvos, modo: 'direto', enviarAoCliente: false, collabs }))
+  const r = await tentar(() => conteudo.agendarPost(sb, tarefaId, { em: new Date().toISOString(), alvos, modo: 'direto', enviarAoCliente: false, collabs, teste }))
   if (r?.erro) return r
   const resultado = await publicarPost(tarefaId, { forcar: true })
   revalidatePath('/', 'layout')
@@ -148,4 +153,28 @@ export async function publicarAgoraAcao(tarefaId: string, alvos: Alvo[], textoCo
 export async function cancelarAgendamentoAcao(tarefaId: string): Promise<Resultado> {
   if (!UUID.test(tarefaId)) return { erro: 'Post inválido.' }
   return executar((sb) => conteudo.cancelarAgendamento(sb, tarefaId), 'Agendamento cancelado.')
+}
+
+/** Prova visual: a agência só responde e resolve os pontos do cliente (não cria marcações). */
+export async function responderProvaAcao(comentarioId: string, versaoId: string, tarefaId: string, texto: string): Promise<Resultado> {
+  if (!UUID.test(comentarioId) || !UUID.test(versaoId) || !UUID.test(tarefaId)) return { erro: 'Comentário inválido.' }
+  return executar((sb) => prova.responderComentario(sb, { id: comentarioId, versaoId, tarefaId }, texto), 'Resposta enviada.')
+}
+
+export async function resolverProvaAcao(comentarioId: string, resolvido: boolean): Promise<Resultado> {
+  if (!UUID.test(comentarioId)) return { erro: 'Comentário inválido.' }
+  return executar((sb) => prova.resolverComentario(sb, comentarioId, resolvido), resolvido ? 'Comentário resolvido' : 'Comentário reaberto')
+}
+
+/** Comentários de uma versão do post, em páginas (a versão aberta na revisão e o histórico). A RLS decide o que a pessoa vê. */
+export async function carregarVersaoProvaAcao(tarefaId: string, versaoId: string, depois: unknown): Promise<{ comentarios: prova.ComentarioProvaComResolvedor[]; proximo: prova.Cursor | null } | { erro: string }> {
+  if (typeof tarefaId !== 'string' || typeof versaoId !== 'string' || !UUID.test(tarefaId) || !UUID.test(versaoId)) return { erro: 'Post inválido.' }
+  if (depois !== null && depois !== undefined && !cursorValido(depois)) return { erro: 'Página inválida.' }
+  await exigirEquipe()
+  try {
+    return await prova.paginaDaVersao(await criarClienteServidor(), tarefaId, versaoId, depois ?? null)
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível carregar os comentários. Tente de novo.' }
+  }
 }

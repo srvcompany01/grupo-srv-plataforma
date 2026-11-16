@@ -9,7 +9,7 @@ import { rotulo } from '@/lib/ui'
 import type { Comentario } from '@/servicos/comentarios'
 import type { ItemAtividade, TarefaCompleta } from '@/servicos/tarefas'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
-import { SecaoRecorrencia } from './SecaoRecorrencia'
+import { AvisoDaSerie, SecaoRecorrencia } from './SecaoRecorrencia'
 import type { Recorrencia } from '@/dominio/recorrencia'
 import { SecaoConteudo } from '@/componentes/conteudo/SecaoConteudo'
 import type { ConteudoDaTarefa, PublicacaoDoPost } from '@/servicos/conteudo'
@@ -47,7 +47,17 @@ export type PropsTela = {
   conteudo: ConteudoDaTarefa | null
   publicacao?: PublicacaoDoPost | null
   contaMeta?: ContaMeta
+  /** Hashtags fixas do cliente no Instagram (entram sozinhas na publicação). */
+  hashtagsInstagram?: string[]
   recorrencia: Recorrencia | null
+  /** Admin e gestor veem o tempo de todos; os demais só o próprio. */
+  verTodoTempo?: boolean
+  /** Prova visual: comentários do cliente nas versões do post. */
+  revisao?: import('@/servicos/prova-visual').RevisaoCarregada | null
+  /** Se a tarefa é cópia de uma série: o modelo e a regra dele. */
+  serie: { modeloId: string; modeloTitulo: string; regra: Recorrencia | null; criadas: number } | null
+  /** Quantas cópias a regra desta tarefa já criou. */
+  copiasCriadas: number
 }
 
 /** Tela da tarefa: coluna principal rolável + coluna Atividade (400px; aba abaixo de lg). */
@@ -62,7 +72,7 @@ export function TelaTarefa(p: PropsTela) {
   const [aba, setAba] = useState<'detalhes' | 'atividade'>('detalhes')
   return (
     <div className="@container flex h-full min-h-0 w-full flex-col bg-white">
-      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0 border-b border-borda px-3 pt-2 @4xl:hidden">
+      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)} className="shrink-0  px-3 pt-2 @4xl:hidden">
         <TabsList>
           <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
           <TabsTrigger value="atividade">Atividade</TabsTrigger>
@@ -70,12 +80,21 @@ export function TelaTarefa(p: PropsTela) {
       </Tabs>
       <div className="grid min-h-0 flex-1 @4xl:grid-cols-[1fr_400px]">
         <div className={`min-h-0 space-y-6 overflow-y-auto p-4 @2xl:px-6 ${aba === 'detalhes' ? '' : 'hidden @4xl:block'}`}>
-          <CabecalhoTarefa tarefa={t} listas={p.listas} podeGerir={p.podeGerir} emJanela={p.emJanela} />
-          <GradePropriedades tarefa={t} status={p.status} equipe={p.equipe} tags={p.tags} tagsCliente={p.tagsCliente} podeGerir={p.podeGerir} hoje={p.hoje}>
-            <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
+          <CabecalhoTarefa tarefa={t} listas={p.listas} status={p.status} podeGerir={p.podeGerir} emJanela={p.emJanela} />
+          {p.serie && <AvisoDaSerie modeloId={p.serie.modeloId} regra={p.serie.regra} />}
+          <GradePropriedades
+            tarefa={t}
+            status={p.status}
+            equipe={p.equipe}
+            tags={p.tags}
+            tagsCliente={p.tagsCliente}
+            podeGerir={p.podeGerir}
+            hoje={p.hoje}
+            repetir={!p.serie && <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.geradas}-${p.recorrencia?.ativa}-${p.recorrencia?.frequencia}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} criadas={p.copiasCriadas} />}
+          >
+            <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} verTudo={p.verTodoTempo} />
           </GradePropriedades>
-          <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.cada}-${p.recorrencia?.frequencia}-${p.recorrencia?.ativa}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} />
-          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} />}
+          {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} revisao={p.revisao} titulo={t.titulo} />}
           <div className="space-y-1">
             <span className={rotulo}>Descrição</span>
             <EditorDescricao key={t.id} tarefaId={t.id} inicial={t.descricao} />
@@ -83,7 +102,7 @@ export function TelaTarefa(p: PropsTela) {
           <SecaoCampos tarefaId={t.id} campos={p.camposPersonalizados} equipe={p.equipe} />
           <SecaoSubtarefas tarefa={t} status={p.status} euId={p.euId} hoje={p.hoje} />
         </div>
-        <aside className={`min-h-0 flex-col overflow-hidden border-l border-borda bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden @4xl:flex'}`}>
+        <aside className={`min-h-0 flex-col overflow-hidden  bg-fundo ${aba === 'atividade' ? 'flex' : 'hidden @4xl:flex'}`}>
           <PainelAtividade atividade={p.atividade} comentarios={p.comentarios} nomes={nomes} euId={p.euId} rodape={<CaixaComentario tarefaId={t.id} pessoas={p.pessoas} />} />
         </aside>
       </div>

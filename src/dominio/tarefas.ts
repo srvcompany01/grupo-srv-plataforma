@@ -1,3 +1,4 @@
+import type { Recorrencia } from './recorrencia'
 import type { Json } from '@/infra/supabase/tipos'
 
 export const PRIORIDADES = ['urgente', 'alta', 'normal', 'baixa'] as const
@@ -30,6 +31,8 @@ export type TarefaResumo = {
   prioridade: Prioridade
   /** YYYY-MM-DD */
   prazo: string | null
+  /** HH:MM (Belém); só existe junto com o prazo. */
+  horario?: string | null
   posicao: string
   responsaveis: Pessoa[]
   tags: { id: string; nome: string; cor: string }[]
@@ -43,6 +46,27 @@ export type TarefaResumo = {
   comentarios?: number
   /** Valores dos campos vinculados à lista, indexados pelo id da definição. */
   camposPersonalizados?: Record<string, Json | null>
+  /** ISO de criação e da última atualização. */
+  criadaEm?: string
+  atualizadaEm?: string
+  /** YYYY-MM-DD de início. */
+  inicio?: string | null
+  estimativaMin?: number | null
+  criadoPorNome?: string
+  /** Soma dos lançamentos de tempo já encerrados, em segundos. */
+  tempoSeg?: number
+  /** Só no modo "subtarefas como tarefas principais": título da tarefa-mãe de origem. */
+  paiTitulo?: string
+  /** Pontos do cliente ainda em aberto na prova visual do post. */
+  provaAbertos?: number
+  /** Tarefa-modelo de uma repetição (tem regra) ou cópia criada por ela. */
+  recorrencia?: {
+    tipo: 'modelo' | 'copia'
+    ativa: boolean
+    resumo: string
+    /** Só no modelo: o que o calendário precisa para mostrar as próximas ocorrências previstas. */
+    regra?: Pick<Recorrencia, 'frequencia' | 'cada' | 'primeiroPrazo' | 'diasSemana' | 'modoMensal' | 'geradas' | 'terminaEm' | 'maximo' | 'modoCriacao'>
+  } | null
 }
 
 export type No<T> = T & { filhos: No<T>[] }

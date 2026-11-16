@@ -1,6 +1,5 @@
 'use client'
 
-import { Bell } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -10,17 +9,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popove
 import { rotuloContagem, tempoRelativo } from '@/dominio/formatar'
 import { criarClienteNavegador } from '@/infra/supabase/navegador'
 import type { Aviso } from '@/servicos/avisos'
+import { AtSign, TriangleAlert } from 'lucide-react'
+import { Ic } from './Ic'
 
-export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLidos: number; euId: string }) {
+export function SinoAvisos({ avisos, naoLidos, euId, variante = 'topo', ouvir = true }: { /** false = só mostra a lista (a outra cópia do sino já escuta e avisa em tempo real). */ ouvir?: boolean; avisos: Aviso[]; naoLidos: number; euId: string; /** `dock` = botão da barra de navegação (painel abre ao lado). */ variante?: 'topo' | 'dock' }) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(() => Date.now())
   const [pendente, iniciar] = useTransition()
+  const [soNovos, setSoNovos] = useState(false)
+  const lista = soNovos ? avisos.filter((a) => !a.lido) : avisos
   const idCanal = useId()
   const selo = rotuloContagem(naoLidos)
 
   // Novo aviso para esta pessoa: atualiza o layout e avisa na hora.
   useEffect(() => {
+    if (!ouvir) return
     const sb = criarClienteNavegador()
     const canal = sb
       .channel(`avisos-${euId}-${idCanal}`)
@@ -38,7 +42,7 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
     return () => {
       void sb.removeChannel(canal)
     }
-  }, [euId, idCanal, router])
+  }, [euId, idCanal, router, ouvir])
 
   function abrir(a: Aviso) {
     setAberto(false)
@@ -56,35 +60,34 @@ export function SinoAvisos({ avisos, naoLidos, euId }: { avisos: Aviso[]; naoLid
         if (v) setAgora(Date.now())
       }}
     >
-      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className="relative rounded-md p-1.5 text-lat-2 hover:bg-lat-hover hover:text-lat-fg">
-        <Bell className="h-4 w-4" />
-        {selo && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-perigo px-1 text-legenda font-semibold text-claro">{selo}</span>}
+      <PopoverTrigger aria-label={selo ? `Avisos (${naoLidos} não lidos)` : 'Avisos'} className={variante === 'dock' ? 'dock-item' : 'tb flex items-center justify-center'} style={variante === 'dock' ? undefined : { padding: 0 }}>
+        <Ic n="notifications" s={variante === 'dock' ? 22 : 18} />
+        {selo && <span className={variante === 'dock' ? 'dock-ponto' : 'tb-ponto'} />}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 gap-0 p-0">
-        <p className="border-b border-borda px-3 py-2 text-corpo font-semibold">Avisos</p>
-        {avisos.length === 0 ? (
-          <p className="px-3 py-4 text-rotulo text-texto-3">Nenhum aviso por enquanto.</p>
+      <PopoverContent side={variante === 'dock' ? 'right' : 'bottom'} align={variante === 'dock' ? 'end' : 'end'} className="painel-alerta">
+        <div className="pa-topo">
+          <p className="pa-titulo">Alertas</p>
+          <div className="pa-seg" role="tablist">
+            <button type="button" role="tab" aria-selected={!soNovos} data-on={!soNovos || undefined} onClick={() => setSoNovos(false)}>Todos</button>
+            <button type="button" role="tab" aria-selected={soNovos} data-on={soNovos || undefined} onClick={() => setSoNovos(true)}>Não lidos</button>
+          </div>
+        </div>
+        {lista.length === 0 ? (
+          <p className="pa-vazio">{soNovos ? 'Nenhum aviso novo.' : 'Nenhum aviso por enquanto.'}</p>
         ) : (
-          <ul className="max-h-80 divide-y divide-borda overflow-y-auto">
-            {avisos.map((a) => (
-              <li key={a.id}>
-                <button disabled={pendente} onClick={() => abrir(a)} className={`block w-full px-3 py-2 text-left text-rotulo hover:bg-hover ${a.lido ? 'text-texto-2' : 'font-bold text-texto'}`}>
-                  <span className="block">
-                    {a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}
-                  </span>
-                  <span className="block text-legenda font-normal text-texto-3">{tempoRelativo(a.criadoEm, agora)}</span>
-                </button>
-              </li>
+          <div className="pa-lista">
+            {lista.map((a) => (
+              <button key={a.id} type="button" disabled={pendente} onClick={() => abrir(a)} data-nova={!a.lido || undefined} className="pa-item">
+                <span className="pa-ico" data-erro={a.mensagem ? true : undefined}>{a.mensagem ? <TriangleAlert size={18} strokeWidth={1.6} /> : <AtSign size={18} strokeWidth={1.6} />}</span>
+                <span className="pa-corpo">
+                  <span className="pa-t block">{a.mensagem ?? `${a.atorNome || 'Alguém'} mencionou você em ${a.onde}`}</span>
+                </span>
+                <span className="pa-lado">{!a.lido && <span className="pa-ponto" />}{tempoRelativo(a.criadoEm, agora)}</span>
+              </button>
             ))}
-          </ul>
+          </div>
         )}
-        <button
-          disabled={pendente || naoLidos === 0}
-          onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))}
-          className="border-t border-borda px-3 py-2 text-left text-rotulo font-medium text-marca hover:bg-hover disabled:opacity-40"
-        >
-          Marcar todos como lidos
-        </button>
+        <button type="button" disabled={pendente || naoLidos === 0} onClick={() => iniciar(async () => void avisar(await marcarTodosAvisosLidosAcao()))} className="pa-rodape">Marcar todos como lidos</button>
       </PopoverContent>
     </Popover>
   )

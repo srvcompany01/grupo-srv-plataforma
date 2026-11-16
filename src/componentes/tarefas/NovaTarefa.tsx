@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
 import { useState, useTransition } from 'react'
 import { criarTarefaAcao } from '@/app/(app)/tarefas/acoes'
 import { avisar } from './avisar'
@@ -35,8 +35,8 @@ export function NovaTarefa({
 
   if (!aberta) {
     return (
-      <button onClick={() => setAberta(true)} className="flex h-9 w-full items-center gap-1.5 border-t border-borda px-10 text-rotulo font-medium text-texto-3 transition hover:bg-hover/70 hover:text-texto">
-        <Plus className="h-3.5 w-3.5" /> {paiId ? 'Nova subtarefa' : 'Nova tarefa'}
+      <button onClick={() => setAberta(true)} className="flex h-8 w-full items-center gap-2 border-0 bg-transparent text-left text-[13px] text-texto-3 transition-colors hover:bg-[var(--bg-hover)] hover:text-texto-2" style={{ paddingLeft: recuo ?? 50 }}>
+        <Ic n="add" s={16} /> {paiId ? 'Adicionar subtarefa' : 'Adicionar tarefa'}
       </button>
     )
   }
@@ -50,8 +50,8 @@ export function NovaTarefa({
           onCriada?.()
         })
       }}
-      className="flex h-9 items-center gap-2 border-t border-borda px-9"
-      style={recuo === undefined ? undefined : { paddingLeft: recuo }}
+      className="flex h-9 items-center gap-2 border-b border-[var(--border-soft)] pr-2"
+      style={{ paddingLeft: recuo ?? 50 }}
     >
       <input
         autoFocus
@@ -60,9 +60,10 @@ export function NovaTarefa({
         onKeyDown={(e) => e.key === 'Escape' && fechar()}
         onBlur={() => !titulo && fechar()}
         disabled={pendente}
-        placeholder={`${paiId ? 'Nome da subtarefa' : 'Nome da tarefa'} (Enter para salvar, Esc para cancelar)`}
-        className="flex-1 bg-transparent text-corpo outline-none"
+        placeholder={`${paiId ? 'Nome da subtarefa' : 'Nome da tarefa'} — Enter salva, Esc cancela`}
+        className="h-7 flex-1 rounded border border-[var(--focus)] bg-[var(--bg)] px-2 text-[13px] outline-none ring-3 ring-[var(--focus-ring)]"
       />
+      <button disabled={pendente || !titulo.trim()} className="b-pri" style={{ padding: '0 12px' }}>Salvar</button>
     </form>
   )
 }

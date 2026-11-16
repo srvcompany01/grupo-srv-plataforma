@@ -226,7 +226,7 @@ function PainelIAInterno() {
 
   if (!aberto) {
     return (
-      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-petroleo text-claro shadow-flutuante transition hover:bg-petroleo-700">
+      <button type="button" onClick={abrir} title="Emma, a assistente da Grupo SRV (Ctrl+J)" aria-label="Abrir a Emma, assistente da Grupo SRV" className="fixed bottom-4 right-4 z-40 flex h-11 w-11 max-md:hidden items-center justify-center rounded-full bg-petroleo text-claro shadow-flutuante transition hover:bg-petroleo-700">
         <Sparkles className="h-5 w-5" />
       </button>
     )
@@ -234,7 +234,7 @@ function PainelIAInterno() {
   return (
     <section
       aria-label="Emma, assistente da Grupo SRV"
-      className={`fixed bottom-4 right-4 z-40 flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-flutuante ring-1 ring-black/10 transition-[width,height] ${grande ? 'h-[calc(100dvh-2rem)] w-[56rem]' : 'h-[42rem] w-[30rem]'}`}
+      className={`fixed bottom-4 right-4 z-[60] flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-flutuante ring-1 ring-black/10 transition-[width,height] ${grande ? 'h-[calc(100dvh-2rem)] w-[56rem]' : 'h-[42rem] w-[30rem]'}`}
     >
       <header className="flex items-center gap-2 px-4 py-3">
         <Sparkles className="h-4 w-4 text-petroleo" />
@@ -314,7 +314,7 @@ function PainelIAInterno() {
                   localStorage.setItem('srv-ia-pensar', pensar ? '0' : '1')
                 } catch {}
               }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-legenda font-semibold transition ${pensar ? 'bg-petroleo text-claro' : 'bg-fundo text-texto-3 hover:bg-hover'}`}
             >
               <Brain className="h-3.5 w-3.5" /> Pensar {pensar ? 'ligado' : 'desligado'}
             </button>

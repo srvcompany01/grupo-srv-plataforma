@@ -196,7 +196,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
       {!atual ? (
         <p className="rounded-lg border border-dashed border-borda py-10 text-center text-corpo text-texto-3">Nenhuma varredura ainda. Rode a primeira acima.</p>
       ) : (
-        <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`} acoes={monitores.some((m) => m.palavra === atual.palavra) ? <span className="inline-flex items-center gap-1 rounded-full bg-sucesso-fundo px-2 py-1 text-legenda font-semibold text-sucesso-forte">Acompanhada toda segunda</span> : <BotaoMonitor clienteId={cliente.id} palavra={atual.palavra} grade={atual.grade} raioKm={atual.raioKm} ligado={false} />}>
+        <Modulo icone={MapPin} titulo={`"${atual.palavra}"`} descricao={`${atual.grade}×${atual.grade} pontos · raio de ${n(atual.raioKm)} km · ${new Date(atual.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}`} acoes={monitores.some((m) => m.palavra === atual.palavra) ? <span className="inline-flex items-center gap-1 rounded-md bg-sucesso-fundo px-2 py-1 text-legenda font-semibold text-sucesso-forte">Acompanhada toda segunda</span> : <BotaoMonitor clienteId={cliente.id} palavra={atual.palavra} grade={atual.grade} raioKm={atual.raioKm} ligado={false} />}>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {[
@@ -234,7 +234,7 @@ async function Geogrid({ cliente, placeId, varreduraId }: { cliente: Cliente; pl
                             <span className="block truncate font-semibold" title={l?.nome}>{l?.nome ?? 'Concorrente'}</span>
                             {l?.nota != null && <span className="text-legenda text-texto-3">★ {n(l.nota)} · {n(l.avaliacoes)} avaliações</span>}
                           </span>
-                          <span className="shrink-0 rounded-full bg-fundo px-2 py-0.5 text-legenda font-semibold tabular-nums text-texto-2" title="Pontos em que aparece no top 3">{c.vezes}/{atual.metricas.pontos}</span>
+                          <span className="shrink-0 rounded-md bg-fundo px-2 py-0.5 text-legenda font-semibold tabular-nums text-texto-2" title="Pontos em que aparece no top 3">{c.vezes}/{atual.metricas.pontos}</span>
                         </li>
                       )
                     })}

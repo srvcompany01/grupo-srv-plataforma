@@ -118,3 +118,60 @@ export function filtrarLancamentos(lancamentos: Lancamento[], aba: AbaFinanceiro
   if (aba === 'pendentes') return lancamentos.filter((l) => !l.pago)
   return lancamentos
 }
+
+/** Despesas que variam com o trabalho entregue: entram na margem de contribuição (as demais são custos fixos/gerais). */
+export const CATEGORIAS_DIRETAS = ['Tráfego pago', 'Freelancers', 'Equipe'] as const
+
+export type Margens = {
+  /** Todas as entradas lançadas no período, recebidas ou a receber (mensalidade, projeto e avulso juntos). */
+  receita: number
+  /** Todas as despesas lançadas, pagas ou a pagar, impostos inclusos. */
+  despesas: number
+  lucro: number
+  /** lucro ÷ receita × 100; null quando não há receita. */
+  margemLiquida: number | null
+  /** Despesas das categorias diretas (CATEGORIAS_DIRETAS). */
+  diretas: number
+  /** receita − despesas diretas: o que sobra antes dos custos fixos. */
+  contribuicao: number
+  margemContribuicao: number | null
+}
+
+const pctDe = (parte: number, todo: number): number | null => (todo > 0 ? (parte / todo) * 100 : null)
+
+/** Margem de lucro pelo que está lançado, já recebido/pago ou ainda por receber/pagar (valores em centavos). */
+export function calcularMargens(lancamentos: Pick<Lancamento, 'tipo' | 'categoria' | 'centavos'>[]): Margens {
+  let receita = 0
+  let despesas = 0
+  let diretas = 0
+  for (const l of lancamentos) {
+    if (l.tipo === 'entrada') receita += l.centavos
+    else {
+      despesas += l.centavos
+      if ((CATEGORIAS_DIRETAS as readonly string[]).includes(l.categoria)) diretas += l.centavos
+    }
+  }
+  const lucro = receita - despesas
+  const contribuicao = receita - diretas
+  return { receita, despesas, lucro, margemLiquida: pctDe(lucro, receita), diretas, contribuicao, margemContribuicao: pctDe(contribuicao, receita) }
+}
+
+/** Margem de cada cliente com o que foi lançado nele; lançamentos sem cliente (custos gerais) vêm numa linha à parte. Maior lucro primeiro. */
+export function margensPorCliente(lancamentos: Lancamento[]): { clienteId: string | null; clienteNome: string; margens: Margens }[] {
+  const grupos = new Map<string, { clienteId: string | null; clienteNome: string; itens: Lancamento[] }>()
+  for (const l of lancamentos) {
+    const chave = l.clienteId ?? ''
+    const g = grupos.get(chave) ?? { clienteId: l.clienteId, clienteNome: l.clienteNome ?? 'Sem cliente (custos gerais)', itens: [] }
+    g.itens.push(l)
+    grupos.set(chave, g)
+  }
+  return [...grupos.values()].map((g) => ({ clienteId: g.clienteId, clienteNome: g.clienteNome, margens: calcularMargens(g.itens) })).sort((a, b) => b.margens.lucro - a.margens.lucro)
+}
+
+/** Margem líquida de cada um dos `quantos` meses que terminam em `mesFinal` (do mais antigo ao mais novo). */
+export function serieDeMargem(lancamentos: Lancamento[], mesFinal: string, quantos = 6): { mes: string; lucro: number; margemLiquida: number | null }[] {
+  return Array.from({ length: quantos }, (_, i) => mesVizinho(mesFinal, i - quantos + 1)).map((mes) => {
+    const m = calcularMargens(lancamentos.filter((l) => l.data.startsWith(mes)))
+    return { mes, lucro: m.lucro, margemLiquida: m.margemLiquida }
+  })
+}

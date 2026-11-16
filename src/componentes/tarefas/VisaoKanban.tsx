@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { IndicadorProva, IndicadorRecorrencia } from './IndicadorRecorrencia'
 import { CalendarDays, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
@@ -112,7 +113,7 @@ export function VisaoKanban({
 function ColunaKanban({ coluna, tarefas, ctx, subtarefas }: { coluna: Coluna; tarefas: TarefaResumo[]; ctx: Contexto; subtarefas: Record<string, number> }) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.id })
   return (
-    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} className={`flex w-[272px] shrink-0 flex-col rounded-lg bg-[var(--bg-subtle)] p-2 transition ${isOver ? 'bg-[var(--sel)]' : ''}`}>
+    <section ref={setNodeRef} aria-label={`${coluna.nome}, ${tarefas.length} tarefas`} data-sobre={isOver ? '' : undefined} style={{ ['--kanban-cor' as string]: coluna.cor ?? undefined }} className="kanban-coluna flex w-[272px] shrink-0 flex-col rounded-2xl p-2 transition">
       <header className="mb-1 flex h-8 items-center gap-2 px-1">
         <h3 className="min-w-0"><EtiquetaGrupo nome={coluna.nome} cor={coluna.cor} icone={coluna.icone} contagem={tarefas.length} /></h3>
       </header>
@@ -138,7 +139,7 @@ function CartaoArrastavel({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; c
 
 function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contexto; subtarefas: number }) {
   return (
-    <div className="space-y-2 rounded-lg border border-borda bg-[var(--bg)] p-2.5 text-corpo transition hover:border-borda-forte focus-within:border-[var(--focus)]">
+    <div className="space-y-2 rounded-2xl bg-[var(--bg)] p-2.5 text-corpo transition focus-within:ring-2 focus-within:ring-[var(--focus-ring)]">
       <div className="flex flex-wrap items-center gap-1.5">
         <SeloPrioridade prioridade={tarefa.prioridade} />
         {ctx.mostrarLista && <span className="max-w-full truncate rounded bg-[var(--bg-active)] px-1.5 py-0.5 text-legenda text-texto-2" title={tarefa.clienteNome ? `${tarefa.listaNome} · @${tarefa.clienteNome}` : tarefa.listaNome}>{tarefa.listaNome}</span>}
@@ -158,8 +159,10 @@ function Cartao({ tarefa, ctx, subtarefas }: { tarefa: TarefaResumo; ctx: Contex
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-rotulo text-texto-3">
         <span className="inline-flex items-center gap-0.5" title="Vencimento">
           <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
+          <EditorVencimento tarefaId={tarefa.id} prazo={tarefa.prazo} horario={tarefa.horario} concluida={!!tarefa.concluidaEm} hoje={ctx.hoje} />
         </span>
+            <IndicadorRecorrencia recorrencia={tarefa.recorrencia} />
+          <IndicadorProva abertos={tarefa.provaAbertos} />
         {!!tarefa.comentarios && (
           <span className="inline-flex items-center gap-1" title={`${tarefa.comentarios} comentários`}>
             <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />

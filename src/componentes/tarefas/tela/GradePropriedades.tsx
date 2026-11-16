@@ -1,16 +1,17 @@
 'use client'
 
-import { Calendar, Check, ChevronRight, X, CircleDot, Eye, EyeOff, Flag, Hourglass, Tag, Timer, User } from 'lucide-react'
+import { diaDaSemana } from '@/dominio/prazo'
+import { Calendar, Check, X, Eye, EyeOff, Flag, Hourglass, Repeat, Tag, Timer, User } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { atualizarTarefaAcao, criarEtiquetaAcao, definirEtiquetaAcao } from '@/app/(app)/tarefas/acoes'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { formatarDuracao } from '@/dominio/formatar'
-import { PRIORIDADES, ROTULO_PRIORIDADE, type Pessoa, type Prioridade, type StatusLista } from '@/dominio/tarefas'
+import { type Pessoa, type StatusLista } from '@/dominio/tarefas'
+import { SeletorPrioridade } from '../SeletorPrioridade'
 import { botaoFantasma, campo } from '@/lib/ui'
 import type { TarefaCompleta } from '@/servicos/tarefas'
 import { avisar } from '../avisar'
 import { SeletorResponsaveis } from '../SeletorResponsaveis'
-import { SeletorStatus } from '../SeletorStatus'
 import { SeletorTagCliente } from '../SeletorTagCliente'
 import type { Opcao } from './TelaTarefa'
 
@@ -42,6 +43,7 @@ export function GradePropriedades({
   tagsCliente,
   podeGerir,
   hoje,
+  repetir,
   children,
 }: {
   tarefa: TarefaCompleta
@@ -51,6 +53,8 @@ export function GradePropriedades({
   tagsCliente: Opcao[]
   podeGerir: boolean
   hoje: string
+  /** Conteúdo da linha "Repetir" (logo abaixo do vencimento). */
+  repetir?: React.ReactNode
   /** Conteúdo da célula "Rastrear tempo". */
   children?: React.ReactNode
 }) {
@@ -59,9 +63,6 @@ export function GradePropriedades({
   const [novaTag, setNovaTag] = useState('')
   const [editandoEstimativa, setEditandoEstimativa] = useState(false)
   const salvar = (campos: Parameters<typeof atualizarTarefaAcao>[1]) => iniciar(async () => void avisar(await atualizarTarefaAcao(t.id, campos)))
-  const atual = status.find((s) => s.id === t.statusId)
-  const concluido = status.find((s) => s.categoria === 'done')
-  const proximo = status[status.findIndex((s) => s.id === t.statusId) + 1]
   const vencida = !!t.prazo && !t.concluidaEm && t.prazo < hoje
   const horas = t.estimativaMin != null ? Math.floor(t.estimativaMin / 60) : ''
   const minutos = t.estimativaMin != null ? t.estimativaMin % 60 : ''
@@ -84,44 +85,34 @@ export function GradePropriedades({
             podeGerir={podeGerir}
           />
         </Linha>
-        <Linha icone={CircleDot} titulo="Status">
-          <span className="flex items-center gap-1">
-            <SeletorStatus tarefaId={t.id} statusId={t.statusId} opcoes={status} comNome />
-            {proximo && (
-              <button disabled={pendente} onClick={() => salvar({ statusId: proximo.id })} aria-label={`Avançar para ${proximo.nome}`} title={`Avançar para ${proximo.nome}`} className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-            {concluido && atual?.categoria !== 'done' && (
-              <button
-                disabled={pendente}
-                onClick={() => salvar({ statusId: concluido.id })}
-                aria-label={`Marcar como ${concluido.nome}`}
-                title={`Marcar como ${concluido.nome}`}
-                className="rounded p-1 text-texto-3 hover:bg-hover hover:text-sucesso"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-            )}
-          </span>
-        </Linha>
-
         <Linha icone={Calendar} titulo="Vencimento">
           <span className="flex items-center gap-1.5">
             <input
               type="date"
               aria-label="Vencimento"
               defaultValue={t.prazo ?? ''}
-              onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null })}
+              onChange={(e) => e.target.value !== (t.prazo ?? '') && salvar({ prazo: e.target.value || null, horario: e.target.value ? (t.horario ?? null) : null })}
               className={`${campo} h-8 w-36 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
             />
             {t.prazo && (
-              <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <>
+                <input
+                  type="time"
+                  aria-label="Horário do vencimento (opcional)"
+                  title="Horário (opcional)"
+                  defaultValue={t.horario ?? ''}
+                  onChange={(e) => e.target.value !== (t.horario ?? '') && salvar({ prazo: t.prazo, horario: e.target.value || null })}
+                  className={`${campo} h-8 w-28 py-0 ${vencida ? 'border-perigo-borda text-perigo' : ''}`}
+                />
+                <span className={`whitespace-nowrap text-legenda ${vencida ? 'text-perigo' : 'text-texto-3'}`}>({diaDaSemana(t.prazo)})</span>
+                <button type="button" disabled={pendente} onClick={() => salvar({ prazo: null })} aria-label="Limpar vencimento" title="Limpar vencimento" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
             )}
           </span>
         </Linha>
+        {repetir && <Linha icone={Repeat} titulo="Repetir">{repetir}</Linha>}
 
         <Linha icone={Hourglass} titulo="Estimativa de tempo">
           {editandoEstimativa || t.estimativaMin != null ? (
@@ -170,7 +161,7 @@ export function GradePropriedades({
                         if (avisar(await criarEtiquetaAcao(t.id, espacoId, novaTag, '#7b68ee'))) setNovaTag('')
                       })
                     }}
-                    className="border-t border-borda pt-1"
+                    className=" pt-1"
                   >
                     <input value={novaTag} onChange={(e) => setNovaTag(e.target.value)} placeholder="Nova etiqueta + Enter" className="w-full px-1.5 py-1 text-corpo outline-none" />
                   </form>
@@ -186,13 +177,7 @@ export function GradePropriedades({
           <SeletorResponsaveis tarefaId={t.id} atuais={t.responsaveis} equipe={equipe} />
         </Linha>
         <Linha icone={Flag} titulo="Prioridade">
-          <select value={t.prioridade} disabled={pendente} onChange={(e) => salvar({ prioridade: e.target.value as Prioridade })} className={`${campo} h-8 w-40 py-0 text-corpo`}>
-            {PRIORIDADES.map((x) => (
-              <option key={x} value={x}>
-                {ROTULO_PRIORIDADE[x]}
-              </option>
-            ))}
-          </select>
+          <SeletorPrioridade tarefaId={t.id} prioridade={t.prioridade} className="-ml-1.5" />
         </Linha>
         <Linha icone={Timer} titulo="Rastrear tempo">
           {children ?? <span className="text-texto-3">—</span>}

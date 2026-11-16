@@ -3,6 +3,9 @@ import { PRIORIDADES, type Prioridade } from './tarefas'
 
 export const PRAZOS = ['atrasadas', 'hoje', 'semana', 'sem-prazo'] as const
 export type FiltroPrazo = (typeof PRAZOS)[number]
+/** Filtro de recorrência: todas, só as de séries (modelo e cópias) ou só as que não repetem. */
+export const RECORRENCIAS = ['todas', 'recorrentes', 'nao'] as const
+export type FiltroRecorrencia = (typeof RECORRENCIAS)[number]
 export const VISOES = ['lista', 'kanban', 'calendario', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos'] as const
 export type VisaoTarefas = (typeof VISOES)[number]
 /** No calendário: só as tarefas-mãe (entregas), só as subtarefas (postagens) ou as duas, separadas. */
@@ -15,6 +18,7 @@ export type Filtros = {
   prioridades: Prioridade[]
   tags: string[]
   prazo: FiltroPrazo | null
+  recorrencia: FiltroRecorrencia
   clientes: string[]
   /** YYYY-MM-01 */
   mes: string | null
@@ -29,6 +33,12 @@ export type Filtros = {
   semConcluidas: boolean
   /** 'e' = a tarefa precisa passar em todos os filtros; 'ou' = basta passar em um. */
   logica: 'e' | 'ou'
+  /** 'normal' = subtarefas dentro das tarefas-mãe; 'planas' = só as subtarefas, como tarefas principais (as mães somem). */
+  subtarefas: 'normal' | 'planas'
+  /** Abre as subtarefas já expandidas na Lista. */
+  expandidas: boolean
+  /** Id da aba (visualização) da lista que está aberta; vazio = a primeira. */
+  vista: string
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -51,6 +61,7 @@ export function lerFiltros(sp: Params): Filtros {
     prioridades: lista(sp, 'prio').filter((p): p is Prioridade => de(PRIORIDADES, p)),
     tags: lista(sp, 'tag'),
     prazo: de(PRAZOS, prazo) ? prazo : null,
+    recorrencia: de(RECORRENCIAS, valor(sp, 'rec')) ? (valor(sp, 'rec') as FiltroRecorrencia) : 'todas',
     clientes: lista(sp, 'cliente'),
     mes: /^\d{4}-(0[1-9]|1[0-2])-01$/.test(mes) ? mes : null,
     busca: valor(sp, 'busca').trim().slice(0, 120),
@@ -60,6 +71,9 @@ export function lerFiltros(sp: Params): Filtros {
     campos: lista(sp, 'cal').filter((id) => UUID.test(id)),
     semConcluidas: valor(sp, 'semconcl') === '1',
     logica: valor(sp, 'logica') === 'ou' ? 'ou' : 'e',
+    subtarefas: valor(sp, 'subs') === 'planas' ? 'planas' : 'normal',
+    expandidas: valor(sp, 'abertas') === '1',
+    vista: UUID.test(valor(sp, 'v')) ? valor(sp, 'v') : '',
   }
 }
 
@@ -72,6 +86,7 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   por('tag', f.tags)
   por('cliente', f.clientes)
   if (f.prazo) sp.set('prazo', f.prazo)
+  if (f.recorrencia !== 'todas') sp.set('rec', f.recorrencia)
   if (f.mes) sp.set('mes', f.mes)
   if (f.busca) sp.set('busca', f.busca)
   if (f.visao !== 'lista') sp.set('visao', f.visao)
@@ -80,11 +95,14 @@ export function escreverFiltros(f: Filtros): URLSearchParams {
   por('cal', f.campos)
   if (f.semConcluidas) sp.set('semconcl', '1')
   if (f.logica === 'ou') sp.set('logica', 'ou')
+  if (f.subtarefas === 'planas') sp.set('subs', 'planas')
+  if (f.expandidas) sp.set('abertas', '1')
+  if (f.vista) sp.set('v', f.vista)
   return sp
 }
 
 /** Campos que formam um "filtro salvo" (o resto da URL é visão: tipo, grupo, calendário). */
-const CAMPOS_FILTRO = ['responsaveis', 'status', 'prioridades', 'tags', 'prazo', 'clientes', 'mes', 'busca', 'semConcluidas', 'logica'] as const
+const CAMPOS_FILTRO = ['responsaveis', 'status', 'prioridades', 'tags', 'prazo', 'recorrencia', 'clientes', 'mes', 'busca', 'semConcluidas', 'logica'] as const
 
 /** Só a parte "filtro" de uma visualização, em texto (query string). */
 export function filtrosEmTexto(f: Filtros): string {

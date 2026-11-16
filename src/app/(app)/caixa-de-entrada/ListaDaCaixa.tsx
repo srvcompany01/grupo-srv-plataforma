@@ -1,0 +1,99 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
+import { Ic } from '@/componentes/app/Ic'
+import { useConfirmar } from '@/componentes/ConfirmarProvider'
+import { avisar } from '@/componentes/tarefas/avisar'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/componentes/ui/dialog'
+import type { EspacoParaDestino } from '@/dominio/destino-caixa'
+import { DestinoDoVideo } from './DestinoDoVideo'
+import { formatarTamanho, resumoDoDestino, ROTULO_STATUS_CAIXA, ROTULO_TIPO_VIDEO, type TipoDoVideo } from '@/dominio/caixa-de-entrada'
+import type { ItemDaCaixa } from '@/servicos/caixa-de-entrada'
+import { excluirItemCaixaAcao, marcarTipoCaixaAcao, renomearItemCaixaAcao, reutilizarCaixaAcao, tentarDeNovoAcao, textoDaTranscricaoAcao, transcreverCaixaAcao, urlDoVideoCaixaAcao } from './acoes'
+
+const COR_TRANSCRICAO = { nao_pedida: 'var(--text-3)', processando: '#e08a00', pronta: 'var(--ok)', erro: 'var(--red)' } as const
+const ROTULO_TRANSCRICAO = { nao_pedida: '📝 Transcrição: aguardando', processando: '📝 Transcrevendo…', pronta: '📝 Transcrição pronta', erro: '📝 Transcrição falhou' } as const
+const COR = { aguardando_envio: 'var(--text-3)', importando: '#e08a00', pronto: 'var(--ok)', usado: 'var(--client)', erro: 'var(--red)' } as const
+
+/** Vídeos do cliente na caixa. Enquanto algum estiver importando, a lista se atualiza sozinha. */
+export function ListaDaCaixa({ arvore, itens, mostrarCliente = false }: { arvore: EspacoParaDestino[]; itens: ItemDaCaixa[]; mostrarCliente?: boolean }) {
+  const router = useRouter()
+  const confirmar = useConfirmar()
+  const [pendente, iniciar] = useTransition()
+  const [previa, setPrevia] = useState<{ nome: string; url: string } | null>(null)
+  const [destinando, setDestinando] = useState<ItemDaCaixa | null>(null)
+  const [lendo, setLendo] = useState<{ nome: string; texto: string } | null>(null)
+  const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null)
+  const renomear = () => {
+    if (!editando) return
+    const { id, nome } = editando
+    setEditando(null)
+    iniciar(async () => void avisar(await renomearItemCaixaAcao(id, nome), true))
+  }
+  // Atualiza sozinha enquanto algo está andando: importação do Drive ou transcrição em andamento.
+  const importando = itens.some((i) => i.status === 'importando' || (i.status === 'pronto' && i.transcricao === 'processando'))
+  useEffect(() => {
+    if (!importando) return
+    const t = setInterval(() => router.refresh(), 5000)
+    return () => clearInterval(t)
+  }, [importando, router])
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-borda">
+      <div className="flex h-10 items-center gap-2 border-b border-borda-fraca px-3"><h2 className="flex-1 text-[13px] font-semibold">Na caixa</h2><span className="text-[12px] text-texto-3">{itens.length}</span></div>
+      {itens.length === 0 && <p className="p-3 text-[13px] text-texto-3">Nenhum vídeo ainda. Envie pelo computador, importe do Drive ou peça para a IA enviar.</p>}
+      <ul>
+        {itens.map((i) => (
+          <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--border-soft)] px-3 py-2 text-[13px] last:border-b-0">
+            <Ic n={i.status === 'importando' ? 'sync' : i.status === 'erro' ? 'error' : i.status === 'usado' ? 'task_alt' : 'movie'} s={16} style={{ color: COR[i.status] }} />
+            <span className="min-w-0 flex-1 basis-[calc(100%-2rem)] sm:basis-0">
+              {editando?.id === i.id ? (
+                <input autoFocus value={editando.nome} maxLength={255} aria-label="Novo nome do vídeo" onChange={(e) => setEditando({ id: i.id, nome: e.target.value })} onBlur={renomear} onKeyDown={(e) => { if (e.key === 'Enter') renomear(); if (e.key === 'Escape') setEditando(null) }} className="h-7 w-full rounded border border-borda bg-transparent px-2 text-[13px] outline-none focus:border-[var(--client)]" />
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="truncate">{i.nome}</span>
+                  <button type="button" title="Renomear" aria-label={`Renomear ${i.nome}`} disabled={pendente} onClick={() => setEditando({ id: i.id, nome: i.nome })} className="b-icon" style={{ width: 22, height: 22, flex: 'none' }}><Ic n="edit" s={14} /></button>
+                </span>
+              )}
+              <span className="block truncate text-[12px] text-texto-3">{mostrarCliente && <><b className="text-[var(--client)]">{i.clienteNome}</b> · </>}{i.origem === 'drive' ? 'Google Drive' : i.origem === 'ia' ? 'enviado pela IA' : 'upload'} · {formatarTamanho(i.tamanho)}{i.erro ? ` · ${i.erro}` : ''}</span>
+              {i.status === 'pronto' && (
+                <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="rounded px-1.5" style={{ color: i.audioPronto ? 'var(--ok)' : 'var(--text-3)', background: `color-mix(in srgb, ${i.audioPronto ? 'var(--ok)' : 'var(--text-3)'} 14%, transparent)` }}>{i.audioPronto ? '🎧 Áudio extraído' : '🎧 Áudio pendente'}</span>
+                  <span title={i.transcricaoErro || undefined} className="rounded px-1.5" style={{ color: COR_TRANSCRICAO[i.transcricao], background: `color-mix(in srgb, ${COR_TRANSCRICAO[i.transcricao]} 14%, transparent)` }}>{ROTULO_TRANSCRICAO[i.transcricao]}</span>
+                  <button type="button" title="Escolher para onde o vídeo vai (espaço, pasta, lista e tarefa)" onClick={() => setDestinando(i)} className="rounded px-1.5" style={{ color: i.destino ? 'var(--client)' : '#e08a00', background: `color-mix(in srgb, ${i.destino ? 'var(--client)' : '#e08a00'} 14%, transparent)` }}>{i.destino ? `📍 ${resumoDoDestino(i.destino)}` : '📍 Sem destino · escolher'}</button>
+                  {i.transcricao === 'erro' && i.transcricaoErro && <span className="truncate text-[var(--red)]">{i.transcricaoErro}</span>}
+                </span>
+              )}
+            </span>
+            <select value={i.tipo} disabled={pendente} aria-label="Tag do material" onChange={(e) => iniciar(async () => void avisar(await marcarTipoCaixaAcao(i.id, e.target.value as TipoDoVideo), true))} className="h-6 rounded border border-borda bg-transparent px-1 text-[12px]" style={i.tipo === 'indefinido' ? { color: 'var(--red)' } : undefined}>
+              {(Object.keys(ROTULO_TIPO_VIDEO) as TipoDoVideo[]).filter((t) => t !== 'indefinido' || i.tipo === 'indefinido').map((t) => <option key={t} value={t}>{ROTULO_TIPO_VIDEO[t]}</option>)}
+            </select>
+            <span className="rounded px-1.5 text-[12px]" style={{ color: COR[i.status], background: `color-mix(in srgb, ${COR[i.status]} 14%, transparent)` }}>{ROTULO_STATUS_CAIXA[i.status]}</span>
+            {i.postId && <Link href={`/tarefas/${i.postId}`} title={i.status === 'usado' ? undefined : 'Já usado em um post: continua aqui para usar de novo'} className="text-[12px] text-[var(--client)] hover:underline">{i.status === 'usado' ? 'Ver post' : 'Usado em post'}</Link>}
+            {i.status === 'usado' && <button type="button" disabled={pendente} title="Trazer de volta para o banco de vídeos e usar de novo" onClick={() => iniciar(async () => void avisar(await reutilizarCaixaAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="replay" s={14} />Reutilizar</button>}
+            {i.status === 'pronto' && i.transcricao === 'pronta' && <button type="button" disabled={pendente} title="Ler o texto transcrito do áudio" onClick={() => iniciar(async () => { const r = await textoDaTranscricaoAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setLendo({ nome: i.nome, texto: r.texto }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="notes" s={14} />Transcrição</button>}
+            {i.status === 'pronto' && (i.transcricao === 'nao_pedida' || i.transcricao === 'erro') && <button type="button" disabled={pendente} title="Extrair o áudio e transcrever com o Whisper" onClick={() => iniciar(async () => void avisar(await transcreverCaixaAcao(i.id, true), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="graphic_eq" s={14} />{i.transcricao === 'erro' ? 'Tentar de novo' : 'Transcrever'}</button>}
+            {i.status === 'pronto' && <button type="button" disabled={pendente} title="Assistir ao vídeo" onClick={() => iniciar(async () => { const r = await urlDoVideoCaixaAcao(i.id); if ('erro' in r) avisar({ erro: r.erro }); else setPrevia({ nome: i.nome, url: r.url }) })} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}><Ic n="play_circle" s={14} />Prévia</button>}
+            {i.status === 'erro' && i.origem === 'drive' && <button type="button" disabled={pendente} onClick={() => iniciar(async () => void avisar(await tentarDeNovoAcao(i.id), true))} className="b-ghost" style={{ height: 24, padding: '0 6px', fontSize: 12 }}>Tentar de novo</button>}
+            {<button type="button" title="Excluir permanentemente" aria-label={`Excluir ${i.nome} permanentemente`} disabled={pendente} onClick={async () => { if (await confirmar({ titulo: `Excluir "${i.nome}" para sempre?`, descricao: 'O vídeo é apagado da caixa e do armazenamento. Não dá para desfazer.', confirmar: 'Excluir permanentemente', perigo: true })) iniciar(async () => void avisar(await excluirItemCaixaAcao(i.id), true)) }} className="b-icon" style={{ width: 24, height: 24, color: 'var(--red)' }}><Ic n="delete" s={16} /></button>}
+          </li>
+        ))}
+      </ul>
+      {destinando && <DestinoDoVideo key={destinando.id} aberto aoFechar={() => setDestinando(null)} itemId={destinando.id} nome={destinando.nome} arvore={arvore} atual={destinando.destino} />}
+      <Dialog open={!!lendo} onOpenChange={(a) => !a && setLendo(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Transcrição do áudio</DialogTitle><DialogDescription className="truncate">{lendo?.nome}</DialogDescription></DialogHeader>
+          <p className="whitespace-pre-wrap text-[13px] text-texto-2">{lendo?.texto || 'Não encontrei fala neste vídeo.'}</p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!previa} onOpenChange={(a) => !a && setPrevia(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Prévia</DialogTitle><DialogDescription className="truncate">{previa?.nome}</DialogDescription></DialogHeader>
+          {previa && <video src={previa.url} controls autoPlay playsInline preload="metadata" className="max-h-[70vh] w-full rounded bg-black" />}
+        </DialogContent>
+      </Dialog>
+    </section>
+  )
+}

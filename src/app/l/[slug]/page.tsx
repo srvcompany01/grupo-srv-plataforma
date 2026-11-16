@@ -59,7 +59,7 @@ export default async function PaginaBio({ params, searchParams }: PageProps<'/l/
           {botoes.map((b, i) => b.id === 'whatsapp' ? (
             <QuizWhatsapp key={b.id} rotulo={b.rotulo} quiz={p.quiz} origem={origem} destaque={i === 0} />
           ) : (
-            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-full border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
+            <a key={b.id} href={`${base}/${b.id}`} rel="nofollow noopener" className={`block w-full rounded-md border border-black px-5 py-3.5 text-center text-base font-medium transition-colors ${i === 0 ? 'bg-black text-claro hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-claro'}`}>
               {b.rotulo}
             </a>
           ))}

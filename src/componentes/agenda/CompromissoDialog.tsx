@@ -112,7 +112,7 @@ export function CompromissoDialog({ compromisso, equipe, clientes, tags, categor
                 {todasTags.map((t) => {
                   const marcada = f.tags.includes(t.id)
                   return (
-                    <button key={t.id} type="button" onClick={() => alternarTag(t.id)} aria-pressed={marcada} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-legenda font-medium ${marcada ? 'border-transparent text-claro' : 'border-borda text-texto-2 hover:bg-hover'}`} style={marcada ? { background: t.cor } : undefined}>
+                    <button key={t.id} type="button" onClick={() => alternarTag(t.id)} aria-pressed={marcada} className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-legenda font-medium ${marcada ? 'border-transparent text-claro' : 'border-borda text-texto-2 hover:bg-hover'}`} style={marcada ? { background: t.cor } : undefined}>
                       {marcada ? <Check className="h-3 w-3" /> : <span className="h-2 w-2 rounded-full" style={{ background: t.cor }} />} {t.nome}
                     </button>
                   )

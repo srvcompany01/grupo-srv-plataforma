@@ -95,7 +95,7 @@ export function MembrosEspaco({ espaco, equipe, podePromover }: { espaco: Espaco
       <div className="mt-2 flex flex-wrap gap-1.5">
         {espaco.membros.length === 0 && <span className="text-corpo text-texto-3">Sem membros.</span>}
         {espaco.membros.map((m) => (
-          <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-hover px-2 py-0.5 text-rotulo">
+          <span key={m.id} className="inline-flex items-center gap-1 rounded-md bg-hover px-2 py-0.5 text-rotulo">
             {m.nome}
             {m.papel === 'gestor' && <span className="text-marca">· gestor</span>}
             {(podePromover || m.papel === 'membro') && (

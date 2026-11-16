@@ -135,7 +135,7 @@ export function EditorMidias({
         <span>
           Solte os arquivos aqui ou <span className="font-medium text-marca">escolha no computador</span>
         </span>
-        <span className="text-xs text-texto-3">1 vídeo, 1 imagem ou carrossel de até 20 imagens · até 1 GB</span>
+        <span className="text-xs text-texto-3">1 vídeo, 1 imagem ou carrossel de até 20 imagens · até 4 GB</span>
         <input
           ref={entrada}
           type="file"

@@ -26,6 +26,7 @@ import { instagramDoCliente } from '@/servicos/insights-instagram'
 import { metaPorDiaPorTipo, resumoMetaPorTipo, seguidoresPagosNoPeriodo } from '@/servicos/meta-anuncios'
 import * as places from '@/servicos/places'
 import { cliquesLinkBioNoPeriodo } from '@/servicos/performance'
+import { FunilConversao, FunilOrganico } from '@/componentes/FunilConversao'
 import { calcularRelatorio } from '@/servicos/relatorio-compartilhado'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
 
@@ -122,6 +123,27 @@ export async function MetaCliente({ c, periodo }: { c: Cliente; periodo: Periodo
             ...(tot?.total.seguidoresAnuncio ? [{ rotulo: 'Seguidores pelos anúncios', valor: n(tot.total.seguidoresAnuncio), extra: [tot.reconhecimento.custoPorSeguidor === null ? '' : `${reais(tot.reconhecimento.custoPorSeguidor)} por seguidor (campanhas de perfil)`, tot.reconhecimento.seguidoresAnuncio ? `${n(tot.reconhecimento.seguidoresAnuncio)} em campanhas de perfil` : '', tot.captacao.seguidoresAnuncio ? `${n(tot.captacao.seguidoresAnuncio)} em campanhas de captação` : '', tot.reconhecimento.taxaSeguidor === null ? '' : `${pct(tot.reconhecimento.taxaSeguidor)} das visitas ao perfil`].filter(Boolean).join(' · ') || undefined, icone: Users, cor: '#6250d6' }] : []),
             { rotulo: 'CTR', valor: m ? pct(m.ctr) : '—', tom: m ? tomCtrMeta(m.ctr) : undefined, icone: Target, cor: '#eda100' },
           ]} />
+          {tot && (
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <h3 className="mb-2 text-rotulo font-semibold text-texto">Funil de captação</h3>
+                <FunilConversao principal="lead" etapas={[
+                  { rotulo: 'Impressões', valor: tot.captacao.impressoes, extra: 'campanhas de captação' },
+                  { rotulo: 'Cliques', valor: tot.captacao.cliques, extra: 'todos os cliques' },
+                  { rotulo: 'Leads', valor: tot.captacao.leads, extra: 'conversas, formulários e site' },
+                ]} />
+              </div>
+              <div>
+                <h3 className="mb-2 text-rotulo font-semibold text-texto">Funil de reconhecimento</h3>
+                <FunilConversao principal="seguidor" etapas={[
+                  { rotulo: 'Impressões', valor: tot.reconhecimento.impressoes, extra: 'campanhas de perfil e tráfego' },
+                  { rotulo: 'Cliques no link', valor: tot.reconhecimento.cliquesLink },
+                  ...(tot.reconhecimento.visitasPerfil ? [{ rotulo: 'Visitas ao perfil', valor: tot.reconhecimento.visitasPerfil }] : []),
+                  { rotulo: 'Seguidores', valor: tot.reconhecimento.seguidoresAnuncio, extra: 'atribuídos aos anúncios' },
+                ]} />
+              </div>
+            </div>
+          )}
           <GraficoDiario titulo="Investimento diário por tipo de campanha" dias={dias} series={[{ nome: 'Captação', valores: dias.map((x) => diaMap.get(x)?.captacao.gasto ?? 0) }, { nome: 'Reconhecimento', valores: dias.map((x) => diaMap.get(x)?.reconhecimento.gasto ?? 0) }]} formato={reaisCurto} />
           <BlocoAnalise analise={analisarPago({ meta: m, google: null })} />
         </div>
@@ -177,6 +199,10 @@ export async function GoogleCliente({ c, periodo }: { c: Cliente; periodo: Perio
         <div className="space-y-4">
           {avisos.map((a) => <p key={a} className="rounded-lg border border-aviso-fundo bg-aviso-fundo/40 px-3 py-2 text-rotulo text-aviso-forte">{a}</p>)}
           <GraficoDiario titulo="Investimento por dia" dias={dias} series={[{ nome: 'Investido', valores: dias.map((x) => diaMap.get(x) ?? 0) }]} formato={reaisCurto} tipo="barras" />
+          {!('erro' in r) && (() => {
+            const t = totaisCampanhas(r.campanhas)
+            return <FunilConversao principal="conversão" etapas={[{ rotulo: 'Impressões', valor: t.impressoes, extra: 'anúncios exibidos' }, { rotulo: 'Cliques', valor: t.cliques, extra: 'entraram no site' }, { rotulo: 'Conversões', valor: t.conversoes, extra: 'ligações, formulários, WhatsApp' }]} />
+          })()}
           <BlocoAnalise analise={analisarPago({ meta: null, google: d.pago.google })} />
         </div>
       </Modulo>
@@ -220,6 +246,7 @@ export async function OrganicoCliente({ c, periodo }: { c: Cliente; periodo: Per
         {'erro' in ig ? <Erro texto={ig.erro} /> : (
           <div className="space-y-4">
             <InstagramInsights ig={ig} dias={dias} cliquesLinkBio={cliquesLinkBio} seguidoresPagos={seguidoresPagos} />
+            <FunilOrganico ig={ig} cliquesLinkBio={cliquesLinkBio} />
             <p className="text-legenda text-texto-3">Engajamento orgânico nos posts: {engajamentoOrganico(ig) === null ? '—' : pct(engajamentoOrganico(ig)!)}. Os totais da conta que incluem anúncios não entram nesta aba.</p>
           </div>
         )}

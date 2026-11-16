@@ -12,7 +12,7 @@ export function BibliotecaAnuncios({ paginaId, semPagina }: { paginaId: string |
         <p className="text-legenda text-texto-3">{paginaId ? 'Todos os anúncios ativos no Facebook e no Instagram, na Biblioteca de Anúncios (pública).' : semPagina}</p>
       </div>
       {paginaId && (
-        <a href={urlBibliotecaAnuncios(paginaId)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#0866ff] px-4 py-2 text-rotulo font-semibold text-claro transition hover:bg-[#0757d9]">
+        <a href={urlBibliotecaAnuncios(paginaId)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md bg-[#0866ff] px-4 py-2 text-rotulo font-semibold text-claro transition hover:bg-[#0757d9]">
           Ver anúncios ativos <ExternalLink className="h-3.5 w-3.5" />
         </a>
       )}

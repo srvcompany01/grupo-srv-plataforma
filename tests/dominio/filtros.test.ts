@@ -17,6 +17,7 @@ describe('filtros', () => {
       prioridades: [],
       tags: [],
       prazo: null,
+      recorrencia: 'todas',
       clientes: [],
       mes: null,
       busca: '',
@@ -26,6 +27,9 @@ describe('filtros', () => {
       campos: [],
       semConcluidas: false,
       logica: 'e',
+      subtarefas: 'normal',
+      expandidas: false,
+      vista: '',
     })
   })
 
@@ -33,6 +37,14 @@ describe('filtros', () => {
     const f = lerFiltros({ resp: 'a', status: 's1,s2', tag: 't', prazo: 'semana', cliente: 'c', mes: '2026-10-01', busca: 'roteiro', visao: 'calendario', grupo: 'mes', niveis: 'maes', semconcl: '1' })
     const sp = Object.fromEntries(escreverFiltros(f))
     expect(lerFiltros(sp)).toEqual(f)
+  })
+
+  it('filtro de recorrência: ida e volta e valor desconhecido volta a "todas"', () => {
+    const f = lerFiltros({ rec: 'recorrentes' })
+    expect(f.recorrencia).toBe('recorrentes')
+    expect(Object.fromEntries(escreverFiltros(f))).toEqual({ rec: 'recorrentes' })
+    expect(lerFiltros({ rec: 'xyz' }).recorrencia).toBe('todas')
+    expect(filtrosEmTexto(lerFiltros({ rec: 'nao' }))).toBe('rec=nao')
   })
 
   it('mês inválido é ignorado', () => {
@@ -83,5 +95,14 @@ describe('filtros E/OU e salvos', () => {
     const texto = filtrosEmTexto({ ...base, status: ['s1'], visao: 'kanban', logica: 'ou' })
     expect(texto).toBe('status=s1&logica=ou')
     expect(aplicarFiltroSalvo({ ...base, visao: 'tabela' }, texto)).toMatchObject({ visao: 'tabela', status: ['s1'], logica: 'ou' })
+  })
+})
+
+describe('aba da lista (v)', () => {
+  const id = '3f1c2d4e-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+  it('lê só ids válidos e mantém o id ao reescrever a URL', () => {
+    expect(lerFiltros({ v: id }).vista).toBe(id)
+    expect(lerFiltros({ v: 'abc' }).vista).toBe('')
+    expect(escreverFiltros(lerFiltros({ v: id })).toString()).toBe(`v=${id}`)
   })
 })

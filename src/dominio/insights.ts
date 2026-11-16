@@ -40,11 +40,14 @@ export type ResumoInstagram = {
   cliquesPerfil: number
   /** Alcance orgânico + pago da conta por dia (o Instagram não separa no total da conta). */
   alcancePorDia: { dia: string; valor: number }[]
+  /** Séries diárias da conta que a Meta entregou (alcance, visualizações, contas engajadas, novos seguidores). Métrica sem série aqui = a Meta não entrega por dia. */
+  seriesPorDia?: Record<string, { dia: string; valor: number }[]>
   posts: PostIG[]
 }
 
 /** Gasto/alcance pago por dia (Meta + Google somados). */
-export type PagoPorDia = { dia: string; gasto: number; impressoes: number; alcance: number; cliques: number }
+/** `conversoes` e `valor` (das vendas) só vêm direto das plataformas; a soma Meta + Google do relatório não os usa. */
+export type PagoPorDia = { dia: string; gasto: number; impressoes: number; alcance: number; cliques: number; conversoes?: number; valor?: number }
 
 /**
  * Tom de cada insight, número ou recomendação: bom (verde), atenção (amarelo), ruim (vermelho), neutro (cinza).
@@ -245,4 +248,20 @@ export function separarSeguidores(a: { ganhos: number; perdidos: number; pagos: 
     organicos: pagos === null ? null : Math.max(0, a.ganhos - pagos),
     pctPagos: pagos === null || !a.ganhos ? null : Math.min(100, (pagos / a.ganhos) * 100),
   }
+}
+
+/**
+ * Saúde da conta (0 a 100): média de quatro sinais que a plataforma já classifica em bom/atenção/ruim — engajamento dos posts,
+ * alcance por post sobre a base, frequência de posts e crescimento de seguidores (bom = 100, atenção = 65, ruim = 30).
+ * Sinal sem dado (neutro) fica fora da média. Sem nenhum sinal, não há nota.
+ */
+export function saudeDaConta(ig: Pick<ResumoInstagram, 'posts' | 'seguidores' | 'novosSeguidores'>, diasNoPeriodo: number): { nota: number; tom: Tom } | null {
+  const o = metricasOrganicas(ig)
+  const eng = engajamentoOrganico(ig)
+  const porSemana = (ig.posts.length / Math.max(1, diasNoPeriodo)) * 7
+  const tons: Tom[] = [eng === null ? 'neutro' : tomEngajamento(eng), o.posts ? tomAlcanceBase(o.alcance / o.posts, ig.seguidores) : 'neutro', tomFrequencia(porSemana), tomVariacao(ig.novosSeguidores)]
+  const pontos = tons.flatMap((t) => (t === 'bom' ? [100] : t === 'atencao' ? [65] : t === 'ruim' ? [30] : []))
+  if (!pontos.length) return null
+  const nota = Math.round(pontos.reduce((a, b) => a + b, 0) / pontos.length)
+  return { nota, tom: nota >= 75 ? 'bom' : nota >= 50 ? 'atencao' : 'ruim' }
 }

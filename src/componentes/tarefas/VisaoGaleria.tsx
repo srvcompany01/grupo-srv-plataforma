@@ -1,3 +1,4 @@
+import { formatarPrazo } from '@/dominio/prazo'
 import { CalendarDays, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { NomeCliente } from '@/componentes/NomeCliente'
@@ -6,7 +7,6 @@ import type { Contexto } from './LinhaTarefa'
 import { Pessoas } from './Pessoas'
 import { SeloPrioridade } from './SeloPrioridade'
 
-const data = (iso: string) => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
 
 /** Galeria: cartões grandes das tarefas, agrupados como a pessoa escolheu (status por padrão). Cada cartão abre a tarefa. */
 export function VisaoGaleria({ grupos, ctx }: { grupos: GrupoTarefas[]; ctx: Contexto }) {
@@ -36,7 +36,7 @@ export function VisaoGaleria({ grupos, ctx }: { grupos: GrupoTarefas[]; ctx: Con
                       <span className="flex flex-wrap items-center gap-2 text-rotulo text-texto-2">
                         {st && <span className="rounded-md px-1.5 py-0.5 text-legenda font-semibold uppercase" style={{ background: `${st.cor}22`, color: st.cor }}>{st.nome}</span>}
                         <SeloPrioridade prioridade={t.prioridade} />
-                        {t.prazo && <span className={`inline-flex items-center gap-1 ${atrasada ? 'font-semibold text-perigo' : ''}`}><CalendarDays className="h-3.5 w-3.5" />{data(t.prazo)}</span>}
+                        {t.prazo && <span className={`inline-flex items-center gap-1 ${atrasada ? 'font-semibold text-perigo' : ''}`}><CalendarDays className="h-3.5 w-3.5" />{formatarPrazo(t.prazo, t.horario)}</span>}
                         {!!t.comentarios && <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" />{t.comentarios}</span>}
                       </span>
                       <span className="flex items-center justify-between">

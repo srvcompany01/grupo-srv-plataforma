@@ -3,6 +3,7 @@ import type { PagoPorDia } from '@/dominio/insights'
 import { leadsDasAcoes, somarLeads, totalLeads, type Leads } from '@/dominio/performance'
 import { dataDeHoje } from '@/dominio/filtros'
 import { periodoEhHoje, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { conversoesMeta } from '@/dominio/painel-anuncios'
 import { avaliarAnuncios, gastoDeMarca, lerAnuncio, papelDoObjetivo, type AnuncioAvaliado, type AnuncioBruto } from '@/dominio/anuncios-meta'
 
 /**
@@ -55,15 +56,16 @@ export async function anunciosAtivos(contaId: string, periodo: Pick<PeriodoAnunc
 export async function pagoPorDiaMeta(contaId: string, periodo: Pick<PeriodoAnuncios, 'de' | 'ate'>): Promise<PagoPorDia[] | { erro: string }> {
   const token = process.env.META_ACCESS_TOKEN
   if (!token) return { erro: 'A integração com o Meta ainda não foi configurada (META_ACCESS_TOKEN).' }
-  const q = new URLSearchParams({ level: 'account', time_increment: '1', fields: 'spend,impressions,reach,clicks', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '1000', access_token: token })
+  const q = new URLSearchParams({ level: 'account', time_increment: '1', fields: 'spend,impressions,reach,clicks,actions,action_values', time_range: JSON.stringify({ since: periodo.de, until: periodo.ate }), limit: '1000', access_token: token })
   try {
     const r = await fetch(`https://graph.facebook.com/${VERSAO}/act_${contaId}/insights?${q}`, opcoesCache(cacheDoPeriodo(periodo)))
-    const corpo = (await r.json()) as { data?: { date_start: string; spend?: string; impressions?: string; reach?: string; clicks?: string }[]; error?: { code?: number; message?: string } }
+    type Acao = { action_type: string; value: string }
+    const corpo = (await r.json()) as { data?: { date_start: string; spend?: string; impressions?: string; reach?: string; clicks?: string; actions?: Acao[]; action_values?: Acao[] }[]; error?: { code?: number; message?: string } }
     if (!r.ok || corpo.error) {
       console.error('Meta API', r.status, corpo.error)
       return { erro: mensagemDaMeta(corpo) }
     }
-    return (corpo.data ?? []).map((d) => ({ dia: d.date_start, gasto: Number(d.spend ?? 0), impressoes: Number(d.impressions ?? 0), alcance: Number(d.reach ?? 0), cliques: Number(d.clicks ?? 0) }))
+    return (corpo.data ?? []).map((d) => ({ dia: d.date_start, gasto: Number(d.spend ?? 0), impressoes: Number(d.impressions ?? 0), alcance: Number(d.reach ?? 0), cliques: Number(d.clicks ?? 0), ...conversoesMeta(d.actions, d.action_values) }))
   } catch (e) {
     console.error(e)
     return { erro: 'Não foi possível falar com o Meta agora. Tente de novo.' }

@@ -73,7 +73,7 @@ export function ChamadaLanding({ slug, variante = 'escura', cta }: { slug: strin
       <p className="mt-2 font-[family-name:var(--blog-titulo)] text-3xl font-bold uppercase leading-none md:text-4xl">{cta?.label ? cta.label : 'Quer transformar isso em vendas na sua empresa?'}</p>
       <p className={`mt-3 max-w-xl text-[15px] ${escura ? 'text-claro/75' : 'text-[#4a4a4a]'}`}>{cta?.contexto || 'A Grupo SRV implementa a Máquina de Vendas: um fluxo contínuo, previsível, controlável e escalável de vendas pela internet.'}</p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Link href={destino} data-cta="1" className="inline-flex items-center gap-2 rounded-full bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a]">
+        <Link href={destino} data-cta="1" className="inline-flex items-center gap-2 rounded-md bg-[#d80d12] px-5 py-3 text-[14px] font-semibold text-claro transition hover:bg-[#a2070a]">
           {cta?.label || 'Faça o pré-diagnóstico'} <ArrowRight className="h-4 w-4" />
         </Link>
         {cta?.label2 && cta.url2 && (
@@ -90,9 +90,9 @@ export function Paginacao({ base, pagina, total, porPagina }: { base: string; pa
   const url = (n: number) => (n === 1 ? base : `${base}${base.includes('?') ? '&' : '?'}pagina=${n}`)
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label="Páginas">
-      {pagina > 1 && <Link href={url(pagina - 1)} rel="prev" className="rounded-full border border-[#e6e6e2] px-4 py-2 text-[13px] font-medium hover:border-[#070707]">← Anteriores</Link>}
+      {pagina > 1 && <Link href={url(pagina - 1)} rel="prev" className="rounded-md border border-[#e6e6e2] px-4 py-2 text-[13px] font-medium hover:border-[#070707]">← Anteriores</Link>}
       <span className="px-2 text-[13px] text-[#656565]">Página {pagina} de {paginas}</span>
-      {pagina < paginas && <Link href={url(pagina + 1)} rel="next" className="rounded-full border border-[#e6e6e2] px-4 py-2 text-[13px] font-medium hover:border-[#070707]">Mais artigos →</Link>}
+      {pagina < paginas && <Link href={url(pagina + 1)} rel="next" className="rounded-md border border-[#e6e6e2] px-4 py-2 text-[13px] font-medium hover:border-[#070707]">Mais artigos →</Link>}
     </nav>
   )
 }

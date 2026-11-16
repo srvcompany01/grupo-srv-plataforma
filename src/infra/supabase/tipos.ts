@@ -231,9 +231,9 @@ export type Database = {
         ]
       }
       content_posts: {
-        Row: { approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null; collaborators: string[]; gbp_post_name: string | null; gbp_link: string | null }
-        Insert: { approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
-        Update: { approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
+        Row: { trial_graduation: string | null; approval: string; created_at: string; current_version: number; format: string; task_id: string; publish_at: string | null; publish_targets: string[]; publish_mode: string; publish_status: string; publish_error: string | null; publish_lock_at: string | null; ig_container_id: string | null; ig_media_id: string | null; ig_permalink: string | null; fb_post_id: string | null; fb_permalink: string | null; published_at: string | null; collaborators: string[]; gbp_post_name: string | null; gbp_link: string | null }
+        Insert: { trial_graduation?: string | null; approval?: string; created_at?: string; current_version?: number; format: string; task_id: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
+        Update: { trial_graduation?: string | null; approval?: string; created_at?: string; current_version?: number; format?: string; task_id?: string; publish_at?: string | null; publish_targets?: string[]; publish_mode?: string; publish_status?: string; publish_error?: string | null; publish_lock_at?: string | null; ig_container_id?: string | null; ig_media_id?: string | null; ig_permalink?: string | null; fb_post_id?: string | null; fb_permalink?: string | null; published_at?: string | null; collaborators?: string[]; gbp_post_name?: string | null; gbp_link?: string | null }
         Relationships: [
           {
             foreignKeyName: "content_posts_task_id_fkey"
@@ -243,6 +243,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_review_comments: {
+        Row: { author_kind: string; author_name: string; author_user_id: string | null; body: string; created_at: string; id: string; media_index: number | null; parent_id: string | null; resolved_at: string | null; resolved_by: string | null; task_id: string; version_id: string; video_second: number | null; x_pct: number | null; y_pct: number | null }
+        Insert: { author_kind: string; author_name: string; author_user_id?: string | null; body: string; created_at?: string; id?: string; media_index?: number | null; parent_id?: string | null; resolved_at?: string | null; resolved_by?: string | null; task_id: string; version_id: string; video_second?: number | null; x_pct?: number | null; y_pct?: number | null }
+        Update: { author_kind?: string; author_name?: string; author_user_id?: string | null; body?: string; created_at?: string; id?: string; media_index?: number | null; parent_id?: string | null; resolved_at?: string | null; resolved_by?: string | null; task_id?: string; version_id?: string; video_second?: number | null; x_pct?: number | null; y_pct?: number | null }
+        Relationships: []
       }
       content_responses: {
         Row: { comment: string; created_at: string; decision: string; id: string; responder_name: string; task_id: string; version_id: string }
@@ -617,6 +623,7 @@ export type Database = {
           edited_at: string | null
           id: string
           is_internal: boolean
+          system_key: string | null
           task_id: string
         }
         Insert: {
@@ -626,6 +633,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           is_internal?: boolean
+          system_key?: string | null
           task_id: string
         }
         Update: {
@@ -635,6 +643,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           is_internal?: boolean
+          system_key?: string | null
           task_id?: string
         }
         Relationships: [
@@ -1410,6 +1419,44 @@ export type Database = {
         Update: { created_at?: string; created_by?: string; id?: string; name?: string; subtasks?: string[]; title?: string }
         Relationships: []
       }
+      list_views: {
+        Row: { created_at: string; created_by: string; id: string; is_private: boolean; kind: string; list_id: string; name: string; params: string; pinned: boolean; position: number }
+        Insert: { created_at?: string; created_by?: string; id?: string; is_private?: boolean; kind: string; list_id: string; name: string; params?: string; pinned?: boolean; position?: number }
+        Update: { created_at?: string; created_by?: string; id?: string; is_private?: boolean; kind?: string; list_id?: string; name?: string; params?: string; pinned?: boolean; position?: number }
+        Relationships: [
+          {
+            foreignKeyName: "list_views_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_content_profiles: {
+        Row: { client_id: string; cta: string; drive_folder_id: string; hashtags: string; notes: string; tone: string; updated_at: string }
+        Insert: { client_id: string; cta?: string; drive_folder_id?: string; hashtags?: string; notes?: string; tone?: string; updated_at?: string }
+        Update: { client_id?: string; cta?: string; drive_folder_id?: string; hashtags?: string; notes?: string; tone?: string; updated_at?: string }
+        Relationships: []
+      }
+      client_platform_hashtags: {
+        Row: { client_id: string; hashtags: string; platform: string; updated_at: string }
+        Insert: { client_id: string; hashtags?: string; platform: string; updated_at?: string }
+        Update: { client_id?: string; hashtags?: string; platform?: string; updated_at?: string }
+        Relationships: []
+      }
+      client_strategy: {
+        Row: { client_id: string; method: string; data: Json; updated_at: string; updated_by: string | null }
+        Insert: { client_id: string; method: string; data?: Json; updated_at?: string; updated_by?: string | null }
+        Update: { client_id?: string; method?: string; data?: Json; updated_at?: string; updated_by?: string | null }
+        Relationships: []
+      }
+      content_inbox: {
+        Row: { dest_list_id: string | null; dest_mode: string | null; dest_task_id: string | null; ai_summary: string; audio_ready: boolean; transcript: string; transcript_error: string; transcript_requested_at: string | null; transcript_state: string; client_id: string; created_at: string; created_by: string | null; drive_file_id: string | null; error: string; id: string; kind: string; mime: string; name: string; post_task_id: string | null; r2_key: string; size_bytes: number; source: string; status: string; updated_at: string }
+        Insert: { dest_list_id?: string | null; dest_mode?: string | null; dest_task_id?: string | null; ai_summary?: string; audio_ready?: boolean; transcript?: string; transcript_error?: string; transcript_requested_at?: string | null; transcript_state?: string; client_id: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime: string; name: string; post_task_id?: string | null; r2_key: string; size_bytes?: number; source: string; status?: string; updated_at?: string }
+        Update: { dest_list_id?: string | null; dest_mode?: string | null; dest_task_id?: string | null; ai_summary?: string; audio_ready?: boolean; transcript?: string; transcript_error?: string; transcript_requested_at?: string | null; transcript_state?: string; client_id?: string; created_at?: string; created_by?: string | null; drive_file_id?: string | null; error?: string; id?: string; kind?: string; mime?: string; name?: string; post_task_id?: string | null; r2_key?: string; size_bytes?: number; source?: string; status?: string; updated_at?: string }
+        Relationships: []
+      }
       saved_filters: {
         Row: { created_at: string; id: string; list_id: string; name: string; params: string; user_id: string }
         Insert: { created_at?: string; id?: string; list_id: string; name: string; params: string; user_id?: string }
@@ -1689,9 +1736,9 @@ export type Database = {
         ]
       }
       task_recurrences: {
-        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string }
-        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string }
-        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string }
+        Row: { active: boolean; anchor_date: string; created_at: string; every: number; frequency: string; generated: number; lead_days: number; task_id: string; updated_at: string; copy_assignees: boolean; copy_fields: boolean; copy_subtasks: boolean; create_mode: string; ends_on: string | null; max_count: number | null; month_mode: string; weekdays: number[] | null }
+        Insert: { active?: boolean; anchor_date: string; created_at?: string; every?: number; frequency: string; generated?: number; lead_days?: number; task_id: string; updated_at?: string; copy_assignees?: boolean; copy_fields?: boolean; copy_subtasks?: boolean; create_mode?: string; ends_on?: string | null; max_count?: number | null; month_mode?: string; weekdays?: number[] | null }
+        Update: { active?: boolean; anchor_date?: string; created_at?: string; every?: number; frequency?: string; generated?: number; lead_days?: number; task_id?: string; updated_at?: string; copy_assignees?: boolean; copy_fields?: boolean; copy_subtasks?: boolean; create_mode?: string; ends_on?: string | null; max_count?: number | null; month_mode?: string; weekdays?: number[] | null }
         Relationships: [
           {
             foreignKeyName: "task_recurrences_task_id_fkey"
@@ -1745,6 +1792,7 @@ export type Database = {
           id: string
           list_id: string
           parent_task_id: string | null
+          recurrence_source_id: string | null
           position: string
           priority: string
           start_date: string | null
@@ -1752,6 +1800,7 @@ export type Database = {
           title: string
           updated_at: string
           visible_to_client: boolean
+          due_time: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1765,6 +1814,7 @@ export type Database = {
           id?: string
           list_id: string
           parent_task_id?: string | null
+          recurrence_source_id?: string | null
           position: string
           priority?: string
           start_date?: string | null
@@ -1772,6 +1822,7 @@ export type Database = {
           title: string
           updated_at?: string
           visible_to_client?: boolean
+          due_time?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1785,6 +1836,7 @@ export type Database = {
           id?: string
           list_id?: string
           parent_task_id?: string | null
+          recurrence_source_id?: string | null
           position?: string
           priority?: string
           start_date?: string | null
@@ -1792,6 +1844,7 @@ export type Database = {
           title?: string
           updated_at?: string
           visible_to_client?: boolean
+          due_time?: string | null
         }
         Relationships: [
           {
@@ -1833,6 +1886,7 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          billable: boolean
           created_at: string
           duration_seconds: number | null
           ended_at: string | null
@@ -1844,6 +1898,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          billable?: boolean
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
@@ -1855,6 +1910,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          billable?: boolean
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
@@ -1950,10 +2006,24 @@ export type Database = {
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
+      registrar_aviso_prova: { Args: { p_nome: string; p_task: string; p_texto: string; p_version: string }; Returns: undefined }
+      resumo_prova_visual: { Args: { p_task: string }; Returns: { abertos: number; resolvidos: number; total: number; version_id: string; version_number: number }[] }
+      abertos_por_tarefa: { Args: { p_ids: string[] }; Returns: { abertos: number; task_id: string }[] }
+      consumir_limite: { Args: { p_chave: string; p_janela_segundos: number; p_max: number }; Returns: boolean }
+      definir_faturavel: { Args: { p_faturavel: boolean; p_id: string }; Returns: undefined }
+      registros_tempo: {
+        Args: { p_ate: string; p_clientes?: string[]; p_de: string; p_faturavel?: boolean; p_pessoas?: string[]; p_sem_cliente?: boolean }
+        Returns: { billable: boolean; client_id: string | null; client_name: string | null; dia: string; id: string; list_name: string; note: string | null; seconds: number; task_id: string; task_title: string; user_id: string; user_name: string }[]
+      }
+      resumo_tempo: {
+        Args: { p_ate: string; p_clientes?: string[]; p_de: string; p_faturavel?: boolean; p_pessoas?: string[]; p_sem_cliente?: boolean }
+        Returns: { billable_seconds: number | null; client_id: string | null; client_name: string | null; registros: number; total_seconds: number; user_id: string; user_name: string }[]
+      }
       lancar_tempo: {
         Args: {
           p_data: string
           p_minutos: number
+          p_faturavel?: boolean
           p_nota?: string
           p_task: string
         }

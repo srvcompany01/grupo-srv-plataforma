@@ -1,15 +1,21 @@
 import { idsDaArvore } from '@/dominio/arvore-tarefa'
+import { resumirRecorrencia, type Frequencia, type ModoCriacao, type ModoMensal } from '@/dominio/recorrencia'
 import { passaPeloOu, prazoEm, type Filtros } from '@/dominio/filtros'
 import { posicaoEntre } from '@/dominio/posicao'
 import type { Prioridade, TarefaResumo } from '@/dominio/tarefas'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
+import { abertosPorTarefa } from './prova-visual'
 import { dados } from './resultado'
 
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
-const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, position, completed_at, list_id,
+// time_entries(duration_seconds): a RLS entrega só o tempo da própria pessoa (admin e gestor veem o de todos).
+const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, due_time, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes, recurrence_source_id,
+  serie:task_recurrences(active, frequency, every, weekdays, month_mode, anchor_date, generated, ends_on, max_count, create_mode),
+  criador:profiles!tasks_created_by_fkey(full_name),
+  time_entries(duration_seconds),
   clients(id, name, color),
   lists!inner(name, space_id, reference_month, archived_at),
   task_assignees(profiles(id, full_name, avatar_url)),
@@ -51,7 +57,13 @@ export async function listarTarefas(sb: Supabase, escopo: Escopo, filtrosPedidos
   if (filtros.prazo === 'atrasadas') q = q.is('completed_at', null)
 
   const linhas = dados(await q.order('position').limit(2000)) as unknown as LinhaResumo[]
-  const tarefas = linhas.map(paraResumo)
+  const tarefas = linhas.map(paraResumo).filter((t) => filtrosPedidos.recorrencia === 'todas' || (filtrosPedidos.recorrencia === 'recorrentes') === !!t.recorrencia)
+  // Prova visual: pontos do cliente em aberto (falha silenciosa se a migração ainda não existe).
+  const abertos = await abertosPorTarefa(sb, tarefas.map((t) => t.id)).catch(() => new Map<string, number>())
+  for (const t of tarefas) {
+    const n = abertos.get(t.id)
+    if (n) t.provaAbertos = n
+  }
   return ou ? tarefas.filter((t) => passaPeloOu(t, filtrosPedidos, hoje)) : tarefas
 }
 
@@ -62,6 +74,7 @@ type LinhaResumo = {
   status_id: string
   priority: string
   due_date: string | null
+  due_time?: string | null
   position: string
   completed_at: string | null
   list_id: string
@@ -71,6 +84,31 @@ type LinhaResumo = {
   task_assignees: { profiles: { id: string; full_name: string; avatar_url: string | null } | null }[]
   task_tags: { tags: { id: string; name: string; color: string } | null }[]
   comments: { count: number }[]
+  created_at: string
+  updated_at: string
+  start_date: string | null
+  estimate_minutes: number | null
+  criador: { full_name: string } | null
+  time_entries: { duration_seconds: number | null }[]
+  recurrence_source_id?: string | null
+  serie?: { active: boolean; frequency: string; every: number; weekdays: number[] | null; month_mode: string; anchor_date: string; generated: number; ends_on: string | null; max_count: number | null; create_mode: string } | null
+}
+
+/** Indicador de recorrência da linha: modelo (tem regra) ou cópia de uma série. */
+function resumoDaSerie(t: LinhaResumo): TarefaResumo['recorrencia'] {
+  if (t.serie) {
+    const resumo = resumirRecorrencia({
+      frequencia: t.serie.frequency as Frequencia, cada: t.serie.every, primeiroPrazo: t.serie.anchor_date,
+      diasSemana: t.serie.weekdays, modoMensal: t.serie.month_mode as ModoMensal,
+    })
+    const regra = {
+      frequencia: t.serie.frequency as Frequencia, cada: t.serie.every, primeiroPrazo: t.serie.anchor_date, diasSemana: t.serie.weekdays,
+      modoMensal: t.serie.month_mode as ModoMensal, geradas: t.serie.generated, terminaEm: t.serie.ends_on, maximo: t.serie.max_count,
+      modoCriacao: t.serie.create_mode as ModoCriacao,
+    }
+    return { tipo: 'modelo', ativa: t.serie.active, resumo, regra }
+  }
+  return t.recurrence_source_id ? { tipo: 'copia', ativa: true, resumo: 'Parte de uma série' } : null
 }
 
 function paraResumo(t: LinhaResumo): TarefaResumo {
@@ -81,9 +119,17 @@ function paraResumo(t: LinhaResumo): TarefaResumo {
     statusId: t.status_id,
     prioridade: t.priority as Prioridade,
     prazo: t.due_date,
+    horario: t.due_time?.slice(0, 5) ?? null,
     posicao: t.position,
     concluidaEm: t.completed_at,
     comentarios: t.comments?.[0]?.count ?? 0,
+    criadaEm: t.created_at,
+    atualizadaEm: t.updated_at,
+    inicio: t.start_date,
+    estimativaMin: t.estimate_minutes,
+    criadoPorNome: t.criador?.full_name ?? '',
+    recorrencia: resumoDaSerie(t),
+    tempoSeg: (t.time_entries ?? []).reduce((s, x) => s + (x.duration_seconds ?? 0), 0),
     listaId: t.list_id,
     listaNome: t.lists?.name ?? '',
     clienteId: t.clients?.id ?? '',
@@ -125,6 +171,8 @@ export type CamposTarefa = Partial<{
   prioridade: Prioridade
   inicio: string | null
   prazo: string | null
+  /** HH:MM (Belém). Limpar o prazo limpa também o horário. */
+  horario: string | null
   estimativaMin: number | null
   visivelCliente: boolean
 }>
@@ -137,6 +185,8 @@ export async function atualizarTarefa(sb: Supabase, id: string, c: CamposTarefa)
     priority: c.prioridade,
     start_date: c.inicio,
     due_date: c.prazo,
+    // Sem data não há horário.
+    due_time: c.prazo === null ? null : c.horario === undefined ? undefined : c.horario,
     estimate_minutes: c.estimativaMin,
     visible_to_client: c.visivelCliente,
   }
@@ -196,6 +246,7 @@ export type TarefaCompleta = {
   prioridade: Prioridade
   inicio: string | null
   prazo: string | null
+  horario: string | null
   estimativaMin: number | null
   visivelCliente: boolean
   concluidaEm: string | null
@@ -212,7 +263,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
   const { data: t, error } = await sb
     .from('tasks')
     .select(
-      `id, title, description, status_id, priority, start_date, due_date, estimate_minutes, visible_to_client, completed_at, parent_task_id,
+      `id, title, description, status_id, priority, start_date, due_date, due_time, estimate_minutes, visible_to_client, completed_at, parent_task_id,
        client_id, clients(name, color),
        lists(id, name, space_id, reference_month),
        task_assignees(profiles(id, full_name, avatar_url)),
@@ -237,6 +288,7 @@ export async function buscarTarefa(sb: Supabase, id: string): Promise<TarefaComp
     prioridade: t.priority as Prioridade,
     inicio: t.start_date,
     prazo: t.due_date,
+    horario: t.due_time?.slice(0, 5) ?? null,
     estimativaMin: t.estimate_minutes,
     visivelCliente: t.visible_to_client,
     concluidaEm: t.completed_at,

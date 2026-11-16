@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronDown, Copy, Link2, Star, Trash2, Users } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { Copy, Trash2, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useOptimistic, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -11,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { botaoSecundario, campo } from '@/lib/ui'
 import { avisar } from './avisar'
 
-const botaoIcone = 'inline-flex h-6 w-6 items-center justify-center rounded-md text-texto-3 transition-colors hover:bg-hover hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca'
+const botaoIcone = 'b-icon'
 
 /** Estrela ao lado do nome da lista: favorita da pessoa. */
 export function EstrelaLista({ listaId, favorita }: { listaId: string; favorita: boolean }) {
@@ -25,7 +26,7 @@ export function EstrelaLista({ listaId, favorita }: { listaId: string; favorita:
       onClick={() => iniciar(async () => { definir(!exibida); avisar(await favoritarListaAcao(listaId, !exibida)) })}
       className={botaoIcone}
     >
-      <Star className={`h-3.5 w-3.5 ${exibida ? 'fill-aviso text-aviso' : ''}`} />
+      <Ic n="star" s={16} fill={exibida} style={{ color: exibida ? '#e0a100' : 'var(--text-3)' }} />
     </button>
   )
 }
@@ -51,7 +52,7 @@ export function MenuLista({ listaId, nome, podeGerir }: { listaId: string; nome:
   }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label="Ações da lista" className={botaoIcone}><ChevronDown className="h-3.5 w-3.5" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger aria-label="Ações da lista" className={botaoIcone}><Ic n="keyboard_arrow_down" s={16} /></DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
         <DropdownMenuItem onSelect={renomear}>Renomear</DropdownMenuItem>
         <DropdownMenuItem onSelect={duplicar}>Duplicar</DropdownMenuItem>
@@ -75,8 +76,8 @@ export function CompartilharDialog({ nome, membros }: { nome: string; membros: {
   }
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-rotulo font-medium text-texto-2 transition hover:bg-hover hover:text-texto">
-        <Link2 className="h-3.5 w-3.5" /> Compartilhar
+      <DialogTrigger className="b-out">
+        <Ic n="share" s={16} /> Compartilhar
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

@@ -16,6 +16,8 @@ export function criarServidorMcp(ctx: Contexto): McpServer {
         try {
           const resultado = await f.executar(ctx, args as never)
           if (f.escrita) revalidatePath('/', 'layout')
+          // Ferramentas que devolvem mídia (áudio) mandam os blocos prontos em `__mcp`.
+          if (resultado && typeof resultado === 'object' && '__mcp' in resultado) return { content: (resultado as { __mcp: never[] }).__mcp }
           return { content: [{ type: 'text' as const, text: JSON.stringify(resultado) }] }
         } catch (e) {
           const msg = e instanceof Error && !('code' in e) ? e.message : mensagemErro(e)

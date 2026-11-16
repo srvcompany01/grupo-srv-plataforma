@@ -59,7 +59,7 @@ export function PainelAtividade({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center gap-1 border-b border-borda px-4 py-2.5">
+      <div className="flex shrink-0 items-center gap-1  px-4 py-2.5">
         <h2 className="flex-1 text-destaque font-semibold">Atividade</h2>
         <button
           onClick={() => {
@@ -86,8 +86,8 @@ export function PainelAtividade({
         </DropdownMenu>
       </div>
       {buscando && (
-        <div className="shrink-0 border-b border-borda px-4 py-2">
-          <input autoFocus value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar na atividade…" aria-label="Buscar na atividade" className="w-full rounded-md border border-borda px-2 py-1 text-corpo outline-none focus:border-marca/40" />
+        <div className="shrink-0  px-4 py-2">
+          <input autoFocus value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar na atividade…" aria-label="Buscar na atividade" className="w-full rounded-md  px-2 py-1 text-corpo outline-none focus:border-marca/40" />
         </div>
       )}
 
@@ -112,7 +112,7 @@ export function PainelAtividade({
         ))}
       </div>
 
-      <div className="shrink-0 border-t border-borda bg-white p-3">{rodape}</div>
+      <div className="shrink-0  bg-white p-3">{rodape}</div>
     </div>
   )
 }

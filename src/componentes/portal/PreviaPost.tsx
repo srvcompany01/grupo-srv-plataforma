@@ -3,15 +3,16 @@ import { ROTULO_FORMATO, type Formato } from '@/dominio/conteudo'
 import type { MidiaPortal } from '@/servicos/portal-conteudo'
 
 /** Prévia do post como ele aparece no Instagram (fotos/vídeos deslizando para o lado e a legenda). */
-export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { nome: string; formato: Formato; midias: MidiaPortal[]; legenda: string; collabs?: string[] }) {
+export function PreviaPost({ nome, formato, midias, legenda, collabs = [], midiaNode }: { nome: string; formato: Formato; midias: MidiaPortal[]; legenda: string; collabs?: string[]; /** Troca a faixa de mídia (prova visual: mídia com marcadores). */ midiaNode?: React.ReactNode }) {
   const vertical = formato === 'reels' || formato === 'stories'
   return (
     <article className="mx-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-borda bg-white shadow-sm">
       <header className="flex items-center gap-2 px-3 py-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[2px]"><span className="flex h-full w-full items-center justify-center rounded-full bg-white text-legenda font-bold text-texto">{nome.slice(0, 1).toUpperCase()}</span></span>
         <span className="min-w-0 truncate text-rotulo font-semibold text-texto">{nome}{collabs.length > 0 && <span className="font-normal text-texto-2"> e {collabs.map((c) => `@${c}`).join(', ')}</span>}</span>
-        <span className="ml-auto rounded-full bg-fundo px-2 py-0.5 text-micro font-semibold text-texto-2">{ROTULO_FORMATO[formato]}</span>
+        <span className="ml-auto rounded-md bg-fundo px-2 py-0.5 text-micro font-semibold text-texto-2">{ROTULO_FORMATO[formato]}</span>
       </header>
+      {midiaNode ?? (
       <div className={`flex snap-x snap-mandatory overflow-x-auto bg-black ${vertical ? 'aspect-[9/16]' : 'aspect-[4/5]'}`}>
         {midias.length === 0 && <p className="m-auto text-rotulo text-claro/70">Sem mídia ainda</p>}
         {midias.map((m, i) => (
@@ -22,10 +23,11 @@ export function PreviaPost({ nome, formato, midias, legenda, collabs = [] }: { n
               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do R2
               <img src={m.url} alt="" className="h-full w-full object-contain" />
             )}
-            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-micro font-semibold text-claro">{i + 1}/{midias.length}</span>}
+            {midias.length > 1 && <span className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-0.5 text-micro font-semibold text-claro">{i + 1}/{midias.length}</span>}
           </div>
         ))}
       </div>
+      )}
       {formato !== 'stories' && (
         <div className="space-y-2 px-3 py-2.5">
           <div className="flex items-center gap-3 text-texto"><Heart className="h-5 w-5" /><MessageCircle className="h-5 w-5" /><Send className="h-5 w-5" /><Bookmark className="ml-auto h-5 w-5" /></div>

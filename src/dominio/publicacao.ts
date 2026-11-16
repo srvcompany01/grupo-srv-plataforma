@@ -21,13 +21,25 @@ export const ROTULO_STATUS_PUBLICACAO: Record<StatusPublicacao, string> = {
   falhou: 'Falhou',
 }
 
+/** Reels de teste: aparece primeiro só para quem não segue. MANUAL = você libera no aplicativo; SS_PERFORMANCE = o Instagram libera sozinho se for bem. */
+export type EstrategiaTeste = 'MANUAL' | 'SS_PERFORMANCE'
+export const ESTRATEGIAS_TESTE: EstrategiaTeste[] = ['MANUAL', 'SS_PERFORMANCE']
+export const ROTULO_ESTRATEGIA_TESTE: Record<EstrategiaTeste, string> = { MANUAL: 'liberação manual (você libera no Instagram)', SS_PERFORMANCE: 'liberação automática (o Instagram libera se for bem)' }
+/** Nomes curtos para o MCP. */
+export const ESTRATEGIA_POR_NOME: Record<'manual' | 'automatico', EstrategiaTeste> = { manual: 'MANUAL', automatico: 'SS_PERFORMANCE' }
+
 export type MidiaPublicavel = { tipo: 'imagem' | 'video'; nome: string; chave: string }
 
 const ehJpeg = (m: MidiaPublicavel) => /\.jpe?g$/i.test(m.chave)
 
 /** Regras de cada rede para o formato e as mídias da versão atual. null = pode publicar. */
-export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: MidiaPublicavel[], collabs: string[] = []): string | null {
+export function validarPublicacao(formato: Formato, alvos: Alvo[], midias: MidiaPublicavel[], collabs: string[] = [], teste: EstrategiaTeste | null = null): string | null {
   if (!alvos.length) return 'Escolha onde publicar (Instagram e/ou Facebook).'
+  if (teste) {
+    if (formato !== 'reels') return 'Reels de teste só vale para o formato Reels. Mude o formato ou desmarque o teste.'
+    if (alvos.length !== 1 || alvos[0] !== 'instagram') return 'Reels de teste é só no Instagram: desmarque o Facebook e o Google.'
+    if (collabs.length) return 'Reels de teste não aceita collab: tire os convidados ou desmarque o teste.'
+  }
   if (collabs.length && !alvos.includes('instagram')) return 'Collab é só no Instagram: marque o Instagram ou tire os convidados.'
   if (collabs.length && formato === 'stories') return 'Stories não aceitam collab: tire os convidados ou mude o formato.'
   if (formato === 'tiktok') return 'Post de TikTok não é publicado pela Meta. Mude o formato ou publique no TikTok.'

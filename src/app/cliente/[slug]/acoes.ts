@@ -3,6 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import type { Resultado } from '@/servicos/acao'
 import { clientePorLink, responderPost } from '@/servicos/portal-conteudo'
+import { headers } from 'next/headers'
+import { ipDoPedido, limitesDoComentario } from '@/dominio/limite'
+import { comentarComoCliente, dentroDosLimites, paginaDoHistorico } from '@/servicos/prova-visual-portal'
+import type { ComentarioProva } from '@/dominio/prova-visual'
+import { cursorValido } from '@/dominio/limite'
+import { lerEntradaDoPortal } from '@/dominio/prova-visual'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -22,5 +28,48 @@ export async function responderPostAcao(slug: string, tarefaId: string, decisao:
   } catch (e) {
     console.error(e)
     return { erro: e instanceof Error && e.message ? e.message : 'Não foi possível enviar a resposta.' }
+  }
+}
+
+/**
+ * Prova visual: o cliente comenta num ponto, num instante ou em geral (ou responde à agência).
+ * O servidor resolve o cliente pelo link e a versão pela tarefa; o banco recusa se a versão já foi respondida.
+ */
+export async function comentarProvaAcao(slug: string, tarefaId: string, bruto: unknown): Promise<Resultado> {
+  if (typeof slug !== 'string' || typeof tarefaId !== 'string' || !UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  // Nada do navegador é confiável: forma, tipos e números finitos são conferidos aqui (e de novo no banco).
+  const lido = lerEntradaDoPortal(bruto)
+  if ('erro' in lido) return { erro: lido.erro }
+  const entrada = lido.entrada
+  const cliente = await clientePorLink(slug)
+  if (!cliente) return { erro: 'Link inválido.' }
+  // Limite compartilhado (no banco) por link+post e por IP: o link é público e qualquer portador poderia encher a prova visual.
+  const ip = ipDoPedido((await headers()).get('x-forwarded-for'))
+  if (!(await dentroDosLimites(limitesDoComentario(cliente.slug, tarefaId, ip)))) return { erro: 'Muitos comentários em pouco tempo. Aguarde alguns minutos e tente de novo.' }
+  try {
+    await comentarComoCliente(cliente.id, tarefaId, { ...entrada, nome: entrada.nome.trim().slice(0, 80) })
+    revalidatePath(`/cliente/${cliente.slug}`, 'layout')
+    return { ok: 'Comentário enviado' }
+  } catch (e) {
+    console.error(e)
+    return { erro: e instanceof Error && e.message ? e.message : 'Não foi possível enviar. Verifique a conexão e tente de novo.' }
+  }
+}
+
+export type PaginaDoHistorico = { comentarios: ComentarioProva[]; proximo: { criadoEm: string; id: string } | null }
+
+/** Histórico de uma versão ANTERIOR do post, em páginas, sob demanda (só leitura). Tudo que vem do navegador é conferido aqui. */
+export async function carregarHistoricoProvaAcao(slug: string, tarefaId: string, versao: unknown, depois: unknown): Promise<PaginaDoHistorico | { erro: string }> {
+  if (typeof slug !== 'string' || typeof tarefaId !== 'string' || !UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  if (typeof versao !== 'number' || !Number.isInteger(versao) || versao < 1) return { erro: 'Versão inválida.' }
+  if (depois !== null && depois !== undefined && !cursorValido(depois)) return { erro: 'Página inválida.' }
+  const cliente = await clientePorLink(slug)
+  if (!cliente) return { erro: 'Link inválido.' }
+  try {
+    const pagina = await paginaDoHistorico(cliente.id, tarefaId, versao, depois ?? null)
+    return pagina ? { comentarios: pagina.comentarios, proximo: pagina.proximo } : { erro: 'Versão não encontrada.' }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível carregar o histórico. Tente de novo.' }
   }
 }

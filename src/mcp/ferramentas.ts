@@ -1,3 +1,4 @@
+import { ESTRATEGIA_POR_NOME } from '@/dominio/publicacao'
 import * as z from 'zod'
 import { descricaoParaTexto, textoParaDescricao } from '@/dominio/descricao'
 import { dataDeHoje, lerFiltros } from '@/dominio/filtros'
@@ -14,6 +15,15 @@ import { dataLocal, horaLocal, instante, lerCompromisso, ocorrencias, paraEntrad
 import * as agenda from '@/servicos/agenda'
 import * as chat from '@/servicos/chat'
 import * as modelosTarefa from '@/servicos/modelos'
+import * as caixa from '@/servicos/caixa-de-entrada'
+import { plataformaDoFormato } from '@/dominio/hashtags'
+import { hashtagsDoCliente, hashtagsDoClienteTodas, legendaComHashtags, salvarHashtagsDoCliente } from '@/servicos/hashtags-cliente'
+import { idDaPastaDoDrive } from '@/dominio/caixa-de-entrada'
+import { proximasJanelas, ranquearHorarios } from '@/dominio/horarios-postagem'
+import { guiaDeAnuncioGoogle, guiaDeAnuncioMeta, guiaDePost, MODOS_META_GUIA } from '@/dominio/guia-publicacao'
+import { after } from 'next/server'
+import * as abasDaLista from '@/servicos/visoes-lista'
+import { ehTipoDeVisao } from '@/dominio/visoes-lista'
 import * as conteudoSvc from '@/servicos/conteudo'
 import { extrairMencoes, segmentarTexto } from '@/dominio/mencoes'
 import { listaDeProjetos, painelDoEscopo } from '@/servicos/painel-projetos'
@@ -23,6 +33,8 @@ import { avisosGoogle, totaisCampanhas } from '@/dominio/google'
 import { totalLeads } from '@/dominio/performance'
 import { analisarCombinado, analisarOrganico, analisarPago, engajamentoOrganico, porFormato, separarSeguidores } from '@/dominio/insights'
 import { lerPeriodo } from '@/dominio/periodo-anuncios'
+import { CAMPOS, METODOS, chavesInvalidas, preenchimento, type Metodo } from '@/dominio/estrategia'
+import * as estrategia from '@/servicos/estrategia'
 
 /** Período das ferramentas de anúncios: de/ate (AAAA-MM-DD) ou os últimos 7/30 dias até ontem. */
 const periodoDaIA = (a: { dias?: 7 | 30; de?: string; ate?: string }) => lerPeriodo({ dias: String(a.dias ?? 7), de: a.de, ate: a.ate }, dataDeHoje(new Date()))
@@ -41,7 +53,7 @@ import { arvoreDePaginas } from '@/dominio/documentos'
 import { listarEquipe } from '@/servicos/usuarios'
 import * as financeiro from '@/servicos/financeiro'
 import * as telas from '@/servicos/telas'
-import { CATEGORIAS, TIPOS_LANCAMENTO, lerMes, limitesDoMes, resumir } from '@/dominio/financeiro'
+import { CATEGORIAS, TIPOS_LANCAMENTO, calcularMargens, lerMes, limitesDoMes, margensPorCliente, resumir } from '@/dominio/financeiro'
 import { calcularFunil, lerDadosFunil } from '@/dominio/funil'
 import type { NoEspaco, NoPasta, ItemLista } from '@/dominio/arvore-espacos'
 
@@ -198,11 +210,19 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
+        'Prova visual: o cliente marca pontos na imagem ou instantes do vídeo de cada versão do post pelo link. ver_prova_visual lista os comentários (com respostas); responder_prova_visual e resolver_prova_visual só respondem e resolvem os pontos do cliente (a agência não cria marcações). Depois que o cliente responde à versão (aprova ou pede ajuste) os comentários dela ficam só para leitura para ele.',
+        'Tempo: cada pessoa lê só os próprios registros de tempo (duração, nota, faturável) e os totais que a plataforma mostra para ela são só os dela; admin e gestor leem os de todos. Cliente do portal não lê tempo.',
+        'Tempo faturável: cada registro de tempo tem a marca faturável (padrão: faturável). definir_tempo_faturavel muda a marca; resumo_tempo_faturavel (só admin e gestor) soma por cliente e pessoa num período, com os mesmos filtros da tela Tempo (Relatórios).',
+        'Tarefas recorrentes: a tarefa com regra é o MODELO e a regra diz quando nascem as cópias (ver_recorrencia, definir_recorrencia, pausar_recorrencia). Frequência: diaria, dias_uteis, semanal (com diasSemana, 1=segunda a 7=domingo), mensal (no dia do mês ou na mesma posição da semana). Pode ter fim (terminaEm ou maximo de vezes), criar "na data programada" (cron diário) ou "ao concluir" a anterior, e copiar responsáveis (sem copiar, fica só o primeiro: toda tarefa precisa de um), subtarefas, etiquetas e campos. A cópia guarda o vínculo com o modelo (modeloDaSerie em ver_recorrencia). Para parar de vez use a tela da tarefa (Repetir > Parar série); aqui só dá para pausar.',
+        'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
+        'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Vencimento das tarefas = data + horário opcional (horario HH:MM); nos posts de conteúdo, agendar_post grava o vencimento da tarefa com o mesmo dia e horário do agendamento. Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
+        'Estratégia do cliente (aba Estratégia e aba Estratégia na página do cliente): 5 métodos por cliente — publico (persona, mapa de empatia, dores/problemas/desafios/medos/desejos/objeções, jobs to be done, nível de consciência de Schwartz, gatilhos, canais, linguagem), jornada (Descoberta → Atração → Consideração → Ação → Apologia: como acontece, como influenciar, conversão entre etapas e checklists simples/complexo), posicionamento (big idea, círculo dourado, declaração de posicionamento, proposta de valor, slogan, manifesto, arquétipos, tom de voz em 4 escalas 0–4, valores, somos/não somos, pilares, mensagens, universo de palavras), receita (Arquitetura de Receita/bowtie: Consciência, Educação, Seleção, Compromisso, Onboarding, Impacto, Expansão com volume, conversão, tempo e ações, mais ticket, CAC, LTV, churn, receita e meta) e swot (forças, fraquezas, oportunidades, ameaças e a matriz cruzada TOWS). estrategia_cliente lê tudo com o rótulo de cada chave; salvar_estrategia_cliente altera só as chaves enviadas (texto ou lista vazia apaga). Use a estratégia (público, tom de voz, palavras) ao escrever conteúdo e anúncios do cliente. Na seção receita, a tela oferece copiar para a gravata os números reais do último mês fechado (impressões, leads, vendas, CAC e ticket); pela IA, os mesmos números vêm de performance_cliente e entram com salvar_estrategia_cliente.',
+        'Avisos automáticos no sino (não há ferramenta para dispará-los): toda segunda, admins e gestores recebem o resumo da semana de cada cliente com anúncios (leads, investido, custo por lead e conversão de clique para lead contra a semana anterior; começa com "Atenção" se os leads caíram ou o custo por lead subiu 25% ou mais); todo dia, campanha ligada sem gasto há 2 dias; e, só para admins, token da Meta inválido ou a 10 dias de vencer e erros do servidor em produção.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
-        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro; criar_lancamento grava um lançamento (repetirMeses repete todo mês). Não há exclusão por aqui.',
+        'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro (que traz também a margem de lucro do mês: líquida e de contribuição, pelo que está lançado, pago ou não, sem separar mensalidade de projeto e avulso; a de contribuição desconta só tráfego pago, freelancers e equipe; impostos entram na líquida); criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
         'Agenda: cada pessoa vê os próprios compromissos, os da equipe toda e os em que foi selecionada. visibilidade: privado (só quem criou), equipe (todos) ou selecionados (quem criou + pessoas, ids de listar_equipe); só admin e gestor criam para outras pessoas. Compromisso fixo = repetir diario/semanal/mensal (repetirAte opcional). Horários no fuso de Belém (HH:MM). Compromisso pode ter uma categoria (listar_categorias_agenda / criar_categoria_agenda; a cor dela pinta o compromisso), um cliente (clienteId) e tags da equipe (listar_tags_agenda / criar_tag_agenda). Quem conectou o Google Agenda recebe os compromissos lá automaticamente. Não há exclusão por aqui.',
         'Projetos: uma lista (solta) marcada como "de projetos"; cada tarefa principal dela é um projeto (normalmente um cliente) e as subtarefas são as entregas. relatorio_projetos traz o foco (tempo lançado nas tarefas pelo cronômetro ou à mão), o andamento de cada projeto e o listaId da lista. Para criar um projeto, crie uma tarefa nessa lista (criar_tarefa ou criar_tarefas_em_lote com as entregas como subtarefas).',
@@ -891,6 +911,46 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'detalhar_objeto_meta',
+    descricao: 'Lê tudo de uma campanha, conjunto ou anúncio da Meta que JÁ FOI SUBIDO (ativo ou pausado): nome, status, objetivo, orçamento (reais), datas, público do conjunto (idades, locais, interesses) e, no anúncio, o criativo com texto, título, descrição e botão. Use antes de editar para ver o texto atual. Ids de estrutura_anuncios_cliente (campanhaId traz os anúncios).',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), nivel: z.enum(['campanha', 'conjunto', 'anuncio']), objetoId: z.string().regex(/^\d{1,25}$/) },
+    executar: async ({ sb }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      return (await import('@/servicos/controle-anuncios')).detalharObjetoMeta(cliente, a.nivel, a.objetoId)
+    },
+  }),
+
+  definir({
+    nome: 'editar_objeto_meta',
+    descricao: 'Edita na Meta um item que JÁ EXISTE, mesmo ativo (só admin e gestor; fica no histórico). Campanha: nome. Conjunto: nome, idadeMin/idadeMax e fim (AAAA-MM-DD). Anúncio: nome e, no criativo, texto (legenda), titulo, descricao, botao (ex.: LEARN_MORE, SIGN_UP, WHATSAPP_MESSAGE) e link — a Meta não edita o criativo: a plataforma cria um novo com a cópia ajustada e liga ao anúncio, que volta para análise. Não edita anúncio que usa publicação existente nem criativo dinâmico/carrossel (só o texto principal). Status e orçamento NÃO mudam aqui: use pausar_anuncio e propor_alteracao_anuncio. Se o item está ATIVO, confirme com a pessoa e envie confirmarAlteracaoEmAtivo=true. Leia o texto atual com detalhar_objeto_meta e mostre o antes e o depois para a pessoa aprovar.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente (id de listar_clientes)'),
+      nivel: z.enum(['campanha', 'conjunto', 'anuncio']),
+      objetoId: z.string().regex(/^\d{1,25}$/),
+      nome: z.string().min(1).max(200).optional(),
+      texto: z.string().min(1).max(2200).optional().describe('Texto principal (legenda) do anúncio'),
+      titulo: z.string().max(80).optional(),
+      descricao: z.string().max(120).optional(),
+      botao: z.string().regex(/^[A-Z_]{3,40}$/).optional(),
+      link: z.string().url().optional(),
+      idadeMin: z.number().int().min(13).max(65).optional(),
+      idadeMax: z.number().int().min(13).max(65).optional(),
+      fim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Data de fim do conjunto'),
+      confirmarAlteracaoEmAtivo: z.boolean().optional().describe('true só depois de a pessoa confirmar a edição de um item ativo'),
+    },
+    executar: async ({ sb, userId, papel }, a) => {
+      const cliente = (await listarClientes(sb)).find((c) => c.id === a.clienteId)
+      if (!cliente) throw new Error('Cliente não encontrado.')
+      const { clienteId: _c, nivel, objetoId, confirmarAlteracaoEmAtivo, ...edicao } = a
+      void _c
+      return { ok: true, ...(await (await import('@/servicos/controle-anuncios')).editarObjetoMeta(sb, { id: userId, papel }, cliente, { nivel, objetoId, edicao, confirmarEmAtivo: confirmarAlteracaoEmAtivo })) }
+    },
+  }),
+
+  definir({
     nome: 'propor_alteracao_anuncio',
     descricao: 'Pede para ATIVAR ou MUDAR O ORÇAMENTO (em reais; diário, ou total se o item usar orçamento total) de uma campanha, conjunto ou anúncio (Meta) ou campanha (Google Ads). Não executa: cria um pedido que admin ou gestor aprova na aba Anúncios. Explique o motivo com números.',
     escrita: true,
@@ -1206,6 +1266,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: t.statusId,
         prioridade: t.prioridade,
         prazo: t.prazo,
+        horario: t.horario ?? null,
         concluida: !!t.concluidaEm,
         responsaveis: t.responsaveis.map((r) => r.nome),
       })),
@@ -1227,6 +1288,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: t.statusId,
         prioridade: t.prioridade,
         prazo: t.prazo,
+        horario: t.horario ?? null,
         lista: { id: t.lista.id, nome: t.lista.nome },
         pai: t.pai,
         responsaveis: t.responsaveis.map((r) => ({ id: r.id, nome: r.nome })),
@@ -1301,6 +1363,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
+      horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').optional(),
       responsaveis: z.array(id('Id de uma pessoa')).max(10).optional(),
       clienteId: id('Tag de cliente da tarefa (id de listar_clientes)').optional(),
     },
@@ -1308,6 +1371,272 @@ export const FERRAMENTAS: Ferramenta[] = [
       const tarefaId = await criarUma(ctx, a)
       if (a.clienteId) await tarefas.definirTagCliente(ctx.sb, tarefaId, a.clienteId)
       return { tarefaId }
+    },
+  }),
+
+  definir({
+    nome: 'listar_visoes_lista',
+    descricao: 'Lista as abas (visualizações) de uma lista: id, tipo (lista, kanban, calendario, tabela, galeria, cronograma, carga, atividade, painel, documentos), nome e se é privada. Uma lista pode ter várias do mesmo tipo.',
+    escrita: false,
+    entrada: { listaId: id('Id da lista') },
+    executar: async (ctx, a) => ({ visoes: (await abasDaLista.listarVisoes(ctx.sb, a.listaId)) ?? [] }),
+  }),
+
+  definir({
+    nome: 'criar_visao_lista',
+    descricao: 'Adiciona uma aba (visualização) à lista. Pode repetir o mesmo tipo (ex.: duas Listas com filtros diferentes, depois ajustadas na plataforma).',
+    escrita: true,
+    entrada: { listaId: id('Id da lista'), tipo: z.enum(['lista', 'kanban', 'calendario', 'tabela', 'galeria', 'cronograma', 'carga', 'atividade', 'painel', 'documentos']), privada: z.boolean().optional() },
+    executar: async (ctx, a) => {
+      if (!ehTipoDeVisao(a.tipo)) throw new Error('Tipo de visualização inválido.')
+      return { visaoId: await abasDaLista.criarVisao(ctx.sb, ctx.userId, { listaId: a.listaId, tipo: a.tipo, privada: !!a.privada, fixada: true }) }
+    },
+  }),
+
+  definir({
+    nome: 'estrategia_cliente',
+    descricao: 'Estratégia do cliente (aba Estratégia): estudo de público, jornada de compra, posicionamento e marca, arquitetura de receita e SWOT. Devolve, por método, o % preenchido e cada campo com chave, rótulo, tipo (texto ou lista) e valor (vazio = ainda não preenchido), mais os itens marcados (checklist da jornada "nivel.etapa:texto", arquétipos "arq.<id>"). metodo filtra um só. Use as chaves em salvar_estrategia_cliente.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)'), metodo: z.enum(['publico', 'jornada', 'posicionamento', 'receita', 'swot']).optional() },
+    executar: async ({ sb }, a) => {
+      const est = await estrategia.estrategiaDoCliente(sb, a.clienteId)
+      return METODOS.filter((m) => !a.metodo || m.id === a.metodo).map((m) => ({
+        metodo: m.id,
+        rotulo: m.rotulo,
+        preenchido: `${Math.round(preenchimento(m.id, est[m.id]) * 100)}%`,
+        campos: CAMPOS[m.id].map((c) => ({ chave: c.chave, rotulo: c.rotulo, tipo: c.tipo, ...(c.ajuda ? { ajuda: c.ajuda } : {}), valor: c.tipo === 'texto' ? (est[m.id].textos[c.chave] ?? '') : (est[m.id].listas[c.chave] ?? []) })),
+        marcados: est[m.id].marcados,
+      }))
+    },
+  }),
+
+  definir({
+    nome: 'salvar_estrategia_cliente',
+    descricao: 'Preenche a estratégia do cliente num método (publico, jornada, posicionamento, receita, swot). Só as chaves enviadas mudam: textos {chave: "texto"} e listas {chave: ["item", …]} (a lista enviada substitui a anterior; texto "" ou lista [] apaga). Chaves: as de estrategia_cliente. marcados substitui a lista inteira de itens marcados (checklist da jornada, ex.: "simples.descoberta:<texto do item>"; arquétipos "arq.heroi", até 2, o primeiro é o principal). Tom de voz: "0" a "4". consciencia: inconsciente, problema, solucao, produto ou total. Mostre à pessoa o que vai gravar antes, se ela não pediu para gravar direto.',
+    escrita: true,
+    entrada: {
+      clienteId: id('Cliente'),
+      metodo: z.enum(['publico', 'jornada', 'posicionamento', 'receita', 'swot']),
+      textos: z.record(z.string(), z.string().max(4000)).optional(),
+      listas: z.record(z.string(), z.array(z.string().max(500)).max(60)).optional(),
+      marcados: z.array(z.string().max(600)).max(400).optional(),
+    },
+    executar: async ({ sb }, a) => {
+      const metodo = a.metodo as Metodo
+      const invalidas = chavesInvalidas(metodo, [...Object.keys(a.textos ?? {}), ...Object.keys(a.listas ?? {})])
+      if (invalidas.length) throw new Error(`Chaves que não existem em "${metodo}": ${invalidas.join(', ')}. Veja as chaves em estrategia_cliente.`)
+      const tipos = new Map(CAMPOS[metodo].map((c) => [c.chave, c.tipo]))
+      const trocadas = [...Object.keys(a.textos ?? {}).filter((k) => tipos.get(k) !== 'texto'), ...Object.keys(a.listas ?? {}).filter((k) => tipos.get(k) !== 'lista')]
+      if (trocadas.length) throw new Error(`Tipo errado (texto em vez de lista ou o contrário): ${trocadas.join(', ')}.`)
+      const novo = await estrategia.alterarEstrategia(sb, a.clienteId, metodo, { textos: a.textos, listas: a.listas, marcados: a.marcados })
+      return { ok: true, preenchido: `${Math.round(preenchimento(metodo, novo) * 100)}%` }
+    },
+  }),
+
+  definir({
+    nome: 'ficha_conteudo_cliente',
+    descricao: 'Ficha de conteúdo do cliente para escrever legendas: tom de voz, hashtags fixas, chamada para ação, observações e a pasta do Google Drive dele. LEIA antes de escrever qualquer legenda.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente (id de listar_clientes)') },
+    executar: async ({ sb }, a) => caixa.buscarFicha(sb, a.clienteId),
+  }),
+
+  definir({
+    nome: 'salvar_ficha_conteudo_cliente',
+    descricao: 'Atualiza a ficha de conteúdo do cliente (só os campos enviados mudam). pastaDrive aceita o link da pasta do cliente no Google Drive ou o id dela.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), pastaDrive: z.string().max(300).optional(), tom: z.string().max(2000).optional(), hashtags: z.string().max(2000).optional(), chamada: z.string().max(500).optional(), observacoes: z.string().max(4000).optional() },
+    executar: async ({ sb }, a) => {
+      const pasta = a.pastaDrive === undefined ? undefined : a.pastaDrive.trim() === '' ? '' : idDaPastaDoDrive(a.pastaDrive)
+      if (a.pastaDrive?.trim() && !pasta) throw new Error('Não reconheci a pasta do Drive: cole o link da pasta (…/folders/…) ou o id.')
+      await caixa.salvarFicha(sb, { clienteId: a.clienteId, pastaDrive: pasta, tom: a.tom, hashtags: a.hashtags, chamada: a.chamada, observacoes: a.observacoes })
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'listar_caixa_de_entrada',
+    descricao: 'Vídeos na caixa de entrada (aguardando envio, importando, prontos, já usados em post ou com erro), por cliente. O banco de vídeos é reutilizável: o vídeo continua "pronto" depois de virar post ou criativo (postId = último post onde foi usado). Cada vídeo "pronto" traz destino (para onde a pessoa mandou; null = ainda não escolheu), audioPronto (áudio já extraído) e transcricao (nao_pedida, processando, pronta ou erro): quando for "pronta", chame transcricao_video_caixa e receba o texto na hora. Use o id em transcricao_video_caixa e criar_post_da_caixa. Só os "pronto" podem virar post.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente; vazio = todos').optional(), status: z.enum(['aguardando_envio', 'importando', 'pronto', 'usado', 'erro']).optional() },
+    executar: async ({ sb }, a) => caixa.listarCaixa(sb, { clienteId: a.clienteId, status: a.status }),
+  }),
+
+  definir({
+    nome: 'buscar_videos_drive',
+    descricao: 'Procura vídeos (MP4/MOV) na pasta do Google Drive do cliente e nas subpastas (orgânico, anúncio…), do mais novo ao mais antigo. tipo filtra pela pasta (organico ou anuncio); busca filtra pelo nome. Devolve id, nome, tamanho e caminho; use o id em importar_video_drive. O Drive do cliente precisa estar na ficha (salvar_ficha_conteudo_cliente) e compartilhado com a conta de serviço.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), tipo: z.enum(['organico', 'anuncio']).optional(), busca: z.string().max(100).optional(), limite: z.number().int().min(1).max(100).optional() },
+    executar: async ({ sb }, a) => {
+      const ficha = await caixa.buscarFicha(sb, a.clienteId)
+      if (!ficha.pastaDrive) throw new Error('Este cliente não tem a pasta do Google Drive na ficha. Use salvar_ficha_conteudo_cliente com o link da pasta.')
+      const { listarVideos } = await import('@/servicos/google-drive')
+      return listarVideos(ficha.pastaDrive, { busca: a.busca, tipo: a.tipo, limite: a.limite })
+    },
+  }),
+
+  definir({
+    nome: 'importar_video_drive',
+    descricao: 'Copia um vídeo do Google Drive (id de buscar_videos_drive) para a caixa de entrada do cliente. A cópia roda em segundo plano: devolve o id do item com status "importando"; consulte listar_caixa_de_entrada até virar "pronto" (vídeos grandes levam alguns minutos). Limite de 4 GB; acima de 1 GB a plataforma avisa que NÃO comprime mas a Meta pode recusar ou recomprimir: mostre o aviso à pessoa e só então envie confirmarVideoGrande=true.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), arquivoId: z.string().regex(/^[A-Za-z0-9_-]{10,200}$/), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB'), paraBiblioteca: z.boolean().optional().describe('true = ao terminar de copiar, já entra também na biblioteca de criativos de anúncio (use para subir como anúncio)'), nomeDoCriativo: z.string().max(200).optional() },
+    executar: async ({ sb, userId }, a) => {
+      const itemId = await caixa.iniciarImportacaoDrive(sb, userId, { clienteId: a.clienteId, arquivoId: a.arquivoId, tipo: a.paraBiblioteca ? 'anuncio' : a.tipo, confirmarGrande: a.confirmarVideoGrande })
+      after(() => caixa.executarImportacao(itemId, a.paraBiblioteca ? { criarCriativo: { nome: a.nomeDoCriativo } } : undefined))
+      return { itemId, status: 'importando', proximoPasso: a.paraBiblioteca ? 'Aguarde e consulte listar_caixa_de_entrada até "pronto"; o criativo aparece em listar_criativos_cliente (use o id em criar_campanha_meta ou adicionar_anuncio_meta).' : 'Aguarde e consulte listar_caixa_de_entrada até o status ser "pronto".' }
+    },
+  }),
+
+  definir({
+    nome: 'criativo_da_caixa',
+    descricao: 'Põe um vídeo "pronto" da caixa de entrada na biblioteca de criativos de anúncio do cliente e devolve o criativoId (use em criar_campanha_meta e adicionar_anuncio_meta; a Meta recebe o vídeo na hora de criar o anúncio). O vídeo continua na caixa para ainda poder virar post — se for usar nos dois, crie o criativo ANTES de criar o post. Só admin e gestor sobem anúncios depois.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), nome: z.string().max(200).optional().describe('Nome do criativo na biblioteca (padrão: nome do arquivo)') },
+    executar: async ({ sb }, a) => ({ ...(await caixa.criativoDaCaixa(sb, a.itemId, a.nome)), proximoPasso: 'Use o criativoId em criar_campanha_meta (campanha nova) ou adicionar_anuncio_meta (conjunto existente). Antes, rode guia_publicacao com tipo anuncio_meta para ver o que perguntar à pessoa.' }),
+  }),
+
+  definir({
+    nome: 'guia_publicacao',
+    descricao: 'COMECE POR AQUI ao publicar vídeos: devolve o roteiro do que perguntar à pessoa (e os padrões), o que ler antes, os passos e os avisos, para tipo=post (orgânico agendado na Meta), anuncio_meta (campanha ou anúncio na Meta; informe modo para as perguntas exatas e as opções de botão) ou anuncio_google (campanha de Pesquisa). Pergunte o que faltar, mostre o resumo e só execute depois do OK.',
+    escrita: false,
+    entrada: { tipo: z.enum(['post', 'anuncio_meta', 'anuncio_google']), modo: z.enum(MODOS_META_GUIA).optional().describe('Só para anuncio_meta: whatsapp, direct, formulario, site ou perfil_instagram') },
+    executar: async (_ctx, a) => (a.tipo === 'post' ? guiaDePost() : a.tipo === 'anuncio_meta' ? guiaDeAnuncioMeta(a.modo) : guiaDeAnuncioGoogle()),
+  }),
+
+  definir({
+    nome: 'preparar_envio_caixa',
+    descricao: 'Para enviar um vídeo que está no computador de quem usa a IA (Claude Code, Codex): cria o item na caixa e devolve uma URL de envio. Faça um PUT do arquivo nessa URL (curl -X PUT -H "Content-Type: <mime>" --upload-file <arquivo> "<urlEnvio>") e depois chame confirmar_envio_caixa. Só MP4 ou MOV, até 4 GB; acima de 1 GB peça a confirmação da pessoa (a plataforma não comprime, mas a Meta pode recusar ou recomprimir) e envie confirmarVideoGrande=true.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), nome: z.string().min(1).max(255), mime: z.enum(['video/mp4', 'video/quicktime']), tamanho: z.number().int().min(1), tipo: z.enum(['organico', 'anuncio']).optional(), confirmarVideoGrande: z.boolean().optional().describe('true só depois de a pessoa confirmar o aviso de vídeo acima de 1 GB') },
+    executar: async ({ sb, userId }, a) => {
+      const r = await caixa.prepararEnvio(sb, userId, { clienteId: a.clienteId, nome: a.nome, mime: a.mime, tamanho: a.tamanho, tipo: a.tipo, origem: 'ia', confirmarGrande: a.confirmarVideoGrande })
+      return { itemId: r.id, urlEnvio: r.urlEnvio, comando: `curl -X PUT -H "Content-Type: ${a.mime}" --upload-file "<caminho do arquivo>" "${r.urlEnvio}"`, validadeDaUrl: '1 hora' }
+    },
+  }),
+
+  definir({
+    nome: 'confirmar_envio_caixa',
+    descricao: 'Depois do PUT de preparar_envio_caixa: confere que o arquivo chegou e libera o item (status "pronto").',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa') },
+    executar: async ({ sb }, a) => {
+      await caixa.confirmarEnvio(sb, a.itemId)
+      return { ok: true, status: 'pronto' }
+    },
+  }),
+
+  definir({
+    nome: 'transcricao_video_caixa',
+    descricao: 'Devolve o TEXTO já transcrito da fala do vídeo da caixa (Whisper rodando no GitHub). A plataforma já extrai o áudio e transcreve sozinha quando o vídeo chega, e o texto fica guardado: quando estado for "pronta", a resposta é imediata. Se ainda ninguém pediu (ou a tentativa anterior falhou), pede agora. estado "processando": aguarde alguns minutos (cerca de 1 a 2x a duração do vídeo) e chame de novo; "pronta": use o texto para escrever legenda e hashtags e grave com criar_post_da_caixa (legenda + descricao); "indisponivel": o Whisper ainda não foi configurado na plataforma. refazer=true pede a transcrição de novo.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), refazer: z.boolean().optional() },
+    executar: async ({ sb }, a) => caixa.transcricaoDoVideo(sb, a.itemId, a.refazer),
+  }),
+
+  definir({
+    nome: 'ouvir_video_caixa',
+    descricao: 'Entrega o ÁUDIO do vídeo da caixa (extraído pelo ffmpeg) como conteúdo de áudio na própria resposta, sem link: use quando você não consegue abrir endereços. Vem em partes de ~10 minutos: peça parte=1 e, se totalPartes for maior, as seguintes. Transcreva a fala e escreva a legenda; grave com criar_post_da_caixa. Se o seu ambiente não processar áudio, use audio_do_video_caixa (endereço).',
+    escrita: false,
+    entrada: { itemId: id('Item da caixa (pronto)'), parte: z.number().int().min(1).optional().describe('Parte do áudio (começa em 1)') },
+    executar: async ({ sb }, a) => {
+      const p = await caixa.parteDoAudio(sb, a.itemId, a.parte ?? 1)
+      return {
+        __mcp: [
+          { type: 'text', text: JSON.stringify({ nome: p.nome, parte: p.parte, totalPartes: p.totalPartes, proximoPasso: p.parte < p.totalPartes ? `Peça a parte ${p.parte + 1}.` : 'Transcreva, escreva a legenda e grave com criar_post_da_caixa.' }) },
+          { type: 'audio', data: p.base64, mimeType: p.mime },
+        ],
+      }
+    },
+  }),
+
+  definir({
+    nome: 'audio_do_video_caixa',
+    descricao: 'Devolve o endereço FIXO (não expira) para BAIXAR o áudio (MP3 mono, leve) extraído do vídeo da caixa. Baixe o arquivo, transcreva a fala na sua própria plataforma e escreva a legenda, as hashtags e as demais informações; depois grave tudo com criar_post_da_caixa (legenda + descricao). O áudio já é extraído sozinho quando o vídeo chega; se ainda não existir, esta ferramenta extrai na hora (pode levar de alguns segundos a poucos minutos em vídeo grande). O endereço fica valendo enquanto o vídeo estiver na caixa (some se for removido ou virar post), então pode baixar quando quiser. Só funciona com vídeo "pronto".',
+    escrita: false,
+    entrada: { itemId: id('Item da caixa (pronto)') },
+    executar: async ({ sb }, a) => ({ ...(await caixa.audioDoVideo(sb, a.itemId)), proximoPasso: 'Baixe o áudio pela url, transcreva, e use ficha_conteudo_cliente (tom) para escrever. Grave com criar_post_da_caixa: legenda (o texto publicado; hashtags fixas entram sozinhas) e descricao (anotação da tarefa: transcrição e observações). Para trocar a legenda depois, use atualizar_conteudo_post.' }),
+  }),
+
+  definir({
+    nome: 'hashtags_cliente',
+    descricao: 'Lê as hashtags fixas cadastradas no cliente (configurações do cliente → aba Hashtags), por plataforma. Sem "plataforma", devolve todas. A plataforma do post vem do formato: reels, feed e stories = instagram. criar_post_da_caixa e atualizar_conteudo_post já acrescentam essas hashtags sozinhos no fim da legenda (depois de uma linha em branco): não as escreva na legenda.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).optional() },
+    executar: async ({ sb }, a) => (a.plataforma ? { plataforma: a.plataforma, hashtags: await hashtagsDoCliente(sb, a.clienteId, a.plataforma) } : { plataformas: await hashtagsDoClienteTodas(sb, a.clienteId) }),
+  }),
+
+  definir({
+    nome: 'definir_hashtags_cliente',
+    descricao: 'Troca as hashtags fixas de um cliente numa plataforma (hoje só instagram, até 30). Substitui a lista inteira: leia antes com hashtags_cliente e mostre o antes e o depois à pessoa. Os posts novos e os ainda não publicados passam a recebê-las.',
+    escrita: true,
+    entrada: { clienteId: id('Cliente'), plataforma: z.enum(['instagram']).default('instagram'), hashtags: z.string().max(2000).describe('Hashtags separadas por espaço, vírgula ou linha') },
+    executar: async ({ sb }, a) => ({ plataforma: a.plataforma, hashtags: await salvarHashtagsDoCliente(sb, a.clienteId, a.plataforma, a.hashtags) }),
+  }),
+
+  definir({
+    nome: 'definir_destino_video_caixa',
+    descricao: 'Grava para onde um vídeo da caixa vai: a lista de conteúdo e como entra: "mae" (tarefa nova na lista), "subtarefa" (subtarefa nova dentro de tarefaId) ou "existente" (dentro de tarefaId, um post que já existe, ex.: a subtarefa "Post 01"). Use SÓ com o que a pessoa pediu na conversa (onde a tarefa deve ficar e como criar); se ela não disse, pergunte. A lista precisa ser do tipo Conteúdo. Ache os ids com listar_arvore e buscar_tarefa. A pessoa também pode escolher na Caixa de entrada (botão Destino).',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (pronto)'), listaId: id('Lista de conteúdo'), modo: z.enum(['mae', 'subtarefa', 'existente']), tarefaId: id('Tarefa (obrigatória em subtarefa e existente)').optional() },
+    executar: async ({ sb }, a) => {
+      await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
+      return { ok: true, proximoPasso: 'Crie o post com criar_post_da_caixa.' }
+    },
+  }),
+
+  definir({
+    nome: 'reutilizar_video_caixa',
+    descricao: 'Devolve ao banco de vídeos (Caixa de entrada) um vídeo que aparece como "usado" (já virou post), para usar de novo em outro post, criativo ou ferramenta. Os vídeos novos NÃO saem mais do banco ao virar post: ficam "pronto" e reutilizáveis (postId mostra o último post em que foram usados). criar_post_da_caixa, criativo_da_caixa e transcricao_video_caixa já fazem isso sozinhos com vídeo "usado"; use esta só para deixar o item pronto antes (ex.: para escolher o destino). Falha se o arquivo não existir mais (post apagado ou arquivado): aí é preciso subir o vídeo de novo.',
+    escrita: true,
+    entrada: { itemId: id('Item da caixa (usado ou pronto)') },
+    executar: async ({ sb }, a) => {
+      await caixa.reutilizarItem(sb, a.itemId)
+      return { ok: true, status: 'pronto' }
+    },
+  }),
+
+  definir({
+    nome: 'criar_post_da_caixa',
+    descricao: 'Coloca um vídeo "pronto" da caixa num POST de conteúdo e grava a legenda. O DESTINO (lista, tarefa e se entra como tarefa-mãe, subtarefa ou na tarefa existente) é o que a PESSOA mandou: ou ela escolheu na Caixa de entrada (campo destino de listar_caixa_de_entrada), ou disse na conversa onde a tarefa deve ficar e como criar (então passe listaId, modo e tarefaId aqui, ou use definir_destino_video_caixa). Nunca escolha por conta própria: se o vídeo não tem destino e a pessoa não disse, pergunte. Depois, agende com agendar_post (data e hora de sugerir_horarios_publicacao). Legenda: use o tom e as hashtags da ficha_conteudo_cliente e o que você transcreveu do áudio (audio_do_video_caixa). descricao grava a descrição da tarefa do post (transcrição, hashtags e observações). formato: reels (vídeo vertical), feed, stories ou tiktok. dataPrevista é só a data planejada do post (AAAA-MM-DD).',
+    escrita: true,
+    entrada: {
+      itemId: id('Item da caixa'),
+      listaId: id('Lista de conteúdo, SÓ se a pessoa disse onde criar (senão vale o destino salvo)').optional(),
+      modo: z.enum(['mae', 'subtarefa', 'existente']).optional().describe('Como entra, SÓ junto com listaId'),
+      tarefaId: id('Tarefa do destino (subtarefa e existente), SÓ junto com listaId e modo').optional(),
+      titulo: z.string().min(1).max(200).optional().describe('Título do post (obrigatório quando o destino é tarefa-mãe ou subtarefa nova; ignorado quando entra na tarefa que já existe)'),
+      formato: z.enum(['feed', 'reels', 'stories', 'tiktok']),
+      legenda: z.string().min(1).max(2200).describe('Legenda do post, SEM as hashtags fixas do cliente: a plataforma as acrescenta sozinha no fim da legenda, depois de uma linha em branco, conforme a plataforma do post (formato reels, feed e stories = Instagram; tiktok = TikTok). Escreva só hashtags específicas do post, se houver'),
+      dataPrevista: data('Data planejada'),
+      ideia: z.string().max(2000).optional(),
+      objetivo: z.string().max(2000).optional(),
+      descricao: z.string().max(50000).optional().describe('Descrição da tarefa do post: transcrição do vídeo, hashtags, observações e tudo que a equipe precisar saber'),
+      semHashtags: z.boolean().optional().describe('true = NÃO acrescentar as hashtags do cliente (só se a pessoa pediu). Por padrão elas entram sozinhas'),
+    },
+    executar: async ({ sb }, a) => {
+      if (a.listaId || a.modo) {
+        if (!a.listaId || !a.modo) throw new Error('Para indicar o destino aqui, informe listaId e modo (e tarefaId em subtarefa ou existente).')
+        await caixa.definirDestino(sb, a.itemId, { listaId: a.listaId, tarefaId: a.tarefaId ?? null, modo: a.modo })
+      }
+      const r = await caixa.criarPostDaCaixa(sb, a)
+      return { tarefaId: r.tarefaId, hashtagsNaLegenda: r.hashtags, proximoPasso: 'Agende com agendar_post (use sugerir_horarios_publicacao para escolher dia e horário).' }
+    },
+  }),
+
+  definir({
+    nome: 'sugerir_horarios_publicacao',
+    descricao: 'Melhores dias e horários para publicar no Instagram do cliente, calculados a partir dos posts que ele já publicou (alcance, visualizações e interações) e das datas que já estão agendadas (no máximo um post por dia, sem repetir dia ocupado). Devolve quantidade janelas {data, hora} (Belém) com o motivo de cada uma. Com pouco histórico usa horários padrão e avisa.',
+    escrita: false,
+    entrada: { clienteId: id('Cliente'), quantidade: z.number().int().min(1).max(30) },
+    executar: async ({ sb }, a) => {
+      const ip = await import('@/servicos/insights-post')
+      const todos = (await conteudoSvc.listarAgendamentos(sb)).filter((p) => p.cliente?.id === a.clienteId)
+      const publicados = todos.filter((p) => p.status === 'publicado' && p.igMediaId && p.publicadoEm)
+      const m = publicados.length ? await ip.metricasDosPosts(publicados.map((p) => ({ igId: p.igMediaId!, formato: p.formato }))) : new Map()
+      const historico = publicados.flatMap((p) => { const x = m.get(p.igMediaId!); return x ? [{ publicadoEm: p.publicadoEm!, alcance: x.alcance, visualizacoes: x.visualizacoes, interacoes: x.interacoes }] : [] })
+      const ranking = ranquearHorarios(historico)
+      const ocupados = todos.filter((p) => p.status === 'agendado' && p.em).map((p) => p.em!)
+      return { baseadoEmDados: ranking.baseadoEmDados, postsAnalisados: ranking.totalPosts, melhoresHorarios: ranking.horarios.slice(0, 6), janelas: proximasJanelas(ranking, { agoraIso: new Date().toISOString(), quantidade: a.quantidade, ocupados }) }
     },
   }),
 
@@ -1351,6 +1680,7 @@ export const FERRAMENTAS: Ferramenta[] = [
             titulo: z.string().min(1).max(200),
             descricao: z.string().max(50000).optional(),
             prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').optional(),
+            horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').optional(),
             prioridade: z.enum(PRIORIDADES).optional(),
             clienteId: id('Tag de cliente da tarefa e das subtarefas (id de listar_clientes)').optional(),
             valoresCampos: z.record(z.string().uuid(), valorCampo).optional().describe('Objeto { idDoCampo: valor }'),
@@ -1372,7 +1702,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (a.tarefas.reduce((n, t) => n + lista(t).length, 0) > 300) throw new Error('No máximo 300 subtarefas por chamada.')
       const criadas: { tarefaId: string; titulo: string; subtarefaIds: string[] }[] = []
       for (const t of a.tarefas) {
-        const tarefaId = await criarUma(ctx, { listaId: a.listaId, titulo: t.titulo, descricao: t.descricao, prazo: t.prazo, prioridade: t.prioridade })
+        const tarefaId = await criarUma(ctx, { listaId: a.listaId, titulo: t.titulo, descricao: t.descricao, prazo: t.prazo, horario: t.horario, prioridade: t.prioridade })
         for (const [campoId, valor] of Object.entries(t.valoresCampos ?? {})) await campos.salvarValorDoCampo(ctx.sb, tarefaId, campoId, valor as Json)
         const subtarefaIds: string[] = []
         for (const s of lista(t)) subtarefaIds.push(await criarUma(ctx, { listaId: a.listaId, titulo: s.titulo, descricao: s.descricao, paiId: tarefaId }))
@@ -1385,7 +1715,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'atualizar_tarefa',
-    descricao: 'Altera título, descrição, status, prioridade, vencimento, responsáveis ou a tag de cliente de uma tarefa. A tag de cliente vale para a tarefa-mãe e todas as subtarefas (clienteId null remove). Só envie o que muda.',
+    descricao: 'Altera título, descrição, status, prioridade, vencimento (prazo + horario opcional HH:MM, hora de Belém), responsáveis ou a tag de cliente de uma tarefa. Em posts de conteúdo o vencimento já é preenchido sozinho pelo agendamento (agendar_post), com o mesmo dia e horário. A tag de cliente vale para a tarefa-mãe e todas as subtarefas (clienteId null remove). Só envie o que muda.',
     escrita: true,
     entrada: {
       tarefaId: id('Id da tarefa'),
@@ -1394,6 +1724,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       statusId: id('Id do status').optional(),
       prioridade: z.enum(PRIORIDADES).optional(),
       prazo: data('Vencimento (é ele que posiciona a tarefa no calendário)').nullable().optional(),
+      horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).describe('Horário do vencimento HH:MM (Belém), opcional; só vale junto com prazo').nullable().optional(),
       responsaveis: z.array(id('Id de uma pessoa')).min(1).max(10).optional(),
       clienteId: id('Tag de cliente (id de listar_clientes); null remove a tag').nullable().optional(),
     },
@@ -1404,6 +1735,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         statusId: a.statusId,
         prioridade: a.prioridade,
         prazo: a.prazo,
+        horario: a.horario,
       })
       if (a.responsaveis) await tarefas.definirResponsaveis(sb, a.tarefaId, a.responsaveis)
       if (a.clienteId !== undefined) await tarefas.definirTagCliente(sb, a.tarefaId, a.clienteId)
@@ -1413,12 +1745,200 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'lancar_tempo',
-    descricao: 'Lança tempo trabalhado numa tarefa, em nome da pessoa dona do token (igual ao lançamento manual na tarefa). Entra no foco de relatorio_projetos. Dia AAAA-MM-DD; minutos de 1 a 1440.',
+    descricao: 'Lança tempo trabalhado numa tarefa, em nome da pessoa dona do token (igual ao lançamento manual na tarefa). Entra no foco de relatorio_projetos. Dia AAAA-MM-DD; minutos de 1 a 1440. faturavel (padrão true) diz se o tempo entra na cobrança do cliente.',
     escrita: true,
-    entrada: { tarefaId: id('Tarefa'), data: data('Dia trabalhado'), minutos: z.number().int().min(1).max(1440), nota: z.string().max(300).optional() },
+    entrada: { tarefaId: id('Tarefa'), data: data('Dia trabalhado'), minutos: z.number().int().min(1).max(1440), nota: z.string().max(300).optional(), faturavel: z.boolean().optional().describe('Entra na cobrança do cliente (padrão true)') },
     executar: async ({ sb }, a) => {
-      await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null)
+      await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null, a.faturavel ?? true)
       return { ok: true, lancado: formatarDuracao(a.minutos * 60) }
+    },
+  }),
+
+  definir({
+    nome: 'ver_prova_visual',
+    descricao: 'Comentários do cliente na prova visual de um post (marcações na imagem ou no instante do vídeo): número, autor, local, texto, respostas e se está resolvido. Sem versao, traz a versão atual inteira; abertos e o resumo por versão vêm de contagem no banco. Com versao (número de uma versão anterior), traz o histórico dela em páginas: passe depois (o proximo da página anterior) para continuar.',
+    escrita: false,
+    entrada: {
+      tarefaId: id('Id da tarefa do post'),
+      versao: z.number().int().min(1).optional().describe('Número da versão (padrão: a atual)'),
+      depois: z.object({ criadoEm: z.string().max(40), id: z.string().uuid() }).optional().describe('Cursor devolvido em proximo'),
+    },
+    executar: async ({ sb }, a) => {
+      const dom = await import('@/dominio/prova-visual')
+      const svc = await import('@/servicos/prova-visual')
+      const resumo = await svc.resumoDaProva(sb, a.tarefaId)
+      const alvo = a.versao ? resumo.find((r) => r.numero === a.versao) : resumo[0]
+      if (!alvo) return { abertos: 0, resumo: [], versao: null, comentarios: [], proximo: null }
+      const { cursorValido } = await import('@/dominio/limite')
+      if (a.depois && !cursorValido(a.depois)) throw new Error('Cursor inválido.')
+      const pagina = a.versao || a.depois ? await svc.paginaDaVersao(sb, a.tarefaId, alvo.versaoId, a.depois ?? null) : { ...(await svc.lerVersao(sb, a.tarefaId, alvo.versaoId)), proximo: null }
+      return {
+        abertos: resumo.reduce((n, r) => n + r.abertos, 0),
+        resumo: resumo.map((r) => ({ versao: r.numero, comentarios: r.total, abertos: r.abertos, resolvidos: r.resolvidos })),
+        versao: alvo.numero,
+        truncado: 'truncado' in pagina ? pagina.truncado : false,
+        comentarios: dom.numerarComentarios(pagina.comentarios).map((c) => ({
+          id: c.id, numero: c.numero, autor: c.autor, texto: c.texto, local: dom.descreverLocal(c, []), midia: c.midia, x: c.x, y: c.y, segundo: c.segundo, resolvido: !!c.resolvidoEm,
+          respostas: c.respostas.map((r) => ({ id: r.id, autor: r.autor, daAgencia: r.autorTipo === 'equipe', texto: r.texto })),
+        })),
+        proximo: pagina.proximo,
+      }
+    },
+  }),
+
+  definir({
+    nome: 'responder_prova_visual',
+    descricao: 'A agência responde a um ponto do cliente na prova visual (comentarioId vem de ver_prova_visual). Não cria marcação nova.',
+    escrita: true,
+    entrada: { comentarioId: id('Id do comentário do cliente'), texto: z.string().min(1).max(2000) },
+    executar: async ({ sb }, a) => {
+      const { data, error } = await sb.from('content_review_comments').select('id, version_id, task_id').eq('id', a.comentarioId).is('parent_id', null).maybeSingle()
+      if (error) throw error
+      if (!data) throw new Error('Comentário não encontrado.')
+      await (await import('@/servicos/prova-visual')).responderComentario(sb, { id: data.id, versaoId: data.version_id, tarefaId: data.task_id }, a.texto)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'resolver_prova_visual',
+    descricao: 'Marca como resolvido (resolvido=true) ou reabre (false) um ponto do cliente na prova visual.',
+    escrita: true,
+    entrada: { comentarioId: id('Id do comentário do cliente'), resolvido: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/prova-visual')).resolverComentario(sb, a.comentarioId, a.resolvido)
+      return { ok: true, resolvido: a.resolvido }
+    },
+  }),
+
+  definir({
+    nome: 'definir_tempo_faturavel',
+    descricao: 'Marca um registro de tempo como faturável (entra na cobrança do cliente) ou não faturável. Pode o dono do registro, admin e gestor. Não muda a duração nem a nota.',
+    escrita: true,
+    entrada: { registroId: id('Id do registro de tempo (aparece em resumo_tempo_faturavel com detalhe=true)'), faturavel: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/tempo')).definirFaturavel(sb, a.registroId, a.faturavel)
+      return { ok: true, faturavel: a.faturavel }
+    },
+  }),
+
+  definir({
+    nome: 'resumo_tempo_faturavel',
+    descricao: 'Horas por cliente e por pessoa num período (datas locais de Belém), separando faturável de não faturável. SÓ admin e gestor; os demais recebem erro de permissão. Filtros: clienteIds (ids de listar_clientes), semCliente (inclui tarefas sem cliente), pessoaIds, faturavel (sim, nao ou todos). detalhe=true traz também os registros um a um (com id, para corrigir a marca).',
+    escrita: false,
+    entrada: {
+      de: data('Primeiro dia'),
+      ate: data('Último dia'),
+      clienteIds: z.array(z.string().uuid()).max(50).optional(),
+      semCliente: z.boolean().optional(),
+      pessoaIds: z.array(z.string().uuid()).max(50).optional(),
+      faturavel: z.enum(['sim', 'nao', 'todos']).optional(),
+      detalhe: z.boolean().optional().describe('Inclui a lista de registros (até 500)'),
+    },
+    executar: async ({ sb }, a) => {
+      if (a.ate < a.de) throw new Error('A data final precisa ser igual ou depois da inicial.')
+      const dom = await import('@/dominio/tempo-faturavel')
+      const svc = await import('@/servicos/tempo')
+      const filtros: import('@/dominio/tempo-faturavel').FiltrosTempo = {
+        periodo: 'intervalo',
+        de: a.de,
+        ate: a.ate,
+        clientes: [...(a.clienteIds ?? []), ...(a.semCliente ? [dom.SEM_CLIENTE] : [])],
+        pessoas: a.pessoaIds ?? [],
+        faturavel: a.faturavel ?? 'todos',
+      }
+      const linhas = await svc.resumoTempo(sb, filtros)
+      const texto = (t: { total: number; faturavel: number; naoFaturavel: number; percentual: number }) => ({
+        total: formatarDuracao(t.total), faturavel: formatarDuracao(t.faturavel), naoFaturavel: formatarDuracao(t.naoFaturavel),
+        totalSegundos: t.total, faturavelSegundos: t.faturavel, percentualFaturavel: t.percentual,
+      })
+      const grupo = (por: 'cliente' | 'pessoa') => dom.agrupar(linhas, por).map((g) => ({ id: g.id, nome: g.nome, ...texto(g), detalhe: g.filhos.map((f) => ({ id: f.id, nome: f.nome, ...texto(f) })) }))
+      return {
+        periodo: { de: a.de, ate: a.ate },
+        totais: texto(dom.somar(linhas)),
+        porCliente: grupo('cliente'),
+        porPessoa: grupo('pessoa'),
+        registros: a.detalhe ? (await svc.registrosDoPeriodo(sb, filtros)).slice(0, 500) : undefined,
+      }
+    },
+  }),
+
+  definir({
+    nome: 'ver_recorrencia',
+    descricao: 'Mostra a regra de repetição de uma tarefa-modelo (frequência, dias, fim, modo de criação, o que copia, quantas cópias já foram criadas e as próximas datas). Se a tarefa for uma cópia de série, devolve também o modelo (modeloDaSerie).',
+    escrita: false,
+    entrada: { tarefaId: id('Id da tarefa (modelo ou cópia)') },
+    executar: async ({ sb }, a) => {
+      const rec = await import('@/servicos/recorrencias')
+      const dom = await import('@/dominio/recorrencia')
+      const [regra, serie] = await Promise.all([rec.buscarRecorrencia(sb, a.tarefaId), rec.buscarSerieDaTarefa(sb, a.tarefaId)])
+      return {
+        regra: regra && {
+          ...regra,
+          resumo: dom.resumirRecorrencia(regra),
+          pausada: !regra.ativa,
+          proximasDatas: dom.proximasDatas(regra, 5),
+        },
+        modeloDaSerie: serie && { id: serie.modeloId, titulo: serie.modeloTitulo, regraAtiva: !!serie.regra?.ativa, copiasCriadas: serie.criadas },
+      }
+    },
+  }),
+
+  definir({
+    nome: 'definir_recorrencia',
+    descricao: 'Cria ou altera a repetição de uma tarefa (a tarefa vira o modelo). frequencia: diaria, dias_uteis, semanal ou mensal. Semanal aceita diasSemana (1=segunda ... 7=domingo; sem eles usa o dia do inicio). Mensal aceita modoMensal: dia_do_mes (padrão) ou posicao_na_semana (ex.: 4ª segunda-feira, pelo dia do inicio). Fim: terminaEm (data) ou maximo (vezes). criar: na_data (padrão, o sistema cria a cópia no dia, com antecedenciaDias de antecedência) ou ao_concluir (cria a próxima quando a atual é concluída). Depois da primeira cópia o inicio e o contador não mudam. As cópias já criadas não são alteradas.',
+    escrita: true,
+    entrada: {
+      tarefaId: id('Id da tarefa-modelo'),
+      frequencia: z.enum(['diaria', 'dias_uteis', 'semanal', 'mensal']),
+      cada: z.number().int().min(1).max(365).optional().describe('A cada N dias/semanas/meses (padrão 1; ignorado em dias_uteis)'),
+      diasSemana: z.array(z.number().int().min(1).max(7)).min(1).max(7).optional().describe('Só em semanal: 1=segunda ... 7=domingo'),
+      modoMensal: z.enum(['dia_do_mes', 'posicao_na_semana']).optional(),
+      inicio: data('Primeiro vencimento (padrão: o vencimento da tarefa, ou hoje)').optional(),
+      terminaEm: data('Última data possível').nullable().optional(),
+      maximo: z.number().int().min(1).max(1000).nullable().optional().describe('Máximo de vezes'),
+      criar: z.enum(['na_data', 'ao_concluir']).optional(),
+      antecedenciaDias: z.number().int().min(0).max(60).optional().describe('Dias de antecedência na criação (só em na_data)'),
+      copiarResponsaveis: z.boolean().optional().describe('Padrão true. Sem copiar, fica só o primeiro responsável'),
+      copiarSubtarefas: z.boolean().optional().describe('Padrão true'),
+      copiarEtiquetasECampos: z.boolean().optional().describe('Padrão true'),
+    },
+    executar: async ({ sb }, a) => {
+      const rec = await import('@/servicos/recorrencias')
+      const dom = await import('@/dominio/recorrencia')
+      const atual = await rec.buscarRecorrencia(sb, a.tarefaId)
+      const tarefa = await tarefas.buscarTarefa(sb, a.tarefaId)
+      const frequencia = ({ diaria: 'daily', dias_uteis: 'weekdays', semanal: 'weekly', mensal: 'monthly' } as const)[a.frequencia]
+      const regra: import('@/dominio/recorrencia').RegraRecorrencia = {
+        frequencia,
+        cada: frequencia === 'weekdays' ? 1 : (a.cada ?? 1),
+        antecedencia: a.criar === 'ao_concluir' ? 0 : (a.antecedenciaDias ?? atual?.antecedencia ?? 0),
+        ativa: atual?.ativa ?? true,
+        primeiroPrazo: a.inicio ?? atual?.primeiroPrazo ?? tarefa?.prazo ?? dataDeHoje(new Date()),
+        diasSemana: frequencia === 'weekly' ? (a.diasSemana ?? null) : null,
+        modoMensal: a.modoMensal === 'posicao_na_semana' ? 'weekday_position' : 'day',
+        terminaEm: a.terminaEm === undefined ? (atual?.terminaEm ?? null) : a.terminaEm,
+        maximo: a.maximo === undefined ? (atual?.maximo ?? null) : a.maximo,
+        modoCriacao: a.criar === 'ao_concluir' ? 'on_complete' : 'schedule',
+        copiarResponsaveis: a.copiarResponsaveis ?? atual?.copiarResponsaveis ?? true,
+        copiarSubtarefas: a.copiarSubtarefas ?? atual?.copiarSubtarefas ?? true,
+        copiarCampos: a.copiarEtiquetasECampos ?? atual?.copiarCampos ?? true,
+      }
+      const erro = dom.validarRecorrencia(regra)
+      if (erro) throw new Error(erro)
+      await rec.definirRecorrencia(sb, a.tarefaId, regra)
+      return { ok: true, resumo: dom.resumirRecorrencia(regra), proximasDatas: dom.proximasDatas({ ...regra, geradas: atual?.geradas ?? 0 }, 3) }
+    },
+  }),
+
+  definir({
+    nome: 'pausar_recorrencia',
+    descricao: 'Pausa (pausada=true) ou retoma (pausada=false) a repetição de uma tarefa-modelo. Pausada, nenhuma tarefa nova é criada; as já criadas não mudam.',
+    escrita: true,
+    entrada: { tarefaId: id('Id da tarefa-modelo'), pausada: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/recorrencias')).pausarRecorrencia(sb, a.tarefaId, !a.pausada)
+      return { ok: true, pausada: a.pausada }
     },
   }),
 
@@ -1586,15 +2106,21 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'resumir_financeiro',
-    descricao: 'Resumo do mês: entradas e despesas PAGAS, saldo (só o que foi pago), a receber, a pagar, previsto (pago + pendente) e, por categoria, previsto, pago e pendente. Só o admin tem acesso. Valores em reais.',
+    descricao: 'Resumo do mês: entradas e despesas PAGAS, saldo (só o que foi pago), a receber, a pagar, previsto (pago + pendente) e, por categoria, previsto, pago e pendente. Traz também a margem de lucro do mês (margemLiquidaPct e margemContribuicaoPct, em %; receita e despesas contam o que foi pago e o que ainda vai ser recebido/pago; a contribuição desconta só tráfego pago, freelancers e equipe) e a margem por cliente. Só o admin tem acesso. Valores em reais.',
     escrita: false,
     entrada: { mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('Mês (AAAA-MM); padrão: o mês atual') },
     executar: async ({ sb }, a) => {
       const mes = lerMes(a.mes, dataDeHoje(new Date()))
       const { de, ate } = limitesDoMes(mes)
-      const r = resumir(await financeiro.listarLancamentos(sb, de, ate))
+      const lancs = await financeiro.listarLancamentos(sb, de, ate)
+      const r = resumir(lancs)
       const reais = (c: number) => c / 100
-      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, previsto: reais(c.centavos), pago: reais(c.pagos), pendente: reais(c.pendentes) })) }
+      const margemEmReais = (itens?: typeof lancs, pronta?: ReturnType<typeof calcularMargens>) => {
+        const x = pronta ?? calcularMargens(itens ?? [])
+        const arred = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10)
+        return { receita: reais(x.receita), despesas: reais(x.despesas), lucro: reais(x.lucro), margemLiquidaPct: arred(x.margemLiquida), despesasDiretas: reais(x.diretas), contribuicao: reais(x.contribuicao), margemContribuicaoPct: arred(x.margemContribuicao) }
+      }
+      return { mes, entradas: reais(r.entradas), despesas: reais(r.despesas), saldo: reais(r.saldo), aReceber: reais(r.aReceber), aPagar: reais(r.aPagar), previsto: reais(r.previsto), margem: margemEmReais(lancs), margemPorCliente: margensPorCliente(lancs).map((c) => ({ cliente: c.clienteNome, ...margemEmReais(undefined, c.margens) })), porCategoria: r.porCategoria.map((c) => ({ tipo: c.tipo, categoria: c.categoria, previsto: reais(c.centavos), pago: reais(c.pagos), pendente: reais(c.pendentes) })) }
     },
   }),
 
@@ -1702,6 +2228,26 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
 
   definir({
+    nome: 'atualizar_conteudo_post',
+    descricao: 'Troca a LEGENDA (o texto que vai na publicação), a ideia e/ou o objetivo de um post de conteúdo que já existe (inclusive já agendado: a legenda é lida na hora de publicar, então a nova vale). Só envie o que muda. Não confunda com a descrição da tarefa (atualizar_tarefa), que é só anotação da equipe e NÃO é publicada. As hashtags fixas do cliente entram sozinhas ao publicar no Instagram (hashtags_cliente): escreva só as do post. Atenção: se o cliente já respondeu a aprovação (aprovado ou pedido de ajuste), a plataforma cria uma versão nova do post, que volta para "aguardando" aprovação; mostre isso à pessoa antes.',
+    escrita: true,
+    entrada: { tarefaId: id('Post (id da tarefa do post)'), legenda: z.string().min(1).max(2200).optional().describe('Nova legenda, SEM as hashtags fixas do cliente (entram sozinhas no fim, depois de uma linha em branco)'), ideia: z.string().max(2000).optional(), objetivo: z.string().max(2000).optional(), semHashtags: z.boolean().optional().describe('true = não acrescentar as hashtags do cliente') },
+    executar: async ({ sb }, a) => {
+      const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
+      if (!post) throw new Error('Essa tarefa não é um post de conteúdo.')
+      const atual = post.versoes.find((v) => v.numero === post.versaoAtual)
+      let legenda = a.legenda ?? atual?.legenda ?? ''
+      let hashtags: string[] = []
+      if (a.legenda && !a.semHashtags) {
+        const { data: t } = await sb.from('tasks').select('client_id').eq('id', a.tarefaId).single()
+        if (t?.client_id) ({ legenda, hashtags } = await legendaComHashtags(sb, t.client_id, plataformaDoFormato(post.formato), a.legenda))
+      }
+      const versao = await conteudoSvc.salvarTexto(sb, a.tarefaId, { ideia: a.ideia ?? atual?.ideia ?? '', objetivo: a.objetivo ?? atual?.objetivo ?? '', legenda })
+      return { ok: true, versao, hashtagsNaLegenda: hashtags, aviso: versao !== post.versaoAtual ? 'O post já tinha resposta do cliente: foi criada a versão ' + versao + ' e ela volta para aprovação.' : undefined }
+    },
+  }),
+
+  definir({
     nome: 'situacao_publicacao_post',
     descricao: 'Agendamento e publicação de um post de conteúdo (tarefa da lista de conteúdo) no Instagram/Facebook: aprovação do cliente, dia e hora, redes, situação (agendado, publicado, falhou e o motivo) e os links publicados.',
     escrita: false,
@@ -1709,7 +2255,28 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async ({ sb }, a) => {
       const [post, pub] = await Promise.all([conteudoSvc.buscarConteudo(sb, a.tarefaId), conteudoSvc.buscarPublicacao(sb, a.tarefaId)])
       if (!post || !pub) throw new Error('Post de conteúdo não encontrado (ou falta a migration de publicação).')
-      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, collab: pub.collabs, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
+      return { formato: post.formato, aprovacao: post.aprovacao, versao: post.versaoAtual, publicarEm: pub.em, redes: pub.alvos, collab: pub.collabs, reelsDeTeste: pub.teste === 'MANUAL' ? 'manual' : pub.teste === 'SS_PERFORMANCE' ? 'automatico' : null, modo: pub.modo, status: pub.status, erro: pub.erro, instagram: pub.igLink, facebook: pub.fbLink, cliente: pub.cliente?.nome }
+    },
+  }),
+
+  definir({
+    nome: 'publicar_post_agora',
+    descricao: 'PUBLICA JÁ um post de conteúdo (sem esperar o horário nem a aprovação do cliente). Ação irreversível e pública: use SÓ quando a pessoa pediu explicitamente para publicar agora, e confirme com ela o post, a legenda e a rede antes. reelsDeTeste (manual ou automatico) publica como Reels de teste do Instagram (só formato reels, só Instagram, sem collab). Se o vídeo ainda estiver processando no Instagram, a publicação termina sozinha em alguns minutos (status publicando). Para publicar num horário, use agendar_post.',
+    escrita: true,
+    entrada: {
+      tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
+      redes: z.array(z.enum(['instagram', 'facebook', 'google'])).min(1).describe('Onde publicar'),
+      reelsDeTeste: z.enum(['manual', 'automatico']).optional().describe('Publica como Reels de teste: manual = a pessoa libera aos seguidores pelo aplicativo; automatico = o Instagram libera sozinho se for bem'),
+    },
+    executar: async ({ sb }, a) => {
+      const teste = a.reelsDeTeste ? ESTRATEGIA_POR_NOME[a.reelsDeTeste] : null
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, undefined, teste)
+      if (problema) throw new Error(problema)
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: new Date().toISOString(), alvos: a.redes, modo: 'direto', enviarAoCliente: false, teste })
+      const { publicarPost } = await import('@/servicos/publicacao-meta')
+      const r = await publicarPost(a.tarefaId, { forcar: true })
+      if (r.status === 'falhou') throw new Error(r.erro ?? 'Não foi possível publicar.')
+      return { status: r.status, reelsDeTeste: a.reelsDeTeste ?? null, aviso: r.status === 'publicando' ? 'O vídeo ainda está processando no Instagram; a publicação termina sozinha em alguns minutos. Consulte situacao_publicacao_post.' : undefined }
     },
   }),
 
@@ -1728,7 +2295,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'agendar_post',
-    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
+    descricao: 'Agenda um post de conteúdo para o Instagram e/ou Facebook (opcionalmente como Reels de teste do Instagram: reelsDeTeste). Para publicar na hora, use publicar_post_agora. modo "aprovacao": o post vai para o portal do cliente (se ainda é rascunho) e só publica no horário depois que ele aprovar; "direto": publica no horário sem aprovação. Data AAAA-MM-DD e hora HH:MM (Belém). O post precisa ter mídia e o cliente a Página do Facebook no cadastro. collab: até 3 @ do Instagram convidados como coautores (feed, Reels e carrossel; Stories não), cada um aceita o convite no app; omitir mantém os já salvos, [] tira. Não publica na hora (isso só pela tela). Para REAGENDAR, chame de novo com a nova data e hora; para tirar da fila, cancelar_agendamento_post.',
     escrita: true,
     entrada: {
       tarefaId: id('Post (id da tarefa da lista de conteúdo)'),
@@ -1737,18 +2304,20 @@ export const FERRAMENTAS: Ferramenta[] = [
       redes: z.array(z.enum(['instagram', 'facebook', 'google'])).min(1).describe('Onde publicar (google = Google Meu Negócio: texto + primeira foto)'),
       modo: z.enum(['aprovacao', 'direto']).optional().describe('Padrão: aprovacao'),
       collab: z.array(z.string()).max(3).optional().describe('@ do Instagram convidados para a collab (até 3)'),
+      reelsDeTeste: z.enum(['manual', 'automatico']).optional().describe('Publica como Reels de teste do Instagram (aparece primeiro só para quem não segue): manual = a pessoa libera para os seguidores pelo aplicativo; automatico = o Instagram libera sozinho se for bem. Só para formato reels, só no Instagram, sem collab. Só use se a pessoa pediu'),
     },
     executar: async ({ sb }, a) => {
       const collabs = a.collab === undefined ? undefined : lerCollabs(a.collab.join(' '))
       if (collabs && 'erro' in collabs) throw new Error(collabs.erro)
-      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, collabs)
+      const teste = a.reelsDeTeste ? ESTRATEGIA_POR_NOME[a.reelsDeTeste] : null
+      const problema = await conteudoSvc.problemaParaPublicar(sb, a.tarefaId, a.redes, collabs, teste)
       if (problema) throw new Error(problema)
       const post = await conteudoSvc.buscarConteudo(sb, a.tarefaId)
       const modo = a.modo ?? 'aprovacao'
       if (modo === 'aprovacao' && post?.aprovacao === 'ajuste') throw new Error('O cliente pediu ajuste: edite o post (nasce a versão nova) antes de reenviar.')
       const enviarAoCliente = modo === 'aprovacao' && post?.aprovacao === 'rascunho'
-      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente, collabs })
-      return { ok: true, enviadoAoCliente: enviarAoCliente }
+      await conteudoSvc.agendarPost(sb, a.tarefaId, { em: instante(a.data, a.hora).toISOString(), alvos: a.redes, modo, enviarAoCliente, collabs, teste })
+      return { ok: true, enviadoAoCliente: enviarAoCliente, reelsDeTeste: a.reelsDeTeste ?? null }
     },
   }),
 
@@ -1969,10 +2538,10 @@ export const FERRAMENTAS: Ferramenta[] = [
 
 async function criarUma(
   ctx: Contexto,
-  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; prazo?: string; responsaveis?: string[] },
+  a: { listaId: string; titulo: string; descricao?: string; paiId?: string; statusId?: string; prioridade?: (typeof PRIORIDADES)[number]; prazo?: string; horario?: string; responsaveis?: string[] },
 ): Promise<string> {
   const tarefaId = await tarefas.criarTarefa(ctx.sb, { listaId: a.listaId, titulo: a.titulo.trim(), responsaveis: a.responsaveis?.length ? a.responsaveis : [ctx.userId], paiId: a.paiId, statusId: a.statusId })
-  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, prazo: a.prazo }
+  const extras = { descricao: a.descricao ? textoParaDescricao(a.descricao) : undefined, prioridade: a.prioridade, prazo: a.prazo, horario: a.prazo ? a.horario : undefined }
   if (Object.values(extras).some((v) => v !== undefined)) await tarefas.atualizarTarefa(ctx.sb, tarefaId, extras)
   return tarefaId
 }

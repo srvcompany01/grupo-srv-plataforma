@@ -1,6 +1,8 @@
 'use client'
 
-import { ChevronDown, CircleDot, Filter, Flag, Search, Tags, Users, X, type LucideIcon } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { EVENTO_ABRIR_COLUNAS } from '@/dominio/eventos-lista'
+import { ChevronDown, CircleDot, Flag, Tags, Users, X, type LucideIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import {
@@ -14,12 +16,13 @@ import {
   DropdownMenuTrigger,
 } from '@/componentes/ui/dropdown-menu'
 import { AGRUPAMENTOS_BASICOS, ROTULO_AGRUPAMENTO } from '@/dominio/agrupamento'
-import { type FiltroPrazo, type Filtros } from '@/dominio/filtros'
+import { type FiltroPrazo, type FiltroRecorrencia, type Filtros } from '@/dominio/filtros'
 import { enderecoDaVisao } from '@/dominio/visao-salva'
 import { PRIORIDADES, ROTULO_PRIORIDADE } from '@/dominio/tarefas'
 
 type Opcao = { id: string; nome: string }
 
+const ROTULO_RECORRENCIA: Record<FiltroRecorrencia, string> = { todas: 'Todas', recorrentes: 'Só recorrentes', nao: 'Não recorrentes' }
 const ROTULO_PRAZO: Record<FiltroPrazo, string> = {
   atrasadas: 'Atrasadas',
   hoje: 'Hoje',
@@ -107,24 +110,25 @@ export function BarraFiltros({
     ? (camposAgrupaveis.find((campo) => `campo:${campo.id}` === filtros.agrupamento)?.nome ?? ROTULO_AGRUPAMENTO.status)
     : ROTULO_AGRUPAMENTO[filtros.agrupamento as keyof typeof ROTULO_AGRUPAMENTO]
 
-  const nFiltros = filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length + (filtros.prazo ? 1 : 0) + (filtros.mes ? 1 : 0)
+  const nFiltros = filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length + (filtros.prazo ? 1 : 0) + (filtros.recorrencia !== 'todas' ? 1 : 0) + (filtros.mes ? 1 : 0)
   const algum =
     filtros.responsaveis.length + filtros.status.length + filtros.prioridades.length + filtros.tags.length + filtros.clientes.length > 0 ||
     !!filtros.prazo ||
+    filtros.recorrencia !== 'todas' ||
     !!filtros.mes ||
     !!filtros.busca
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="contents">
       {comAgrupamento && (
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Agrupar por: ${rotuloAgrupamento}`}
             title="Agrupar por"
-            className="inline-flex h-6 items-center gap-1 rounded-full border border-sucesso/30 bg-sucesso/15 px-2.5 text-legenda font-semibold text-sucesso-forte transition-colors hover:bg-sucesso/25 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-sucesso/30"
+            className="b-pill"
           >
+            <Ic n="layers" s={15} style={{ color: 'var(--text-2)' }} />
             {rotuloAgrupamento}
-            <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
             <DropdownMenuRadioGroup value={filtros.agrupamento} onValueChange={(v) => aplicar({ agrupamento: v })}>
@@ -140,9 +144,30 @@ export function BarraFiltros({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+      {comAgrupamento && (
+        <>
+          <Popover>
+            <PopoverTrigger title="Subtarefas" aria-label="Opções de subtarefas" className={`b-icon ${filtros.subtarefas === 'planas' || filtros.expandidas ? 'on' : ''}`} style={filtros.subtarefas === 'planas' ? { background: 'var(--bg-active)', color: 'var(--text)' } : undefined}><Ic n="account_tree" s={16} /></PopoverTrigger>
+            <PopoverContent align="start" className="w-80 gap-3 p-3">
+              {([
+                { chave: 'expandidas', titulo: 'Expandir subtarefas', texto: 'As tarefas já abrem mostrando as subtarefas.', ligado: filtros.expandidas, desabilitado: filtros.subtarefas === 'planas', mudar: () => aplicar({ expandidas: !filtros.expandidas }) },
+                { chave: 'planas', titulo: 'Subtarefas como tarefas principais', texto: 'Mostra só as subtarefas, soltas, e esconde as tarefas-mãe. Assim os posts aparecem juntos e dá para agrupar por formato, mês e outros campos.', ligado: filtros.subtarefas === 'planas', desabilitado: false, mudar: () => aplicar({ subtarefas: filtros.subtarefas === 'planas' ? 'normal' : 'planas' }) },
+              ] as const).map((o) => (
+                <div key={o.chave} className="flex items-start gap-3" style={{ opacity: o.desabilitado ? 0.5 : 1 }}>
+                  <span className="min-w-0 flex-1"><span className="block text-[13px] font-medium text-texto">{o.titulo}</span><span className="block text-[12px] leading-4 text-texto-3">{o.texto}</span></span>
+                  <button type="button" role="switch" aria-checked={o.ligado} aria-label={o.titulo} disabled={o.desabilitado} onClick={o.mudar} style={{ width: 28, height: 16, flex: 'none', marginTop: 2, borderRadius: 8, border: 0, padding: 0, position: 'relative', cursor: 'pointer', background: o.ligado ? 'var(--primary)' : 'var(--border-strong)', transition: 'background 150ms' }}>
+                    <span style={{ position: 'absolute', top: 2, left: o.ligado ? 14 : 2, width: 12, height: 12, borderRadius: '50%', background: 'var(--bg)', transition: 'left 150ms' }} />
+                  </button>
+                </div>
+              ))}
+            </PopoverContent>
+          </Popover>
+          <button type="button" title="Colunas" aria-label="Colunas" onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_COLUNAS))} className="b-icon"><Ic n="view_week" s={16} /></button>
+        </>
+      )}
       <Popover>
-        <PopoverTrigger className={`${botao} ml-auto ${nFiltros ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
-          <Filter className="h-3.5 w-3.5" /> Filtro{nFiltros > 0 && ` · ${nFiltros}`}
+        <PopoverTrigger className={`b-ghost ml-auto ${nFiltros ? 'on' : ''}`}>
+          <Ic n="filter_list" s={16} /> Filtro{nFiltros > 0 && <span style={{ minWidth: 16, height: 16, padding: '0 4px', borderRadius: 4, background: 'var(--primary)', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{nFiltros}</span>}
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-[22rem] flex-wrap gap-2 p-3">
       <Multi filtros={filtros} aplicar={aplicar} rotulo="Responsável" chave="responsaveis" opcoes={equipe} Icone={Users} tom="azul" />
@@ -166,6 +191,19 @@ export function BarraFiltros({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger className={`${botao} ${filtros.recorrencia !== 'todas' ? ATIVO : 'border-borda bg-white text-texto-2 hover:bg-hover'}`}>
+          {filtros.recorrencia === 'todas' ? 'Recorrência' : ROTULO_RECORRENCIA[filtros.recorrencia]}
+          <ChevronDown className="h-3 w-3" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuRadioGroup value={filtros.recorrencia} onValueChange={(v) => aplicar({ recorrencia: v as FiltroRecorrencia })}>
+            {(Object.keys(ROTULO_RECORRENCIA) as FiltroRecorrencia[]).map((r) => (
+              <DropdownMenuRadioItem key={r} value={r}>{ROTULO_RECORRENCIA[r]}</DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {comMes && (
         <input
           type="month"
@@ -182,22 +220,22 @@ export function BarraFiltros({
           e.preventDefault()
           aplicar({ busca: String(new FormData(e.currentTarget).get('busca') ?? '').trim() })
         }}
-        className="relative min-w-44 flex-1 sm:max-w-56"
+        className="relative hidden w-44 shrink-0 lg:block"
       >
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-texto-3" />
+        <Ic n="search" s={15} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', pointerEvents: 'none' }} />
         <input
           key={filtros.busca}
           name="busca"
           defaultValue={filtros.busca}
           aria-label="Pesquisar tarefas"
-          placeholder="Pesquisar tarefas…" autoComplete="off"
-          className="h-7 w-full rounded-md border border-borda bg-white pl-8 pr-8 text-rotulo outline-none transition focus-visible:border-petroleo focus-visible:ring-3 focus-visible:ring-petroleo/15"
+          placeholder="Buscar na lista" autoComplete="off"
+          className="h-7 w-full rounded-md border border-borda bg-white pl-7 pr-7 text-[13px] outline-none transition focus-visible:border-[var(--focus)] focus-visible:ring-3 focus-visible:ring-[var(--focus-ring)]"
         />
         {filtros.busca && <button type="button" aria-label="Limpar pesquisa" onClick={() => aplicar({ busca: '' })} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-texto-3 hover:bg-hover"><X className="h-3 w-3" /></button>}
       </form>
       {algum && (
         <button
-          onClick={() => aplicar({ responsaveis: [], status: [], prioridades: [], tags: [], clientes: [], prazo: null, mes: null, busca: '' })}
+          onClick={() => aplicar({ responsaveis: [], status: [], prioridades: [], tags: [], clientes: [], prazo: null, recorrencia: 'todas', mes: null, busca: '' })}
           className={`${botao} border-transparent text-texto-3 hover:text-texto`}
         >
           <X className="h-3 w-3" /> Limpar

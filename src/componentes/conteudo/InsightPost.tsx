@@ -103,7 +103,7 @@ export async function PainelInsight({ id, fechar }: { id: string; fechar: string
           <>
             <div className="flex flex-wrap items-center gap-2">
               <SeloNota nota={a.nota} />
-              {a.tipo && <span className="rounded-full bg-white px-2 py-0.5 text-micro font-semibold text-texto-2">{a.tipo}</span>}
+              {a.tipo && <span className="rounded-md bg-white px-2 py-0.5 text-micro font-semibold text-texto-2">{a.tipo}</span>}
               <span className="text-micro text-texto-3">{a.assistiuVideo ? 'assistiu o arquivo' : 'sem o arquivo (só números e legenda)'} · {new Date(a.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}</span>
             </div>
             <p className="text-rotulo text-texto">{a.resumo}</p>

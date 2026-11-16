@@ -4,6 +4,7 @@ import { Check, UserPlus } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { Avatar } from '@/componentes/Avatar'
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/componentes/ui/command'
+import { TituloMenu } from '@/componentes/ui/opcao-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { opcoesResponsaveis } from '@/dominio/convite'
 import type { Pessoa } from '@/dominio/tarefas'
@@ -37,7 +38,8 @@ export function SeletorResponsaveis({ tarefaId, atuais, equipe }: { tarefaId: st
       <PopoverTrigger disabled={pendente} aria-label="Responsáveis" className="rounded-full hover:opacity-80">
         {atuais.length ? <Pessoas pessoas={atuais} /> : <UserPlus className="h-5 w-5 text-texto-3" />}
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-64 gap-0 p-0 pt-1" align="start">
+        <TituloMenu>Responsáveis</TituloMenu>
         <Command>
           <CommandInput placeholder="Buscar pessoa…" />
           <CommandList>

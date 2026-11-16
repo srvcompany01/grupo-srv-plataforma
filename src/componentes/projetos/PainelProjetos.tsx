@@ -107,7 +107,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
           <ul className="flex flex-wrap gap-1.5">
             {atencao.map((l) => (
               <li key={l.id}>
-                <Link href={l.href} className="flex items-center gap-1.5 rounded-full border border-borda bg-white px-2.5 py-1 text-rotulo hover:bg-hover">
+                <Link href={l.href} className="flex items-center gap-1.5 rounded-md border border-borda bg-white px-2.5 py-1 text-rotulo hover:bg-hover">
                   <span className="h-2 w-2 rounded-full" style={{ background: l.cor }} /> {l.nome}
                   <span className="text-legenda text-texto-3">{l.ultimaAtividade ? `última atividade ${dia(l.ultimaAtividade)}` : 'sem atividade'}</span>
                 </Link>
@@ -149,7 +149,7 @@ export function PainelProjetos({ painel, rotulo, periodo, quem, href, vazio }: {
                   <td className="px-3 py-2 text-right tabular-nums">{l.pendentes}</td>
                   <td className={`px-3 py-2 text-right tabular-nums ${l.atrasadas ? 'font-semibold text-perigo' : ''}`}>{l.atrasadas}</td>
                   <td className="px-3 py-2 tabular-nums text-texto-2">{l.ultimaAtividade ? dia(l.ultimaAtividade) : '—'}</td>
-                  <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-legenda font-medium ${SAUDE[l.saude].classe}`}>{SAUDE[l.saude].rotulo}</span></td>
+                  <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-legenda font-medium ${SAUDE[l.saude].classe}`}>{SAUDE[l.saude].rotulo}</span></td>
                 </tr>
               ))}
             </tbody>

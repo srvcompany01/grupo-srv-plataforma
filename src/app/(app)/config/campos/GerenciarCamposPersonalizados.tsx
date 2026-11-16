@@ -60,7 +60,7 @@ export function GerenciarCamposPersonalizados({ campos, espacos, listas }: Dados
                   <p className="text-corpo font-medium">{c.nome} <span className="font-normal text-texto-3">· {c.espaco}</span></p>
                   <div className="flex flex-wrap gap-1">
                     {c.listaIds.length === 0 && <span className="text-legenda text-texto-3">Não está em nenhuma lista</span>}
-                    {c.listaIds.map((id) => <span key={id} className="rounded-full bg-hover px-2 py-0.5 text-legenda text-texto-2">{caminhos.get(id) ?? 'Lista removida'}</span>)}
+                    {c.listaIds.map((id) => <span key={id} className="rounded-md bg-hover px-2 py-0.5 text-legenda text-texto-2">{caminhos.get(id) ?? 'Lista removida'}</span>)}
                   </div>
                 </div>
                 <span className="h-4 w-4 rounded-full ring-1 ring-borda" style={{ background: c.cor }} title={c.cor} />

@@ -125,7 +125,7 @@ export function Gravador({
   }, [modo])
 
   return (
-    <div className="space-y-2 rounded-md border border-borda bg-white p-2 text-corpo">
+    <div className="space-y-2 rounded-md  bg-white p-2 text-corpo">
       {fase === 'escolha' && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-texto-2">Gravar:</span>

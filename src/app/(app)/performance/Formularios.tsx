@@ -174,7 +174,7 @@ export function QuizBio({ clienteId, perguntas, aparencia }: { clienteId: string
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full border px-6 py-3 text-base font-medium" style={{ backgroundColor: fundo, color: letra, borderColor: fundo }}>{ap.botaoTexto || TEXTO_PADRAO_BOTAO}</span>
+          <span className="rounded-md border px-6 py-3 text-base font-medium" style={{ backgroundColor: fundo, color: letra, borderColor: fundo }}>{ap.botaoTexto || TEXTO_PADRAO_BOTAO}</span>
           {(ap.botaoFundo || ap.botaoLetra) && <button type="button" className={botaoFantasma} onClick={() => setAp({ ...ap, botaoFundo: '', botaoLetra: '' })}>Voltar às cores padrão</button>}
           <span className="text-legenda text-texto-3">Prévia. Sem escolher cores, o botão segue o padrão preto e branco da página.</span>
         </div>

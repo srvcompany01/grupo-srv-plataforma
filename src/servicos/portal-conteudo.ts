@@ -1,3 +1,5 @@
+import type { Supabase } from '@/infra/supabase/servidor'
+import { aplicarEtapaDoPost } from './etapa-post'
 import 'server-only'
 import type { Aprovacao, Decisao, Formato } from '@/dominio/conteudo'
 import type { Alvo, ModoPublicacao, StatusPublicacao } from '@/dominio/publicacao'
@@ -119,6 +121,8 @@ export async function responderPost(clienteId: string, nome: string, tarefaId: s
   if (error) throw error
   dados(await admin.from('content_responses').insert({ version_id: versao.id, task_id: tarefaId, decision: decisao, comment: comentario, responder_name: nome }))
   dados(await admin.from('content_posts').update({ approval: decisao }).eq('task_id', tarefaId).eq('approval', 'aguardando').select('task_id'))
+  // O cliente aprovou: o post segue para o agendamento (o campo "Etapa" vira Agendado).
+  if (decisao === 'aprovado') await aplicarEtapaDoPost(admin as unknown as Supabase, tarefaId, 'agendado')
   // Sem login, o comentário sai em nome de quem criou a tarefa (ou do primeiro responsável), dizendo que foi o cliente.
   const texto = decisao === 'aprovado' ? `✅ O cliente (${nome}) aprovou a versão ${post.versao} pelo link.` : `✏️ O cliente (${nome}) pediu ajuste na versão ${post.versao}: ${comentario}`
   const { data: tarefa } = await admin.from('tasks').select('created_by, task_assignees(user_id)').eq('id', tarefaId).single()

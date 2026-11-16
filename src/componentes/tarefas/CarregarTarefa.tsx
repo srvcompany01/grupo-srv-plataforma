@@ -1,9 +1,11 @@
+import { hashtagsDoCliente } from '@/servicos/hashtags-cliente'
 import { notFound } from 'next/navigation'
 import { dataDeHoje } from '@/dominio/filtros'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { listarComentarios, pessoasDaTarefa } from '@/servicos/comentarios'
-import { buscarRecorrencia } from '@/servicos/recorrencias'
+import { buscarRecorrencia, buscarSerieDaTarefa, contarCopias } from '@/servicos/recorrencias'
+import { revisaoDaTarefa } from '@/servicos/prova-visual'
 import { buscarConteudo, buscarPublicacao } from '@/servicos/conteudo'
 import { contaDaPagina } from '@/servicos/publicacao-meta'
 import { buscarLista, listarListasVisiveis, listarTags } from '@/servicos/listas'
@@ -20,7 +22,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
   const sb = await criarClienteServidor()
   const tarefa = await buscarTarefa(sb, id)
   if (!tarefa) notFound()
-  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo, recorrencia] = await Promise.all([
+  const [lista, equipe, tags, listas, comentarios, atividade, camposPersonalizados, tempo, cronometro, pessoas, clientes, conteudo, recorrencia, serie, copiasCriadas] = await Promise.all([
     buscarLista(sb, tarefa.lista.id),
     listarEquipe(sb),
     listarTags(sb, tarefa.lista.espacoId),
@@ -34,10 +36,14 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
     listarClientes(sb),
     buscarConteudo(sb, id).catch(() => null), // sem a migration de conteúdo a tarefa abre normalmente
     buscarRecorrencia(sb, id).catch(() => null), // idem para a migration de recorrências
+    buscarSerieDaTarefa(sb, id).catch(() => null),
+    contarCopias(sb, id).catch(() => 0),
   ])
   // Post de conteúdo: agendamento na Meta e a Página/Instagram do cliente.
+  const revisao = conteudo ? await revisaoDaTarefa(sb, id).catch(() => null) : null
   const publicacao = conteudo ? await buscarPublicacao(sb, id) : null
   const contaMeta = publicacao?.cliente?.paginaId ? await contaDaPagina(publicacao.cliente.paginaId) : null
+  const hashtagsInstagram = publicacao?.cliente?.id ? await hashtagsDoCliente(sb, publicacao.cliente.id, 'instagram').catch(() => []) : []
   return (
     <TelaTarefa
       key={tarefa.id}
@@ -62,7 +68,12 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       conteudo={conteudo}
       publicacao={publicacao}
       contaMeta={contaMeta}
+      hashtagsInstagram={hashtagsInstagram}
       recorrencia={recorrencia}
+      verTodoTempo={eu.papel === 'admin' || eu.papel === 'gestor'}
+      revisao={revisao}
+      serie={serie}
+      copiasCriadas={copiasCriadas}
     />
   )
 }

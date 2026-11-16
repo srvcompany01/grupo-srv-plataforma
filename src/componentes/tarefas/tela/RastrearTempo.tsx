@@ -1,12 +1,15 @@
 'use client'
 
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { Pencil, Play, Square, Trash2 } from 'lucide-react'
+import { CircleDollarSign, Pencil, Play, Square, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useEffect, useState, useTransition } from 'react'
-import { apagarTempoAcao, editarTempoAcao, iniciarCronometroAcao, lancarTempoAcao, pararCronometroAcao } from '@/app/(app)/tarefas/acoes'
+import { apagarTempoAcao, definirFaturavelAcao, editarTempoAcao, iniciarCronometroAcao, lancarTempoAcao, pararCronometroAcao } from '@/app/(app)/tarefas/acoes'
+import { Checkbox } from '@/componentes/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/componentes/ui/tooltip'
 import { formatarDuracao, formatarRelogio } from '@/dominio/formatar'
-import { segundosDecorridos, totalTempo } from '@/dominio/tempo'
+import { segundosDecorridos, totalFaturavel, totalTempo } from '@/dominio/tempo'
 import { botaoFantasma, botaoPrimario, campo } from '@/lib/ui'
 import type { CronometroAtivo, RegistroTempo } from '@/servicos/tempo'
 import { avisar } from '../avisar'
@@ -22,10 +25,30 @@ function dataCurta(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+/** Alternância [$]: faturável (verde, preenchido) ou não faturável (cinza, contorno). */
+function BotaoFaturavel({ faturavel, desabilitado, aoAlternar }: { faturavel: boolean; desabilitado: boolean; aoAlternar: () => void }) {
+  const texto = faturavel ? 'Faturável. Clique para marcar como não faturável.' : 'Não faturável. Clique para marcar como faturável.'
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" aria-pressed={faturavel} aria-label={texto} disabled={desabilitado} onClick={aoAlternar} className={`shrink-0 rounded p-1 hover:bg-hover disabled:opacity-50 ${faturavel ? 'text-sucesso-forte' : 'text-texto-3'}`}>
+            <CircleDollarSign className={`h-3.5 w-3.5 ${faturavel ? 'fill-sucesso-fundo' : ''}`} aria-hidden="true" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{texto}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: number; podeMexer: boolean }) {
   const [editando, setEditando] = useState(false)
   const [minutos, setMinutos] = useState(String(Math.max(1, Math.round((r.segundos ?? 0) / 60))))
   const [nota, setNota] = useState(r.nota ?? '')
+  const [faturavelEdicao, setFaturavelEdicao] = useState(r.faturavel)
+  // Marca mostrada na hora; volta ao valor do servidor se a alteração falhar.
+  const [faturavel, setFaturavel] = useState(r.faturavel)
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   const rodando = r.fim === null
@@ -38,12 +61,18 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
           <input type="number" min={1} max={1440} value={minutos} onChange={(e) => setMinutos(e.target.value)} aria-label="Minutos" className={`${campo} w-20`} />
           <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Nota" aria-label="Nota" className={`${campo} min-w-0 flex-1`} />
         </div>
+        <label className="flex items-center gap-2 text-rotulo text-texto">
+          <Checkbox checked={faturavelEdicao} onCheckedChange={(v) => setFaturavelEdicao(v === true)} /> Faturável
+        </label>
         <div className="flex gap-1">
           <button
             disabled={pendente}
             onClick={() =>
               iniciar(async () => {
-                if (avisar(await editarTempoAcao(r.id, Number(minutos), nota), true)) setEditando(false)
+                if (avisar(await editarTempoAcao(r.id, Number(minutos), nota, faturavelEdicao), true)) {
+                  setFaturavel(faturavelEdicao)
+                  setEditando(false)
+                }
               })
             }
             className={botaoPrimario}
@@ -61,12 +90,27 @@ function LinhaRegistro({ r, agora, podeMexer }: { r: RegistroTempo; agora: numbe
     <li className="flex items-start gap-2 py-2 text-rotulo">
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{r.usuarioNome}</p>
-        <p className="text-texto-3">
+        <p className="text-texto-2">
           {dataCurta(r.inicio)}
           {r.nota ? ` · ${r.nota}` : ''}
         </p>
       </div>
       <span className="shrink-0 font-mono tabular-nums">{rodando ? formatarRelogio(segundos) : formatarDuracao(segundos)}</span>
+      <BotaoFaturavel
+        faturavel={faturavel}
+        desabilitado={rodando || !podeMexer || pendente}
+        aoAlternar={() => {
+          const novo = !faturavel
+          setFaturavel(novo)
+          iniciar(async () => {
+            const resposta = await definirFaturavelAcao(r.id, novo)
+            if (resposta?.erro) {
+              setFaturavel(!novo)
+              toast.error('Não foi possível alterar. Tente de novo.')
+            }
+          })
+        }}
+      />
       {podeMexer && !rodando && (
         <span className="flex shrink-0 gap-0.5">
           <button onClick={() => setEditando(true)} aria-label="Editar registro" className="rounded p-1 text-texto-3 hover:bg-hover hover:text-texto">
@@ -91,6 +135,7 @@ function FormularioLancar({ tarefaId }: { tarefaId: string }) {
   const [horas, setHoras] = useState('')
   const [minutos, setMinutos] = useState('')
   const [nota, setNota] = useState('')
+  const [faturavel, setFaturavel] = useState(true)
   const [pendente, iniciar] = useTransition()
   const total = (Number(horas) || 0) * 60 + (Number(minutos) || 0)
   return (
@@ -98,10 +143,11 @@ function FormularioLancar({ tarefaId }: { tarefaId: string }) {
       onSubmit={(e) => {
         e.preventDefault()
         iniciar(async () => {
-          if (avisar(await lancarTempoAcao(tarefaId, data, total, nota), true)) {
+          if (avisar(await lancarTempoAcao(tarefaId, data, total, nota, faturavel), true)) {
             setHoras('')
             setMinutos('')
             setNota('')
+            setFaturavel(true)
           }
         })
       }}
@@ -116,6 +162,9 @@ function FormularioLancar({ tarefaId }: { tarefaId: string }) {
         <span>min</span>
       </div>
       <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Nota (opcional)" aria-label="Nota" className={campo} />
+      <label className="flex items-center gap-2 text-rotulo text-texto">
+        <Checkbox checked={faturavel} onCheckedChange={(v) => setFaturavel(v === true)} /> Faturável
+      </label>
       <button disabled={pendente || total < 1 || total > 1440} className={botaoPrimario}>
         Lançar
       </button>
@@ -129,12 +178,15 @@ export function RastrearTempo({
   cronometro,
   euId,
   podeGerir,
+  verTudo = false,
 }: {
   tarefaId: string
   registros: RegistroTempo[]
   cronometro: CronometroAtivo | null
   euId: string
   podeGerir: boolean
+  /** Admin e gestor veem as horas de todos; os demais só as próprias (regra do banco). */
+  verTudo?: boolean
 }) {
   const [agora, setAgora] = useState(() => Date.now())
   const [pendente, iniciar] = useTransition()
@@ -149,6 +201,7 @@ export function RastrearTempo({
   }, [algumAberto])
 
   const total = totalTempo(registros, agora)
+  const faturavelTotal = totalFaturavel(registros, agora)
   return (
     <div className="flex items-center gap-2">
       {nestaTarefa ? (
@@ -167,17 +220,25 @@ export function RastrearTempo({
           onClick={() => iniciar(async () => void avisar(await iniciarCronometroAcao(tarefaId), true))}
           className="inline-flex items-center gap-1.5 rounded-md bg-hover px-2 py-1 text-rotulo font-medium hover:bg-borda"
         >
-          <Play className="h-3.5 w-3.5 fill-current" /> Start
+          <Play className="h-3.5 w-3.5 fill-current" /> Iniciar
         </button>
       )}
       <Popover>
         <PopoverTrigger className="rounded-md px-1.5 py-1 text-rotulo text-texto-2 hover:bg-hover" aria-label="Ver registros de tempo">
-          {total > 0 ? formatarDuracao(total) : 'Sem tempo'}
+          {total > 0 ? (
+            <>
+              <span className="tabular-nums">{formatarDuracao(total)}</span>
+              <span className="tabular-nums text-texto-2"> · {formatarDuracao(faturavelTotal)} faturável</span>
+            </>
+          ) : (
+            'Sem tempo'
+          )}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-80 gap-3">
           <FormularioLancar tarefaId={tarefaId} />
           <div>
             <p className="text-rotulo font-semibold">Registros</p>
+            {!verTudo && <p className="text-rotulo text-texto-2">Você vê só os seus registros.</p>}
             {registros.length === 0 ? (
               <p className="py-2 text-rotulo text-texto-3">Nenhum registro ainda.</p>
             ) : (

@@ -1,6 +1,7 @@
 'use client'
 
-import { Filter, Trash2 } from 'lucide-react'
+import { Ic } from '@/componentes/app/Ic'
+import { Trash2 } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { removerFiltroSalvoAcao, salvarFiltroAcao } from '@/app/(app)/listas/acoes-visao'
@@ -41,8 +42,8 @@ export function FiltrosSalvos({ listaId, filtros, salvos }: { listaId: string; f
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex h-7 items-center gap-1.5 rounded-md border border-borda bg-white px-3 text-rotulo font-medium text-texto-2 hover:bg-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-petroleo/20">
-        <Filter className="h-3.5 w-3.5 text-texto-3" />
+      <DropdownMenuTrigger className="b-ghost">
+        <Ic n="bookmark" s={16} />
         {filtros.logica === 'ou' ? 'Salvos · OU' : 'Salvos'}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">

@@ -1,7 +1,10 @@
 'use client'
 
+import { Ic } from '@/componentes/app/Ic'
+import { PainelCampos } from './PainelCampos'
+import { EVENTO_ABRIR_COLUNAS } from '@/dominio/eventos-lista'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
-import { Archive, ArrowLeftToLine, ArrowRightToLine, ChevronRight, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
+import { Archive, ArrowLeftToLine, ArrowRightToLine, EyeOff, Flag, MoveHorizontal, Plus, Settings2, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { arquivarCampoGestaoAcao } from '@/app/(app)/config/campos/acoes'
 import { arquivarTarefasAcao } from '@/app/(app)/tarefas/acoes'
@@ -21,7 +24,6 @@ import { avisar } from './avisar'
 import { linhasVisiveis, useFaixaDeCelulas } from './usarFaixaDeCelulas'
 import { ConfigurarCampo } from './ConfigurarCampo'
 import { EditarCamposEmLote } from './EditarCamposEmLote'
-import { GerenciarCampos } from './GerenciarCampos'
 import { EtiquetaGrupo } from './EtiquetaGrupo'
 import { LinhaTarefa, gradeDaLista, larguraDaColuna, type Contexto } from './LinhaTarefa'
 import { NovaTarefa } from './NovaTarefa'
@@ -85,6 +87,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const arrasteRef = useRef<Arraste | null>(null)
   const [configurando, setConfigurando] = useState<string | null>(null)
   const [novoCampo, setNovoCampo] = useState(false)
+  useEffect(() => {
+    const abrir = () => setNovoCampo(true)
+    window.addEventListener(EVENTO_ABRIR_COLUNAS, abrir)
+    return () => window.removeEventListener(EVENTO_ABRIR_COLUNAS, abrir)
+  }, [])
   const [config, setConfig] = useState<ConfigColunas>(CONFIG_COLUNAS_VAZIA)
   const campos = useMemo(() => ctx.camposPersonalizados ?? [], [ctx.camposPersonalizados])
   const chaveStorage = chaveLarguras ? `srv:list-columns:v1:${chaveLarguras}` : null
@@ -94,7 +101,7 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   const camposPorColuna = useMemo(() => new Map(campos.map((campo) => [`campo:${campo.id}`, campo])), [campos])
   /** Colunas opcionais fora da lista agora: ocultadas pelo usuário ou nativas que começam ocultas. */
   const colunasFora = [
-    ...COLUNAS_PADRAO.filter((c) => !visivel(c.id, config)).map((c) => ({ id: c.id, nome: c.nome, campo: undefined })),
+    ...COLUNAS_PADRAO.filter((c) => (c.padrao || ['status', 'tagcliente', 'etiquetas'].includes(c.id)) && !visivel(c.id, config)).map((c) => ({ id: c.id, nome: c.nome, campo: undefined })),
     ...campos.filter((campo) => !visivel(campo.id, config)).map((campo) => ({ id: campo.id, nome: campo.nome, campo })),
   ]
   const tarefas = useMemo(() => grupos.flatMap((grupo) => tarefasEmProfundidade(grupo.tarefas)), [grupos])
@@ -325,7 +332,6 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   }, [faixa, tarefaPorId, camposPorColuna, ctx.equipe])
 
   const contexto = { ...ctx, camposPersonalizados: campos, colunas, largurasColunas: larguras, selecionadas, alternarSelecao, faixa: faixaSets }
-  const colunasPadrao = COLUNAS_PADRAO.map((c) => ({ id: c.id, nome: c.nome, visivel: visivel(c.id, config) }))
 
   const menuDaColuna = (colunaId: string, gatilho: ReactNode, titulo: string) => {
     const bruto = idBruto(colunaId)
@@ -380,8 +386,8 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
   return (
     <div ref={(el) => { raiz.current = el; definirRaiz(el) }} className="area-lista space-y-2">
       {faixa && !selecionadas.size && (
-        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
-          <span className="rounded-full bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
+        <div role="toolbar" aria-label="Células selecionadas" data-sem-faixa className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-flutuante ring-1 ring-black/5">
+          <span className="rounded-md bg-marca-fundo px-2.5 py-1 text-legenda font-semibold text-marca-escura">
             {faixa.linhas.length * faixa.colunas.length} {faixa.linhas.length * faixa.colunas.length === 1 ? 'célula' : 'células'} · {faixa.linhas.length} {faixa.linhas.length === 1 ? 'tarefa' : 'tarefas'}
           </span>
           {uniaColuna && campoDaFaixa(uniaColuna) && (
@@ -397,39 +403,53 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
       )}
       {alterandoColuna && uniaColuna && faixa && <AlterarColunaEmLote ids={faixa.linhas} campo={uniaColuna} equipe={ctx.equipe} aoFechar={() => setAlterandoColuna(false)} />}
       {selecionadas.size > 0 && (
-        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-lg bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
+        <div className="fixed bottom-5 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center gap-2 rounded-2xl bg-petroleo px-3 text-claro shadow-flutuante [&_button]:text-claro">
           <span className="text-corpo font-semibold">{selecionadas.size} {selecionadas.size === 1 ? 'selecionada' : 'selecionadas'}</span>
           {selecionadas.size >= 2 && <EditarCamposEmLote ids={[...selecionadas]} campos={campos} equipe={ctx.equipe} />}
           <button type="button" disabled={excluindo} onClick={excluirSelecionadas} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-corpo font-semibold !text-[#ff8084] transition hover:bg-white/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{excluindo ? 'Excluindo…' : 'Excluir'}</button>
           <button type="button" disabled={excluindo} onClick={() => setSelecionadas(new Set())} className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-corpo font-medium transition hover:bg-white/10"><X className="h-3.5 w-3.5" /> Limpar seleção</button>
         </div>
       )}
-      {ctx.gerirCampos && <GerenciarCampos {...ctx.gerirCampos} aberto={novoCampo} aoMudarAberto={setNovoCampo} colunasPadrao={colunasPadrao} aoAlternarColuna={alternarColuna} />}
+      <PainelCampos
+        aberto={novoCampo}
+        aoFechar={() => setNovoCampo(false)}
+        listaId={ctx.gerirCampos?.listaId ?? ''}
+        espacoId={ctx.gerirCampos?.espacoId ?? null}
+        camposDaLista={campos}
+        camposDoEspaco={ctx.gerirCampos?.camposDoEspaco ?? []}
+        podeGerir={!!ctx.gerirCampos}
+        colunas={colunas}
+        alternar={alternarColuna}
+        reordenar={(ids) => atualizarColunas({ ...config, ordem: ids })}
+        aoConfigurar={(id) => setConfigurando(id)}
+      />
       {configurando && <ConfigurarCampo campoId={configurando} aoFechar={() => setConfigurando(null)} />}
       {colunasOcultas && grupos[0]?.semCabecalho && <div className="flex justify-end">{colunasOcultas}</div>}
-      <div className="overflow-x-auto pb-2">
-        <div className="space-y-1.5" style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
+      <div className="overflow-x-auto px-4 pb-2 pt-1">
+        <div style={{ minWidth: gradeDaLista(colunas, larguras, !!ctx.gerirCampos).match(/\d+(?=px)/g)!.reduce((total, parte) => total + Number(parte), 0) }}>
       {grupos.map((g, indice) => (
-        <section key={g.id} className="bg-white">
+        <section key={g.id} className="bg-[var(--bg)]" style={{ marginTop: indice === 0 ? 0 : 4 }}>
           {!g.semCabecalho && (
-            <div className="flex items-center">
-              <button onClick={() => alternar(g.id)} className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1.5 text-left">
-                <ChevronRight className={`h-3.5 w-3.5 text-texto-3 transition ${fechados.has(g.id) ? '' : 'rotate-90'}`} />
+            <div className="flex h-8 items-center">
+              <button onClick={() => alternar(g.id)} className="flex min-w-0 items-center gap-1.5 text-left">
+                <span className="b-icon" style={{ width: 20, height: 20, borderRadius: 4, color: 'var(--text-3)' }}><Ic n={fechados.has(g.id) ? 'chevron_right' : 'expand_more'} s={16} /></span>
                 <EtiquetaGrupo nome={g.nome} cor={g.cor} icone={g.icone} contagem={g.tarefas.length} />
               </button>
+              <span className="flex-1" />
               {/* "Colunas ocultas" mora na linha do primeiro grupo, sempre visível à direita. */}
               {indice === 0 && colunasOcultas && <div className="sticky right-2 shrink-0 pr-2">{colunasOcultas}</div>}
             </div>
           )}
           {(g.semCabecalho || !fechados.has(g.id)) && (
             <>
-              <div className="grid min-h-7 items-center border-y border-borda/60 bg-white text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
-                <CabecalhoColuna colunaId="nome" className="pl-3" {...propsRedimensionamento}><span className="flex items-center gap-2"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="h-3.5 w-3.5 cursor-pointer accent-marca" /> Nome</span></CabecalhoColuna>
+              <div className="grid h-7 items-center rounded-lg bg-[var(--bg-subtle)] text-[11px] font-medium text-texto-3" style={{ gridTemplateColumns: gradeDaLista(colunas, larguras, !!ctx.gerirCampos) }}>
+                <span className="flex justify-center"><input type="checkbox" checked={todasSelecionadas} onChange={alternarTodas} aria-label="Selecionar todas as tarefas" className="ck" /></span><span /><span />
+                <CabecalhoColuna colunaId="nome" className="pl-0.5" {...propsRedimensionamento}>Nome</CabecalhoColuna>
                 {colunas.map((colunaId) => {
                   const definicao = camposPorColuna.get(colunaId)
                   if (definicao) {
                     return (
-                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="border-l border-borda/50" {...propsRedimensionamento}>
+                      <CabecalhoColuna key={colunaId} colunaId={colunaId} className="" {...propsRedimensionamento}>
                         {menuDaColuna(colunaId, <>{definicao.icone !== 'nenhum' && <span style={{ color: definicao.cor }}><IconeVisual icone={definicao.icone} className="h-3.5 w-3.5" /></span>}<span className="truncate" style={definicao.icone === 'nenhum' ? { color: definicao.cor } : undefined}>{definicao.nome}</span></>, definicao.nome)}
                       </CabecalhoColuna>
                     )
@@ -441,11 +461,11 @@ export function VisaoLista({ grupos, ctx, criarEm, euId, chaveLarguras }: { grup
                   )
                 })}
                 {ctx.gerirCampos && (
-                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center border-l border-borda/50 text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Adicionar campo personalizado" title="Adicionar campo personalizado" onClick={() => setNovoCampo(true)} className="flex h-full items-center justify-center text-texto-3 transition hover:bg-hover hover:text-texto"><Plus className="h-4 w-4" /></button>
                 )}
               </div>
               {g.tarefas.map((t) => (
-                <LinhaTarefa key={t.id} tarefa={t} nivel={0} ctx={contexto} euId={euId} />
+                <LinhaTarefa key={`${t.id}-${ctx.subtarefasAbertas ? 'a' : 'f'}`} tarefa={t} nivel={0} ctx={contexto} euId={euId} />
               ))}
               {criarEm && <NovaTarefa listaId={criarEm} statusId={g.statusId} euId={euId} />}
             </>

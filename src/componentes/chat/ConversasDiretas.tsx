@@ -29,7 +29,7 @@ export function ConversasDiretas({ pessoas }: { pessoas: PessoaConversa[] }) {
             <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--bg-subtle)] ${COR[p.situacao]}`} aria-label={p.situacao === 'ativo' ? 'online' : p.situacao === 'ocioso' ? 'ausente' : 'offline'} />
           </span>
           <span className="min-w-0 flex-1 truncate">{p.nome}</span>
-          {p.naoLidas > 0 && !p.aberta && <span className="rounded-full bg-[#d80d12] px-1.5 text-micro font-bold text-white">{p.naoLidas > 99 ? '99+' : p.naoLidas}</span>}
+          {p.naoLidas > 0 && !p.aberta && <span className="rounded-md bg-[#d80d12] px-1.5 text-micro font-bold text-white">{p.naoLidas > 99 ? '99+' : p.naoLidas}</span>}
         </button>
       ))}
     </div>

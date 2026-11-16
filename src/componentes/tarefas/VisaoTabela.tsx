@@ -1,5 +1,6 @@
 'use client'
 
+import { formatarPrazo } from '@/dominio/prazo'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -11,7 +12,6 @@ import { Pessoas } from './Pessoas'
 import { SeloPrioridade } from './SeloPrioridade'
 
 const ORDEM_PRIORIDADE = { urgente: 0, alta: 1, normal: 2, baixa: 3 } as const
-const data = (iso: string) => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
 
 type Coluna = { id: string; rotulo: string; ordenar: (t: TarefaResumo) => string | number }
 
@@ -73,7 +73,7 @@ export function VisaoTabela({ tarefas, ctx }: { tarefas: TarefaResumo[]; ctx: Co
                 <td className="px-3"><NomeCliente nome={t.clienteNome} /></td>
                 <td className="px-3">{st && <span className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-legenda font-semibold uppercase" style={{ background: `${st.cor}22`, color: st.cor }}>{st.nome}</span>}</td>
                 <td className="px-3">{t.responsaveis.length ? <Pessoas pessoas={t.responsaveis} /> : <span className="text-texto-3">—</span>}</td>
-                <td className={`px-3 tabular-nums ${atrasada ? 'font-semibold text-perigo' : 'text-texto-2'}`}>{t.prazo ? data(t.prazo) : <span className="text-texto-3">—</span>}</td>
+                <td className={`px-3 tabular-nums ${atrasada ? 'font-semibold text-perigo' : 'text-texto-2'}`}>{t.prazo ? formatarPrazo(t.prazo, t.horario) : <span className="text-texto-3">—</span>}</td>
                 <td className="px-3" title={ROTULO_PRIORIDADE[t.prioridade]}><SeloPrioridade prioridade={t.prioridade} /></td>
                 {campos.map((c) => <td key={c.id} className="max-w-48 truncate px-3 text-texto-2">{valorParaTexto(c, t.camposPersonalizados?.[c.id], ctx.equipe) || <span className="text-texto-3">—</span>}</td>)}
               </tr>

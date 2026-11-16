@@ -36,14 +36,14 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
           <img src={a.imagem} alt="" className="h-full w-full object-cover" loading="lazy" />
         )}
         {a.video && <PlayCircle className="absolute right-2 top-2 h-6 w-6 text-claro drop-shadow" aria-label="Vídeo" />}
-        <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-legenda font-semibold ${SELO[a.desempenho].classe}`} title={a.motivos.join('\n')}>{SELO[a.desempenho].rotulo}</span>
+        <span className={`absolute left-2 top-2 rounded-md px-2 py-0.5 text-legenda font-semibold ${SELO[a.desempenho].classe}`} title={a.motivos.join('\n')}>{SELO[a.desempenho].rotulo}</span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>
           <p className="truncate text-rotulo font-semibold text-texto" title={a.nome}>{a.titulo || a.nome}</p>
           <p className="flex min-w-0 items-center gap-1.5 text-micro text-texto-3">
             <span
-              className={`shrink-0 rounded-full px-1.5 py-0.5 font-semibold ${a.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}
+              className={`shrink-0 rounded-md px-1.5 py-0.5 font-semibold ${a.papel === 'lead' ? 'bg-sucesso-fundo text-sucesso-forte' : 'bg-[#efeafd] text-[#6250d6]'}`}
               title={a.papel === 'lead' ? 'Gera conversas/leads: avaliado pelo custo por resultado' : 'Tráfego/conteúdo para o Instagram: traz seguidores e visitas que viram lead depois; avaliado pelo custo do clique, não por leads'}
             >
               {a.papel === 'lead' ? 'Leads' : 'Marca'}
@@ -83,10 +83,9 @@ function Cartao({ a, mostrarGasto }: { a: AnuncioAvaliado; mostrarGasto: boolean
  * Anúncios ativos da conta do cliente com os resultados do período, puxados da API de Marketing do Meta.
  * `mostrarGasto` só para a equipe (o cliente vê resultados, não o investimento). `seletor` troca o período.
  */
-export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode }) {
+export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor, incorporado = false }: { contaId: string; periodo: PeriodoAnuncios; mostrarGasto: boolean; seletor: ReactNode; /** Dentro de outro módulo: sem o cartão próprio, só um subtítulo. */ incorporado?: boolean }) {
   const [r, conta] = await Promise.all([anunciosAtivos(contaId, periodo), mostrarGasto ? nomeDaConta(contaId) : Promise.resolve(null)])
-  return (
-    <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram · ${rotuloPeriodo(periodo)}`} acoes={seletor}>
+  const corpo = (
       <div className="@container space-y-3">
       {'erro' in r ? (
         <p className="rounded-lg border border-perigo-borda bg-perigo-fundo/40 px-3 py-2 text-rotulo text-perigo-forte">{r.erro}</p>
@@ -104,8 +103,10 @@ export async function GaleriaAnuncios({ contaId, periodo, mostrarGasto, seletor 
         </>
       )}
       </div>
-    </Modulo>
   )
+  const sub = `${conta ? `Conta "${conta}" (act_${contaId}) · ` : ''}Facebook e Instagram`
+  if (incorporado) return <div className="space-y-3"><h3 className="text-corpo font-semibold text-texto">Anúncios ativos <span className="text-legenda font-normal text-texto-3">{sub}</span></h3>{corpo}</div>
+  return <Modulo icone={Megaphone} titulo="Anúncios ativos" descricao={`${sub} · ${rotuloPeriodo(periodo)}`} acoes={seletor}>{corpo}</Modulo>
 }
 
 function Resumo({ anuncios, mostrarGasto }: { anuncios: AnuncioAvaliado[]; mostrarGasto: boolean }) {

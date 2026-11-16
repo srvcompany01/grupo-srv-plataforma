@@ -1,5 +1,5 @@
 import 'server-only'
-import { centavos, configDoModo, modoDoDestino, montarCriativo, montarPublico, planoCampanhaMeta, type ConjuntoPedido, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
+import { centavos, configDoModo, corta, editarFaixaEtaria, editarSpecDoCriativo, type EdicaoTextoAnuncio, modoDoDestino, montarCriativo, montarPublico, planoCampanhaMeta, type ConjuntoPedido, operacoesPesquisaGoogle, podeGerirAnuncios, problemaPesquisaGoogle, type Modo, type NovaPesquisaGoogle, type Publico, type TextoAnuncio } from '@/dominio/controle-anuncios'
 import { leadsDasAcoes, totalLeads } from '@/dominio/performance'
 import { urlLeitura } from '@/infra/r2'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
@@ -331,6 +331,98 @@ export async function adicionarAnuncioMeta(sb: Supabase, quem: Quem, cliente: Cl
     const modo = modoDoDestino(c.destination_type, c.campaign?.objective)
     if (!modo) throw falha(`A plataforma ainda não monta anúncios para este destino (${c.destination_type ?? c.campaign?.objective ?? 'desconhecido'}).`)
     return criarAnuncio(sb, cliente, ctx, { modo, ...o })
+  })
+}
+
+// ───────────────────────────── Meta: ler e editar o que já está no ar ─────────────────────────────
+
+const CAMPOS_DETALHE: Record<Nivel, string> = {
+  campanha: 'id,account_id,name,status,effective_status,objective,buying_type,special_ad_categories,daily_budget,lifetime_budget,bid_strategy,start_time,stop_time,updated_time',
+  conjunto: 'id,account_id,name,status,effective_status,daily_budget,lifetime_budget,optimization_goal,billing_event,bid_strategy,bid_amount,destination_type,start_time,end_time,targeting,promoted_object,campaign{id,name,objective},updated_time',
+  anuncio: 'id,account_id,name,status,effective_status,adset{id,name},campaign{id,name},creative{id,name,title,body,object_type,object_story_spec,object_story_id,effective_object_story_id,call_to_action_type,url_tags,asset_feed_spec,thumbnail_url,image_url},issues_info,ad_review_feedback,updated_time',
+}
+
+async function lerMeta(cliente: Cliente, nivel: Nivel, objetoId: string): Promise<Record<string, unknown>> {
+  if (!cliente.metaContaId) throw falha('O cliente não tem conta de anúncios da Meta no cadastro.')
+  if (!/^\d{1,25}$/.test(objetoId)) throw falha('Id inválido.')
+  const o = await graph<Record<string, unknown>>(objetoId, { params: { fields: CAMPOS_DETALHE[nivel] } })
+  if (String(o.account_id) !== cliente.metaContaId) throw falha('Este item não é da conta de anúncios do cliente.')
+  return o
+}
+
+/** Tudo de uma campanha, conjunto ou anúncio da Meta (inclusive ATIVO): configuração, público, criativo com texto, título, descrição e botão. Só leitura. */
+export async function detalharObjetoMeta(cliente: Cliente, nivel: Nivel, objetoId: string): Promise<Record<string, unknown>> {
+  return comMensagem(async () => {
+    const o = await lerMeta(cliente, nivel, objetoId)
+    const { account_id: _conta, daily_budget, lifetime_budget, bid_amount, ...resto } = o as Record<string, unknown> & { account_id?: string; daily_budget?: string; lifetime_budget?: string; bid_amount?: string }
+    void _conta
+    return { nivel, ...resto, orcamentoDiarioReais: reaisDe(daily_budget), orcamentoTotalReais: reaisDe(lifetime_budget), lanceReais: reaisDe(bid_amount) }
+  })
+}
+
+export type EdicaoMeta = EdicaoTextoAnuncio & { nome?: string; idadeMin?: number; idadeMax?: number; fim?: string }
+
+/**
+ * Edita um item da Meta que já existe (ativo ou pausado). Só admin e gestor; fica no histórico.
+ * Campanha: nome. Conjunto: nome, faixa etária e data de fim. Anúncio: nome e, no criativo, texto, título, descrição, botão e link
+ * (a Meta não edita o criativo: cria-se um novo com a cópia ajustada e o anúncio passa a usá-lo; o anúncio volta para análise).
+ * Status e orçamento NÃO mudam por aqui: seguem pausar_anuncio e propor_alteracao_anuncio.
+ */
+export async function editarObjetoMeta(sb: Supabase, quem: Quem, cliente: Cliente, p: { nivel: Nivel; objetoId: string; edicao: EdicaoMeta; confirmarEmAtivo?: boolean }): Promise<{ resumo: string; mudancas: string[]; novoCriativoId?: string }> {
+  if (!podeGerirAnuncios(quem.papel)) throw falha('Só admin e gestor alteram anúncios.')
+  const e = p.edicao
+  return comMensagem(async () => {
+    const o = await lerMeta(cliente, p.nivel, p.objetoId)
+    const nome = String(o.name ?? '')
+    const ativo = o.status === 'ACTIVE'
+    if (ativo && !p.confirmarEmAtivo) throw falha('Este item está ATIVO. Editar mexe no que está no ar (e, no anúncio, volta para análise da Meta). Confirme com a pessoa e chame de novo com confirmarAlteracaoEmAtivo=true.')
+    const mudancas: string[] = []
+    const params: Record<string, string> = {}
+    let novoCriativoId: string | undefined
+
+    if (e.nome !== undefined) {
+      const n = e.nome.trim().slice(0, 200)
+      if (!n) throw falha('O nome não pode ficar vazio.')
+      if (n !== nome) mudancas.push(`nome: "${corta(nome)}" → "${corta(n)}"`)
+      params.name = n
+    }
+
+    if (p.nivel === 'campanha') {
+      if (e.texto !== undefined || e.titulo !== undefined || e.descricao !== undefined || e.botao !== undefined || e.link !== undefined || e.idadeMin !== undefined || e.idadeMax !== undefined || e.fim !== undefined)
+        throw falha('Na campanha só dá para mudar o nome. Público e data de fim são do conjunto; texto e botão são do anúncio.')
+    } else if (p.nivel === 'conjunto') {
+      if (e.texto !== undefined || e.titulo !== undefined || e.descricao !== undefined || e.botao !== undefined || e.link !== undefined) throw falha('Texto, título, descrição, botão e link são do anúncio, não do conjunto.')
+      if (e.idadeMin !== undefined || e.idadeMax !== undefined) {
+        const r = editarFaixaEtaria((o.targeting ?? {}) as Record<string, unknown>, e.idadeMin, e.idadeMax)
+        mudancas.push(...r.mudancas)
+        params.targeting = JSON.stringify(r.targeting)
+      }
+      if (e.fim !== undefined) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fim)) throw falha('Data de fim inválida (use AAAA-MM-DD).')
+        mudancas.push(`fim: ${String(o.end_time ?? 'sem fim').slice(0, 10)} → ${e.fim}`)
+        params.end_time = `${e.fim}T23:59:59-0300`
+      }
+    } else {
+      if (e.idadeMin !== undefined || e.idadeMax !== undefined || e.fim !== undefined) throw falha('Faixa etária e data de fim são do conjunto, não do anúncio.')
+      const textoMudou = e.texto !== undefined || e.titulo !== undefined || e.descricao !== undefined || e.botao !== undefined || e.link !== undefined
+      if (textoMudou) {
+        const criativo = (o.creative ?? {}) as { id?: string; name?: string; object_story_spec?: Record<string, unknown>; asset_feed_spec?: unknown }
+        if (criativo.asset_feed_spec) throw falha('Anúncio com criativo dinâmico (vários textos/imagens): não dá para editar por aqui.')
+        if (!criativo.object_story_spec) throw falha('Este anúncio usa uma publicação existente: o texto é o da publicação. Edite a publicação ou crie um anúncio novo.')
+        const r = editarSpecDoCriativo(criativo.object_story_spec, e)
+        mudancas.push(...r.mudancas)
+        if (r.mudancas.length) {
+          const novo = await graph<{ id: string }>(`act_${cliente.metaContaId}/adcreatives`, { metodo: 'POST', params: { name: (e.nome?.trim() || nome || criativo.name || 'Criativo').slice(0, 80), object_story_spec: JSON.stringify(r.spec) } })
+          novoCriativoId = novo.id
+          params.creative = JSON.stringify({ creative_id: novo.id })
+        }
+      }
+    }
+
+    if (Object.keys(params).length === 0) return { resumo: `${nome}: nada mudou (os valores já eram esses).`, mudancas: [] }
+    await graph(p.objetoId, { metodo: 'POST', params })
+    await registrar(sb, cliente.id, { plataforma: 'meta', nivel: p.nivel, objetoId: p.objetoId, acao: 'editar', nome, antes: ativo ? 'ativo' : 'pausado', depois: mudancas.join('; '), origem: 'ia' })
+    return { resumo: `${nome}: ${mudancas.length} alteração(ões) feita(s).${p.nivel === 'anuncio' && novoCriativoId ? ' O anúncio volta para análise da Meta.' : ''}`, mudancas, novoCriativoId }
   })
 }
 

@@ -1,11 +1,12 @@
 'use client'
 
+import { Ic } from '@/componentes/app/Ic'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { ROTULO_CATEGORIA, type Categoria, type StatusLista } from '@/dominio/tarefas'
-import { botaoFantasma, botaoPrimario, botaoSecundario, campo } from '@/lib/ui'
+import { botaoFantasma, botaoPrimario, campo } from '@/lib/ui'
 import {
   atualizarStatusAcao,
   criarStatusAcao,
@@ -31,7 +32,7 @@ export function EditorStatus({ listaId, status }: { listaId: string; status: S[]
 
   return (
     <Dialog>
-      <DialogTrigger className={botaoSecundario}>Editar status</DialogTrigger>
+      <DialogTrigger className="b-ghost"><Ic n="adjust" s={16} />Editar status</DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogTitle>Status da lista</DialogTitle>
         <div className="space-y-2">

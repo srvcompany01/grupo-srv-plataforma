@@ -1,5 +1,7 @@
 'use server'
 
+import { horarioValido } from '@/dominio/prazo'
+import { dataCurtaBr, validarRecorrencia, type RegraRecorrencia } from '@/dominio/recorrencia'
 import { revalidatePath } from 'next/cache'
 import { normalizarMime, validarAnexo, validarAnexosComentario } from '@/dominio/anexos'
 import { extrairMencoes } from '@/dominio/mencoes'
@@ -26,6 +28,15 @@ async function executar(fn: (sb: Awaited<ReturnType<typeof criarClienteServidor>
   return r
 }
 
+/** Se concluir a tarefa criou a próxima da série ("ao concluir"), troca o aviso por "Próxima criada para 01/12" com o botão Abrir. */
+async function comAvisoDaSerie(r: Resultado, tarefaId: string): Promise<Resultado> {
+  if (!r || r.erro) return r
+  const sb = await criarClienteServidor()
+  const proxima = await recorrencias.proximaDaSerie(sb, tarefaId).catch(() => null)
+  if (!proxima) return r
+  return { ok: `Próxima criada${proxima.prazo ? ` para ${dataCurtaBr(proxima.prazo, false)}` : ''}`, acao: { rotulo: 'Abrir', href: `/tarefas/${proxima.id}` } }
+}
+
 export async function criarTarefaAcao(d: {
   listaId: string
   titulo: string
@@ -39,13 +50,26 @@ export async function criarTarefaAcao(d: {
 
 export async function atualizarTarefaAcao(id: string, campos: tarefas.CamposTarefa): Promise<Resultado> {
   if (campos.titulo !== undefined && !campos.titulo.trim()) return { erro: 'O título não pode ficar vazio.' }
-  return executar((sb) => tarefas.atualizarTarefa(sb, id, campos))
+  if (campos.horario != null && !horarioValido(campos.horario)) return { erro: 'Horário inválido. Use o formato 14:30.' }
+  const r = await executar((sb) => tarefas.atualizarTarefa(sb, id, campos))
+  return campos.statusId ? comAvisoDaSerie(r, id) : r
 }
 
-export async function definirRecorrenciaAcao(id: string, regra: Parameters<typeof recorrencias.definirRecorrencia>[2]): Promise<Resultado> {
-  if (regra && (!Number.isInteger(regra.cada) || regra.cada < 1 || regra.cada > 365 || !Number.isInteger(regra.antecedencia) || regra.antecedencia < 0 || regra.antecedencia > 60 || !/^\d{4}-\d{2}-\d{2}$/.test(regra.primeiroPrazo)))
-    return { erro: 'Confira o intervalo, a antecedência e o primeiro prazo.' }
-  return executar((sb) => recorrencias.definirRecorrencia(sb, id, regra), regra ? 'Repetição salva.' : 'Repetição removida.')
+export async function definirRecorrenciaAcao(id: string, regra: RegraRecorrencia | null): Promise<Resultado> {
+  const erro = regra && validarRecorrencia(regra)
+  if (erro) return { erro }
+  return executar((sb) => recorrencias.definirRecorrencia(sb, id, regra), regra ? 'Repetição salva.' : 'Série parada.')
+}
+
+export async function pausarRecorrenciaAcao(id: string, pausada: boolean): Promise<Resultado> {
+  return executar((sb) => recorrencias.pausarRecorrencia(sb, id, !pausada), pausada ? 'Repetição pausada. Nenhuma tarefa nova será criada.' : 'Repetição retomada.')
+}
+
+/** Depois de concluir uma tarefa de série "ao concluir": qual foi a próxima criada (para o aviso "Próxima criada para …"). */
+export async function proximaDaSerieAcao(id: string): Promise<{ id: string; prazo: string | null } | null> {
+  await exigirEquipe()
+  const sb = await criarClienteServidor()
+  return recorrencias.proximaDaSerie(sb, id).catch(() => null)
 }
 
 export async function definirResponsaveisAcao(id: string, ids: string[]): Promise<Resultado> {
@@ -53,7 +77,7 @@ export async function definirResponsaveisAcao(id: string, ids: string[]): Promis
 }
 
 export async function moverTarefaAcao(id: string, statusId: string, posicao: string): Promise<Resultado> {
-  return executar((sb) => tarefas.moverTarefa(sb, id, statusId, posicao))
+  return comAvisoDaSerie(await executar((sb) => tarefas.moverTarefa(sb, id, statusId, posicao)), id)
 }
 
 export async function moverParaListaAcao(id: string, listaId: string): Promise<Resultado> {
@@ -158,13 +182,18 @@ export async function pararCronometroAcao(): Promise<Resultado> {
   return executar((sb) => tempo.pararCronometro(sb), 'Cronômetro parado.')
 }
 
-export async function lancarTempoAcao(tarefaId: string, data: string, minutos: number, nota: string): Promise<Resultado> {
-  return executar((sb) => tempo.lancarTempo(sb, tarefaId, data, minutos, nota.trim() || null), 'Tempo lançado.')
+export async function lancarTempoAcao(tarefaId: string, data: string, minutos: number, nota: string, faturavel = true): Promise<Resultado> {
+  return executar((sb) => tempo.lancarTempo(sb, tarefaId, data, minutos, nota.trim() || null, faturavel), 'Tempo lançado.')
 }
 
-export async function editarTempoAcao(id: string, minutos: number, nota: string): Promise<Resultado> {
+export async function editarTempoAcao(id: string, minutos: number, nota: string, faturavel?: boolean): Promise<Resultado> {
   if (!Number.isInteger(minutos) || minutos < 1 || minutos > 1440) return { erro: 'O tempo deve ficar entre 1 e 1440 minutos.' }
-  return executar((sb) => tempo.editarTempo(sb, id, minutos, nota.trim() || null))
+  return executar((sb) => tempo.editarTempo(sb, id, minutos, nota.trim() || null, faturavel))
+}
+
+/** Alterna a marca de faturável de um registro de tempo (o aviso de erro fica por conta de quem chama). */
+export async function definirFaturavelAcao(id: string, faturavel: boolean): Promise<Resultado> {
+  return executar((sb) => tempo.definirFaturavel(sb, id, faturavel))
 }
 
 export async function apagarTempoAcao(id: string): Promise<Resultado> {

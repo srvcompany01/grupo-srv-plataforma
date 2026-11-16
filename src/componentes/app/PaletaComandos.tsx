@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react'
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from '@/componentes/ui/command'
 import { itensDaNavegacao } from '@/dominio/paleta'
 import type { Navegacao } from '@/dominio/arvore-espacos'
-import { atalhosDoInicio } from './BarraLateral'
+import { atalhosDoInicio } from './atalhos'
 import { alternarTemaGlobal } from './tema-cliente'
 
 /**

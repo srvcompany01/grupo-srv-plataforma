@@ -37,9 +37,18 @@ export function GraficoDiario({ titulo, dias, series, formato, tipo = 'linha', r
           </g>
         ))}
         {dias.map((d, i) => i % passo === 0 && <text key={d} x={x(i)} y={A - 6} textAnchor="middle" fontSize={10} fill="var(--g-texto, #76756f)">{rotulo(d)}</text>)}
+        {tipo === 'barras' && (
+          <defs>
+            <pattern id="barras-hachura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="6" height="6" fill="var(--hachura-fundo, #efeeea)" />
+              <line x1="0" y1="0" x2="0" y2="6" stroke="var(--hachura, #d6d3cc)" strokeWidth="2.2" />
+            </pattern>
+          </defs>
+        )}
         {tipo === 'barras'
           ? series[0]?.valores.map((v, i) => (
-              <rect key={dias[i]} x={x(i) - larguraBarra / 2} y={y(v)} width={larguraBarra} height={Math.max(0, M.cima + h - y(v))} rx={Math.min(4, larguraBarra / 2)} fill={cor(0)}>
+              // Barras hachuradas; a do pico fica sólida em vermelho (padrão do redesign).
+              <rect key={dias[i]} x={x(i) - larguraBarra / 2} y={y(v)} width={larguraBarra} height={Math.max(0, M.cima + h - y(v))} rx={Math.min(4, larguraBarra / 2)} fill={v > 0 && v === maior ? '#d80d12' : 'url(#barras-hachura)'}>
                 <title>{`${rotulo(dias[i])}: ${formato(v)}`}</title>
               </rect>
             ))
