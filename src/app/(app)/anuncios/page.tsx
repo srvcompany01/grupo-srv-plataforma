@@ -1,509 +1,147 @@
-import { BarChart3, Bot, ChevronRight, ImagePlus, Megaphone, PlugZap, Search, SlidersHorizontal, Target } from 'lucide-react'
+import { ArrowUpRight, ChartNoAxesCombined, CheckCheck, ChevronRight, ClipboardCheck, History, ImagePlus, MessagesSquare, MousePointer2, PlugZap, Radio, ShieldCheck, SlidersHorizontal, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import './anuncios.css'
 import { ConexaoGoogle } from '@/componentes/anuncios/ConexaoGoogle'
+import { Criativos, Propostas } from '@/componentes/anuncios/ControleAnuncios'
 import { GaleriaAnuncios } from '@/componentes/anuncios/GaleriaAnuncios'
 import { GoogleAds } from '@/componentes/anuncios/GoogleAds'
-import { SeletorPeriodo } from '@/componentes/anuncios/SeletorPeriodo'
 import { BlocoAnalise } from '@/componentes/insights/BlocoAnalise'
 import { FunilConversao } from '@/componentes/FunilConversao'
-import { BarraSegmentada, BarrasDiarias, COR, Cartao, Kpi, Legenda, Medidor, Progressos, Trilho, Variacao, corDaVez } from '@/componentes/anuncios/Bento'
-import { ORDEM_TOM } from '@/componentes/insights/tom'
-import { somarDias } from '@/dominio/agenda'
-import type { PagoPorDia } from '@/dominio/insights'
-import { EmBreve } from '@/componentes/insights/EmBreve'
-import { SeletorCliente } from '@/componentes/insights/SeletorCliente'
-import { Modulo } from '@/componentes/Modulo'
+import { analisarPago } from '@/dominio/insights'
+import { lerAbaAnuncios, lerCanalAnuncios, resumirContasAnuncios, serieContasAnuncios, somarDisponiveis, urlAnuncios, type AbaAnuncios, type CanalAnuncios } from '@/dominio/central-anuncios'
+import { podeGerirAnuncios } from '@/dominio/controle-anuncios'
 import { dataDeHoje } from '@/dominio/filtros'
-import { totaisCampanhas } from '@/dominio/google'
-import { analisarPago, tomCtrMeta } from '@/dominio/insights'
-import { SeloTom } from '@/componentes/insights/tom'
-import { consultaPeriodo, diasDoPeriodo, lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { lerPeriodo, rotuloPeriodo, type PeriodoAnuncios } from '@/dominio/periodo-anuncios'
+import { urlLeitura } from '@/infra/r2'
 import { exigirEquipe } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
+import { campanhasGoogleCentral, contaCentralAnuncios } from '@/servicos/central-anuncios'
 import { listarClientes, type Cliente } from '@/servicos/clientes-plataforma'
-import { campanhasGoogle, pagoPorDiaGoogle, situacaoGoogle } from '@/servicos/google-agencia'
-import { pagoPorDiaMeta } from '@/servicos/meta-anuncios'
+import { estruturaMeta, historico, listarCriativos, propostasPendentes, type Proposta } from '@/servicos/controle-anuncios'
+import { situacaoGoogle } from '@/servicos/google-agencia'
 import { dadosDoCliente } from '@/servicos/relatorio-cliente'
-import { NomeCliente } from '@/componentes/NomeCliente'
-import { ArvoreMeta, Criativos, Propostas, TabelaGoogle } from '@/componentes/anuncios/ControleAnuncios'
-import { podeGerirAnuncios } from '@/dominio/controle-anuncios'
-import { urlLeitura } from '@/infra/r2'
-import { estruturaGoogle } from '@/servicos/google-agencia'
-import { estruturaMeta, historico, listarCriativos, propostasPendentes } from '@/servicos/controle-anuncios'
+import { CampanhasAnuncios, type ContaCampanhas } from './CampanhasAnuncios'
+import { FiltrosAnuncios } from './FiltrosAnuncios'
+import { GraficoInvestimento } from './GraficoInvestimento'
+import { NovaCampanha } from './NovaCampanha'
+import './anuncios.css'
 
 export const maxDuration = 60
+const reais = (n: number | null) => n === null ? '—' : n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const numero = (n: number | null) => n === null ? '—' : n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+const data = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+const ABAS = [['visao', 'Visão geral'], ['campanhas', 'Campanhas'], ['criativos', 'Criativos'], ['aprovacoes', 'Aprovações']] as const
+const AVISO_GOOGLE: Record<string, string> = { ok: 'Google da agência conectado.', cancelado: 'Conexão com o Google cancelada.', erro: 'Não foi possível conectar o Google. Tente de novo.', 'sem-config': 'A conexão do Google ainda não foi configurada. Fale com o administrador.' }
 
-const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-const reaisCurto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 })
-const numero = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
-const pct = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+type Contexto = { clientes: Cliente[]; escolhido: Cliente | null; periodo: PeriodoAnuncios; canal: CanalAnuncios; aba: AbaAnuncios; googleConectado: boolean; podeGerir: boolean; propostas: Proposta[] }
+const link = (ctx: Pick<Contexto, 'escolhido' | 'periodo' | 'canal'>, aba: AbaAnuncios, cliente = ctx.escolhido?.id) => urlAnuncios({ cliente, periodo: ctx.periodo, canal: ctx.canal, aba })
 
-const AVISO_GOOGLE: Record<string, string> = {
-  ok: 'Google da agência conectado.',
-  cancelado: 'Conexão com o Google cancelada.',
-  erro: 'Não foi possível conectar o Google. Tente de novo.',
-  'sem-config': 'Falta o app do Google (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET) na Vercel.',
-}
-
-type Erro = { erro: string }
-type Linha = {
-  id: string
-  nome: string
-  meta: { gasto: number; impressoes: number; cliques: number; ctr: number; porDia: Map<string, number> } | Erro | null
-  google: { custo: number; cliques: number; conversoes: number; porDia: Map<string, number> } | Erro | null
-}
-const valor = <T,>(x: T | Erro | null): T | null => (x && !('erro' in (x as object)) ? (x as T) : null)
-
-/**
- * Anúncios: panorama de todos os clientes (Meta da conta inteira, inclusive anúncios já pausados no período, e
- * Google Ads) ou, com ?cliente=, tudo o que um cliente roda, com insights e recomendações. Visual em "bento"
- * (cartões brancos sobre fundo cinza, .anu em globals.css); as ações continuam nos mesmos componentes.
- */
 export default async function Anuncios({ searchParams }: PageProps<'/anuncios'>) {
   const eu = await exigirEquipe()
   const sp = await searchParams
-  const hoje = dataDeHoje(new Date())
-  const periodo = lerPeriodo(sp, hoje)
+  const hoje = dataDeHoje(new Date()), periodo = lerPeriodo(sp, hoje)
+  const canal = lerCanalAnuncios(sp.canal), aba = lerAbaAnuncios(sp.aba)
+  const sb = await criarClienteServidor()
+  const [todos, google] = await Promise.all([listarClientes(sb), situacaoGoogle()])
+  const clientes = todos.filter(c => !c.interno && c.status !== 'encerrado' && (c.metaContaId || c.googleAdsId))
+  const escolhido = clientes.find(c => c.id === sp.cliente) ?? null
+  const propostas = (await propostasPendentes(sb, escolhido?.id)).filter(p => canal === 'todos' || p.plataforma === canal)
+  const ctx: Contexto = { clientes: escolhido ? [escolhido] : clientes, escolhido, periodo, canal, aba, googleConectado: google.conectado, podeGerir: podeGerirAnuncios(eu.papel), propostas }
   const aviso = typeof sp.google === 'string' ? AVISO_GOOGLE[sp.google] : undefined
-  const sb = await criarClienteServidor()
-  const [clientes, google] = await Promise.all([listarClientes(sb), situacaoGoogle()])
-  const comAnuncios = clientes.filter((c) => !c.interno && c.status !== 'encerrado' && (c.metaContaId || c.googleAdsId))
-  const escolhido = comAnuncios.find((c) => c.id === sp.cliente) ?? null
-  const base = escolhido ? `/anuncios?cliente=${escolhido.id}` : '/anuncios'
-  const seletorPeriodo = <SeletorPeriodo base={base} periodo={periodo} hoje={hoje} />
-  const podeGerir = podeGerirAnuncios(eu.papel)
-  const propostas = await propostasPendentes(sb, escolhido?.id)
-  const carregando = (titulo: string, texto: string) => <Cartao titulo={titulo}><p>{texto}</p></Cartao>
-
-  return (
-    <div className="an">
-      <div className="an-corpo">
-        <header className="an-cab">
-          <div>
-            <p>Tráfego pago · {rotuloPeriodo(periodo)}</p>
-            <h1>{escolhido ? <>Anúncios · <NomeCliente nome={escolhido.nome} href={`/clientes/${escolhido.id}`} /></> : 'Anúncios'}</h1>
-          </div>
-          <div className="an-filtros">
-            <SeletorCliente base="/anuncios" clientes={comAnuncios.map((c) => ({ id: c.id, nome: c.nome }))} atual={escolhido?.id ?? null} consultaPeriodo={consultaPeriodo(periodo)} />
-            {seletorPeriodo}
-          </div>
-        </header>
-        {aviso && <p className="an-aviso">{aviso}</p>}
-
-        <div className="an-conteudo">
-          {propostas.length > 0 && (
-            <Modulo icone={Bot} titulo={`Pedidos da IA aguardando aprovação (${propostas.length})`} descricao="Ativar e mudar orçamento pela IA só acontece depois que admin ou gestor aprova">
-              <Propostas propostas={propostas} podeGerir={podeGerir} mostrarCliente={!escolhido} />
-            </Modulo>
-          )}
-
-          {escolhido ? (
-            <>
-              <Suspense fallback={carregando('Visão geral', 'Buscando no Meta e no Google…')}>
-                <VisaoCliente cliente={escolhido} periodo={periodo} googleConectado={google.conectado} />
-              </Suspense>
-              <div id="controle">
-                <Suspense fallback={<Modulo icone={SlidersHorizontal} titulo="Controle das campanhas" descricao="Buscando no Meta e no Google…"><p>Carregando as campanhas…</p></Modulo>}>
-                  <Controle cliente={escolhido} periodo={periodo} googleConectado={google.conectado} podeGerir={podeGerir} seletor={null} />
-                </Suspense>
-              </div>
-              {escolhido.metaContaId && (
-                <div id="criativos">
-                  <Suspense fallback={null}>
-                    <BibliotecaCriativos clienteId={escolhido.id} />
-                  </Suspense>
-                </div>
-              )}
-              <div id="analise">
-                <Modulo icone={Target} titulo="Insights, recomendações e anúncios ativos" descricao={<><NomeCliente nome={escolhido.nome} href={`/clientes/${escolhido.id}`} /> · {rotuloPeriodo(periodo)}</>}>
-                  <div>
-                    <Suspense fallback={<p>Analisando as contas…</p>}>
-                      <AnalisePago cliente={escolhido} periodo={periodo} googleConectado={google.conectado} />
-                    </Suspense>
-                    {escolhido.metaContaId && (
-                      <div id="anuncios">
-                        <Suspense fallback={<p>Carregando os anúncios…</p>}>
-                          <GaleriaAnuncios contaId={escolhido.metaContaId} periodo={periodo} mostrarGasto seletor={null} incorporado />
-                        </Suspense>
-                      </div>
-                    )}
-                  </div>
-                </Modulo>
-              </div>
-              {escolhido.googleAdsId && google.conectado && (
-                <div id="google">
-                  <Suspense fallback={<Modulo icone={Megaphone} titulo="Google Ads" descricao="Buscando no Google…"><p>Carregando as campanhas…</p></Modulo>}>
-                    <GoogleAds contaId={escolhido.googleAdsId} periodo={periodo} seletor={null} />
-                  </Suspense>
-                </div>
-              )}
-              <EmBreve itens={['TikTok Ads', 'LinkedIn Ads']} />
-            </>
-          ) : (
-            <Suspense fallback={carregando('Panorama de todos os clientes', 'Somando as contas do Meta e do Google…')}>
-              <Panorama clientes={comAnuncios} periodo={periodo} googleConectado={google.conectado} />
-            </Suspense>
-          )}
-
-          <Modulo icone={PlugZap} titulo="Conexão com o Google" descricao="Uma conta Google da agência acessa a MCC do Google Ads e os perfis do Meu Negócio dos clientes">
-            <div>
-              <p>{google.conectado ? <>Conectado como <strong>{google.email || 'conta Google'}</strong>.</> : 'Ainda não conectado.'}</p>
-              {google.conectado && !google.adsPronto && <p>Google Ads: falta o número da MCC (GOOGLE_ADS_LOGIN_CUSTOMER_ID) na Vercel.</p>}
-              {eu.papel === 'admin' ? <ConexaoGoogle email={google.conectado ? google.email || 'conta Google' : null} /> : !google.conectado && <p>Peça ao admin para conectar.</p>}
-            </div>
-          </Modulo>
-        </div>
-      </div>
-    </div>
-  )
+  return <div className="an"><div className="an-corpo">
+    <header className="an-cab"><div><span className="an-eyebrow"><i />Tráfego pago</span><h1>Anúncios{escolhido && <span> · {escolhido.nome}</span>}</h1><p>Resultados claros. Campanhas sob controle.</p></div><NovaCampanha key={escolhido?.id ?? 'todos'} clientes={clientes.map(c => ({ id: c.id, nome: c.nome }))} clienteInicial={escolhido?.id ?? null} /></header>
+    <FiltrosAnuncios key={`${escolhido?.id}:${periodo.de}:${periodo.ate}:${canal}:${aba}`} clientes={clientes.map(c => ({ id: c.id, nome: c.nome }))} cliente={escolhido?.id ?? null} periodo={periodo} hoje={hoje} canal={canal} aba={aba} />
+    {aviso && <p className="an-aviso" role="status">{aviso}</p>}
+    <nav className="an-tabs" aria-label="Seções de anúncios">{ABAS.map(([a, rotulo]) => <Link key={a} href={link(ctx, a)} scroll={false} prefetch={false} aria-current={aba === a ? 'page' : undefined}>{rotulo}{a === 'aprovacoes' && <span>{propostas.length}</span>}</Link>)}</nav>
+    <Suspense key={`${escolhido?.id}:${periodo.de}:${periodo.ate}:${canal}:${aba}`} fallback={<Carregando />}><Resultados ctx={ctx} /></Suspense>
+    <details className="an-connection"><summary><span><PlugZap /><i data-conectado={google.conectado} />{google.conectado ? 'Google da agência conectado' : 'Conectar Google da agência'}</span><span>Gerenciar conexão<ChevronRight /></span></summary><div><p>{google.conectado ? <>Conectado como <strong>{google.email || 'conta Google'}</strong>.</> : 'Conecte a conta da agência para acessar o Google Ads e os perfis do Meu Negócio.'}</p>{google.conectado && !google.adsPronto && <p>O Google Ads ainda precisa da configuração da MCC. Fale com o administrador.</p>}{eu.papel === 'admin' ? <ConexaoGoogle email={google.conectado ? google.email || 'conta Google' : null} /> : <p>A conexão é gerenciada pelo administrador.</p>}</div></details>
+    <footer className="an-footer"><span><ShieldCheck />Alterações e aprovações ficam registradas na plataforma.</span><span>Período: {data(periodo.de)} a {data(periodo.ate)} · horário de Belém</span></footer>
+  </div></div>
 }
 
-/** Período imediatamente anterior, do mesmo tamanho (para as variações). */
-const periodoAnterior = (p: PeriodoAnuncios) => {
-  const n = diasDoPeriodo(p).length
-  const ate = somarDias(p.de, -1)
-  return { de: somarDias(ate, -(n - 1)), ate }
+function Carregando() {
+  return <div className="an-loading" role="status"><div className="an-metrics">{[0, 1, 2, 3].map(i => <div className="an-metric" key={i}><span /><strong /><small /></div>)}</div><p>Consultando resultados nas contas de anúncios…</p></div>
 }
-const lista = <T,>(x: T[] | { erro: string } | null): T[] => (x && !('erro' in x) ? x : [])
-const soma = (xs: PagoPorDia[], k: 'gasto' | 'cliques' | 'impressoes') => xs.reduce((s, d) => s + d[k], 0)
 
-/** Bento do cliente: investimento por dia, totais com variação, atalhos e histórico, divisão do gasto, saúde e campanhas. */
-async function VisaoCliente({ cliente, periodo, googleConectado }: { cliente: Cliente; periodo: PeriodoAnuncios; googleConectado: boolean }) {
-  const comGoogle = !!cliente.googleAdsId && googleConectado
-  const ant = periodoAnterior(periodo)
-  const sb = await criarClienteServidor()
-  const [d, mDia, gDia, mAnt, gAnt, alteracoes] = await Promise.all([
-    dadosDoCliente(cliente, periodo, googleConectado, { organico: false }),
-    cliente.metaContaId ? pagoPorDiaMeta(cliente.metaContaId, periodo) : null,
-    comGoogle ? pagoPorDiaGoogle(cliente.googleAdsId!, periodo) : null,
-    cliente.metaContaId ? pagoPorDiaMeta(cliente.metaContaId, ant) : null,
-    comGoogle ? pagoPorDiaGoogle(cliente.googleAdsId!, ant) : null,
-    historico(sb, cliente.id),
-  ])
-  const dias = diasDoPeriodo(periodo)
-  const meta = new Map(lista(mDia).map((x) => [x.dia, x]))
-  const goog = new Map(lista(gDia).map((x) => [x.dia, x]))
-  const temAnterior = (mAnt && !('erro' in mAnt)) || (gAnt && !('erro' in gAnt))
-  const anterior = temAnterior ? [...lista(mAnt), ...lista(gAnt)] : null
-  const total = (d.pago.meta?.gasto ?? 0) + (d.pago.google?.custo ?? 0)
-  const cliques = (d.pago.meta?.cliques ?? 0) + (d.pago.google?.cliques ?? 0)
-  const impressoes = d.pago.meta?.impressoes ?? 0
-  const anuncios = d.anuncios ?? []
-  const leadsMeta = anuncios.reduce((s, a) => s + a.resultados, 0)
-  const leads = leadsMeta + (d.pago.google?.conversoes ?? 0)
-  const gastoLead = anuncios.filter((a) => a.papel === 'lead').reduce((s, a) => s + a.gasto, 0) + (d.pago.google?.custo ?? 0)
-  const gastoMarca = anuncios.filter((a) => a.papel === 'marca').reduce((s, a) => s + a.gasto, 0)
-  const bons = anuncios.filter((a) => a.desempenho === 'bom').length
-  const fracos = anuncios.filter((a) => a.desempenho === 'fraco').length
+function carregarContas(ctx: Contexto) {
+  return Promise.all(ctx.clientes.map(c => contaCentralAnuncios(c.id, c.nome, c.metaContaId, c.googleAdsId, ctx.periodo.de, ctx.periodo.ate, ctx.googleConectado, ctx.canal)))
+}
 
-  // Campanhas: Meta (somando os anúncios ativos de cada campanha) e Google (campanhas do período).
-  const porCampanha = new Map<string, { nome: string; gasto: number; leads: number; canal: 'Meta' | 'Google' }>()
-  for (const a of anuncios) {
-    const c = porCampanha.get(`m:${a.campanha}`) ?? { nome: a.campanha, gasto: 0, leads: 0, canal: 'Meta' as const }
-    porCampanha.set(`m:${a.campanha}`, { ...c, gasto: c.gasto + a.gasto, leads: c.leads + a.resultados })
-  }
-  for (const c of d.campanhas?.campanhas ?? []) porCampanha.set(`g:${c.id}`, { nome: c.nome, gasto: c.custo, leads: c.conversoes, canal: 'Google' })
-  const campanhas = [...porCampanha.entries()].map(([id, c]) => ({ id, ...c })).filter((c) => c.gasto > 0).sort((a, b) => b.gasto - a.gasto)
-  const fatias = [...campanhas.slice(0, 5).map((c, i) => ({ rotulo: c.nome, valor: c.gasto, cor: corDaVez(i) })), ...(campanhas.length > 5 ? [{ rotulo: 'Outras', valor: campanhas.slice(5).reduce((s, c) => s + c.gasto, 0), cor: 'var(--anu-hach)' }] : [])]
+function Resultados({ ctx }: { ctx: Contexto }) {
+  return <div className="an-content"><Suspense fallback={<Carregando />}><Metricas ctx={ctx} /></Suspense><Suspense fallback={<p className="an-empty" role="status">Carregando {ctx.aba === 'visao' ? 'resultados' : ctx.aba === 'campanhas' ? 'campanhas' : ctx.aba === 'criativos' ? 'criativos' : 'aprovações'}…</p>}>
+    {ctx.aba === 'visao' ? <VisaoGeral ctx={ctx} /> : ctx.aba === 'campanhas' ? <ControleCampanhas ctx={ctx} /> : ctx.aba === 'criativos' ? <Bibliotecas ctx={ctx} /> : <section className="an-panel"><div className="an-panel-head"><div><h2>Aprovações</h2><p>Revise antes de ativar campanhas ou alterar orçamentos pela IA.</p></div><ClipboardCheck aria-hidden /></div>{ctx.propostas.length ? <div className="an-proposals"><Propostas propostas={ctx.propostas} podeGerir={ctx.podeGerir} mostrarCliente={!ctx.escolhido} /></div> : <div className="an-empty"><CheckCheck /><h3>Tudo revisado por aqui</h3><p>Nenhuma solicitação pendente para este filtro.</p></div>}</section>}
+  </Suspense></div>
+}
 
-  const analise = analisarPago(d.pago)
-  const dica = [...analise.recomendacoes].sort((a, b) => ORDEM_TOM[a.tom] - ORDEM_TOM[b.tom])[0]
-  const q = consultaPeriodo(periodo)
-  const atalhos = [
-    { href: '#controle', rotulo: 'Controle', Icone: SlidersHorizontal },
-    ...(cliente.metaContaId ? [{ href: '#criativos', rotulo: 'Criativos', Icone: ImagePlus }, { href: '#anuncios', rotulo: 'Anúncios', Icone: Megaphone }] : []),
-    ...(comGoogle ? [{ href: '#google', rotulo: 'Google', Icone: Search }] : []),
-    { href: `/performance?aba=meta&cliente=${cliente.id}${q ? `&${q}` : ''}`, rotulo: 'Performance', Icone: BarChart3 },
+async function Metricas({ ctx }: { ctx: Contexto }) {
+  const { canal } = ctx
+  const contas = await carregarContas(ctx)
+  const t = resumirContasAnuncios(contas)
+  const kpis = [
+    { rotulo: 'Investimento total', valor: reais(t.gasto), sub: 'No período selecionado', Icone: Wallet },
+    { rotulo: 'Leads · Meta', valor: numero(t.leads), sub: t.cpl !== null ? `CPL de ${reais(t.cpl)} · somente captação` : canal === 'google' ? 'Selecione Meta para consultar' : 'Conversas e formulários de captação', Icone: MessagesSquare },
+    { rotulo: 'Conversões · Google', valor: numero(t.conversoes), sub: canal === 'meta' ? 'Selecione Google para consultar' : 'Ações registradas no Google Ads', Icone: MousePointer2 },
+    { rotulo: 'Campanhas ativas', valor: numero(t.ativas), sub: t.pausadas !== null ? `${numero(t.pausadas)} pausadas · status atual` : 'Status indisponível', Icone: Radio },
   ]
+  return <>
+    <div className="an-metrics" aria-label="Indicadores dos anúncios">{kpis.map(({ rotulo, valor, sub, Icone }) => <div className="an-metric" key={rotulo}><div><span>{rotulo}</span><Icone aria-hidden /></div><strong>{valor}</strong><small>{sub}</small></div>)}</div>
+    {t.erros.length > 0 && <details className="an-data-warning"><summary>Alguns dados não puderam ser carregados. Os totais disponíveis podem estar parciais.</summary><ul>{t.erros.map((erro, i) => <li key={i}>{erro}</li>)}</ul></details>}
+  </>
+}
 
-  return (
-    <div className="an-bento">
-      <Cartao className="an-largo" titulo={<span>{reais.format(total)}</span>} sub={<>Investido no período · <Variacao atual={total} anterior={anterior ? soma(anterior, 'gasto') : null} /></>} acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
-        {d.erros.length > 0 && <p>{d.erros.join(' · ')}</p>}
-        <BarrasDiarias dias={dias} formato={(n) => reaisCurto.format(n)} series={[{ nome: 'Meta', cor: COR.verde, valores: dias.map((x) => meta.get(x)?.gasto ?? 0) }, { nome: 'Google Ads', cor: COR.amarelo, valores: dias.map((x) => goog.get(x)?.gasto ?? 0) }]} />
-      </Cartao>
-
-      <Cartao>
-        <Kpi rotulo="Cliques" valor={numero.format(cliques)} extra={<Variacao atual={cliques} anterior={anterior ? soma(anterior, 'cliques') : null} />} />
-        <Kpi rotulo="Leads e conversões" valor={numero.format(leads)} extra={<span>{leads ? `${reais.format(gastoLead / leads)} por lead` : 'nenhum no período'}</span>} />
-        <Kpi rotulo="Impressões (Meta)" valor={numero.format(impressoes)} extra={<span>CTR {d.pago.meta ? pct(d.pago.meta.ctr) : '—'}{d.pago.meta && tomCtrMeta(d.pago.meta.ctr) !== 'neutro' && <> · <SeloTom tom={tomCtrMeta(d.pago.meta.ctr)} /></>}</span>} />
-      </Cartao>
-
-      <Cartao titulo="Ações rápidas" sub="Vá direto para cada parte">
-        <nav aria-label="Ir para">
-          {atalhos.map(({ href, rotulo, Icone }) => <Link key={href} href={href}><span><Icone /></span>{rotulo}</Link>)}
-        </nav>
-        <div>
-          <h3>Histórico de alterações</h3>
-          <p>O que foi mudado nos anúncios pela plataforma e pela IA</p>
-          {alteracoes.length ? <ListaHistorico itens={alteracoes} /> : <p>Nenhuma alteração ainda.</p>}
-        </div>
-      </Cartao>
-
-      <Cartao titulo="Para onde vai o investimento" sub="Captação (gera lead) e marca (tráfego e conteúdo)">
-        <div>
-          <Trilho valor={gastoLead} max={gastoLead + gastoMarca} cor={COR.verde} esquerda={`Captação ${reais.format(gastoLead)}`} direita={`Marca ${reais.format(gastoMarca)}`} />
-          <Trilho valor={d.pago.meta?.gasto ?? 0} max={total} cor={COR.amarelo} esquerda={`Meta ${reais.format(d.pago.meta?.gasto ?? 0)}`} direita={`Google ${reais.format(d.pago.google?.custo ?? 0)}`} />
-        </div>
-      </Cartao>
-
-      <Cartao titulo="O que fazer agora" sub="A recomendação mais importante do período">
-        <div>
-          <p>{dica ? dica.texto : 'Sem recomendações: as contas estão dentro do esperado no período.'}</p>
-          <Link href="#analise">Ver todas <ChevronRight /></Link>
-        </div>
-      </Cartao>
-
-      <Cartao titulo="Divisão por campanha" sub="Quanto cada campanha levou do investimento">
-        <BarraSegmentada itens={fatias} formato={(n) => reaisCurto.format(n)} />
-      </Cartao>
-
-      <Cartao titulo="Saúde dos anúncios" sub="Anúncios ativos do Meta sem desempenho fraco">
-        <Medidor pct={anuncios.length ? ((anuncios.length - fracos) / anuncios.length) * 100 : null} centro="saudáveis" legenda={anuncios.length ? `${bons} bons · ${fracos} fracos · ${d.pago.meta?.frequenciaAlta ?? 0} com frequência alta` : 'Sem anúncios ativos no Meta.'} />
-      </Cartao>
-
-      <Cartao titulo="Campanhas" sub="Maiores investimentos do período">
-        <Progressos
-          vazio="Nenhuma campanha gastou neste período."
-          itens={campanhas.slice(0, 5).map((c, i) => ({ id: c.id, nome: c.nome, valor: c.gasto, max: campanhas[0].gasto, direita: reais.format(c.gasto), cor: corDaVez(i), obs: `${c.canal} · ${c.leads ? `${numero.format(c.leads)} ${c.canal === 'Google' ? 'conversões' : 'leads'} · ${reais.format(c.gasto / c.leads)} cada` : 'sem leads'}` }))}
-        />
-      </Cartao>
-
-      <Cartao className="an-largo" titulo="Funil dos anúncios" sub="Do anúncio visto até a conversa ou o lead, com a conversão de cada etapa (Meta: soma dos anúncios do período)">
-        <div>
-          <div>
-            <h3>Meta</h3>
-            {anuncios.length ? (
-              <FunilConversao principal="lead ou mensagem" etapas={[
-                { rotulo: 'Impressões', valor: anuncios.reduce((s, a) => s + a.impressoes, 0), extra: 'vezes que os anúncios apareceram' },
-                { rotulo: 'Alcance', valor: anuncios.reduce((s, a) => s + a.alcance, 0), extra: 'pessoas que viram' },
-                { rotulo: 'Cliques no link', valor: anuncios.reduce((s, a) => s + a.cliquesLink, 0), extra: 'foram para o WhatsApp, site ou formulário' },
-                { rotulo: 'Leads e mensagens', valor: leadsMeta, extra: 'conversas iniciadas e formulários' },
-              ]} />
-            ) : <p>Sem anúncios da Meta no período.</p>}
-          </div>
-          {d.pago.google && (
-            <div>
-              <h3>Google Ads</h3>
-              <FunilConversao principal="conversão" etapas={[
-                { rotulo: 'Cliques', valor: d.pago.google.cliques, extra: 'entraram no site' },
-                { rotulo: 'Conversões', valor: d.pago.google.conversoes, extra: 'ligações, formulários, WhatsApp' },
-              ]} />
-            </div>
-          )}
-        </div>
-      </Cartao>
+async function VisaoGeral({ ctx }: { ctx: Contexto }) {
+  const contas = await carregarContas(ctx)
+  const t = resumirContasAnuncios(contas), serie = serieContasAnuncios(contas, ctx.periodo)
+  const ordenadas = [...contas].sort((a, b) => (somarDisponiveis([b.meta?.gasto, b.google?.gasto]) ?? 0) - (somarDisponiveis([a.meta?.gasto, a.google?.gasto]) ?? 0))
+  return <>
+    <div className="an-columns">
+      <section className="an-panel"><div className="an-panel-head"><div><h2>Investimento por dia</h2><p>{data(ctx.periodo.de)} a {data(ctx.periodo.ate)}</p></div><ChartNoAxesCombined aria-hidden /></div>
+        <div className="an-legend">{ctx.canal !== 'google' && <span><i />Meta</span>}{ctx.canal !== 'meta' && <span><i data-google />Google Ads</span>}</div>
+        {t.gasto !== null ? <GraficoInvestimento dias={serie} meta={ctx.canal !== 'google'} google={ctx.canal !== 'meta'} /> : <div className="an-empty"><p>Sem dados de investimento para este filtro.</p></div>}
+        <div className="an-chart-foot">{ctx.canal !== 'google' && <span>Meta <strong>{reais(t.meta)}</strong></span>}{ctx.canal !== 'meta' && <span>Google Ads <strong>{reais(t.google)}</strong></span>}</div>
+      </section>
+      <section className="an-panel an-review"><div className="an-panel-head"><div><h2>Aguardando sua decisão</h2><p>{ctx.propostas.length} solicitaç{ctx.propostas.length === 1 ? 'ão pendente' : 'ões pendentes'}</p></div><ClipboardCheck aria-hidden /></div><div className="an-review-items">
+        {ctx.propostas.length ? ctx.propostas.slice(0, 2).map(p => <div className="an-review-row" key={p.id}><span><SlidersHorizontal /></span><div><strong>{p.acao === 'ativar' ? 'Ativar campanha ou anúncio' : 'Ajustar orçamento'}</strong><p>{p.cliente} · {p.nome}</p>{p.acao === 'orcamento' && <small>{reais(p.valorAtual)} → {reais(p.valorNovo)}</small>}</div></div>) : <div className="an-review-row"><span data-ok><CheckCheck /></span><div><strong>Tudo revisado por aqui</strong><p>Sem solicitações pendentes para este filtro.</p></div></div>}
+      </div><Link className="an-btn" href={link(ctx, 'aprovacoes')} scroll={false} prefetch={false}>{ctx.propostas.length ? 'Revisar solicitações' : 'Ver aprovações'}<ArrowUpRight /></Link></section>
     </div>
-  )
+    <section className="an-panel"><div className="an-panel-head"><div><h2>{ctx.escolhido ? 'Resultados do cliente' : 'Resultados por cliente'}</h2><p>Leads de captação do Meta e conversões do Google Ads.</p></div><Link className="an-text-btn" href={link(ctx, 'campanhas')} scroll={false} prefetch={false}>Ver campanhas<ArrowUpRight /></Link></div>
+      {ordenadas.length ? <div className="an-table-wrap"><table><thead><tr><th>Cliente</th><th className="an-number">Investido</th><th className="an-number">Leads Meta</th><th className="an-number">Conv. Google</th><th className="an-number">Campanhas</th><th><span className="sr-only">Detalhes</span></th></tr></thead><tbody>{ordenadas.map(c => <tr key={c.id}><td><Link className="an-client" href={link(ctx, 'visao', c.id)} prefetch={false}><span>{c.nome.split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase()}</span><div><strong>{c.nome}</strong><small>{c.erros.length ? 'Dados parciais · confira os avisos' : [c.meta && 'Meta Ads', c.google && 'Google Ads'].filter(Boolean).join(' · ') || 'Sem conta neste canal'}</small></div></Link></td><td className="an-number">{reais(somarDisponiveis([c.meta?.gasto, c.google?.gasto]))}</td><td className="an-number">{numero(c.meta?.resultados ?? null)}</td><td className="an-number">{numero(c.google?.resultados ?? null)}</td><td className="an-number">{numero(somarDisponiveis([c.meta?.ativas, c.google?.ativas]))} ativas</td><td><Link className="an-icon-btn" href={link(ctx, 'campanhas', c.id)} prefetch={false} aria-label={`Ver campanhas de ${c.nome}`}><ArrowUpRight /></Link></td></tr>)}</tbody></table></div> : <div className="an-empty"><h3>Nenhuma conta de anúncios cadastrada</h3><p>Vincule a conta Meta ou Google Ads na página do cliente para acompanhar os resultados.</p><Link className="an-btn" href="/clientes">Ver clientes</Link></div>}
+      <div className="an-table-bottom"><span>{contas.length} cliente{contas.length === 1 ? '' : 's'} no filtro</span><span>{numero(t.cliques)} cliques no período</span></div>
+    </section>
+    {ctx.escolhido && <details className="an-details"><summary><ChartNoAxesCombined />Funil, insights e recomendações<ChevronRight /></summary><Suspense fallback={<p className="an-empty">Analisando os resultados…</p>}><AnaliseCliente ctx={ctx} cliente={ctx.escolhido} /></Suspense></details>}
+  </>
 }
 
-const ROTULO_ACAO: Record<string, string> = { pausar: 'Pausou', ativar: 'Ativou', orcamento: 'Orçamento', criar: 'Criou' }
-const COR_ACAO: Record<string, string> = { pausar: '#9a9aa2', ativar: '#6fae2c', orcamento: '#e0a23c', criar: '#5b8def' }
-
-function ListaHistorico({ itens }: { itens: Awaited<ReturnType<typeof historico>> }) {
-  const linha = (a: (typeof itens)[number]) => (
-    <li key={a.id}>
-      <span style={{ background: COR_ACAO[a.acao] ?? '#9a9aa2' }} aria-hidden>{a.plataforma === 'meta' ? 'M' : 'G'}</span>
-      <div>
-        <p title={a.nome}>{a.nome}</p>
-        <p>{new Date(a.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })} · {a.origem === 'ia' ? 'IA · ' : ''}{a.por}</p>
-      </div>
-      <div>
-        <p>{ROTULO_ACAO[a.acao] ?? a.acao}</p>
-        {(a.antes || a.depois) && <p title={`${a.antes ? `${a.antes} → ` : ''}${a.depois}`}>{a.antes ? `${a.antes} → ` : ''}{a.depois}</p>}
-      </div>
-    </li>
-  )
-  return (
-    <>
-      <ul>{itens.slice(0, 6).map(linha)}</ul>
-      {itens.length > 6 && (
-        <details>
-          <summary>Ver mais {itens.length - 6}</summary>
-          <ul>{itens.slice(6).map(linha)}</ul>
-        </details>
-      )}
-    </>
-  )
+async function ControleCampanhas({ ctx }: { ctx: Contexto }) {
+  const erros: string[] = []
+  const contas: ContaCampanhas[] = await Promise.all(ctx.clientes.map(async c => {
+    const [meta, google] = await Promise.all([
+      c.metaContaId && ctx.canal !== 'google' ? estruturaMeta(c.metaContaId, ctx.periodo).catch((e: Error) => ({ erro: e.message })) : null,
+      c.googleAdsId && ctx.googleConectado && ctx.canal !== 'meta' ? campanhasGoogleCentral(c.googleAdsId, ctx.periodo.de, ctx.periodo.ate) : null,
+    ])
+    if (meta && 'erro' in meta) erros.push(`${c.nome} · Meta: ${meta.erro}`)
+    if (google && 'erro' in google) erros.push(`${c.nome} · Google: ${google.erro}`)
+    return { id: c.id, nome: c.nome, meta: meta && !('erro' in meta) ? meta : [], google: google && !('erro' in google) ? google : [] }
+  }))
+  return <>{erros.length > 0 && <div className="an-aviso" role="status">{erros.map(e => <p key={e}>{e}</p>)}</div>}<CampanhasAnuncios contas={contas} podeGerir={ctx.podeGerir} />{ctx.escolhido && <details className="an-details"><summary><History />Histórico de alterações<ChevronRight /></summary><HistoricoCliente clienteId={ctx.escolhido.id} /></details>}</>
 }
 
-/** Liga/desliga e orçamento das campanhas, conjuntos e anúncios (Meta) e das campanhas (Google Ads). */
-async function Controle({ cliente, periodo, googleConectado, podeGerir, seletor }: { cliente: Cliente; periodo: PeriodoAnuncios; googleConectado: boolean; podeGerir: boolean; seletor: React.ReactNode }) {
-  const [meta, goog] = await Promise.all([
-    cliente.metaContaId ? estruturaMeta(cliente.metaContaId, periodo).catch((e: Error) => ({ erro: e.message })) : null,
-    cliente.googleAdsId && googleConectado ? estruturaGoogle(cliente.googleAdsId, periodo) : null,
-  ])
-  const erro = (e: { erro: string }) => <p>{e.erro}</p>
-  return (
-    <Modulo icone={SlidersHorizontal} titulo="Controle das campanhas" descricao={<><NomeCliente nome={cliente.nome} /> · ligue, pause e ajuste o orçamento aqui mesmo · gasto de {rotuloPeriodo(periodo)}{!podeGerir && ' · só admin e gestor alteram'}</>} acoes={seletor}>
-      <div>
-        {meta && (
-          <section>
-            <h3><span aria-hidden /> Meta</h3>
-            {'erro' in meta ? erro(meta) : <ArvoreMeta clienteId={cliente.id} campanhas={meta} podeGerir={podeGerir} />}
-          </section>
-        )}
-        {goog && (
-          <section>
-            <h3><span aria-hidden /> Google Ads</h3>
-            {'erro' in goog ? erro(goog) : <TabelaGoogle clienteId={cliente.id} campanhas={goog} podeGerir={podeGerir} />}
-          </section>
-        )}
-        {!meta && !goog && <p>O cliente não tem conta de anúncios ligada (ou o Google da agência não está conectado).</p>}
-        <p>Criar campanhas, públicos e subir criativos é pela IA (Claude ou Codex, pelo MCP da plataforma): ela monta tudo pausado e os pedidos de ativar ou de orçamento aparecem aqui para aprovar.</p>
-      </div>
-    </Modulo>
-  )
+async function Bibliotecas({ ctx }: { ctx: Contexto }) {
+  const clientes = ctx.canal === 'google' ? [] : ctx.clientes.filter(c => c.metaContaId)
+  return <div className="an-libraries">{clientes.length ? clientes.map(c => <section className="an-panel" key={c.id}><div className="an-panel-head"><div><h2>{c.nome}</h2><p>Biblioteca de criativos · Meta Ads</p></div><ImagePlus aria-hidden /></div><Suspense fallback={<p className="an-empty">Carregando arquivos…</p>}><BibliotecaCliente clienteId={c.id} /></Suspense>{ctx.escolhido && <details className="an-details an-live-ads"><summary>Anúncios ativos e desempenho<ChevronRight /></summary><Suspense fallback={<p className="an-empty">Buscando anúncios…</p>}><GaleriaAnuncios contaId={c.metaContaId!} periodo={ctx.periodo} mostrarGasto seletor={null} incorporado /></Suspense></details>}</section>) : <section className="an-panel an-empty"><ImagePlus /><h3>{ctx.canal === 'google' ? 'A biblioteca reúne os criativos da Meta' : 'Nenhuma conta Meta neste filtro'}</h3><p>{ctx.canal === 'google' ? 'Selecione Meta ou Todos para consultar e enviar arquivos.' : 'Vincule uma conta de anúncios da Meta ao cliente para começar.'}</p></section>}</div>
 }
-
-async function BibliotecaCriativos({ clienteId }: { clienteId: string }) {
+async function BibliotecaCliente({ clienteId }: { clienteId: string }) {
   const lista = await listarCriativos(await criarClienteServidor(), clienteId)
-  const criativos = await Promise.all(lista.map(async (c) => ({ id: c.id, nome: c.nome, tipo: c.tipo, url: await urlLeitura(c.chave) })))
-  return (
-    <Modulo icone={ImagePlus} titulo="Criativos" descricao="Biblioteca do cliente para as campanhas da Meta: suba aqui e peça à IA para montar a campanha">
-      <Criativos clienteId={clienteId} criativos={criativos} />
-    </Modulo>
-  )
+  const criativos = await Promise.all(lista.map(async c => ({ id: c.id, nome: c.nome, tipo: c.tipo, url: await urlLeitura(c.chave) })))
+  return <div className="an-library"><Criativos clienteId={clienteId} criativos={criativos} /></div>
 }
-
-/** Insights e recomendações do pago (os números ficam nos cartões do topo). */
-async function AnalisePago({ cliente, periodo, googleConectado }: { cliente: Cliente; periodo: PeriodoAnuncios; googleConectado: boolean }) {
-  const d = await dadosDoCliente(cliente, periodo, googleConectado, { organico: false })
-  return (
-    <div>
-      <h3>Insights e recomendações <span>Meta e Google Ads</span></h3>
-      <BlocoAnalise analise={analisarPago(d.pago)} />
-      <p>Para cruzar com o orgânico (Instagram), veja o relatório na <Link href={`/clientes/${cliente.id}`}>página do cliente</Link>.</p>
-    </div>
-  )
+async function HistoricoCliente({ clienteId }: { clienteId: string }) {
+  const itens = await historico(await criarClienteServidor(), clienteId)
+  return itens.length ? <ul className="an-history">{itens.map(a => <li key={a.id}><div><strong>{a.nome}</strong><p>{a.plataforma === 'meta' ? 'Meta' : 'Google'} · {a.acao} · {a.por || 'Equipe'}{a.origem === 'ia' ? ' · IA' : ''}</p></div><div><span>{a.antes}{a.antes && a.depois ? ' → ' : ''}{a.depois}</span><small>{new Date(a.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Belem' })}</small></div></li>)}</ul> : <p className="an-empty">Nenhuma alteração registrada ainda.</p>
 }
-
-/** Todos os clientes: investimento por dia (Meta e Google), totais, quem investe, divisão por canal e a tabela completa. */
-async function Panorama({ clientes, periodo, googleConectado }: { clientes: Cliente[]; periodo: PeriodoAnuncios; googleConectado: boolean }) {
-  const linhas: Linha[] = await Promise.all(
-    clientes.map(async (c) => {
-      const comGoogle = !!c.googleAdsId && googleConectado
-      const [meta, ads, adsDia] = await Promise.all([
-        c.metaContaId ? pagoPorDiaMeta(c.metaContaId, periodo) : null,
-        comGoogle ? campanhasGoogle(c.googleAdsId!, periodo) : null,
-        comGoogle ? pagoPorDiaGoogle(c.googleAdsId!, periodo) : null,
-      ])
-      const somar = (xs: { gasto: number; impressoes: number; cliques: number }[]) => xs.reduce((s, d) => ({ gasto: s.gasto + d.gasto, impressoes: s.impressoes + d.impressoes, cliques: s.cliques + d.cliques }), { gasto: 0, impressoes: 0, cliques: 0 })
-      const m = meta && !('erro' in meta) ? somar(meta) : null
-      return {
-        id: c.id,
-        nome: c.nome,
-        meta: !meta ? null : 'erro' in meta ? meta : { ...m!, ctr: m!.impressoes ? (m!.cliques / m!.impressoes) * 100 : 0, porDia: new Map(meta.map((d) => [d.dia, d.gasto])) },
-        google: !ads ? null : 'erro' in ads ? ads : { ...totaisCampanhas(ads.campanhas), porDia: new Map((adsDia && !('erro' in adsDia) ? adsDia : []).map((d) => [d.dia, d.gasto])) },
-      }
-    }),
-  )
-  const totalMeta = linhas.reduce((s, l) => s + (valor(l.meta)?.gasto ?? 0), 0)
-  const totalGoogle = linhas.reduce((s, l) => s + (valor(l.google)?.custo ?? 0), 0)
-  const cliques = linhas.reduce((s, l) => s + (valor(l.meta)?.cliques ?? 0) + (valor(l.google)?.cliques ?? 0), 0)
-  const impressoes = linhas.reduce((s, l) => s + (valor(l.meta)?.impressoes ?? 0), 0)
-  const conversoes = linhas.reduce((s, l) => s + (valor(l.google)?.conversoes ?? 0), 0)
-  const totalDe = (l: Linha) => (valor(l.meta)?.gasto ?? 0) + (valor(l.google)?.custo ?? 0)
-  const investindo = linhas.filter((l) => totalDe(l) > 0)
-  const parados = linhas.filter((l) => totalDe(l) === 0)
-  const dias = diasDoPeriodo(periodo)
-  const ordenadas = [...linhas].sort((a, b) => totalDe(b) - totalDe(a))
-  const q = consultaPeriodo(periodo)
-  const linkCliente = (id: string) => `/anuncios?cliente=${id}${q ? `&${q}` : ''}`
-  const erro = (e: Erro) => <span title={e.erro}>erro</span>
-  const vazio = <span>—</span>
-
-  return (
-    <div className="an-bento">
-      <Cartao className="an-largo" titulo={<span>{reais.format(totalMeta + totalGoogle)}</span>} sub="Investido no período, todos os clientes" acoes={<Legenda itens={[{ nome: 'Meta', cor: COR.verde }, { nome: 'Google Ads', cor: COR.amarelo }]} />}>
-        <BarrasDiarias
-          dias={dias}
-          formato={(n) => reaisCurto.format(n)}
-          series={[
-            { nome: 'Meta', cor: COR.verde, valores: dias.map((d) => linhas.reduce((s, l) => s + (valor(l.meta)?.porDia.get(d) ?? 0), 0)) },
-            { nome: 'Google Ads', cor: COR.amarelo, valores: dias.map((d) => linhas.reduce((s, l) => s + (valor(l.google)?.porDia.get(d) ?? 0), 0)) },
-          ]}
-        />
-      </Cartao>
-
-      <Cartao>
-        <Kpi rotulo="Meta" valor={reais.format(totalMeta)} extra={<span>{numero.format(impressoes)} impressões · CTR {impressoes ? pct((linhas.reduce((s, l) => s + (valor(l.meta)?.cliques ?? 0), 0) / impressoes) * 100) : '—'}</span>} />
-        <Kpi rotulo="Google Ads" valor={reais.format(totalGoogle)} extra={<span>{conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} conversões</span>} />
-        <Kpi rotulo="Cliques" valor={numero.format(cliques)} extra={<span>média de {investindo.length ? reais.format((totalMeta + totalGoogle) / investindo.length) : '—'} por cliente</span>} />
-      </Cartao>
-
-      <Cartao titulo="Clientes investindo" sub={`${investindo.length} de ${linhas.length} com gasto no período`}>
-        <Medidor pct={linhas.length ? (investindo.length / linhas.length) * 100 : null} centro="investindo" legenda={parados.length ? `${parados.length} sem investimento` : 'Todos os clientes estão investindo.'} />
-        {parados.length > 0 && (
-          <div>
-            <h3>Sem investimento</h3>
-            <ul>
-              {parados.map((l) => (
-                <li key={l.id}>
-                  <span style={{ background: 'var(--anu-laranja)' }} aria-hidden>{l.nome.slice(0, 1).toUpperCase()}</span>
-                  <NomeCliente nome={l.nome} href={linkCliente(l.id)} />
-                  {(l.meta && 'erro' in l.meta) || (l.google && 'erro' in l.google) ? erro((l.meta && 'erro' in l.meta ? l.meta : l.google) as Erro) : <span>R$ 0</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Cartao>
-
-      <Cartao titulo="Divisão por canal" sub="Quanto de todo o investimento foi para cada rede">
-        <BarraSegmentada formato={(n) => reaisCurto.format(n)} itens={[{ rotulo: 'Meta (Facebook e Instagram)', valor: totalMeta, cor: COR.verde }, { rotulo: 'Google Ads', valor: totalGoogle, cor: COR.amarelo }]} />
-      </Cartao>
-
-      <Cartao titulo="Quem mais investe" sub="Os 5 maiores do período">
-        <Progressos
-          vazio="Nenhum cliente investiu neste período."
-          itens={ordenadas.filter((l) => totalDe(l) > 0).slice(0, 5).map((l, i, xs) => ({ id: l.id, nome: <NomeCliente nome={l.nome} href={linkCliente(l.id)} />, valor: totalDe(l), max: totalDe(xs[0]), direita: reais.format(totalDe(l)), cor: corDaVez(i), obs: `Meta ${reais.format(valor(l.meta)?.gasto ?? 0)} · Google ${reais.format(valor(l.google)?.custo ?? 0)}` }))}
-        />
-      </Cartao>
-
-      <Cartao className="an-largo" titulo="Todos os clientes" sub={`Meta (conta inteira) e Google Ads · ${rotuloPeriodo(periodo)} · clique no cliente para ver tudo o que ele roda`}>
-        {linhas.length === 0 ? (
-          <p>Nenhum cliente com conta de anúncios no cadastro. Preencha a conta do Meta e/ou do Google Ads na página do cliente.</p>
-        ) : (
-          <div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Meta investido</th>
-                  <th>Meta cliques</th>
-                  <th>Meta CTR</th>
-                  <th>Google investido</th>
-                  <th>Google cliques</th>
-                  <th>Google conversões</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordenadas.map((l) => {
-                  const m = valor(l.meta)
-                  const g = valor(l.google)
-                  return (
-                    <tr key={l.id}>
-                      <td><NomeCliente nome={l.nome} href={linkCliente(l.id)} /></td>
-                      <td>{m ? reais.format(m.gasto) : l.meta ? erro(l.meta as Erro) : vazio}</td>
-                      <td>{m ? numero.format(m.cliques) : vazio}</td>
-                      <td>{m ? <span>{pct(m.ctr)} {tomCtrMeta(m.ctr) !== 'neutro' && <SeloTom tom={tomCtrMeta(m.ctr)} />}</span> : vazio}</td>
-                      <td>{g ? reais.format(g.custo) : l.google ? erro(l.google as Erro) : vazio}</td>
-                      <td>{g ? numero.format(g.cliques) : vazio}</td>
-                      <td>{g ? <span>{g.conversoes > 0 ? '▲ ' : g.custo > 0 ? '▼ ' : ''}{g.conversoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</span> : vazio}</td>
-                      <td>{reais.format(totalDe(l))}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p>Passe o mouse em &quot;erro&quot; para ver o motivo.</p>
-      </Cartao>
-    </div>
-  )
+async function AnaliseCliente({ ctx, cliente }: { ctx: Contexto; cliente: Cliente }) {
+  const d = await dadosDoCliente(cliente, ctx.periodo, ctx.googleConectado && ctx.canal !== 'meta', { organico: false })
+  const anuncios = d.anuncios ?? []
+  const pago = { meta: ctx.canal === 'google' ? null : d.pago.meta, google: ctx.canal === 'meta' ? null : d.pago.google }
+  return <div className="an-analysis"><BlocoAnalise analise={analisarPago(pago)} />{ctx.canal !== 'google' && anuncios.length > 0 && <section><h3>Funil Meta · anúncios ativos</h3><FunilConversao principal="lead ou mensagem" etapas={[{ rotulo: 'Impressões', valor: anuncios.reduce((s, a) => s + a.impressoes, 0) }, { rotulo: 'Cliques no link', valor: anuncios.reduce((s, a) => s + a.cliquesLink, 0) }, { rotulo: 'Leads e mensagens', valor: anuncios.reduce((s, a) => s + a.resultados, 0) }]} /></section>}{cliente.googleAdsId && ctx.googleConectado && ctx.canal !== 'meta' && <GoogleAds contaId={cliente.googleAdsId} periodo={ctx.periodo} seletor={null} />}<p>Período analisado: {rotuloPeriodo(ctx.periodo)}. <Link href={`/clientes/${cliente.id}`}>Ver relatório do cliente</Link></p></div>
 }

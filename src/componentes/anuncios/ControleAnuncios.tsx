@@ -39,7 +39,7 @@ export function Interruptor({ ligado, nome, desabilitado, aoMudar }: { ligado: b
 }
 
 /** Orçamento com edição na própria linha. */
-function Orcamento({ valor, total, desabilitado, aoSalvar }: { valor: number | null; total?: boolean; desabilitado: boolean; aoSalvar: (v: number) => void }) {
+export function Orcamento({ valor, total, desabilitado, aoSalvar }: { valor: number | null; total?: boolean; desabilitado: boolean; aoSalvar: (v: number) => void }) {
   const [editando, setEditando] = useState(false)
   const [texto, setTexto] = useState('')
   if (valor === null) return <span>—</span>
@@ -248,7 +248,7 @@ export function Criativos({ clienteId, criativos }: { clienteId: string; criativ
                 {c.tipo === 'video' && <Film aria-label="Vídeo" />}
                 <p title={c.nome}>{c.nome}</p>
                 <button type="button" aria-label="Copiar id do criativo" title="Copiar id (para a IA)" onClick={() => navigator.clipboard.writeText(c.id).then(() => avisar({ ok: 'Id copiado.' }, true))}><Copy /></button>
-                <button type="button" aria-label="Remover criativo" title="Remover da biblioteca" onClick={() => confirm(`Remover "${c.nome}" da biblioteca? (anúncios já criados continuam)`) && iniciar(async () => { avisar(await removerCriativoAcao(c.id), true) })}><Trash2 /></button>
+                <button type="button" disabled={pendente} aria-label="Remover criativo" title="Remover da biblioteca" onClick={() => confirm(`Remover "${c.nome}" da biblioteca? (anúncios já criados continuam)`) && iniciar(async () => { avisar(await removerCriativoAcao(c.id), true) })}><Trash2 /></button>
               </div>
             </li>
           ))}
