@@ -3,7 +3,7 @@ import { validarComentario, validarLocalNaMidia, type ComentarioProva, type Entr
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { LimiteCompartilhado } from '@/dominio/limite'
 import type { Supabase } from '@/infra/supabase/servidor'
-import { lerComentarios } from './prova-visual'
+import { lerVersao, paginaDaVersao, resumoDaProva, type Cursor, type PaginaDeComentarios } from './prova-visual'
 import { dados } from './resultado'
 
 // ---------------------------------------------------------------- portal do cliente (chave mestra, sempre filtrando pelo cliente do link)
@@ -21,24 +21,45 @@ async function postDoLink(clienteId: string, tarefaId: string) {
   return data
 }
 
-export type ProvaDoCliente = { atual: ComentarioProva[]; anteriores: { versao: number; comentarios: ComentarioProva[] }[]; podeComentar: boolean }
+export type VersaoAnterior = { versao: number; total: number }
+export type ProvaDoCliente = {
+  /** Comentários da versão atual (lida inteira, até o teto; `truncado` avisa se passou). */
+  atual: ComentarioProva[]
+  truncado: boolean
+  /** Pontos em aberto da versão atual, contados no banco (não dependem do que foi carregado). */
+  abertos: number
+  /** Versões antigas: só o total; os comentários vêm sob demanda, em páginas. */
+  anteriores: VersaoAnterior[]
+  podeComentar: boolean
+}
 
-/** Comentários do post para o cliente do link: os da versão atual e, recolhidos, os das anteriores (só leitura). */
+const SEM_PROVA: ProvaDoCliente = { atual: [], truncado: false, abertos: 0, anteriores: [], podeComentar: false }
+
+/** Comentários do post para o cliente do link: a versão atual inteira e, das anteriores, só os totais (o histórico se pagina sob demanda). */
 export async function comentariosParaCliente(clienteId: string, tarefaId: string): Promise<ProvaDoCliente> {
   const post = await postDoLink(clienteId, tarefaId)
-  if (!post) return { atual: [], anteriores: [], podeComentar: false }
-  const admin = criarClienteAdmin()
-  const [versoes, todos] = await Promise.all([
-    admin.from('content_versions').select('id, number').eq('task_id', tarefaId),
-    lerComentarios(admin as unknown as Supabase, tarefaId), // páginas por cursor, com teto
-  ])
-  const numeroDa = new Map(dados(versoes).map((v) => [v.id, v.number]))
-  const atual = todos.filter((c) => numeroDa.get(c.versaoId) === post.current_version)
-  const anteriores = [...new Set(todos.map((c) => numeroDa.get(c.versaoId) ?? 0))]
-    .filter((n) => n !== post.current_version)
-    .sort((x, y) => y - x)
-    .map((versao) => ({ versao, comentarios: todos.filter((c) => numeroDa.get(c.versaoId) === versao) }))
-  return { atual, anteriores, podeComentar: post.approval === 'aguardando' }
+  if (!post) return SEM_PROVA
+  const admin = criarClienteAdmin() as unknown as Supabase
+  const resumo = await resumoDaProva(admin, tarefaId)
+  const atual = resumo.find((r) => r.numero === post.current_version)
+  const { comentarios, truncado } = atual ? await lerVersao(admin, tarefaId, atual.versaoId) : { comentarios: [], truncado: false }
+  return {
+    atual: comentarios,
+    truncado,
+    abertos: atual?.abertos ?? 0,
+    anteriores: resumo.filter((r) => r.numero !== post.current_version && r.total > 0).map((r) => ({ versao: r.numero, total: r.total })),
+    podeComentar: post.approval === 'aguardando',
+  }
+}
+
+/** Uma página do histórico de uma versão ANTERIOR (só leitura), com cursor para a próxima. */
+export async function paginaDoHistorico(clienteId: string, tarefaId: string, versao: number, depois: Cursor | null): Promise<PaginaDeComentarios | null> {
+  const post = await postDoLink(clienteId, tarefaId)
+  if (!post || !Number.isInteger(versao) || versao < 1 || versao >= post.current_version) return null
+  const admin = criarClienteAdmin() as unknown as Supabase
+  const { data } = await criarClienteAdmin().from('content_versions').select('id').eq('task_id', tarefaId).eq('number', versao).maybeSingle()
+  if (!data) return null
+  return paginaDaVersao(admin, tarefaId, data.id, depois)
 }
 
 /** Consome os limites compartilhados (no banco). false = passou de algum. Se o banco falhar, recusa (não deixa passar sem contar). */

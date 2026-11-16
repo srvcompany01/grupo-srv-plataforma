@@ -33,39 +33,49 @@ export const paraComentario = (l: LinhaProva): ComentarioProvaComResolvedor => (
 // ---------------------------------------------------------------- agência (cliente do usuário: a RLS decide)
 
 export const PAGINA_DE_LEITURA = 200
-export const MAXIMO_DE_LEITURA = 2000
+/** Teto de leitura de UMA versão (a quota é de 100 pontos e 20 respostas do cliente por ponto; a agência responde sem teto). */
+export const MAXIMO_DA_VERSAO = 3000
 
-/**
- * Lê os comentários do post em páginas por cursor (created_at, id), mais antigos primeiro, até um teto.
- * A ordem é total e estável: comentário novo durante a leitura não repete nem pula linhas.
- */
-export async function lerComentarios(sb: Supabase, tarefaId: string, pagina = PAGINA_DE_LEITURA, maximo = MAXIMO_DE_LEITURA): Promise<ComentarioProvaComResolvedor[]> {
+export type Cursor = { criadoEm: string; id: string }
+export type PaginaDeComentarios = { comentarios: ComentarioProvaComResolvedor[]; /** `null` = acabou; senão, passe de volta para ler a próxima página. */ proximo: Cursor | null }
+
+/** Uma página de uma versão, por cursor (created_at, id): ordem total e estável, comentário novo não repete nem pula linhas. */
+export async function paginaDaVersao(sb: Supabase, tarefaId: string, versaoId: string, depois: Cursor | null = null, limite = PAGINA_DE_LEITURA): Promise<PaginaDeComentarios> {
+  let q = sb.from('content_review_comments').select(CAMPOS_PROVA).eq('task_id', tarefaId).eq('version_id', versaoId).order('created_at').order('id').limit(limite + 1)
+  const filtro = filtroDeCursor(depois)
+  if (filtro) q = q.or(filtro)
+  const linhas = dados(await q) as unknown as LinhaProva[]
+  const pagina = linhas.slice(0, limite)
+  const ultima = pagina[pagina.length - 1]
+  return { comentarios: pagina.map(paraComentario), proximo: linhas.length > limite && ultima ? { criadoEm: ultima.created_at, id: ultima.id } : null }
+}
+
+/** A versão inteira (até o teto). `truncado` avisa quando passou do teto: nunca some em silêncio. */
+export async function lerVersao(sb: Supabase, tarefaId: string, versaoId: string, maximo = MAXIMO_DA_VERSAO): Promise<{ comentarios: ComentarioProvaComResolvedor[]; truncado: boolean }> {
   const todos: ComentarioProvaComResolvedor[] = []
-  let cursor: { criadoEm: string; id: string } | null = null
-  while (todos.length < maximo) {
-    let q = sb.from('content_review_comments').select(CAMPOS_PROVA).eq('task_id', tarefaId).order('created_at').order('id').limit(Math.min(pagina, maximo - todos.length))
-    const filtro = filtroDeCursor(cursor)
-    if (filtro) q = q.or(filtro)
-    const linhas = dados(await q) as unknown as LinhaProva[]
-    todos.push(...linhas.map(paraComentario))
-    if (linhas.length < pagina) break
-    const ultima: LinhaProva = linhas[linhas.length - 1]
-    cursor = { criadoEm: ultima.created_at, id: ultima.id }
+  let cursor: Cursor | null = null
+  for (;;) {
+    const pagina: PaginaDeComentarios = await paginaDaVersao(sb, tarefaId, versaoId, cursor, Math.min(PAGINA_DE_LEITURA, maximo - todos.length))
+    todos.push(...pagina.comentarios)
+    if (!pagina.proximo) return { comentarios: todos, truncado: false }
+    if (todos.length >= maximo) return { comentarios: todos, truncado: true }
+    cursor = pagina.proximo
   }
-  return todos
 }
 
-/** Comentários de todas as versões do post, mais antigos primeiro (com o teto da leitura paginada). */
-export async function comentariosDoPost(sb: Supabase, tarefaId: string): Promise<ComentarioProvaComResolvedor[]> {
-  return lerComentarios(sb, tarefaId)
+export type ResumoDaVersao = { versaoId: string; numero: number; total: number; abertos: number; resolvidos: number }
+
+/** Totais por versão (consulta agregada, sem depender de página carregada), da mais nova para a mais antiga. */
+export async function resumoDaProva(sb: Supabase, tarefaId: string): Promise<ResumoDaVersao[]> {
+  const linhas = dados(await sb.rpc('resumo_prova_visual', { p_task: tarefaId }))
+  return linhas.map((l) => ({ versaoId: l.version_id, numero: l.version_number, total: Number(l.total), abertos: Number(l.abertos), resolvidos: Number(l.resolvidos) }))
 }
 
-/** Quantos pontos do cliente ainda estão em aberto, por tarefa (indicador da lista e do kanban). */
+/** Quantos pontos do cliente ainda estão em aberto, por tarefa (indicador da lista e do kanban). Agregado no banco. */
 export async function abertosPorTarefa(sb: Supabase, tarefaIds: string[]): Promise<Map<string, number>> {
   const mapa = new Map<string, number>()
   if (tarefaIds.length === 0) return mapa
-  const linhas = dados(await sb.from('content_review_comments').select('task_id').in('task_id', tarefaIds).is('parent_id', null).is('resolved_at', null))
-  for (const l of linhas) mapa.set(l.task_id, (mapa.get(l.task_id) ?? 0) + 1)
+  for (const l of dados(await sb.rpc('abertos_por_tarefa', { p_ids: tarefaIds }))) mapa.set(l.task_id, Number(l.abertos))
   return mapa
 }
 
@@ -84,3 +94,19 @@ export async function resolverComentario(sb: Supabase, id: string, resolvido: bo
   if (!count) throw { code: '42501' }
 }
 
+
+export type RevisaoCarregada = {
+  /** Totais por versão (agregados no banco), da mais nova para a mais antiga. */
+  resumo: ResumoDaVersao[]
+  /** Comentários da versão atual, inteiros (até o teto). */
+  atual: ComentarioProvaComResolvedor[]
+  truncado: boolean
+}
+
+/** O que a tela da tarefa precisa: o resumo por versão e a versão atual. As antigas vêm sob demanda (carregarVersaoProvaAcao). */
+export async function revisaoDaTarefa(sb: Supabase, tarefaId: string): Promise<RevisaoCarregada> {
+  const resumo = await resumoDaProva(sb, tarefaId)
+  if (resumo.length === 0) return { resumo, atual: [], truncado: false }
+  const { comentarios, truncado } = await lerVersao(sb, tarefaId, resumo[0].versaoId)
+  return { resumo, atual: comentarios, truncado }
+}

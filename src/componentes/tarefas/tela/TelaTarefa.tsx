@@ -53,7 +53,7 @@ export type PropsTela = {
   /** Admin e gestor veem o tempo de todos; os demais só o próprio. */
   verTodoTempo?: boolean
   /** Prova visual: comentários do cliente nas versões do post. */
-  revisao?: import('@/servicos/prova-visual').ComentarioProvaComResolvedor[]
+  revisao?: import('@/servicos/prova-visual').RevisaoCarregada | null
   /** Se a tarefa é cópia de uma série: o modelo e a regra dele. */
   serie: { modeloId: string; modeloTitulo: string; regra: Recorrencia | null; criadas: number } | null
   /** Quantas cópias a regra desta tarefa já criou. */

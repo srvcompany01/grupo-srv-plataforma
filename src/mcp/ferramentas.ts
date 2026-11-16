@@ -1756,22 +1756,32 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'ver_prova_visual',
-    descricao: 'Comentários do cliente na prova visual de um post (marcações na imagem ou no instante do vídeo), por versão: número, autor, local, texto, respostas e se está resolvido. abertos = quantos ainda esperam a agência.',
+    descricao: 'Comentários do cliente na prova visual de um post (marcações na imagem ou no instante do vídeo): número, autor, local, texto, respostas e se está resolvido. Sem versao, traz a versão atual inteira; abertos e o resumo por versão vêm de contagem no banco. Com versao (número de uma versão anterior), traz o histórico dela em páginas: passe depois (o proximo da página anterior) para continuar.',
     escrita: false,
-    entrada: { tarefaId: id('Id da tarefa do post') },
+    entrada: {
+      tarefaId: id('Id da tarefa do post'),
+      versao: z.number().int().min(1).optional().describe('Número da versão (padrão: a atual)'),
+      depois: z.object({ criadoEm: z.string().max(40), id: z.string().uuid() }).optional().describe('Cursor devolvido em proximo'),
+    },
     executar: async ({ sb }, a) => {
       const dom = await import('@/dominio/prova-visual')
-      const todos = await (await import('@/servicos/prova-visual')).comentariosDoPost(sb, a.tarefaId)
-      const versoes = [...new Set(todos.map((c) => c.versaoId))]
+      const svc = await import('@/servicos/prova-visual')
+      const resumo = await svc.resumoDaProva(sb, a.tarefaId)
+      const alvo = a.versao ? resumo.find((r) => r.numero === a.versao) : resumo[0]
+      if (!alvo) return { abertos: 0, resumo: [], versao: null, comentarios: [], proximo: null }
+      const { cursorValido } = await import('@/dominio/limite')
+      if (a.depois && !cursorValido(a.depois)) throw new Error('Cursor inválido.')
+      const pagina = a.versao || a.depois ? await svc.paginaDaVersao(sb, a.tarefaId, alvo.versaoId, a.depois ?? null) : { ...(await svc.lerVersao(sb, a.tarefaId, alvo.versaoId)), proximo: null }
       return {
-        abertos: dom.contarAbertos(todos),
-        versoes: versoes.map((v) => ({
-          versaoId: v,
-          comentarios: dom.numerarComentarios(todos.filter((c) => c.versaoId === v)).map((c) => ({
-            id: c.id, numero: c.numero, autor: c.autor, texto: c.texto, local: dom.descreverLocal(c, []), midia: c.midia, x: c.x, y: c.y, segundo: c.segundo, resolvido: !!c.resolvidoEm,
-            respostas: c.respostas.map((r) => ({ id: r.id, autor: r.autor, daAgencia: r.autorTipo === 'equipe', texto: r.texto })),
-          })),
+        abertos: resumo.reduce((n, r) => n + r.abertos, 0),
+        resumo: resumo.map((r) => ({ versao: r.numero, comentarios: r.total, abertos: r.abertos, resolvidos: r.resolvidos })),
+        versao: alvo.numero,
+        truncado: 'truncado' in pagina ? pagina.truncado : false,
+        comentarios: dom.numerarComentarios(pagina.comentarios).map((c) => ({
+          id: c.id, numero: c.numero, autor: c.autor, texto: c.texto, local: dom.descreverLocal(c, []), midia: c.midia, x: c.x, y: c.y, segundo: c.segundo, resolvido: !!c.resolvidoEm,
+          respostas: c.respostas.map((r) => ({ id: r.id, autor: r.autor, daAgencia: r.autorTipo === 'equipe', texto: r.texto })),
         })),
+        proximo: pagina.proximo,
       }
     },
   }),

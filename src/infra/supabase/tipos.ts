@@ -2007,6 +2007,8 @@ export type Database = {
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
       registrar_aviso_prova: { Args: { p_nome: string; p_task: string; p_texto: string; p_version: string }; Returns: undefined }
+      resumo_prova_visual: { Args: { p_task: string }; Returns: { abertos: number; resolvidos: number; total: number; version_id: string; version_number: number }[] }
+      abertos_por_tarefa: { Args: { p_ids: string[] }; Returns: { abertos: number; task_id: string }[] }
       consumir_limite: { Args: { p_chave: string; p_janela_segundos: number; p_max: number }; Returns: boolean }
       definir_faturavel: { Args: { p_faturavel: boolean; p_id: string }; Returns: undefined }
       registros_tempo: {

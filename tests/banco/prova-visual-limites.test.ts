@@ -69,3 +69,37 @@ describe('M1: quota por versão', () => {
     await expect(comentar(db, c, { pai: raiz })).rejects.toThrow(/máximo de respostas/)
   })
 })
+
+describe('R2: contagens agregadas no banco', () => {
+  it('resumo_prova_visual: totais por versão, abertos e resolvidos só nos pontos do cliente', async () => {
+    const db = await criarBanco()
+    const c = await base(db)
+    const raiz = (await comentar(db, c)).rows[0].id
+    const resolvido = (await comentar(db, c)).rows[0].id
+    await comoUsuario(db, c.ana, (tx) => tx.query(`insert into content_review_comments (task_id, version_id, parent_id, author_kind, author_name, body) values ($1, $2, $3, 'equipe', 'x', 'ok')`, [c.tarefa, c.versao, raiz]))
+    await db.query(`update content_review_comments set resolved_at = now() where id = $1`, [resolvido])
+    const linhas = await comoUsuario(db, c.ana, (tx) => tx.query(`select version_number, total::int, abertos::int, resolvidos::int from resumo_prova_visual($1)`, [c.tarefa]).then((r) => r.rows))
+    expect(linhas).toEqual([{ version_number: 1, total: 3, abertos: 1, resolvidos: 1 }]) // 3 comentários (a resposta conta no total); só as raízes entram em abertos/resolvidos
+  })
+
+  it('abertos_por_tarefa conta tudo no banco, também acima do limite de 1000 linhas da API', async () => {
+    const db = await criarBanco()
+    const c = await base(db)
+    // 1200 pontos abertos (a quota do gatilho é do cliente pelo portal; aqui o carregamento em massa a ignora de propósito).
+    await db.exec(`set session_replication_role = replica`)
+    await db.query(`insert into content_review_comments (task_id, version_id, author_kind, author_name, body) select $1, $2, 'cliente', 'Maria', 'm' || g from generate_series(1, 1200) g`, [c.tarefa, c.versao])
+    await db.exec(`set session_replication_role = origin`)
+    const r = await comoUsuario(db, c.ana, (tx) => tx.query(`select task_id, abertos::int as abertos from abertos_por_tarefa(array[$1::uuid])`, [c.tarefa]).then((x) => x.rows))
+    expect(r).toEqual([{ task_id: c.tarefa, abertos: 1200 }])
+  })
+
+  it('quem não lê a tarefa recebe zero (a RLS vale nas duas funções)', async () => {
+    const db = await criarBanco()
+    const c = await base(db)
+    await comentar(db, c)
+    const fora = await criarUsuario(db, { role: 'membro' })
+    expect(await comoUsuario(db, fora, (tx) => tx.query(`select * from abertos_por_tarefa(array[$1::uuid])`, [c.tarefa]).then((r) => r.rows))).toEqual([])
+    const resumoFora = await comoUsuario(db, fora, (tx) => tx.query<{ total: number }>(`select total::int from resumo_prova_visual($1)`, [c.tarefa]).then((r) => r.rows))
+    expect(resumoFora.every((l) => l.total === 0)).toBe(true) // se a versão aparece, o total dos comentários que a RLS esconde é 0
+  })
+})

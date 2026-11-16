@@ -5,7 +5,9 @@ import type { Resultado } from '@/servicos/acao'
 import { clientePorLink, responderPost } from '@/servicos/portal-conteudo'
 import { headers } from 'next/headers'
 import { ipDoPedido, limitesDoComentario } from '@/dominio/limite'
-import { comentarComoCliente, dentroDosLimites } from '@/servicos/prova-visual-portal'
+import { comentarComoCliente, dentroDosLimites, paginaDoHistorico } from '@/servicos/prova-visual-portal'
+import type { ComentarioProva } from '@/dominio/prova-visual'
+import { cursorValido } from '@/dominio/limite'
 import { lerEntradaDoPortal } from '@/dominio/prova-visual'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -51,5 +53,23 @@ export async function comentarProvaAcao(slug: string, tarefaId: string, bruto: u
   } catch (e) {
     console.error(e)
     return { erro: e instanceof Error && e.message ? e.message : 'Não foi possível enviar. Verifique a conexão e tente de novo.' }
+  }
+}
+
+export type PaginaDoHistorico = { comentarios: ComentarioProva[]; proximo: { criadoEm: string; id: string } | null }
+
+/** Histórico de uma versão ANTERIOR do post, em páginas, sob demanda (só leitura). Tudo que vem do navegador é conferido aqui. */
+export async function carregarHistoricoProvaAcao(slug: string, tarefaId: string, versao: unknown, depois: unknown): Promise<PaginaDoHistorico | { erro: string }> {
+  if (typeof slug !== 'string' || typeof tarefaId !== 'string' || !UUID.test(tarefaId)) return { erro: 'Post inválido.' }
+  if (typeof versao !== 'number' || !Number.isInteger(versao) || versao < 1) return { erro: 'Versão inválida.' }
+  if (depois !== null && depois !== undefined && !cursorValido(depois)) return { erro: 'Página inválida.' }
+  const cliente = await clientePorLink(slug)
+  if (!cliente) return { erro: 'Link inválido.' }
+  try {
+    const pagina = await paginaDoHistorico(cliente.id, tarefaId, versao, depois ?? null)
+    return pagina ? { comentarios: pagina.comentarios, proximo: pagina.proximo } : { erro: 'Versão não encontrada.' }
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível carregar o histórico. Tente de novo.' }
   }
 }

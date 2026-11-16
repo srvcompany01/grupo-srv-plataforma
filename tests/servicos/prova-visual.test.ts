@@ -42,7 +42,7 @@ it('valida o comentário antes de tocar no banco e grava na versão atual com o 
 
 it('a agência só tem resposta e resolução (não existe criar marcação)', async () => {
   const servico = await import('@/servicos/prova-visual')
-  expect(Object.keys(servico).sort()).toEqual(['CAMPOS_PROVA', 'MAXIMO_DE_LEITURA', 'PAGINA_DE_LEITURA', 'abertosPorTarefa', 'comentariosDoPost', 'lerComentarios', 'paraComentario', 'resolverComentario', 'responderComentario'])
+  expect(Object.keys(servico).sort()).toEqual(['CAMPOS_PROVA', 'MAXIMO_DA_VERSAO', 'PAGINA_DE_LEITURA', 'abertosPorTarefa', 'lerVersao', 'paginaDaVersao', 'paraComentario', 'resolverComentario', 'responderComentario', 'resumoDaProva', 'revisaoDaTarefa'])
   const sb = { from: () => ({ insert: async () => ({ data: null, error: null }) }) } as unknown as Supabase
   await expect(servico.responderComentario(sb, { id: 'a', versaoId: 'b', tarefaId: 'c' }, '  ')).rejects.toThrow(/Escreva/)
 })

@@ -4,7 +4,7 @@ import { MessageSquare, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
 import { toast } from 'sonner'
-import { comentarProvaAcao } from '@/app/cliente/[slug]/acoes'
+import { carregarHistoricoProvaAcao, comentarProvaAcao } from '@/app/cliente/[slug]/acoes'
 import { Button } from '@/componentes/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/componentes/ui/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/tabs'
@@ -51,19 +51,51 @@ function Item({ c, tipos, selecionado, aoSelecionar, aoResponder, somenteLeitura
   )
 }
 
+/** Comentários de uma versão antiga: só carrega quando a pessoa abre, em páginas, com "Carregar mais". */
+function HistoricoDaVersao({ slug, tarefaId, versao, total, tipos, agora }: { slug: string; tarefaId: string; versao: number; total: number; tipos: ('imagem' | 'video')[]; agora: number }) {
+  const [itens, setItens] = useState<ComentarioProva[]>([])
+  const [proximo, setProximo] = useState<{ criadoEm: string; id: string } | null>(null)
+  const [carregou, setCarregou] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  async function carregar(depois: { criadoEm: string; id: string } | null) {
+    setCarregando(true)
+    setErro(null)
+    const r = await carregarHistoricoProvaAcao(slug, tarefaId, versao, depois)
+    setCarregando(false)
+    if ('erro' in r) return setErro(r.erro)
+    setCarregou(true)
+    setItens((atual) => [...atual, ...r.comentarios])
+    setProximo(r.proximo)
+  }
+  return (
+    <details className="rounded-lg border border-borda bg-white p-3" onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open && !carregou && !carregando) void carregar(null) }}>
+      <summary className="min-h-11 cursor-pointer text-rotulo font-semibold">Ver comentários da versão {versao} ({total})</summary>
+      <ul className="mt-2 space-y-1">
+        {numerarComentarios(itens).map((c) => <Item key={c.id} c={c} tipos={tipos} selecionado={false} aoSelecionar={() => {}} aoResponder={() => {}} somenteLeitura agora={agora} />)}
+      </ul>
+      {carregando && <p role="status" className="py-2 text-rotulo text-texto-2">Carregando…</p>}
+      {erro && <p role="alert" className="py-2 text-rotulo text-perigo-forte">{erro}</p>}
+      {proximo && !carregando && <Button variant="outline" size="lg" className="mt-2 h-11" onClick={() => void carregar(proximo)}>Carregar mais</Button>}
+    </details>
+  )
+}
+
 /**
  * Prova visual do cliente: a mídia com marcadores, o botão "Comentar na imagem" (ou "Comentar em 0:12"), a lista
  * com abas e o painel para escrever. Depois da resposta do cliente à versão, tudo vira só leitura.
  */
 export function ProvaVisualCliente({
-  slug, tarefaId, nome, formato, midias, legenda, collabs, podeComentar, comentarios, anteriores,
+  slug, tarefaId, nome, formato, midias, legenda, collabs, podeComentar, comentarios, truncado, anteriores,
 }: {
   slug: string; tarefaId: string; nome: string; formato: Formato; midias: MidiaPortal[]; legenda: string; collabs: string[]
   podeComentar: boolean
   /** Comentários da versão atual. */
   comentarios: ComentarioProva[]
-  /** Versões antigas (só leitura), da mais nova para a mais antiga. */
-  anteriores: { versao: number; comentarios: ComentarioProva[] }[]
+  /** A versão atual passou do teto de leitura: o aviso aparece em vez de sumir em silêncio. */
+  truncado: boolean
+  /** Versões antigas (só leitura): só o total; os comentários vêm sob demanda, em páginas. */
+  anteriores: { versao: number; total: number }[]
 }) {
   const router = useRouter()
   const [pendente, iniciar] = useTransition()
@@ -190,14 +222,8 @@ export function ProvaVisualCliente({
           : lista(resolvidos, { titulo: 'Nenhum comentário resolvido.' })}
         {podeComentar && <button type="button" onClick={abrirGeral} className="min-h-11 text-rotulo font-semibold text-texto-2 underline underline-offset-2">Comentar sem marcar ponto</button>}
       </section>
-      {anteriores.filter((a) => a.comentarios.length > 0).map((a) => (
-        <details key={a.versao} className="rounded-lg border border-borda bg-white p-3">
-          <summary className="min-h-11 cursor-pointer text-rotulo font-semibold">Ver comentários da versão {a.versao}</summary>
-          <ul className="mt-2 space-y-1">
-            {numerarComentarios(a.comentarios).map((c) => <Item key={c.id} c={c} tipos={tipos} selecionado={false} aoSelecionar={() => {}} aoResponder={() => {}} somenteLeitura agora={agora} />)}
-          </ul>
-        </details>
-      ))}
+      {truncado && <p role="status" className="rounded-md bg-hover px-3 py-2 text-rotulo text-texto-2">Esta versão tem muitos comentários: mostramos os primeiros. Fale com a agência para ver o restante.</p>}
+      {anteriores.map((a) => <HistoricoDaVersao key={a.versao} slug={slug} tarefaId={tarefaId} versao={a.versao} total={a.total} tipos={tipos} agora={agora} />)}
 
       <Sheet open={rascunho !== null} onOpenChange={(a) => { if (!a) setRascunho(null) }}>
         <SheetContent side="bottom" className="rounded-t-[var(--r-panel)] p-4" onOpenAutoFocus={(e) => { e.preventDefault(); campoTexto.current?.focus() }} onCloseAutoFocus={(e) => { e.preventDefault(); botaoOrigem.current?.focus() }}>

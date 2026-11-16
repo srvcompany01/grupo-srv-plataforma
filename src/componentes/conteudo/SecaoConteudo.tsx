@@ -12,7 +12,7 @@ import { botaoPrimario, botaoSecundario, campo, rotulo } from '@/lib/ui'
 import type { ConteudoDaTarefa, PublicacaoDoPost, VersaoDoPost } from '@/servicos/conteudo'
 import { BlocoPublicacao, type ContaMeta } from './BlocoPublicacao'
 import { RevisaoCliente, type RevisaoDaVersao } from './RevisaoCliente'
-import type { ComentarioProvaComResolvedor } from '@/servicos/prova-visual'
+import type { RevisaoCarregada } from '@/servicos/prova-visual'
 import { enviarMidia } from './enviarMidia'
 
 const COR_APROVACAO = { rascunho: 'bg-hover text-texto-2', aguardando: 'bg-aviso-fundo text-aviso-forte', aprovado: 'bg-sucesso-fundo text-sucesso-forte', ajuste: 'bg-perigo-fundo text-perigo-forte' } as const
@@ -83,7 +83,7 @@ function Midias({ tarefaId, versao, editavel }: { tarefaId: string; versao: Vers
 }
 
 /** Editor do post dentro da tarefa: ideia, objetivo, legenda, mídias e o histórico de versões. */
-export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, conta, hoje, hashtagsInstagram = [], revisao = [], titulo = '' }: { revisao?: ComentarioProvaComResolvedor[]; titulo?: string; tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean; publicacao?: PublicacaoDoPost | null; conta?: ContaMeta; hoje: string; hashtagsInstagram?: string[] }) {
+export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, conta, hoje, hashtagsInstagram = [], revisao = null, titulo = '' }: { revisao?: RevisaoCarregada | null; titulo?: string; tarefaId: string; conteudo: ConteudoDaTarefa; podeEditar: boolean; publicacao?: PublicacaoDoPost | null; conta?: ContaMeta; hoje: string; hashtagsInstagram?: string[] }) {
   const router = useRouter()
   const atual = conteudo.versoes[0]
   const [ideia, setIdeia] = useState(atual.ideia)
@@ -144,7 +144,7 @@ export function SecaoConteudo({ tarefaId, conteudo, podeEditar, publicacao, cont
         {atual.resposta && <p className="text-legenda text-texto-3">Esta versão já foi respondida; as mídias dela estão congeladas.</p>}
       </div>
 
-      {(revisao.length > 0 || conteudo.aprovacao !== 'rascunho') && <RevisaoCliente tarefaId={tarefaId} titulo={titulo} formato={conteudo.formato} versoes={conteudo.versoes.map((v): RevisaoDaVersao => ({ versaoId: v.id, numero: v.numero, midias: v.midias.map((m) => ({ tipo: m.tipo === 'video' ? 'video' : 'imagem', url: m.url })) }))} comentarios={revisao} />}
+      {revisao && (revisao.resumo.some((r) => r.total > 0) || conteudo.aprovacao !== 'rascunho') && <RevisaoCliente tarefaId={tarefaId} titulo={titulo} formato={conteudo.formato} versoes={conteudo.versoes.map((v): RevisaoDaVersao => ({ versaoId: v.id, numero: v.numero, midias: v.midias.map((m) => ({ tipo: m.tipo === 'video' ? 'video' : 'imagem', url: m.url })) }))} revisao={revisao} />}
       {publicacao && podeEditar && <BlocoPublicacao tarefaId={tarefaId} p={publicacao} conta={conta ?? null} formato={conteudo.formato} aprovacao={conteudo.aprovacao} hoje={hoje} />}
 
       {conteudo.versoes.some((v) => v.resposta || v.numero < conteudo.versaoAtual) && (

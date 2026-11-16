@@ -4,15 +4,15 @@ import { Check, MessageSquare, RotateCcw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { responderProvaAcao, resolverProvaAcao } from '@/app/(app)/conteudo/acoes'
+import { carregarVersaoProvaAcao, responderProvaAcao, resolverProvaAcao } from '@/app/(app)/conteudo/acoes'
 import { MidiaMarcavel } from '@/componentes/portal/MidiaMarcavel'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Button } from '@/componentes/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/componentes/ui/dialog'
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/tabs'
 import { Textarea } from '@/componentes/ui/textarea'
-import { contarAbertos, descreverLocal, numerarComentarios, tempoRelativo, type ComentarioNumerado } from '@/dominio/prova-visual'
-import type { ComentarioProvaComResolvedor } from '@/servicos/prova-visual'
+import { descreverLocal, numerarComentarios, tempoRelativo, type ComentarioNumerado } from '@/dominio/prova-visual'
+import type { ComentarioProvaComResolvedor, Cursor, RevisaoCarregada } from '@/servicos/prova-visual'
 import type { MidiaPortal } from '@/servicos/portal-conteudo'
 import type { Formato } from '@/dominio/conteudo'
 
@@ -72,17 +72,39 @@ function Cartao({ c, tipos, selecionado, aoSelecionar, tarefaId }: { c: Comentar
 }
 
 /** Cartão "Revisão do cliente" na tarefa do post e o diálogo em tela cheia: a agência só responde e resolve os pontos do cliente. */
-export function RevisaoCliente({ tarefaId, titulo, formato, versoes, comentarios }: { tarefaId: string; titulo: string; formato: Formato; versoes: RevisaoDaVersao[]; comentarios: ComentarioProvaComResolvedor[] }) {
+export function RevisaoCliente({ tarefaId, titulo, formato, versoes, revisao }: { tarefaId: string; titulo: string; formato: Formato; versoes: RevisaoDaVersao[]; revisao: RevisaoCarregada }) {
   const [aberto, setAberto] = useState(false)
   const [versaoNum, setVersaoNum] = useState(versoes[0]?.numero ?? 1)
   const [aba, setAba] = useState<'abertos' | 'resolvidos' | 'todos'>('abertos')
   const [selecionado, setSelecionado] = useState<string | null>(null)
   const [irPara, setIrPara] = useState<number | null>(null)
+  // Versões antigas: carregadas sob demanda, em páginas (a atual já vem inteira do servidor).
+  const [antigas, setAntigas] = useState<Record<string, { comentarios: ComentarioProvaComResolvedor[]; proximo: Cursor | null; carregando: boolean; erro: boolean }>>({})
   const videos = useRef(new Map<number, HTMLVideoElement>())
   const versao = versoes.find((v) => v.numero === versaoNum) ?? versoes[0]
-  const daVersao = useMemo(() => numerarComentarios(comentarios.filter((c) => c.versaoId === versao?.versaoId)).map((n) => ({ ...n, resolvidoPorNome: comentarios.find((c) => c.id === n.id)?.resolvidoPorNome ?? null })), [comentarios, versao?.versaoId])
-  const abertosTotal = contarAbertos(comentarios)
-  const resolvidosTotal = comentarios.filter((c) => !c.paiId && c.resolvidoEm).length
+  const atualId = revisao.resumo[0]?.versaoId
+  const ehAtual = versao?.versaoId === atualId
+  const estado = ehAtual ? { comentarios: revisao.atual, proximo: null as Cursor | null, carregando: false, erro: false } : (antigas[versao?.versaoId ?? ''] ?? { comentarios: [], proximo: null as Cursor | null, carregando: false, erro: false })
+  const comentarios = estado.comentarios
+  const daVersao = useMemo(() => numerarComentarios(comentarios).map((n) => ({ ...n, resolvidoPorNome: comentarios.find((c) => c.id === n.id)?.resolvidoPorNome ?? null })), [comentarios])
+  // Totais do cartão: da consulta agregada, não do que foi carregado.
+  const abertosTotal = revisao.resumo.reduce((n, r) => n + r.abertos, 0)
+  const resolvidosTotal = revisao.resumo.reduce((n, r) => n + r.resolvidos, 0)
+  const semComentarios = revisao.resumo.every((r) => r.total === 0)
+
+  async function carregarAntiga(versaoId: string, depois: Cursor | null) {
+    setAntigas((m) => ({ ...m, [versaoId]: { comentarios: m[versaoId]?.comentarios ?? [], proximo: m[versaoId]?.proximo ?? null, carregando: true, erro: false } }))
+    const r = await carregarVersaoProvaAcao(tarefaId, versaoId, depois)
+    setAntigas((m) => {
+      const antes = m[versaoId]?.comentarios ?? []
+      return { ...m, [versaoId]: 'erro' in r ? { comentarios: antes, proximo: m[versaoId]?.proximo ?? null, carregando: false, erro: true } : { comentarios: [...antes, ...r.comentarios], proximo: r.proximo, carregando: false, erro: false } }
+    })
+  }
+  function trocarVersao(numero: number) {
+    setVersaoNum(numero)
+    const alvo = versoes.find((v) => v.numero === numero)
+    if (alvo && alvo.versaoId !== atualId && !antigas[alvo.versaoId]) void carregarAntiga(alvo.versaoId, null)
+  }
   if (versoes.length === 0) return null
   const filtrados = daVersao.filter((c) => (aba === 'todos' ? true : aba === 'resolvidos' ? !!c.resolvidoEm : !c.resolvidoEm))
   const naMidia = daVersao.filter((c) => !c.resolvidoEm || aba !== 'abertos')
@@ -99,9 +121,9 @@ export function RevisaoCliente({ tarefaId, titulo, formato, versoes, comentarios
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-borda bg-white p-4">
       <p className="text-corpo">
         <span className="font-semibold">Revisão do cliente</span>{' '}
-        <span className="text-texto-2">{comentarios.length === 0 ? 'O cliente ainda não comentou nesta versão.' : `● ${abertosTotal} ${abertosTotal === 1 ? 'aberto' : 'abertos'} · ${resolvidosTotal} ${resolvidosTotal === 1 ? 'resolvido' : 'resolvidos'}`}</span>
+        <span className="text-texto-2">{semComentarios ? 'O cliente ainda não comentou nesta versão.' : `● ${abertosTotal} ${abertosTotal === 1 ? 'aberto' : 'abertos'} · ${resolvidosTotal} ${resolvidosTotal === 1 ? 'resolvido' : 'resolvidos'}`}</span>
       </p>
-      <Button variant="outline" size="sm" onClick={() => setAberto(true)} disabled={comentarios.length === 0}><MessageSquare aria-hidden="true" />Abrir revisão</Button>
+      <Button variant="outline" size="sm" onClick={() => setAberto(true)} disabled={semComentarios}><MessageSquare aria-hidden="true" />Abrir revisão</Button>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="h-[90vh] max-w-[1200px] gap-0 overflow-hidden p-0 sm:max-w-[1200px]">
@@ -116,7 +138,7 @@ export function RevisaoCliente({ tarefaId, titulo, formato, versoes, comentarios
             <div className="flex min-h-0 flex-col border-l border-borda">
               <div className="space-y-2 border-b border-borda p-3">
                 {versoes.length > 1 && (
-                  <select aria-label="Versão" value={versaoNum} onChange={(e) => setVersaoNum(Number(e.target.value))} className="h-8 w-full rounded-md border border-borda px-2 text-corpo">
+                  <select aria-label="Versão" value={versaoNum} onChange={(e) => trocarVersao(Number(e.target.value))} className="h-8 w-full rounded-md border border-borda px-2 text-corpo">
                     {versoes.map((v) => <option key={v.numero} value={v.numero}>Versão {v.numero}</option>)}
                   </select>
                 )}
@@ -126,7 +148,11 @@ export function RevisaoCliente({ tarefaId, titulo, formato, versoes, comentarios
               </div>
               <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
                 {filtrados.length === 0 && <li className="py-6 text-center text-rotulo text-texto-2">{daVersao.length === 0 ? 'O cliente ainda não comentou nesta versão.' : aba === 'resolvidos' ? 'Nenhum comentário resolvido.' : 'Nenhum comentário aberto.'}</li>}
+                {ehAtual && revisao.truncado && <li role="status" className="rounded-md bg-hover px-3 py-2 text-rotulo text-texto-2">Esta versão tem mais comentários do que a tela carrega. Use o MCP ou fale com o suporte para ver o restante.</li>}
+                {estado.carregando && <li role="status" className="py-2 text-center text-rotulo text-texto-2">Carregando…</li>}
+                {estado.erro && <li role="alert" className="py-2 text-center text-rotulo text-perigo-forte">Não foi possível carregar os comentários.</li>}
                 {filtrados.map((c) => <Cartao key={c.id} c={c} tipos={tipos} selecionado={c.id === selecionado} aoSelecionar={() => selecionar(c.id)} tarefaId={tarefaId} />)}
+                {estado.proximo && !estado.carregando && <li className="text-center"><Button variant="outline" size="sm" onClick={() => void carregarAntiga(versao.versaoId, estado.proximo)}>Carregar mais</Button></li>}
               </ul>
             </div>
           </div>

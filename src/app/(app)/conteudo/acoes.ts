@@ -11,6 +11,7 @@ import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
 import * as conteudo from '@/servicos/conteudo'
 import * as prova from '@/servicos/prova-visual'
+import { cursorValido } from '@/dominio/limite'
 import * as tarefas from '@/servicos/tarefas'
 import { instante } from '@/dominio/agenda'
 import { lerCollabs, type Alvo, type ModoPublicacao } from '@/dominio/publicacao'
@@ -163,4 +164,17 @@ export async function responderProvaAcao(comentarioId: string, versaoId: string,
 export async function resolverProvaAcao(comentarioId: string, resolvido: boolean): Promise<Resultado> {
   if (!UUID.test(comentarioId)) return { erro: 'Comentário inválido.' }
   return executar((sb) => prova.resolverComentario(sb, comentarioId, resolvido), resolvido ? 'Comentário resolvido' : 'Comentário reaberto')
+}
+
+/** Comentários de uma versão do post, em páginas (a versão aberta na revisão e o histórico). A RLS decide o que a pessoa vê. */
+export async function carregarVersaoProvaAcao(tarefaId: string, versaoId: string, depois: unknown): Promise<{ comentarios: prova.ComentarioProvaComResolvedor[]; proximo: prova.Cursor | null } | { erro: string }> {
+  if (typeof tarefaId !== 'string' || typeof versaoId !== 'string' || !UUID.test(tarefaId) || !UUID.test(versaoId)) return { erro: 'Post inválido.' }
+  if (depois !== null && depois !== undefined && !cursorValido(depois)) return { erro: 'Página inválida.' }
+  await exigirEquipe()
+  try {
+    return await prova.paginaDaVersao(await criarClienteServidor(), tarefaId, versaoId, depois ?? null)
+  } catch (e) {
+    console.error(e)
+    return { erro: 'Não foi possível carregar os comentários. Tente de novo.' }
+  }
 }

@@ -131,7 +131,7 @@ describe('limite público e leitura paginada', () => {
 
   it('cursor (created_at, id): sem cursor não filtra; com cursor pega o que vem depois, com desempate pelo id', () => {
     expect(filtroDeCursor(null)).toBeNull()
-    expect(filtroDeCursor({ criadoEm: '2026-11-24T10:00:00+00:00', id: 'abc' })).toBe('created_at.gt.2026-11-24T10:00:00+00:00,and(created_at.eq.2026-11-24T10:00:00+00:00,id.gt.abc)')
+    expect(filtroDeCursor({ criadoEm: '2026-11-24T10:00:00+00:00', id: '00000000-0000-4000-8000-000000000abc' })).toBe('created_at.gt.2026-11-24T10:00:00+00:00,and(created_at.eq.2026-11-24T10:00:00+00:00,id.gt.00000000-0000-4000-8000-000000000abc)')
   })
 })
 

@@ -52,7 +52,18 @@ export function limitesDoComentario(slug: string, tarefaId: string, ip: string):
 }
 
 /** Filtro de página por cursor (created_at, id): estável mesmo com comentários novos chegando durante a leitura. */
+const CURSOR_DATA = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/
+const CURSOR_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** O cursor vem do navegador e entra num filtro do PostgREST: só data e uuid no formato certo passam. */
+export function cursorValido(c: unknown): c is { criadoEm: string; id: string } {
+  if (typeof c !== 'object' || c === null) return false
+  const o = c as Record<string, unknown>
+  return typeof o.criadoEm === 'string' && CURSOR_DATA.test(o.criadoEm) && typeof o.id === 'string' && CURSOR_ID.test(o.id)
+}
+
 export function filtroDeCursor(cursor: { criadoEm: string; id: string } | null): string | null {
   if (!cursor) return null
+  if (!cursorValido(cursor)) throw new Error('Cursor inválido')
   return `created_at.gt.${cursor.criadoEm},and(created_at.eq.${cursor.criadoEm},id.gt.${cursor.id})`
 }

@@ -6,7 +6,6 @@ import { RespostaPost } from '@/componentes/portal/RespostaPost'
 import { ROTULO_ALVO, situacaoPublicacao } from '@/dominio/publicacao'
 import { clientePorLink, postDoCliente } from '@/servicos/portal-conteudo'
 import { comentariosParaCliente } from '@/servicos/prova-visual-portal'
-import { contarAbertos } from '@/dominio/prova-visual'
 
 // Aprovar pode publicar na hora (quando o horário já passou).
 export const maxDuration = 300
@@ -22,8 +21,8 @@ export default async function PostDoCliente({ params }: PageProps<'/cliente/[slu
   if (!cliente) notFound()
   const post = await postDoCliente(cliente.id, id)
   if (!post) notFound()
-  const prova = await comentariosParaCliente(cliente.id, post.id).catch(() => ({ atual: [], anteriores: [], podeComentar: false }))
-  const abertos = contarAbertos(prova.atual)
+  const prova = await comentariosParaCliente(cliente.id, post.id).catch(() => ({ atual: [], truncado: false, abertos: 0, anteriores: [], podeComentar: false }))
+  const abertos = prova.abertos // contado no banco, não depende do que foi carregado
   const dataHora = post.publicarEm ? quando.format(new Date(post.publicarEm)) : null
   const situacao = situacaoPublicacao({ status: post.status, em: post.publicarEm, modo: post.modo, aprovacao: post.aprovacao }, new Date())
 
@@ -31,7 +30,7 @@ export default async function PostDoCliente({ params }: PageProps<'/cliente/[slu
     <main className="mx-auto min-h-screen max-w-4xl space-y-5 p-4 py-8">
       <Link href={`/cliente/${cliente.slug}`} className="inline-flex items-center gap-1 text-rotulo text-texto-3 hover:text-texto"><ChevronLeft className="h-4 w-4" /> Voltar</Link>
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,420px)_1fr]">
-        <ProvaVisualCliente slug={cliente.slug} tarefaId={post.id} nome={cliente.nome} formato={post.formato} midias={post.midias} legenda={post.legenda} collabs={post.collabs} podeComentar={prova.podeComentar} comentarios={prova.atual} anteriores={prova.anteriores} />
+        <ProvaVisualCliente slug={cliente.slug} tarefaId={post.id} nome={cliente.nome} formato={post.formato} midias={post.midias} legenda={post.legenda} collabs={post.collabs} podeComentar={prova.podeComentar} comentarios={prova.atual} truncado={prova.truncado} anteriores={prova.anteriores} />
         <section className="space-y-4">
           <div>
             <p className="text-legenda font-semibold uppercase tracking-wide text-texto-3">Post · versão {post.versao}</p>
