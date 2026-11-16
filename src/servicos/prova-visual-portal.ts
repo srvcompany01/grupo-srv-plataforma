@@ -94,18 +94,10 @@ export async function comentarComoCliente(clienteId: string, tarefaId: string, e
       video_second: e.paiId ? null : e.segundo,
     }),
   )
-  // Aviso para a equipe: um por vez. Marcações seguidas do mesmo cliente na mesma versão viram um aviso só, que vai contando.
+  // Aviso para a equipe: um por tarefa, versão e janela de 30 minutos, com identificador estruturado e upsert atômico no banco
+  // (função registrar_aviso_prova). Resposta do cliente a um comentário não gera aviso.
   if (e.paiId) return
-  const { data: tarefa } = await admin.from('tasks').select('created_by, task_assignees(user_id)').eq('id', tarefaId).single()
-  const autor = tarefa?.created_by ?? tarefa?.task_assignees[0]?.user_id
-  if (!autor) return
-  const nome = e.nome.trim()
-  const desde = new Date(Date.now() - 30 * 60_000).toISOString()
-  const { data: aviso } = await admin.from('comments').select('id, created_at').eq('task_id', tarefaId).eq('author_id', autor).like('body', '💬 O cliente (%) na prova visual%').gte('created_at', desde).order('created_at', { ascending: false }).limit(1).maybeSingle()
-  if (aviso) {
-    const { count } = await admin.from('content_review_comments').select('id', { count: 'exact', head: true }).eq('version_id', versao.id).is('parent_id', null).eq('author_kind', 'cliente').gte('created_at', aviso.created_at)
-    await admin.from('comments').update({ body: `💬 O cliente (${nome}) fez ${Math.max(2, count ?? 2)} comentários na prova visual. Último: ${e.texto.trim().slice(0, 160)}` }).eq('id', aviso.id)
-    return
-  }
-  await admin.from('comments').insert({ task_id: tarefaId, author_id: autor, body: `💬 O cliente (${nome}) comentou na prova visual: ${e.texto.trim().slice(0, 200)}`, is_internal: false })
+  const { error: erroAviso } = await admin.rpc('registrar_aviso_prova', { p_task: tarefaId, p_version: versao.id, p_nome: e.nome.trim(), p_texto: e.texto })
+  // O comentário já foi gravado: uma falha no aviso não pode desfazer nem esconder isso do cliente.
+  if (erroAviso) console.error(erroAviso)
 }

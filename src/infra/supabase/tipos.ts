@@ -623,6 +623,7 @@ export type Database = {
           edited_at: string | null
           id: string
           is_internal: boolean
+          system_key: string | null
           task_id: string
         }
         Insert: {
@@ -632,6 +633,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           is_internal?: boolean
+          system_key?: string | null
           task_id: string
         }
         Update: {
@@ -641,6 +643,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           is_internal?: boolean
+          system_key?: string | null
           task_id?: string
         }
         Relationships: [
@@ -2003,6 +2006,7 @@ export type Database = {
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
+      registrar_aviso_prova: { Args: { p_nome: string; p_task: string; p_texto: string; p_version: string }; Returns: undefined }
       consumir_limite: { Args: { p_chave: string; p_janela_segundos: number; p_max: number }; Returns: boolean }
       definir_faturavel: { Args: { p_faturavel: boolean; p_id: string }; Returns: undefined }
       registros_tempo: {
