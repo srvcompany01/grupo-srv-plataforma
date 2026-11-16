@@ -54,7 +54,7 @@ export const LARGURA_NOVO_CAMPO = 40
 export const colunasDoContexto = (ctx: Pick<Contexto, 'colunas' | 'camposPersonalizados'>) =>
   ctx.colunas ?? [...COLUNAS_PADRAO.filter((c) => c.padrao).map((c) => c.id), ...(ctx.camposPersonalizados ?? []).map((c) => `campo:${c.id}`)]
 
-/** `colunas` = ids após Nome, na ordem de exibição. `comMais` reserva a coluna final do "+" (só o cabeçalho usa). */
+/** `colunas` = ids após Nome. Cabeçalho e linhas reservam o mesmo espaço para o "+". */
 export function gradeDaLista(colunas: string[], larguras: Record<string, number> = {}, comMais = false) {
   // A coluna de nome ocupa o espaço que sobra, até o usuário arrastar a borda: aí a largura escolhida vale
   // (encolher a coluna só funciona se ela deixar de ser flexível).
@@ -144,7 +144,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
   }
   return (
     <>
-      <div data-linha={tarefa.id} className="ls-linha" data-nivel={nivel} data-sel={selecionada || undefined} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas) }}>
+      <div data-linha={tarefa.id} className="ls-linha" data-nivel={nivel} data-sel={selecionada || undefined} style={{ gridTemplateColumns: gradeDaLista(colunas, ctx.largurasColunas, !!ctx.gerirCampos) }}>
         <div>
           <input
             type="checkbox"
@@ -163,7 +163,7 @@ export function LinhaTarefa({ tarefa, nivel, ctx, euId }: { tarefa: No<TarefaRes
         </div>
         <div><SeletorStatus tarefaId={tarefa.id} statusId={tarefa.statusId} opcoes={status} /></div>
         <div {...marca('nome')} className="ls-nome" style={{ paddingLeft: 2 + nivel * 22 }}>
-          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="ls-titulo">
+          <Link href={`/tarefas/${tarefa.id}`} scroll={false} draggable={false} className="ls-titulo" title={tarefa.titulo}>
             {tarefa.titulo.trim() || <span>Sem título</span>}
           </Link>
           {nivel > 0 && <Ic n="arrow_forward" s={14} className="ls-seta" />}

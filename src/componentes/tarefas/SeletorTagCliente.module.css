@@ -1,0 +1,44 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--r-ctl);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+.trigger:hover { background: var(--bg-active); }
+.trigger > span { min-width: 0; overflow: hidden; }
+.trigger > span > span:last-child { min-width: 0; }
+
+.panel button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 30px; padding: 4px 8px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text); cursor: pointer; font: inherit;
+}
+.panel button:hover { background: var(--bg-hover); }
+.panel button:disabled { opacity: .5; cursor: default; }
+.panel svg { width: 16px; height: 16px; flex: none; }
+.header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.header > div { flex: 1; min-width: 0; }
+.header p { margin: 0; font-weight: 600; }
+.header p + p { margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--text-3); }
+.header > :global(.chip-cliente) { display: none; }
+.options { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; }
+.options > button { width: 100%; justify-content: flex-start; text-align: left; }
+.options > button > span:first-child { width: 12px; height: 12px; flex: none; border-radius: 50%; background: var(--bg-active); }
+.options > button > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.panel label { display: flex; flex-direction: column; gap: 6px; }
+.panel input:not([type='color']) { min-width: 0; width: 100%; height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--bg-subtle); }
+.panel fieldset { min-width: 0; margin: 12px 0; padding: 0; border: 0; }
+.panel legend { margin-bottom: 6px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatches > button { width: 26px; height: 26px; min-height: 0; padding: 0; border: 2px solid transparent; border-radius: 50%; color: #fff; }
+.colorInputs { display: flex; align-items: center; gap: 8px; }
+.colorInputs input[type='color'] { width: 36px; height: 32px; flex: none; padding: 2px; border: 0; border-radius: 8px; background: var(--bg-subtle); }
+.panel .save { width: 100%; margin-top: 12px; background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.panel .save:hover { background: var(--primary-hover); }

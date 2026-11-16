@@ -7,6 +7,7 @@ import { atualizarTagCliente, definirTagClienteDaTarefa } from '@/app/(app)/acoe
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 import { CORES_PERSONALIZACAO } from '@/dominio/personalizacao'
 import { avisar } from './avisar'
+import styles from './SeletorTagCliente.module.css'
 
 export type TagCliente = { id: string; nome: string; cor: string }
 
@@ -60,14 +61,14 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
   return (
     <Popover open={aberto} onOpenChange={(valor) => { setAberto(valor); if (!valor) setConfigurando(false) }}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={`Tag do cliente: ${atual.nome}`} title="Alterar tag de cliente">
+        <button type="button" className={styles.trigger} aria-label={`Tag do cliente: ${atual.nome}`} title={`${atual.nome} · Alterar tag de cliente`}>
           {atualOuNulo ? <Chip tag={atual} compacto={compacto} /> : <span><Tag /> Cliente</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={7}>
+      <PopoverContent className={styles.panel} align="start" sideOffset={7}>
         {configurando ? (
           <div>
-            <div>
+            <div className={styles.header}>
               <button type="button" onClick={() => setConfigurando(false)} aria-label="Voltar para as tags"><ChevronLeft /></button>
               <div><p>Configurar tag</p><p>A alteração vale em toda a plataforma</p></div>
               <Chip tag={{ ...atual, nome: nome || atual.nome, cor: COR_HEX.test(cor) ? cor : atual.cor }} />
@@ -79,7 +80,7 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
               </label>
               <fieldset>
                 <legend>Cor</legend>
-                <div>
+                <div className={styles.swatches}>
                   {CORES_PERSONALIZACAO.map((item) => (
                     <button key={item} type="button" onClick={() => setCor(item)} aria-label={`Usar cor ${item}`} style={{ backgroundColor: item, borderColor: cor.toLowerCase() === item ? '#202020' : 'transparent' }}>
                       {cor.toLowerCase() === item && <Check />}
@@ -87,20 +88,20 @@ export function SeletorTagCliente({ tarefaId, atual: atualOuNulo, opcoes = [], p
                   ))}
                 </div>
               </fieldset>
-              <div>
+              <div className={styles.colorInputs}>
                 <input type="color" value={COR_HEX.test(cor) ? cor : atual.cor} onChange={(evento) => setCor(evento.target.value)} aria-label="Selecionar cor personalizada" />
                 <input value={cor} onChange={(evento) => setCor(evento.target.value.startsWith('#') ? evento.target.value : `#${evento.target.value}`)} maxLength={7} aria-label="Cor hexadecimal" placeholder="#3b82f6" />
               </div>
-              <button type="button" onClick={salvar} disabled={pendente || !nome.trim() || !COR_HEX.test(cor)}>{pendente ? 'Salvando…' : 'Salvar configuração'}</button>
+              <button className={styles.save} type="button" onClick={salvar} disabled={pendente || !nome.trim() || !COR_HEX.test(cor)}>{pendente ? 'Salvando…' : 'Salvar configuração'}</button>
             </div>
           </div>
         ) : (
           <div>
-            <div>
+            <div className={styles.header}>
               <div><p>Tag do cliente</p><p>Atualiza a tarefa-mãe e todas as subtarefas</p></div>
               {atualOuNulo && <button type="button" onClick={abrirConfiguracao} aria-label="Configurar nome e cor da tag" title="Configurar tag"><Settings2 /></button>}
             </div>
-            <div>
+            <div className={styles.options}>
               <button type="button" disabled={pendente || !atualOuNulo} onClick={() => selecionar(null)}>
                 <span />
                 <span>Sem cliente</span>
