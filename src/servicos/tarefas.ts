@@ -11,6 +11,7 @@ import { dados } from './resultado'
 /** `todas`: toda a operação (Painel de Gestão); a RLS ainda limita ao que a pessoa pode ver. */
 export type Escopo = { listaId: string } | { espacoId: string } | { responsavelId: string } | { todas: true }
 
+// time_entries(duration_seconds): a RLS entrega só o tempo da própria pessoa (admin e gestor veem o de todos).
 const CAMPOS_RESUMO = `id, title, parent_task_id, status_id, priority, due_date, due_time, position, completed_at, list_id, created_at, updated_at, start_date, estimate_minutes, recurrence_source_id,
   serie:task_recurrences(active, frequency, every, weekdays, month_mode, anchor_date, generated, ends_on, max_count, create_mode),
   criador:profiles!tasks_created_by_fkey(full_name),

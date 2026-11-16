@@ -50,6 +50,8 @@ export type PropsTela = {
   /** Hashtags fixas do cliente no Instagram (entram sozinhas na publicação). */
   hashtagsInstagram?: string[]
   recorrencia: Recorrencia | null
+  /** Admin e gestor veem o tempo de todos; os demais só o próprio. */
+  verTodoTempo?: boolean
   /** Prova visual: comentários do cliente nas versões do post. */
   revisao?: import('@/servicos/prova-visual').ComentarioProvaComResolvedor[]
   /** Se a tarefa é cópia de uma série: o modelo e a regra dele. */
@@ -90,7 +92,7 @@ export function TelaTarefa(p: PropsTela) {
             hoje={p.hoje}
             repetir={!p.serie && <SecaoRecorrencia key={`${t.id}-${p.recorrencia?.geradas}-${p.recorrencia?.ativa}-${p.recorrencia?.frequencia}`} tarefaId={t.id} prazo={t.prazo} hoje={p.hoje} regra={p.recorrencia} criadas={p.copiasCriadas} />}
           >
-            <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} />
+            <RastrearTempo tarefaId={t.id} registros={p.tempo} cronometro={p.cronometro} euId={p.euId} podeGerir={p.podeGerir} verTudo={p.verTodoTempo} />
           </GradePropriedades>
           {p.conteudo && <SecaoConteudo key={`${t.id}-${p.conteudo.versaoAtual}-${p.publicacao?.status}`} tarefaId={t.id} conteudo={p.conteudo} podeEditar publicacao={p.publicacao} conta={p.contaMeta} hoje={p.hoje} hashtagsInstagram={p.hashtagsInstagram} revisao={p.revisao} titulo={t.titulo} />}
           <div className="space-y-1">

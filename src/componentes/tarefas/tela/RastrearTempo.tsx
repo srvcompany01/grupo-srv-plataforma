@@ -178,12 +178,15 @@ export function RastrearTempo({
   cronometro,
   euId,
   podeGerir,
+  verTudo = false,
 }: {
   tarefaId: string
   registros: RegistroTempo[]
   cronometro: CronometroAtivo | null
   euId: string
   podeGerir: boolean
+  /** Admin e gestor veem as horas de todos; os demais só as próprias (regra do banco). */
+  verTudo?: boolean
 }) {
   const [agora, setAgora] = useState(() => Date.now())
   const [pendente, iniciar] = useTransition()
@@ -235,6 +238,7 @@ export function RastrearTempo({
           <FormularioLancar tarefaId={tarefaId} />
           <div>
             <p className="text-rotulo font-semibold">Registros</p>
+            {!verTudo && <p className="text-rotulo text-texto-2">Você vê só os seus registros.</p>}
             {registros.length === 0 ? (
               <p className="py-2 text-rotulo text-texto-3">Nenhum registro ainda.</p>
             ) : (

@@ -211,6 +211,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
         'Prova visual: o cliente marca pontos na imagem ou instantes do vídeo de cada versão do post pelo link. ver_prova_visual lista os comentários (com respostas); responder_prova_visual e resolver_prova_visual só respondem e resolvem os pontos do cliente (a agência não cria marcações). Depois que o cliente responde à versão (aprova ou pede ajuste) os comentários dela ficam só para leitura para ele.',
+        'Tempo: cada pessoa lê só os próprios registros de tempo (duração, nota, faturável) e os totais que a plataforma mostra para ela são só os dela; admin e gestor leem os de todos. Cliente do portal não lê tempo.',
         'Tempo faturável: cada registro de tempo tem a marca faturável (padrão: faturável). definir_tempo_faturavel muda a marca; resumo_tempo_faturavel (só admin e gestor) soma por cliente e pessoa num período, com os mesmos filtros da tela Tempo (Relatórios).',
         'Tarefas recorrentes: a tarefa com regra é o MODELO e a regra diz quando nascem as cópias (ver_recorrencia, definir_recorrencia, pausar_recorrencia). Frequência: diaria, dias_uteis, semanal (com diasSemana, 1=segunda a 7=domingo), mensal (no dia do mês ou na mesma posição da semana). Pode ter fim (terminaEm ou maximo de vezes), criar "na data programada" (cron diário) ou "ao concluir" a anterior, e copiar responsáveis (sem copiar, fica só o primeiro: toda tarefa precisa de um), subtarefas, etiquetas e campos. A cópia guarda o vínculo com o modelo (modeloDaSerie em ver_recorrencia). Para parar de vez use a tela da tarefa (Repetir > Parar série); aqui só dá para pausar.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
@@ -1802,7 +1803,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'definir_tempo_faturavel',
-    descricao: 'Marca um registro de tempo como faturável (entra na cobrança do cliente) ou não faturável. Pode o dono do registro, o gestor do espaço, admin e gestor. Não muda a duração nem a nota.',
+    descricao: 'Marca um registro de tempo como faturável (entra na cobrança do cliente) ou não faturável. Pode o dono do registro, admin e gestor. Não muda a duração nem a nota.',
     escrita: true,
     entrada: { registroId: id('Id do registro de tempo (aparece em resumo_tempo_faturavel com detalhe=true)'), faturavel: z.boolean() },
     executar: async ({ sb }, a) => {

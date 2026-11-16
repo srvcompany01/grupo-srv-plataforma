@@ -70,6 +70,7 @@ export async function CarregarTarefa({ id, emJanela = false }: { id: string; emJ
       contaMeta={contaMeta}
       hashtagsInstagram={hashtagsInstagram}
       recorrencia={recorrencia}
+      verTodoTempo={eu.papel === 'admin' || eu.papel === 'gestor'}
       revisao={revisao}
       serie={serie}
       copiasCriadas={copiasCriadas}
