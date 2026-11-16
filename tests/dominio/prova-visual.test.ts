@@ -110,3 +110,25 @@ describe('validação', () => {
     expect(validarComentario({ ...ok, texto: 'x'.repeat(2001) })).toBe('O comentário passou de 2000 caracteres.')
   })
 })
+
+import { filtroDeCursor, ipDoPedido, limitesDoComentario } from '@/dominio/limite'
+
+describe('limite público e leitura paginada', () => {
+  it('IP do x-forwarded-for: primeiro da lista, e lixo vira "sem-ip"', () => {
+    expect(ipDoPedido('203.0.113.9, 10.0.0.1')).toBe('203.0.113.9')
+    expect(ipDoPedido('2001:db8::1')).toBe('2001:db8::1')
+    expect(ipDoPedido(null)).toBe('sem-ip')
+    expect(ipDoPedido("1.2.3.4'; drop table x;--")).toBe('sem-ip')
+  })
+
+  it('duas chaves por comentário: por link+post e por IP', () => {
+    const l = limitesDoComentario('loja-aurora-abc123', 't1', '203.0.113.9')
+    expect(l.map((x) => x.chave)).toEqual(['prova|post|loja-aurora-abc123|t1', 'prova|ip|203.0.113.9'])
+    expect(l.every((x) => x.max > 0 && x.janelaSegundos > 0)).toBe(true)
+  })
+
+  it('cursor (created_at, id): sem cursor não filtra; com cursor pega o que vem depois, com desempate pelo id', () => {
+    expect(filtroDeCursor(null)).toBeNull()
+    expect(filtroDeCursor({ criadoEm: '2026-11-24T10:00:00+00:00', id: 'abc' })).toBe('created_at.gt.2026-11-24T10:00:00+00:00,and(created_at.eq.2026-11-24T10:00:00+00:00,id.gt.abc)')
+  })
+})

@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import type { Resultado } from '@/servicos/acao'
 import { clientePorLink, responderPost } from '@/servicos/portal-conteudo'
-import { comentarComoCliente } from '@/servicos/prova-visual-portal'
+import { headers } from 'next/headers'
+import { ipDoPedido, limitesDoComentario } from '@/dominio/limite'
+import { comentarComoCliente, dentroDosLimites } from '@/servicos/prova-visual-portal'
 import type { EntradaComentario } from '@/dominio/prova-visual'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -35,6 +37,9 @@ export async function comentarProvaAcao(slug: string, tarefaId: string, entrada:
   if (!UUID.test(tarefaId) || (entrada.paiId && !UUID.test(entrada.paiId))) return { erro: 'Post inválido.' }
   const cliente = await clientePorLink(slug)
   if (!cliente) return { erro: 'Link inválido.' }
+  // Limite compartilhado (no banco) por link+post e por IP: o link é público e qualquer portador poderia encher a prova visual.
+  const ip = ipDoPedido((await headers()).get('x-forwarded-for'))
+  if (!(await dentroDosLimites(limitesDoComentario(cliente.slug, tarefaId, ip)))) return { erro: 'Muitos comentários em pouco tempo. Aguarde alguns minutos e tente de novo.' }
   try {
     await comentarComoCliente(cliente.id, tarefaId, { ...entrada, nome: entrada.nome.trim().slice(0, 80) })
     revalidatePath(`/cliente/${cliente.slug}`, 'layout')

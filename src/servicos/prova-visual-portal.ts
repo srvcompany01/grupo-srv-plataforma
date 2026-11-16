@@ -1,7 +1,9 @@
 import 'server-only'
 import { validarComentario, type ComentarioProva, type EntradaComentario } from '@/dominio/prova-visual'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
-import { CAMPOS_PROVA, paraComentario, type LinhaProva } from './prova-visual'
+import type { LimiteCompartilhado } from '@/dominio/limite'
+import type { Supabase } from '@/infra/supabase/servidor'
+import { lerComentarios } from './prova-visual'
 import { dados } from './resultado'
 
 // ---------------------------------------------------------------- portal do cliente (chave mestra, sempre filtrando pelo cliente do link)
@@ -26,18 +28,31 @@ export async function comentariosParaCliente(clienteId: string, tarefaId: string
   const post = await postDoLink(clienteId, tarefaId)
   if (!post) return { atual: [], anteriores: [], podeComentar: false }
   const admin = criarClienteAdmin()
-  const [versoes, linhas] = await Promise.all([
+  const [versoes, todos] = await Promise.all([
     admin.from('content_versions').select('id, number').eq('task_id', tarefaId),
-    admin.from('content_review_comments').select(CAMPOS_PROVA).eq('task_id', tarefaId).order('created_at'),
+    lerComentarios(admin as unknown as Supabase, tarefaId), // páginas por cursor, com teto
   ])
   const numeroDa = new Map(dados(versoes).map((v) => [v.id, v.number]))
-  const todos = (dados(linhas) as unknown as LinhaProva[]).map(paraComentario)
   const atual = todos.filter((c) => numeroDa.get(c.versaoId) === post.current_version)
   const anteriores = [...new Set(todos.map((c) => numeroDa.get(c.versaoId) ?? 0))]
     .filter((n) => n !== post.current_version)
     .sort((x, y) => y - x)
     .map((versao) => ({ versao, comentarios: todos.filter((c) => numeroDa.get(c.versaoId) === versao) }))
   return { atual, anteriores, podeComentar: post.approval === 'aguardando' }
+}
+
+/** Consome os limites compartilhados (no banco). false = passou de algum. Se o banco falhar, recusa (não deixa passar sem contar). */
+export async function dentroDosLimites(limites: LimiteCompartilhado[]): Promise<boolean> {
+  const admin = criarClienteAdmin()
+  for (const l of limites) {
+    const { data, error } = await admin.rpc('consumir_limite', { p_chave: l.chave, p_max: l.max, p_janela_segundos: l.janelaSegundos })
+    if (error) {
+      console.error(error)
+      return false
+    }
+    if (!data) return false
+  }
+  return true
 }
 
 /**
@@ -71,8 +86,18 @@ export async function comentarComoCliente(clienteId: string, tarefaId: string, e
       video_second: e.paiId ? null : e.segundo,
     }),
   )
-  // Aviso para a equipe, como o resto do portal: um comentário na tarefa dizendo que foi o cliente.
+  // Aviso para a equipe: um por vez. Marcações seguidas do mesmo cliente na mesma versão viram um aviso só, que vai contando.
+  if (e.paiId) return
   const { data: tarefa } = await admin.from('tasks').select('created_by, task_assignees(user_id)').eq('id', tarefaId).single()
   const autor = tarefa?.created_by ?? tarefa?.task_assignees[0]?.user_id
-  if (autor && !e.paiId) await admin.from('comments').insert({ task_id: tarefaId, author_id: autor, body: `💬 O cliente (${e.nome.trim()}) comentou na prova visual: ${e.texto.trim().slice(0, 200)}`, is_internal: false })
+  if (!autor) return
+  const nome = e.nome.trim()
+  const desde = new Date(Date.now() - 30 * 60_000).toISOString()
+  const { data: aviso } = await admin.from('comments').select('id, created_at').eq('task_id', tarefaId).eq('author_id', autor).like('body', '💬 O cliente (%) na prova visual%').gte('created_at', desde).order('created_at', { ascending: false }).limit(1).maybeSingle()
+  if (aviso) {
+    const { count } = await admin.from('content_review_comments').select('id', { count: 'exact', head: true }).eq('version_id', versao.id).is('parent_id', null).eq('author_kind', 'cliente').gte('created_at', aviso.created_at)
+    await admin.from('comments').update({ body: `💬 O cliente (${nome}) fez ${Math.max(2, count ?? 2)} comentários na prova visual. Último: ${e.texto.trim().slice(0, 160)}` }).eq('id', aviso.id)
+    return
+  }
+  await admin.from('comments').insert({ task_id: tarefaId, author_id: autor, body: `💬 O cliente (${nome}) comentou na prova visual: ${e.texto.trim().slice(0, 200)}`, is_internal: false })
 }

@@ -29,3 +29,30 @@ export function permitir(chave: string, max: number, agora: number): boolean {
   j.n += 1
   return j.n <= max
 }
+
+// ---------------------------------------------------------------- comentários públicos da prova visual (limite compartilhado no banco)
+
+export type LimiteCompartilhado = { chave: string; max: number; janelaSegundos: number }
+
+/** Máximo de comentários por janela de 10 minutos: por link+post e por IP. O contador mora no banco (função consumir_limite), então vale para todas as instâncias. */
+export const LIMITE_PROVA_POR_POST = { max: 30, janelaSegundos: 600 }
+export const LIMITE_PROVA_POR_IP = { max: 40, janelaSegundos: 600 }
+
+/** Primeiro IP do `x-forwarded-for`, sem lixo: vira parte da chave do limite. */
+export function ipDoPedido(xForwardedFor: string | null): string {
+  const ip = (xForwardedFor ?? '').split(',')[0].trim().slice(0, 64)
+  return /^[0-9a-fA-F:.]+$/.test(ip) ? ip : 'sem-ip'
+}
+
+export function limitesDoComentario(slug: string, tarefaId: string, ip: string): LimiteCompartilhado[] {
+  return [
+    { chave: `prova|post|${slug}|${tarefaId}`, ...LIMITE_PROVA_POR_POST },
+    { chave: `prova|ip|${ip}`, ...LIMITE_PROVA_POR_IP },
+  ]
+}
+
+/** Filtro de página por cursor (created_at, id): estável mesmo com comentários novos chegando durante a leitura. */
+export function filtroDeCursor(cursor: { criadoEm: string; id: string } | null): string | null {
+  if (!cursor) return null
+  return `created_at.gt.${cursor.criadoEm},and(created_at.eq.${cursor.criadoEm},id.gt.${cursor.id})`
+}

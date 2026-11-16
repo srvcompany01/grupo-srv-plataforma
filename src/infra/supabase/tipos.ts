@@ -2003,6 +2003,7 @@ export type Database = {
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
+      consumir_limite: { Args: { p_chave: string; p_janela_segundos: number; p_max: number }; Returns: boolean }
       definir_faturavel: { Args: { p_faturavel: boolean; p_id: string }; Returns: undefined }
       registros_tempo: {
         Args: { p_ate: string; p_clientes?: string[]; p_de: string; p_faturavel?: boolean; p_pessoas?: string[]; p_sem_cliente?: boolean }

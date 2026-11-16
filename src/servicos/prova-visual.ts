@@ -1,5 +1,6 @@
 import type { ComentarioProva } from '@/dominio/prova-visual'
 import type { Supabase } from '@/infra/supabase/servidor'
+import { filtroDeCursor } from '@/dominio/limite'
 import { dados } from './resultado'
 
 export const CAMPOS_PROVA = 'id, version_id, parent_id, author_kind, author_name, body, media_index, x_pct, y_pct, video_second, resolved_at, resolved_by, created_at, resolvedor:profiles!content_review_comments_resolved_by_fkey(full_name)'
@@ -31,10 +32,32 @@ export const paraComentario = (l: LinhaProva): ComentarioProvaComResolvedor => (
 
 // ---------------------------------------------------------------- agência (cliente do usuário: a RLS decide)
 
-/** Comentários de todas as versões do post, mais antigos primeiro. */
+export const PAGINA_DE_LEITURA = 200
+export const MAXIMO_DE_LEITURA = 2000
+
+/**
+ * Lê os comentários do post em páginas por cursor (created_at, id), mais antigos primeiro, até um teto.
+ * A ordem é total e estável: comentário novo durante a leitura não repete nem pula linhas.
+ */
+export async function lerComentarios(sb: Supabase, tarefaId: string, pagina = PAGINA_DE_LEITURA, maximo = MAXIMO_DE_LEITURA): Promise<ComentarioProvaComResolvedor[]> {
+  const todos: ComentarioProvaComResolvedor[] = []
+  let cursor: { criadoEm: string; id: string } | null = null
+  while (todos.length < maximo) {
+    let q = sb.from('content_review_comments').select(CAMPOS_PROVA).eq('task_id', tarefaId).order('created_at').order('id').limit(Math.min(pagina, maximo - todos.length))
+    const filtro = filtroDeCursor(cursor)
+    if (filtro) q = q.or(filtro)
+    const linhas = dados(await q) as unknown as LinhaProva[]
+    todos.push(...linhas.map(paraComentario))
+    if (linhas.length < pagina) break
+    const ultima: LinhaProva = linhas[linhas.length - 1]
+    cursor = { criadoEm: ultima.created_at, id: ultima.id }
+  }
+  return todos
+}
+
+/** Comentários de todas as versões do post, mais antigos primeiro (com o teto da leitura paginada). */
 export async function comentariosDoPost(sb: Supabase, tarefaId: string): Promise<ComentarioProvaComResolvedor[]> {
-  const linhas = dados(await sb.from('content_review_comments').select(CAMPOS_PROVA).eq('task_id', tarefaId).order('created_at')) as unknown as LinhaProva[]
-  return linhas.map(paraComentario)
+  return lerComentarios(sb, tarefaId)
 }
 
 /** Quantos pontos do cliente ainda estão em aberto, por tarefa (indicador da lista e do kanban). */
