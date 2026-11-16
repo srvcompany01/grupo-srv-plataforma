@@ -31,6 +31,13 @@ export async function exigirAdmin(): Promise<Perfil> {
   return eu
 }
 
+/** Só admin e gestor (resumo de tempo e horas faturáveis). Os demais recebem 404, como se a página não existisse. */
+export async function exigirGestorOuAdmin(): Promise<Perfil> {
+  const eu = await exigirEquipe()
+  if (eu.papel !== 'admin' && eu.papel !== 'gestor') notFound()
+  return eu
+}
+
 export async function exigirCliente(): Promise<Perfil> {
   const eu = await usuarioAtual()
   if (!eu || !eu.ativo) redirect('/login')

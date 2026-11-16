@@ -210,6 +210,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Você age com as permissões da pessoa dona do token: o banco recusa o que ela não pode fazer (por exemplo, só gestor do espaço cria pasta, lista e campo).',
         'Toda tarefa precisa de pelo menos um responsável (se você não informar, usa a pessoa dona do token).',
         'Modelos de tarefa: título e subtarefas prontos, compartilhados pela equipe (listar_modelos_tarefa, salvar_modelo_tarefa, criar_tarefa_de_modelo). Na plataforma: "+ Tarefa ▾ > A partir de modelo" e "Importar CSV" na barra da lista. Conversas diretas do chat são canais privados de duas pessoas chamados dm-<início dos ids>; listar_canais_chat as mostra.',
+        'Tempo faturável: cada registro de tempo tem a marca faturável (padrão: faturável). definir_tempo_faturavel muda a marca; resumo_tempo_faturavel (só admin e gestor) soma por cliente e pessoa num período, com os mesmos filtros da tela Tempo (Relatórios).',
         'Tarefas recorrentes: a tarefa com regra é o MODELO e a regra diz quando nascem as cópias (ver_recorrencia, definir_recorrencia, pausar_recorrencia). Frequência: diaria, dias_uteis, semanal (com diasSemana, 1=segunda a 7=domingo), mensal (no dia do mês ou na mesma posição da semana). Pode ter fim (terminaEm ou maximo de vezes), criar "na data programada" (cron diário) ou "ao concluir" a anterior, e copiar responsáveis (sem copiar, fica só o primeiro: toda tarefa precisa de um), subtarefas, etiquetas e campos. A cópia guarda o vínculo com o modelo (modeloDaSerie em ver_recorrencia). Para parar de vez use a tela da tarefa (Repetir > Parar série); aqui só dá para pausar.',
         'Visualizações: cada lista tem as suas abas (listar_visoes_lista / criar_visao_lista), como no ClickUp: dá para ter várias do mesmo tipo, cada uma com os próprios filtros, agrupamento e colunas. Na plataforma: botão "+ Visualização" ao lado das abas.',
         'Caixa de entrada de vídeos (aba Caixa de entrada): vídeos que chegam por upload na plataforma, pelo computador de quem usa a IA (preparar_envio_caixa + PUT + confirmar_envio_caixa) ou do Google Drive do cliente (buscar_videos_drive + importar_video_drive). Vencimento das tarefas = data + horário opcional (horario HH:MM); nos posts de conteúdo, agendar_post grava o vencimento da tarefa com o mesmo dia e horário do agendamento. Hashtags fixas por cliente e plataforma (hoje Instagram): hashtags_cliente / definir_hashtags_cliente (as cadastradas nas configurações do cliente). Ao criar ou atualizar o post (criar_post_da_caixa, atualizar_conteudo_post) a plataforma acrescenta sozinha, no fim da legenda e depois de uma linha em branco, as hashtags da plataforma do post (reels, feed e stories = Instagram): não as escreva na legenda. O post não pode ir sem legenda (a descrição da tarefa não é publicada). Fluxo de publicação em lote: ficha_conteudo_cliente (tom, hashtags) → listar_caixa_de_entrada → transcricao_video_caixa (texto já transcrito pelo Whisper; se "processando", espere e chame de novo; ouvir_video_caixa e audio_do_video_caixa entregam o áudio como alternativa) → sugerir_horarios_publicacao → criar_post_da_caixa (legenda + descrição da tarefa + vídeo no post) → MOSTRAR a tabela (vídeo, legenda, dia e hora) e esperar o OK da pessoa → agendar_post. Nunca agende sem a confirmação. Para subir o vídeo como ANÚNCIO: guia_publicacao (tipo anuncio_meta) → importar_video_drive com paraBiblioteca=true (ou criativo_da_caixa para vídeo já na caixa) → criar_campanha_meta / adicionar_anuncio_meta com texto, título, descrição e botão. Anúncio do Google é só de Pesquisa (texto); vídeo no Google precisa estar no YouTube e ainda não é suportado.',
@@ -1742,12 +1743,64 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'lancar_tempo',
-    descricao: 'Lança tempo trabalhado numa tarefa, em nome da pessoa dona do token (igual ao lançamento manual na tarefa). Entra no foco de relatorio_projetos. Dia AAAA-MM-DD; minutos de 1 a 1440.',
+    descricao: 'Lança tempo trabalhado numa tarefa, em nome da pessoa dona do token (igual ao lançamento manual na tarefa). Entra no foco de relatorio_projetos. Dia AAAA-MM-DD; minutos de 1 a 1440. faturavel (padrão true) diz se o tempo entra na cobrança do cliente.',
     escrita: true,
-    entrada: { tarefaId: id('Tarefa'), data: data('Dia trabalhado'), minutos: z.number().int().min(1).max(1440), nota: z.string().max(300).optional() },
+    entrada: { tarefaId: id('Tarefa'), data: data('Dia trabalhado'), minutos: z.number().int().min(1).max(1440), nota: z.string().max(300).optional(), faturavel: z.boolean().optional().describe('Entra na cobrança do cliente (padrão true)') },
     executar: async ({ sb }, a) => {
-      await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null)
+      await (await import('@/servicos/tempo')).lancarTempo(sb, a.tarefaId, a.data, a.minutos, a.nota?.trim() || null, a.faturavel ?? true)
       return { ok: true, lancado: formatarDuracao(a.minutos * 60) }
+    },
+  }),
+
+  definir({
+    nome: 'definir_tempo_faturavel',
+    descricao: 'Marca um registro de tempo como faturável (entra na cobrança do cliente) ou não faturável. Pode o dono do registro, o gestor do espaço, admin e gestor. Não muda a duração nem a nota.',
+    escrita: true,
+    entrada: { registroId: id('Id do registro de tempo (aparece em resumo_tempo_faturavel com detalhe=true)'), faturavel: z.boolean() },
+    executar: async ({ sb }, a) => {
+      await (await import('@/servicos/tempo')).definirFaturavel(sb, a.registroId, a.faturavel)
+      return { ok: true, faturavel: a.faturavel }
+    },
+  }),
+
+  definir({
+    nome: 'resumo_tempo_faturavel',
+    descricao: 'Horas por cliente e por pessoa num período (datas locais de Belém), separando faturável de não faturável. SÓ admin e gestor; os demais recebem erro de permissão. Filtros: clienteIds (ids de listar_clientes), semCliente (inclui tarefas sem cliente), pessoaIds, faturavel (sim, nao ou todos). detalhe=true traz também os registros um a um (com id, para corrigir a marca).',
+    escrita: false,
+    entrada: {
+      de: data('Primeiro dia'),
+      ate: data('Último dia'),
+      clienteIds: z.array(z.string().uuid()).max(50).optional(),
+      semCliente: z.boolean().optional(),
+      pessoaIds: z.array(z.string().uuid()).max(50).optional(),
+      faturavel: z.enum(['sim', 'nao', 'todos']).optional(),
+      detalhe: z.boolean().optional().describe('Inclui a lista de registros (até 500)'),
+    },
+    executar: async ({ sb }, a) => {
+      if (a.ate < a.de) throw new Error('A data final precisa ser igual ou depois da inicial.')
+      const dom = await import('@/dominio/tempo-faturavel')
+      const svc = await import('@/servicos/tempo')
+      const filtros: import('@/dominio/tempo-faturavel').FiltrosTempo = {
+        periodo: 'intervalo',
+        de: a.de,
+        ate: a.ate,
+        clientes: [...(a.clienteIds ?? []), ...(a.semCliente ? [dom.SEM_CLIENTE] : [])],
+        pessoas: a.pessoaIds ?? [],
+        faturavel: a.faturavel ?? 'todos',
+      }
+      const linhas = await svc.resumoTempo(sb, filtros)
+      const texto = (t: { total: number; faturavel: number; naoFaturavel: number; percentual: number }) => ({
+        total: formatarDuracao(t.total), faturavel: formatarDuracao(t.faturavel), naoFaturavel: formatarDuracao(t.naoFaturavel),
+        totalSegundos: t.total, faturavelSegundos: t.faturavel, percentualFaturavel: t.percentual,
+      })
+      const grupo = (por: 'cliente' | 'pessoa') => dom.agrupar(linhas, por).map((g) => ({ id: g.id, nome: g.nome, ...texto(g), detalhe: g.filhos.map((f) => ({ id: f.id, nome: f.nome, ...texto(f) })) }))
+      return {
+        periodo: { de: a.de, ate: a.ate },
+        totais: texto(dom.somar(linhas)),
+        porCliente: grupo('cliente'),
+        porPessoa: grupo('pessoa'),
+        registros: a.detalhe ? (await svc.registrosDoPeriodo(sb, filtros)).slice(0, 500) : undefined,
+      }
     },
   }),
 

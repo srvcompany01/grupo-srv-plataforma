@@ -182,13 +182,18 @@ export async function pararCronometroAcao(): Promise<Resultado> {
   return executar((sb) => tempo.pararCronometro(sb), 'Cronômetro parado.')
 }
 
-export async function lancarTempoAcao(tarefaId: string, data: string, minutos: number, nota: string): Promise<Resultado> {
-  return executar((sb) => tempo.lancarTempo(sb, tarefaId, data, minutos, nota.trim() || null), 'Tempo lançado.')
+export async function lancarTempoAcao(tarefaId: string, data: string, minutos: number, nota: string, faturavel = true): Promise<Resultado> {
+  return executar((sb) => tempo.lancarTempo(sb, tarefaId, data, minutos, nota.trim() || null, faturavel), 'Tempo lançado.')
 }
 
-export async function editarTempoAcao(id: string, minutos: number, nota: string): Promise<Resultado> {
+export async function editarTempoAcao(id: string, minutos: number, nota: string, faturavel?: boolean): Promise<Resultado> {
   if (!Number.isInteger(minutos) || minutos < 1 || minutos > 1440) return { erro: 'O tempo deve ficar entre 1 e 1440 minutos.' }
-  return executar((sb) => tempo.editarTempo(sb, id, minutos, nota.trim() || null))
+  return executar((sb) => tempo.editarTempo(sb, id, minutos, nota.trim() || null, faturavel))
+}
+
+/** Alterna a marca de faturável de um registro de tempo (o aviso de erro fica por conta de quem chama). */
+export async function definirFaturavelAcao(id: string, faturavel: boolean): Promise<Resultado> {
+  return executar((sb) => tempo.definirFaturavel(sb, id, faturavel))
 }
 
 export async function apagarTempoAcao(id: string): Promise<Resultado> {

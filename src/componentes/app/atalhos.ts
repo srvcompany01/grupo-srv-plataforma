@@ -3,6 +3,7 @@ import {
   CalendarClock,
   CalendarDays,
   CheckSquare,
+  Clock,
   ClipboardList,
   FileText,
   ChartNoAxesCombined,
@@ -54,6 +55,7 @@ export function atalhosDoInicio(papel: string, chatNaoLidas: number): Atalho[] {
     { id: 'quadros', href: '/quadros', rotulo: 'Quadros', curto: 'Quadros', Icone: PenTool },
     { id: 'funis', href: '/funis', rotulo: 'Funis', curto: 'Funis', Icone: Filter },
     { id: 'estrategia', href: '/estrategia', rotulo: 'Estratégia', curto: 'Estratégia', Icone: Compass },
+    ...(papel === 'admin' || papel === 'gestor' ? [{ id: 'tempo', href: '/relatorios/tempo', rotulo: 'Tempo', curto: 'Tempo', Icone: Clock }] : []),
     ...(papel === 'admin'
       ? [
           { id: 'financeiro', href: '/financeiro', rotulo: 'Financeiro', curto: 'Financeiro', Icone: Wallet },
@@ -73,13 +75,13 @@ export const estaEm = (caminho: string, href: string) => caminho === href || cam
 export const NO_TOPO = ['home', 'espacos', 'chat', 'agenda', 'time', 'documentos', 'painel', 'quadros', 'formularios']
 /** "Mais" (popover de 2 colunas): os módulos do documento e, no fim, os que a plataforma já tinha (nada some). */
 export const GRUPOS_FAIXA: { id: string; itens: string[] }[] = [
-  { id: 'mais', itens: ['clientes', 'estrategia', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'tarefas', 'agendamentos', 'reunioes', 'caixa'] },
+  { id: 'mais', itens: ['clientes', 'estrategia', 'projetos', 'financeiro', 'anuncios', 'insights', 'gmn', 'performance', 'biolytics', 'blog', 'funis', 'tarefas', 'agendamentos', 'reunioes', 'caixa', 'tempo'] },
 ]
 
 /** Nome do ícone (Material Symbols Rounded) de cada módulo, usado na paleta de comandos e no painel. */
 export const ICONE_MS: Record<string, string> = {
   home: 'home', espacos: 'grid_view', chat: 'chat_bubble', agenda: 'event_note', time: 'groups', documentos: 'description', painel: 'monitoring', quadros: 'draw', formularios: 'assignment',
   tarefas: 'task_alt', agendamentos: 'event_available', caixa: 'move_to_inbox', reunioes: 'videocam', clientes: 'storefront', projetos: 'work', financeiro: 'payments', anuncios: 'campaign', insights: 'insights',
-  gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', funis: 'filter_alt', estrategia: 'explore', config: 'settings',
+  gmn: 'location_on', performance: 'trending_up', biolytics: 'radar', blog: 'article', tempo: 'schedule', funis: 'filter_alt', estrategia: 'explore', config: 'settings',
 }
 

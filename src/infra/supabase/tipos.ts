@@ -1877,6 +1877,7 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          billable: boolean
           created_at: string
           duration_seconds: number | null
           ended_at: string | null
@@ -1888,6 +1889,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          billable?: boolean
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
@@ -1899,6 +1901,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          billable?: boolean
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
@@ -1994,10 +1997,20 @@ export type Database = {
       is_space_manager: { Args: { space: string }; Returns: boolean }
       is_space_member: { Args: { space: string }; Returns: boolean }
       is_team: { Args: never; Returns: boolean }
+      definir_faturavel: { Args: { p_faturavel: boolean; p_id: string }; Returns: undefined }
+      registros_tempo: {
+        Args: { p_ate: string; p_clientes?: string[]; p_de: string; p_faturavel?: boolean; p_pessoas?: string[]; p_sem_cliente?: boolean }
+        Returns: { billable: boolean; client_id: string | null; client_name: string | null; dia: string; id: string; list_name: string; note: string | null; seconds: number; task_id: string; task_title: string; user_id: string; user_name: string }[]
+      }
+      resumo_tempo: {
+        Args: { p_ate: string; p_clientes?: string[]; p_de: string; p_faturavel?: boolean; p_pessoas?: string[]; p_sem_cliente?: boolean }
+        Returns: { billable_seconds: number | null; client_id: string | null; client_name: string | null; registros: number; total_seconds: number; user_id: string; user_name: string }[]
+      }
       lancar_tempo: {
         Args: {
           p_data: string
           p_minutos: number
+          p_faturavel?: boolean
           p_nota?: string
           p_task: string
         }

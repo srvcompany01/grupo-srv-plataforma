@@ -98,7 +98,7 @@ it('P2-5: lancar_tempo chama lancar_tempo no banco com os minutos', async () => 
   await cli.connect(a)
   const r = await cli.callTool({ name: 'lancar_tempo', arguments: { tarefaId: '00000000-0000-4000-8000-000000000001', data: '2026-10-23', minutos: 90 } })
   expect(r.isError).toBeFalsy()
-  expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined }]])
+  expect(chamadas).toEqual([['lancar_tempo', { p_task: '00000000-0000-4000-8000-000000000001', p_data: '2026-10-23', p_minutos: 90, p_nota: undefined, p_faturavel: true }]])
 })
 
 it('P2-6: cancelar_agendamento_post explica quando o post não está agendado', async () => {
@@ -145,4 +145,21 @@ it('recorrência: as ferramentas são de leitura/escrita certas e a plataforma d
   expect(por('definir_recorrencia').escrita).toBe(true)
   expect(por('pausar_recorrencia').escrita).toBe(true)
   expect(FERRAMENTAS.some((f) => /exclu|apagar|remover_recorrencia|parar_recorrencia/.test(f.nome) && /recorrencia/.test(f.nome))).toBe(false)
+})
+
+it('tempo faturável: ferramentas com a escrita certa e o resumo recusa período invertido', async () => {
+  const por = (nome: string) => FERRAMENTAS.find((f) => f.nome === nome)!
+  expect(por('resumo_tempo_faturavel').escrita).toBe(false)
+  expect(por('definir_tempo_faturavel').escrita).toBe(true)
+  const chamadas: unknown[] = []
+  const sb = { rpc: async (nome: string, args: unknown) => { chamadas.push([nome, args]); return { error: null } } } as unknown as Supabase
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  await criarServidorMcp({ sb, userId: 'u1', nome: 'Ana', papel: 'membro', escopo: 'write' }).connect(b)
+  const cli = new Client({ name: 't', version: '1' })
+  await cli.connect(a)
+  const registroId = '00000000-0000-4000-8000-000000000002'
+  expect((await cli.callTool({ name: 'definir_tempo_faturavel', arguments: { registroId, faturavel: false } })).isError).toBeFalsy()
+  expect(chamadas).toEqual([['definir_faturavel', { p_id: registroId, p_faturavel: false }]])
+  const invertido = await cli.callTool({ name: 'resumo_tempo_faturavel', arguments: { de: '2026-11-30', ate: '2026-11-01' } })
+  expect(invertido.isError).toBe(true)
 })
