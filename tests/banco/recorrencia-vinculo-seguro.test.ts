@@ -140,3 +140,34 @@ describe('A1: autor da regra revalidado ao gerar', () => {
     expect((await db.query(`select count(*)::int as n from tasks where list_id = $1`, [c.listaB])).rows[0]).toEqual({ n: 1 }) // só o modelo: nada voltou para a lista dele
   })
 })
+
+describe('R3: lista na raiz é aberta à equipe', () => {
+  it('autor ativo que não é responsável continua gerando a série numa lista na raiz (cron e ao concluir)', async () => {
+    const db = await criarBanco()
+    const c = await cenario(db)
+    const raiz = await criarLista(db, { spaceId: null, clientId: c.clienteA })
+    const modelo = await criarTarefa(db, { listId: raiz, responsaveis: [c.dono], titulo: 'Modelo na raiz' })
+    // O atacante do cenário é um membro comum de outro espaço: na raiz ele lê o modelo, mas não é responsável.
+    expect((await comoUsuario(db, c.atacante, (tx) => tx.query<{ ok: boolean }>(`select can_read_task($1) as ok`, [modelo]))).rows).toEqual([{ ok: true }])
+    await regraComoUsuario(db, c.atacante, modelo, 'schedule')
+    expect((await db.query(`select autor_pode_gerar(author_id, task_id) as ok from task_recurrences where task_id = $1`, [modelo])).rows).toEqual([{ ok: true }])
+    expect(await db.query(`select gerar_recorrencias('2026-01-02') as n`).then((r) => r.rows)).toEqual([{ n: 2 }])
+
+    // "Ao concluir": outro modelo na raiz, com o mesmo autor não responsável.
+    const outro = await criarTarefa(db, { listId: raiz, responsaveis: [c.dono], titulo: 'Outro modelo na raiz' })
+    await regraComoUsuario(db, c.atacante, outro)
+    await concluir(db, c.dono, outro, raiz)
+    expect((await copiasDe(db, outro)).length).toBe(1)
+  })
+
+  it('na raiz, autor desativado ou fora da equipe continua sem gerar', async () => {
+    const db = await criarBanco()
+    const c = await cenario(db)
+    const raiz = await criarLista(db, { spaceId: null, clientId: c.clienteA })
+    const modelo = await criarTarefa(db, { listId: raiz, responsaveis: [c.dono], titulo: 'Modelo na raiz' })
+    await regraComoUsuario(db, c.atacante, modelo, 'schedule')
+    await db.query(`update profiles set active = false where id = $1`, [c.atacante])
+    expect(await db.query(`select gerar_recorrencias('2026-01-02') as n`).then((r) => r.rows)).toEqual([{ n: 0 }])
+  })
+})
+
