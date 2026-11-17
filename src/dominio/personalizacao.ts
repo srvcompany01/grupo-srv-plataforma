@@ -19,6 +19,9 @@ export const ICONES_PERSONALIZACAO = [
   'rocket', 'target', 'chart-no-axes-combined', 'users', 'heart', 'star', 'zap',
   'globe-2', 'shopping-bag', 'badge-dollar-sign', 'bot', 'sparkles', 'camera',
   'clapperboard', 'messages-square', 'calendar-days', 'circle-check',
+  'mail', 'map-pin', 'phone', 'music-2', 'list-checks', 'list-collapse',
+  'paperclip', 'pen-line', 'tags', 'hash', 'type', 'arrow-up-right',
+  'badge', 'square-check-big', 'minus-square', 'chart-no-axes-column-increasing',
 ] as const
 
 export const EMOJIS_PERSONALIZACAO = [

@@ -10,6 +10,7 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { IndicadorCronometro } from './IndicadorCronometro'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/componentes/ui/dropdown-menu'
 import { Ic } from './Ic'
+import { IconeVisual } from '@/componentes/IconeVisual'
 import { AlternarTema } from './AlternarTema'
 import { ListaOrdenavel } from './ListaOrdenavel'
 import { PainelAtalhos } from './PainelAtalhos'
@@ -123,7 +124,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         style={{ paddingLeft: 6 + nivel * 14 }}
       >
         <button type="button" aria-label={aberto ? 'Recolher espaço' : 'Expandir espaço'} onClick={() => alternar(espaco.id)}><Ic n={aberto ? 'expand_more' : 'chevron_right'} s={16} /></button>
-        <span className="cs-esp-ladrilho" style={{ background: espaco.cor }}>{espaco.nome.slice(0, 1).toUpperCase()}</span>
+        <span className="cs-esp-ladrilho" style={{ background: espaco.cor }} aria-hidden="true">{espaco.emoji || espaco.icone ? <IconeVisual icone={espaco.icone} emoji={espaco.emoji} /> : espaco.nome.slice(0, 1).toUpperCase()}</span>
         <Link href={href} draggable={false} aria-current={caminho === href ? 'page' : undefined}>{espaco.nome}</Link>
         {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
         {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
