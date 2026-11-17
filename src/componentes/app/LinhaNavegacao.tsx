@@ -2,10 +2,12 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Copy, CopyPlus, ExternalLink, FolderInput, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Copy, CopyPlus, ExternalLink, FolderInput, MoreHorizontal, Palette, Pencil, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createContext, useContext, useState, useTransition, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react'
 import { duplicarListaNavegacao, excluirItemNavegacao, moverItemNavegacao, renomearItemNavegacao } from '@/app/(app)/acoes-navegacao'
+import { PersonalizarItemDialog } from './CriadoresNavegacao'
+import type { EstadoVisual } from '@/componentes/SeletorVisual'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/componentes/ui/context-menu'
@@ -32,7 +34,7 @@ function nascidoEmCampo(evento: SyntheticEvent): boolean {
  * Linha da navegação: arrastável (segurar e mover) e com menu de contexto (botão direito).
  * O menu e o diálogo de renomear ficam FORA da linha na árvore do React: o espaço digitado nunca chega ao arrastar.
  */
-export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExcluir, fixa = false, className, style, children }: {
+export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExcluir, fixa = false, className, style, visual, children }: {
   tipo: TipoArrastavel
   id: string
   nome: string
@@ -43,6 +45,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
   podeExcluir: boolean
   /** Área que a plataforma criou (tem funções ligadas a ela): o aviso de exclusão é mais forte. */
   fixa?: boolean
+  visual: EstadoVisual
   className?: string
   style?: CSSProperties
   children: ReactNode
@@ -50,6 +53,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
   const router = useRouter()
   const confirmar = useConfirmar()
   const [pendente, iniciar] = useTransition()
+  const [personalizando, setPersonalizando] = useState(false)
   const [renomeando, setRenomeando] = useState(false)
   const [novoNome, setNovoNome] = useState(nome)
   const [movendo, setMovendo] = useState(false)
@@ -122,6 +126,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
               <DropdownMenu>
                 <DropdownMenuTrigger aria-label={`Ações de ${nome}`} className="ao-passar"><MoreHorizontal /></DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
+                  {podeEditar && <DropdownMenuItem onSelect={() => setPersonalizando(true)}><Palette /> Personalizar</DropdownMenuItem>}
                   {podeEditar && <DropdownMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</DropdownMenuItem>}
                   {podeEditar && <DropdownMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</DropdownMenuItem>}
                   {podeEditar && tipo === 'list' && <DropdownMenuItem disabled={pendente} onSelect={duplicar}><CopyPlus /> Duplicar</DropdownMenuItem>}
@@ -141,6 +146,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
           {podeEditar && (
             <>
               {caminho && <ContextMenuSeparator />}
+              <ContextMenuItem onSelect={() => setPersonalizando(true)}><Palette /> Personalizar</ContextMenuItem>
               <ContextMenuItem onSelect={() => { setNovoNome(nome); setRenomeando(true) }}><Pencil /> Renomear</ContextMenuItem>
               <ContextMenuItem onSelect={() => setMovendo(true)}><FolderInput /> Mover para…</ContextMenuItem>
               {tipo === 'list' && <ContextMenuItem disabled={pendente} onSelect={duplicar}><CopyPlus /> Duplicar</ContextMenuItem>}
@@ -154,6 +160,7 @@ export function LinhaNavegacao({ tipo, id, nome, habilitado, podeEditar, podeExc
           )}
         </ContextMenuContent>
       </ContextMenu>
+      {podeEditar && personalizando && <PersonalizarItemDialog tipo={tipo === 'space' ? 'spaces' : tipo === 'folder' ? 'folders' : 'lists'} id={id} nomeInicial={nome} visualInicial={visual} aberto={personalizando} onOpenChange={setPersonalizando} />}
       <Dialog open={movendo} onOpenChange={setMovendo}>
         <DialogContent>
           <DialogHeader>

@@ -9,7 +9,6 @@ import {
   FolderPlus,
   Layers3,
   ListPlus,
-  MoreHorizontal,
   PenTool,
   Plus,
   Sparkles,
@@ -217,27 +216,29 @@ export function PersonalizarItemDialog({
   id,
   nomeInicial,
   visualInicial,
+  aberto,
+  onOpenChange,
 }: {
   tipo: 'spaces' | 'folders' | 'lists'
   id: string
   nomeInicial: string
   visualInicial: EstadoVisual
+  aberto: boolean
+  onOpenChange: (aberto: boolean) => void
 }) {
   const router = useRouter()
-  const [aberto, setAberto] = useState(false)
   const [pendente, iniciar] = useTransition()
   const [nome, setNome] = useState(nomeInicial)
   const [visual, setVisual] = useState(visualInicial)
 
   return (
-    <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild><GatilhoPadrao rotulo={`Personalizar ${nomeInicial}`}><MoreHorizontal /></GatilhoPadrao></DialogTrigger>
+    <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent className={styles.dialog}>
         <DialogHeader><DialogTitle>Personalizar</DialogTitle><DialogDescription>Escolha o nome, a cor e um ícone Lucide ou emoji.</DialogDescription></DialogHeader>
-        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }}>
+        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; onOpenChange(false); router.refresh() }) }}>
           <div><div style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} /></div><label><span>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} /></label></div>
           <SeletorVisual valor={visual} onChange={setVisual} />
-          <div><button type="button" onClick={() => setAberto(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>Salvar</button></div>
+          <div><button type="button" onClick={() => onOpenChange(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>Salvar</button></div>
         </form>
       </DialogContent>
     </Dialog>

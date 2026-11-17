@@ -20,7 +20,7 @@ import { ICONE_MS, atalhosDoInicio, type Atalho } from './atalhos'
 import { EVENTO_ABRIR_PALETA, EVENTO_ALTERNAR_BARRA } from './AtalhosGlobais'
 import { DestinosMover, LinhaNavegacao, type DestinoMover, type TipoArrastavel } from './LinhaNavegacao'
 import type { CronometroAtivo } from '@/servicos/tempo'
-import { CriarEspacoDialog, CriarEstruturaDialog, PersonalizarItemDialog } from './CriadoresNavegacao'
+import { CriarEspacoDialog, CriarEstruturaDialog } from './CriadoresNavegacao'
 import type { ItemLista, Navegacao, NoEspaco, NoPasta } from '@/dominio/arvore-espacos'
 import { rotuloMes } from '@/dominio/formatar'
 import { COOKIE_LARGURA_LATERAL, COOKIE_MODO_LATERAL, COOKIE_NAV_FECHADOS, COOKIE_ORDEM_INICIO, LARGURA_LATERAL, escreverFechados, limitarLargura, type ModoLateral, type ModoTema } from '@/dominio/tema-lateral'
@@ -74,6 +74,7 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
       nome={lista.nome}
       habilitado={podeArrastar}
       podeEditar={podeGerir}
+      visual={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }}
       podeExcluir={podeGerir && (!lista.slug || admin)}
       fixa={!!lista.slug}
       style={{ paddingLeft: 6 + nivel * 14 }}
@@ -83,7 +84,7 @@ function LinkLista({ lista, nivel, podeGerir, podeArrastar }: { lista: ItemLista
         <span>{lista.nome}</span>
         {detalhe && <span>{detalhe}</span>}
       </Link>
-      {podeGerir && <PersonalizarItemDialog tipo="lists" id={lista.id} nomeInicial={lista.nome} visualInicial={{ cor: lista.cor, icone: lista.icone, emoji: lista.emoji }} />}
+
     </LinhaNavegacao>
   )
 }
@@ -93,12 +94,12 @@ function Pasta({ pasta, nivel, contexto, pastas, podeGerir, podeArrastar }: { pa
   const aberta = !fechado(pasta.id)
   return (
     <div>
-      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} style={{ paddingLeft: 6 + nivel * 14 }}>
+      <LinhaNavegacao tipo="folder" id={pasta.id} nome={pasta.nome} visual={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} habilitado={podeArrastar} podeEditar={podeGerir} podeExcluir={podeGerir} style={{ paddingLeft: 6 + nivel * 14 }}>
         <button type="button" aria-label={aberta ? 'Recolher pasta' : 'Expandir pasta'} onClick={() => alternar(pasta.id)}><Ic n={aberta ? 'expand_more' : 'chevron_right'} s={16} /></button>
         <Ic n="folder" s={16} />
         <span>{pasta.nome}</span>
         {podeGerir && <CriarEstruturaDialog espaco={contexto} pastas={pastas} pastaInicial={pasta.id} modoInicial="lista" />}
-        {podeGerir && <PersonalizarItemDialog tipo="folders" id={pasta.id} nomeInicial={pasta.nome} visualInicial={{ cor: pasta.cor, icone: pasta.icone, emoji: pasta.emoji }} />}
+
       </LinhaNavegacao>
       {aberta && pasta.listas.map((lista) => <LinkLista key={lista.id} lista={lista} nivel={nivel + 1} podeGerir={podeGerir} podeArrastar={podeArrastar} />)}
     </div>
@@ -119,6 +120,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         nome={espaco.nome}
         habilitado={podeArrastar}
         podeEditar={podeEditarEspaco}
+        visual={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }}
         podeExcluir={podeEditarEspaco}
         fixa={!!espaco.slug}
         style={{ paddingLeft: 6 + nivel * 14 }}
@@ -127,7 +129,7 @@ function Espaco({ espaco, nivel, podeGerir, podeEditarEspaco, podeArrastar }: { 
         <span className="cs-esp-ladrilho" style={{ background: espaco.cor }} aria-hidden="true">{espaco.emoji || espaco.icone ? <IconeVisual icone={espaco.icone} emoji={espaco.emoji} /> : espaco.nome.slice(0, 1).toUpperCase()}</span>
         <Link href={href} draggable={false} aria-current={caminho === href ? 'page' : undefined}>{espaco.nome}</Link>
         {podeGerir && <CriarEstruturaDialog espaco={{ id: espaco.id, nome: espaco.nome }} pastas={espaco.pastas} />}
-        {podeEditarEspaco && <PersonalizarItemDialog tipo="spaces" id={espaco.id} nomeInicial={espaco.nome} visualInicial={{ cor: espaco.cor, icone: espaco.icone, emoji: espaco.emoji }} />}
+
       </LinhaNavegacao>
       {aberto && (
         <div>
