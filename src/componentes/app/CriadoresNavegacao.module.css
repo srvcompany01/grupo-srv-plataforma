@@ -1,0 +1,28 @@
+.dialog { width: min(580px, calc(100vw - 32px)); padding: 26px; gap: 22px; border: 1px solid var(--border); border-radius: 20px; }
+.dialog > [data-slot='dialog-header'] { padding-right: 24px; }
+.dialog [data-slot='dialog-title'] { font-size: 21px; letter-spacing: -.025em; }
+.dialog [data-slot='dialog-description'] { font-size: 13px; line-height: 1.6; }
+.form { display: grid; gap: 20px; min-width: 0; }
+.form label { display: grid; gap: 7px; min-width: 0; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.form :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 40px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font: inherit; font-size: 13px; font-weight: 400; }
+.form textarea { min-height: 86px; resize: vertical; line-height: 1.6; }
+.form > div:first-child { display: flex; align-items: flex-start; gap: 16px; }
+.form > div:first-child > div:first-child { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; margin-top: 22px; border-radius: 14px; color: #fff; }
+.form > div:first-child > div:first-child svg { width: 25px; height: 25px; }
+.form > div:first-child > :last-child { flex: 1; min-width: 0; }
+.form > div:first-child > div:last-child { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; }
+.form > div:not(:first-child):has(> label) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.form > div:last-child { display: flex; justify-content: flex-end; gap: 9px; padding-top: 18px; border-top: 1px solid var(--border); }
+.form > div:last-child button { min-height: 38px; padding: 8px 15px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text-2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.form > div:last-child button:last-child { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.form button:disabled { opacity: .45; cursor: default; }
+.dialog > div:has(> button > svg) { display: flex; gap: 8px; }
+.dialog > div > button:has(> svg) { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-subtle); color: var(--text); font-size: 13px; cursor: pointer; }
+.dialog > div > button > svg { width: 16px; height: 16px; }
+@media(max-width: 540px) {
+  .dialog { padding: 21px; }
+  .form > div:first-child > div:last-child { grid-template-columns: minmax(0,1fr); }
+  .form > div:first-child { gap: 12px; }
+  .form > div:first-child > div:first-child { flex-basis: 44px; width: 44px; height: 44px; }
+}
+@media(pointer:coarse) { .form :is(input,select,textarea) { font-size: 16px; } .form button { min-height: 44px; } }

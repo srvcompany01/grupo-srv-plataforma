@@ -29,6 +29,8 @@ import { avisar } from '@/componentes/tarefas/avisar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/componentes/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/componentes/ui/popover'
 
+import styles from './CriadoresNavegacao.module.css'
+
 type Opcao = { id: string; nome: string }
 
 function OpcaoCriacao({ icone: Icone, nome, descricao, cor, onClick, seta = false, indisponivel = false }: {
@@ -79,12 +81,12 @@ export function CriarEspacoDialog({ pais, trigger }: { pais: Opcao[]; trigger?: 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>{trigger ?? <GatilhoPadrao rotulo="Novo espaço"><Plus /></GatilhoPadrao>}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className={styles.dialog}>
         <DialogHeader>
           <DialogTitle>Criar novo espaço</DialogTitle>
           <DialogDescription>Defina a identidade e a posição do novo departamento na plataforma.</DialogDescription>
         </DialogHeader>
-        <form
+        <form className={styles.form}
           onSubmit={(e) => {
             e.preventDefault()
             iniciar(async () => {
@@ -172,13 +174,13 @@ export function CriarEstruturaDialog({
         </PopoverContent>
       </Popover>
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent>
+        <DialogContent className={styles.dialog}>
         <DialogHeader><DialogTitle>Adicionar em {espaco?.nome ?? 'Itens soltos'}</DialogTitle><DialogDescription>Crie a estrutura sem sair da navegação lateral.</DialogDescription></DialogHeader>
         <div>
           <button type="button" onClick={() => trocarModo('pasta')}><FolderPlus /> Pasta</button>
           <button type="button" onClick={() => trocarModo('lista')}><ListPlus /> Lista</button>
         </div>
-        <form
+        <form className={styles.form}
           onSubmit={(e) => {
             e.preventDefault()
             iniciar(async () => {
@@ -230,9 +232,9 @@ export function PersonalizarItemDialog({
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild><GatilhoPadrao rotulo={`Personalizar ${nomeInicial}`}><MoreHorizontal /></GatilhoPadrao></DialogTrigger>
-      <DialogContent>
+      <DialogContent className={styles.dialog}>
         <DialogHeader><DialogTitle>Personalizar</DialogTitle><DialogDescription>Escolha o nome, a cor e um ícone Lucide ou emoji.</DialogDescription></DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }}>
+        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const resultado = await personalizarItemNavegacao({ tipo, id, nome, visual }); if (!avisar(resultado)) return; setAberto(false); router.refresh() }) }}>
           <div><div style={{ background: visual.cor }}><IconeVisual icone={visual.icone} emoji={visual.emoji} /></div><label><span>Nome</span><input value={nome} onChange={(e) => setNome(e.target.value)} /></label></div>
           <SeletorVisual valor={visual} onChange={setVisual} />
           <div><button type="button" onClick={() => setAberto(false)}>Cancelar</button><button disabled={pendente || !nome.trim()}>Salvar</button></div>
