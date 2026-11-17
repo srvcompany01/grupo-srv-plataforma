@@ -1,4 +1,4 @@
-import { limparOpcoes } from '@/dominio/campos-gestao'
+import { limparOpcoes, normalizarHex } from '@/dominio/campos-gestao'
 import { calcularFormula, configuracaoPadrao, type ConfigCampo, type DefinicaoCampo, type TipoCampoPersonalizado } from '@/dominio/personalizacao'
 import { posicaoEntre } from '@/dominio/posicao'
 import type { TarefaResumo } from '@/dominio/tarefas'
@@ -214,4 +214,48 @@ export async function salvarValorEmLote(sb: Supabase, tarefaIds: string[], campo
     ? await sb.from('task_custom_field_values').delete().in('task_id', tarefaIds).eq('field_id', campoId)
     : await sb.from('task_custom_field_values').upsert(tarefaIds.map((id) => ({ task_id: id, field_id: campoId, value: valor })))
   if (error) throw error
+}
+
+/** Edita nome, cor, ícone e/ou configuração (só o que vier; a configuração é mesclada). O tipo não muda. Exige ser gestor do espaço. */
+export async function atualizarCampo(
+  sb: Supabase,
+  campoId: string,
+  d: { nome?: string; cor?: string; icone?: string; configuracao?: ConfigCampo },
+): Promise<void> {
+  const { data: atual, error: e1 } = await sb.from('custom_fields').select('config').eq('id', campoId).is('archived_at', null).maybeSingle()
+  if (e1) throw e1
+  if (!atual) throw new Error('Campo não encontrado, arquivado ou sem acesso.')
+  const mudancas: { name?: string; color?: string; icon?: string; config?: Json; updated_at: string } = { updated_at: new Date().toISOString() }
+  if (d.nome !== undefined) {
+    const nome = d.nome.trim()
+    if (!nome || nome.length > 80) throw new Error('O nome deve ter de 1 a 80 caracteres.')
+    mudancas.name = nome
+  }
+  if (d.cor !== undefined) {
+    const cor = normalizarHex(d.cor)
+    if (!cor) throw new Error('Cor inválida. Use o formato #RRGGBB.')
+    mudancas.color = cor
+  }
+  if (d.icone !== undefined) {
+    if (!/^[a-z0-9-]{1,40}$/.test(d.icone)) throw new Error('Ícone inválido.')
+    mudancas.icon = d.icone
+  }
+  if (d.configuracao) mudancas.config = limparOpcoes({ ...(atual.config as ConfigCampo), ...d.configuracao }) as Json
+  const { data, error } = await sb.from('custom_fields').update(mudancas).eq('id', campoId).select('id')
+  if (error) throw error
+  if (!data.length) throw new Error('Sem permissão para editar este campo (só gestor do espaço).')
+}
+
+/** Tira o campo de uma lista. Os valores já gravados nas tarefas continuam no banco. */
+export async function desvincularCampoDaLista(sb: Supabase, listaId: string, campoId: string): Promise<void> {
+  const { data, error } = await sb.from('list_custom_fields').delete().eq('list_id', listaId).eq('field_id', campoId).select('field_id')
+  if (error) throw error
+  if (!data.length) throw new Error('O campo não está ligado a essa lista (ou sem permissão).')
+}
+
+/** Arquiva o campo: some de todas as listas, mas os valores preenchidos são preservados. Não exclui. */
+export async function arquivarCampo(sb: Supabase, campoId: string): Promise<void> {
+  const { data, error } = await sb.from('custom_fields').update({ archived_at: new Date().toISOString() }).eq('id', campoId).is('archived_at', null).select('id')
+  if (error) throw error
+  if (!data.length) throw new Error('Campo não encontrado, já arquivado ou sem permissão (só gestor do espaço).')
 }

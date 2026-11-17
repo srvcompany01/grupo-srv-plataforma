@@ -41,6 +41,7 @@ const periodoDaIA = (a: { dias?: 7 | 30; de?: string; ate?: string }) => lerPeri
 import { ROTULO_STATUS_TIME, STATUS_TIME, duracao, minutosDesde, situacao } from '@/dominio/time'
 import * as time from '@/servicos/time'
 import * as campos from '@/servicos/campos-personalizados'
+import { dadosGestaoCampos } from '@/servicos/campos-gestao'
 import { criarComentario } from '@/servicos/comentarios'
 import { listarArvore } from '@/servicos/espacos'
 import * as estrutura from '@/servicos/estrutura'
@@ -83,6 +84,19 @@ function definir<S extends z.ZodRawShape>(f: {
 
 const id = (descricao: string) => z.string().uuid().describe(descricao)
 const data = (descricao: string) => z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe(`${descricao} (AAAA-MM-DD)`)
+const configCampo = z
+  .object({
+    options: z.array(z.string().min(1)).max(100).optional().describe('Opções (lista suspensa e rótulos)'),
+    optionColors: z.record(z.string(), z.string()).optional().describe('Cor #RRGGBB por texto de opção'),
+    currency: z.string().optional(),
+    decimals: z.number().int().min(0).max(8).optional(),
+    max: z.number().optional(),
+    placeholder: z.string().optional(),
+    buttonLabel: z.string().optional(),
+    buttonUrl: z.string().optional(),
+  })
+  .describe('Configuração do campo (só as chaves que o tipo usa)')
+
 const valorCampo = z
   .union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.null()])
   .describe('Valor do campo: texto, número, true/false, lista de textos (rótulos) ou null para limpar. Datas em AAAA-MM-DD; lista suspensa = o texto de uma das opções.')
@@ -216,7 +230,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Avisos automáticos no sino (não há ferramenta para dispará-los): toda segunda, admins e gestores recebem o resumo da semana de cada cliente com anúncios (leads, investido, custo por lead e conversão de clique para lead contra a semana anterior; começa com "Atenção" se os leads caíram ou o custo por lead subiu 25% ou mais); todo dia, campanha ligada sem gasto há 2 dias; e, só para admins, token da Meta inválido ou a 10 dias de vencer e erros do servidor em produção.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
-        'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote).',
+        'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote). Gestão: listar_campos_do_espaco, criar_campo, atualizar_campo (nome, cor, ícone, opções), ligar_campo_a_lista, desligar_campo_da_lista e arquivar_campo (nunca exclui; os valores ficam). Só gestor do espaço altera campos.',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro (que traz também a margem de lucro do mês: líquida e de contribuição, pelo que está lançado, pago ou não, sem separar mensalidade de projeto e avulso; a de contribuição desconta só tráfego pago, freelancers e equipe; impostos entram na líquida); criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
         'Funis: desenhos de funil (tráfego → página → lead → venda) com taxa de conversão em cada ligação. calcular_funil devolve visitantes por etapa, leads, vendas, receita, custo por lead/venda e ROAS. Quadros brancos são desenhados só na tela (listar_quadros mostra os nomes).',
@@ -1331,19 +1345,87 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'criar_campo',
-    descricao: 'Cria um campo personalizado no espaço da lista e já o liga à lista. Para lista suspensa e rótulos, informe opcoes. Exige ser gestor do espaço.',
+    descricao: 'Cria um campo personalizado no espaço da lista e já o liga à lista. Para lista suspensa e rótulos, informe opcoes (ou configuracao.optionColors para colorir). cor (#RRGGBB) e icone são opcionais. Exige ser gestor do espaço.',
     escrita: true,
     entrada: {
       listaId: id('Id da lista que receberá o campo'),
       nome: z.string().min(1).max(60),
       tipo: z.enum([...TIPOS_CAMPO] as [TipoCampoPersonalizado, ...TipoCampoPersonalizado[]]),
       opcoes: z.array(z.string().min(1)).max(100).optional(),
+      cor: z.string().optional(),
+      icone: z.string().optional(),
+      configuracao: configCampo.optional(),
     },
     executar: async ({ sb }, a) => {
       const lista = await buscarLista(sb, a.listaId)
       if (!lista) throw new Error('Lista não encontrada ou sem acesso.')
-      const campoId = await campos.criarCampo(sb, { espacoId: lista.espaco.id, listaId: a.listaId, nome: a.nome, tipo: a.tipo, configuracao: a.opcoes ? { options: a.opcoes } : {}, cor: '#70262d', icone: 'type' })
+      const configuracao = { ...a.configuracao, ...(a.opcoes ? { options: a.opcoes } : {}) }
+      const campoId = await campos.criarCampo(sb, { espacoId: lista.espaco.id, listaId: a.listaId, nome: a.nome, tipo: a.tipo, configuracao, cor: a.cor ?? '#70262d', icone: a.icone ?? 'type' })
       return { campoId }
+    },
+  }),
+
+  definir({
+    nome: 'listar_campos_do_espaco',
+    descricao: 'Campos personalizados (não arquivados) de um espaço, com tipo, opções, cor e ícone, e as listas em que cada um está ligado. Use para achar o campoId antes de atualizar_campo, ligar_campo_a_lista ou arquivar_campo. Sem espacoId, traz os campos da raiz.',
+    escrita: false,
+    entrada: { espacoId: id('Id do espaço (de listar_arvore)').optional() },
+    executar: async ({ sb }, a) => {
+      const g = await dadosGestaoCampos(sb)
+      return g.campos
+        .filter((c) => c.espacoId === (a.espacoId ?? null))
+        .map((c) => ({ id: c.id, nome: c.nome, tipo: c.tipo, configuracao: c.configuracao, cor: c.cor, icone: c.icone, listas: c.listaIds.map((l) => g.listas.find((x) => x.id === l)?.caminho ?? l) }))
+    },
+  }),
+
+  definir({
+    nome: 'atualizar_campo',
+    descricao: 'Edita um campo personalizado: nome, cor (#RRGGBB), ícone e/ou configuracao (opções de lista suspensa e rótulos, optionColors, moeda, casas decimais, etc.; é mesclada com a atual: ao mexer em options, envie a lista COMPLETA). Só o que for informado muda. O tipo não muda (crie outro campo). Valores já preenchidos nas tarefas não são alterados; remover uma opção não limpa tarefas que já a usam. Exige ser gestor do espaço.',
+    escrita: true,
+    entrada: {
+      campoId: id('Id do campo (de listar_campos_do_espaco ou listar_campos_da_lista)'),
+      nome: z.string().min(1).max(80).optional(),
+      cor: z.string().optional(),
+      icone: z.string().optional(),
+      configuracao: configCampo.optional(),
+    },
+    executar: async ({ sb }, { campoId, ...d }) => {
+      await campos.atualizarCampo(sb, campoId, d)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'ligar_campo_a_lista',
+    descricao: 'Liga um campo existente a outra lista (a lista precisa ser do mesmo espaço do campo). O campo passa a aparecer nas tarefas dessa lista.',
+    escrita: true,
+    entrada: { listaId: id('Id da lista'), campoId: id('Id do campo') },
+    executar: async ({ sb }, a) => {
+      if ((await campos.listarCamposDaLista(sb, a.listaId)).some((c) => c.id === a.campoId)) return { ok: true, jaLigado: true }
+      await campos.vincularCampoALista(sb, a.listaId, a.campoId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'desligar_campo_da_lista',
+    descricao: 'Tira um campo de uma lista (ele some das tarefas dessa lista). Não apaga o campo nem os valores já preenchidos; ligar de novo os traz de volta.',
+    escrita: true,
+    entrada: { listaId: id('Id da lista'), campoId: id('Id do campo') },
+    executar: async ({ sb }, a) => {
+      await campos.desvincularCampoDaLista(sb, a.listaId, a.campoId)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'arquivar_campo',
+    descricao: 'Arquiva um campo personalizado: ele some de TODAS as listas. Os valores preenchidos nas tarefas ficam preservados (não é exclusão). Confirme com a pessoa antes. Exige ser gestor do espaço.',
+    escrita: true,
+    entrada: { campoId: id('Id do campo') },
+    executar: async ({ sb }, a) => {
+      await campos.arquivarCampo(sb, a.campoId)
+      return { ok: true }
     },
   }),
 
