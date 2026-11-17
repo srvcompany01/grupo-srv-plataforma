@@ -187,7 +187,8 @@ button.cs-secao:hover { color: var(--text-2); }
   display: none; width: 20px; height: 20px; flex: none; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 6px;
   background: transparent; color: var(--text-3); cursor: pointer;
 }
-.cs-linha:hover > :is(button, [data-slot$='trigger']):not(:first-child), .cs-linha > [aria-expanded='true'] { display: inline-flex; }
+.cs-linha:hover > :is(button, [data-slot$='trigger']):not(:first-child),
+.cs-linha > :is(button, [data-slot$='trigger'])[aria-expanded='true']:not(:first-child) { display: inline-flex; }
 .cs-linha > :is(button, [data-slot$='trigger']):not(:first-child):hover { background: var(--bg-active); color: var(--text); }
 .cs-linha svg { width: 15px; height: 15px; }
 
