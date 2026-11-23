@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import s from './config.module.css'
 
 const ABAS = [
   ['/config/usuarios', 'Usuários'],
@@ -19,11 +20,13 @@ const ABAS = [
 export function AbasConfig() {
   const caminho = usePathname()
   return (
-    <nav>
+    <nav className={s.abas} aria-label="Configurações">
       {ABAS.map(([href, rotulo]) => (
         <Link
           key={href}
           href={href}
+          className={s.aba}
+          aria-current={caminho === href || caminho?.startsWith(`${href}/`) ? 'page' : undefined}
         >
           {rotulo}
         </Link>

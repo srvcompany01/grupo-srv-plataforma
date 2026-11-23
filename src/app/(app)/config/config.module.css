@@ -1,0 +1,15 @@
+.pagina { display: flex; flex-direction: column; gap: 20px; min-width: 0; padding: 28px; }
+.cabecalho { display: flex; flex-direction: column; gap: 8px; }
+.cabecalho p { margin: 0; color: var(--text-3); font-size: 12px; }
+.cabecalho h1 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
+.abas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border-radius: var(--r-painel); background: var(--bg-subtle); }
+.aba { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 8px 12px; border-radius: var(--r-ctl); color: var(--text-2); font-size: 13px; line-height: 1.4; text-decoration: none; white-space: nowrap; transition: background var(--t-rapido), color var(--t-rapido); }
+.aba:hover { background: var(--bg-hover); color: var(--text); }
+.aba[aria-current='page'] { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.conteudo { min-width: 0; }
+@media (max-width: 600px) {
+  .pagina { padding: 20px 16px; gap: 16px; }
+  .cabecalho h1 { font-size: 22px; }
+  .abas { gap: 4px; }
+  .aba { padding: 7px 10px; font-size: 12px; }
+}

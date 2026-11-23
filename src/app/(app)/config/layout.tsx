@@ -1,12 +1,15 @@
 import { AbasConfig } from './AbasConfig'
+import s from './config.module.css'
 
 export default function LayoutConfig({ children }: LayoutProps<'/config'>) {
   return (
-    <div>
-      <p>Administração</p>
-      <h1>Configurações</h1>
+    <div className={s.pagina}>
+      <header className={s.cabecalho}>
+        <p>Administração</p>
+        <h1>Configurações</h1>
+      </header>
       <AbasConfig />
-      <div>{children}</div>
+      <div className={s.conteudo}>{children}</div>
     </div>
   )
 }

@@ -1,0 +1,38 @@
+.pagina { min-height: 100dvh; padding: 48px 24px; background: var(--bg-subtle); }
+.cartao { width: 100%; max-width: 800px; margin: 0 auto; padding: 36px; border-radius: var(--r-secao); background: var(--bg); }
+.cabecalho { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+.cabecalho h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.cabecalho p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--text-2); white-space: pre-line; overflow-wrap: anywhere; }
+.formulario { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.instrucao { margin: 0; font-size: 12px; line-height: 1.6; color: var(--text-3); }
+.asterisco, .instrucao > span { color: var(--red); }
+.campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 20px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.campo { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; }
+.campo[data-largo='true'] { grid-column: 1 / -1; }
+.campo > span { overflow-wrap: anywhere; }
+.campo input, .campo textarea, .campo select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: var(--r-ctl); background: var(--bg-subtle); color: var(--text); font-size: 14px; font-weight: 400; }
+.campo textarea { min-height: 112px; resize: vertical; }
+.campo input:focus, .campo textarea:focus, .campo select:focus { border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-ring); outline: none; }
+.caixa { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: var(--r-ctl); background: var(--bg-subtle); font-size: 13px; }
+.caixa input { flex: none; margin: 3px 0 0; width: 16px; height: 16px; }
+.caixa span { overflow-wrap: anywhere; }
+.oculto { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; padding: 0; border: 0; clip-path: inset(50%); white-space: nowrap; pointer-events: none; }
+.rodape { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-top: 8px; }
+.rodape p { margin: 0; font-size: 12px; color: var(--text-3); }
+.rodape button { min-height: 44px; }
+.erro { margin: 0; padding: 14px; border-radius: var(--r-ctl); background: var(--red-soft); color: var(--red); font-size: 13px; line-height: 1.6; }
+.sucesso { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 12px; text-align: center; }
+.sucesso > svg { width: 44px; height: 44px; color: var(--ok); }
+.sucesso h2 { font-size: 20px; }
+.sucesso p { margin: 0; color: var(--text-2); font-size: 14px; }
+.carregando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (max-width: 600px) {
+  .pagina { padding: 20px 12px; }
+  .cartao { padding: 24px 20px; border-radius: var(--r-painel); }
+  .cabecalho { margin-bottom: 24px; }
+  .campos { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .rodape { align-items: stretch; flex-direction: column; }
+  .rodape button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .carregando { animation: none; } }
