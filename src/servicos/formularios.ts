@@ -1,4 +1,5 @@
-import { camposOferecidos, type CampoFormulario } from '@/dominio/formularios'
+import { camposOferecidos, EntradaFormularioSchema, type EntradaFormulario, type CampoFormulario } from '@/dominio/formularios'
+import { gerarToken } from '@/dominio/token'
 import type { TipoCampoPersonalizado } from '@/dominio/personalizacao'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
@@ -28,6 +29,36 @@ export type DadosFormularios = {
   listas: ListaDoFormulario[]
   clientes: { id: string; nome: string }[]
   equipe: { id: string; nome: string }[]
+}
+
+// Mensagens de validação seguras para a tela; erros técnicos continuam tratados por tentar().
+const erroFormulario = (mensagem: string) => Object.assign(new Error(mensagem), { code: 'P0001' })
+
+/** Gestão compartilhada pela tela e pelo MCP; RLS e gatilho conferem acesso e campos da lista. */
+export async function salvarFormulario(sb: Supabase, id: string | null, entrada: EntradaFormulario): Promise<string> {
+  const validacao = EntradaFormularioSchema.safeParse(entrada)
+  if (!validacao.success) throw erroFormulario(validacao.error.issues[0].message)
+  const e = validacao.data
+  const base = { list_id: e.listaId, client_id: e.clienteId, assignee_id: e.responsavelId, name: e.nome, description: e.descricao || null, landing: e.landing, fields: e.campos as unknown as Json }
+  const { data, error } = id
+    ? await sb.from('forms').update(base).eq('id', id).is('archived_at', null).select('id').maybeSingle()
+    : await sb.from('forms').insert({ ...base, token: gerarToken() }).select('id').single()
+  if (error?.code === '23505' && e.landing) throw erroFormulario('Esta landing page já está ligada a outro formulário. Desvincule-a antes de continuar.')
+  if (error) throw error
+  if (!data) throw erroFormulario('Formulário não encontrado, arquivado ou sem permissão para editar.')
+  return data.id
+}
+
+export async function alternarFormulario(sb: Supabase, id: string, ativo: boolean): Promise<void> {
+  const { data, error } = await sb.from('forms').update({ active: ativo }).eq('id', id).is('archived_at', null).select('id').maybeSingle()
+  if (error) throw error
+  if (!data) throw erroFormulario('Formulário não encontrado, arquivado ou sem permissão para alterar.')
+}
+
+export async function arquivarFormulario(sb: Supabase, id: string): Promise<void> {
+  const { data, error } = await sb.from('forms').update({ archived_at: new Date().toISOString(), active: false }).eq('id', id).is('archived_at', null).select('id').maybeSingle()
+  if (error) throw error
+  if (!data) throw erroFormulario('Formulário não encontrado, já arquivado ou sem permissão para arquivar.')
 }
 
 /** Tela de gestão (admin): formulários ativos e o que a gestão precisa para criar e editar. */

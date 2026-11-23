@@ -1,7 +1,30 @@
 import type { DefinicaoCampo, TipoCampoPersonalizado } from './personalizacao'
+import { z } from 'zod'
+import { LANDINGS_COM_FORMULARIO } from './landings'
 
 /** Um campo pedido pelo formulário: 'title', 'description' ou o id de um campo personalizado da lista. */
 export type CampoFormulario = { key: string; label: string; required: boolean }
+
+const uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Identificador inválido.')
+export const CamposFormulario = z.array(z.object({
+  key: z.union([z.literal('title'), z.literal('description'), uuid]),
+  label: z.string().trim().min(1, 'Preencha o nome de cada campo.').max(120, 'O nome de cada campo deve ter até 120 caracteres.'),
+  required: z.boolean(),
+})).min(1, 'Selecione os campos do formulário.').max(40, 'O formulário aceita até 40 campos.').superRefine((campos, ctx) => {
+  if (!campos.some((c) => c.key === 'title')) ctx.addIssue({ code: 'custom', message: 'O formulário precisa pedir o título.' })
+  if (new Set(campos.map((c) => c.key)).size !== campos.length) ctx.addIssue({ code: 'custom', message: 'Há campos repetidos no formulário.' })
+}).transform((campos) => campos.map((c) => ({ ...c, required: c.key === 'title' || c.required })))
+
+export const EntradaFormularioSchema = z.object({
+  listaId: uuid,
+  clienteId: uuid.nullable(),
+  responsavelId: uuid,
+  nome: z.string().trim().min(1, 'Informe o nome do formulário.').max(120, 'O nome deve ter até 120 caracteres.'),
+  descricao: z.string().trim(),
+  landing: z.string().refine((v) => LANDINGS_COM_FORMULARIO.some((l) => l.slug === v), 'Landing page inválida.').nullable(),
+  campos: CamposFormulario,
+})
+export type EntradaFormulario = z.input<typeof EntradaFormularioSchema>
 
 /** Tipos que uma pessoa de fora consegue preencher num formulário simples. */
 export const TIPOS_NO_FORMULARIO: ReadonlySet<TipoCampoPersonalizado> = new Set([

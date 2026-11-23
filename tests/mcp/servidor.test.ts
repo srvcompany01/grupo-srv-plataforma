@@ -120,3 +120,10 @@ it('P3: listar_comentarios_redes com atualizar=true recusa token de leitura (gra
   const leitura = (await (await conectar('read')).listTools()).tools.map((t) => t.name)
   expect(leitura).not.toContain('atualizar_comentarios_redes')
 })
+
+it.each(['listar_formularios', 'salvar_formulario', 'alternar_formulario', 'arquivar_formulario'])('%s mantém a gestão restrita a admin', async (nome) => {
+  const ferramenta = FERRAMENTAS.find((f) => f.nome === nome)!
+  const sb = { from: vi.fn() } as unknown as Supabase
+  await expect(ferramenta.executar({ sb, userId: 'u1', nome: 'Pessoa', papel: 'membro', escopo: 'write' }, {} as never)).rejects.toThrow(/Só admin/)
+  expect(sb.from).not.toHaveBeenCalled()
+})

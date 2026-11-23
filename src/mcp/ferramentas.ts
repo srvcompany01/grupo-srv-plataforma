@@ -1,3 +1,5 @@
+import { EntradaFormularioSchema } from '@/dominio/formularios'
+import * as formularios from '@/servicos/formularios'
 import { ESTRATEGIA_POR_NOME } from '@/dominio/publicacao'
 import * as z from 'zod'
 import { descricaoParaTexto, textoParaDescricao } from '@/dominio/descricao'
@@ -230,6 +232,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Avisos automáticos no sino (não há ferramenta para dispará-los): toda segunda, admins e gestores recebem o resumo da semana de cada cliente com anúncios (leads, investido, custo por lead e conversão de clique para lead contra a semana anterior; começa com "Atenção" se os leads caíram ou o custo por lead subiu 25% ou mais); todo dia, campanha ligada sem gasto há 2 dias; e, só para admins, token da Meta inválido ou a 10 dias de vencer e erros do servidor em produção.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
+        'Formulários públicos (Configurações → Formulários): listar_formularios traz formulários, listas e campos disponíveis; salvar_formulario cria ou edita a configuração completa, incluindo nomes, ordem e obrigatoriedade das perguntas; alternar_formulario controla o link; arquivar_formulario preserva as tarefas. Só admin. Cada envio cria uma tarefa com responsável. Não confundir com formulários instantâneos da Meta.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote). Gestão: listar_campos_do_espaco, criar_campo, atualizar_campo (nome, cor, ícone, opções), ligar_campo_a_lista, desligar_campo_da_lista e arquivar_campo (nunca exclui; os valores ficam). Só gestor do espaço altera campos.',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro (que traz também a margem de lucro do mês: líquida e de contribuição, pelo que está lançado, pago ou não, sem separar mensalidade de projeto e avulso; a de contribuição desconta só tráfego pago, freelancers e equipe; impostos entram na líquida); criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
@@ -1362,6 +1365,52 @@ export const FERRAMENTAS: Ferramenta[] = [
       const configuracao = { ...a.configuracao, ...(a.opcoes ? { options: a.opcoes } : {}) }
       const campoId = await campos.criarCampo(sb, { espacoId: lista.espaco.id, listaId: a.listaId, nome: a.nome, tipo: a.tipo, configuracao, cor: a.cor ?? '#70262d', icone: a.icone ?? 'type' })
       return { campoId }
+    },
+  }),
+
+  definir({
+    nome: 'listar_formularios',
+    descricao: 'Formulários públicos da plataforma (não os Lead Ads da Meta), com campos na ordem de exibição, token do link /f/{token}, status e destino. Inclui listas e campos disponíveis, clientes e responsáveis para montar o formulário. Só admin.',
+    escrita: false,
+    entrada: {},
+    executar: async ({ sb, papel }) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      return formularios.dadosFormularios(sb)
+    },
+  }),
+
+  definir({
+    nome: 'salvar_formulario',
+    descricao: 'Cria um formulário público ou edita um existente (formularioId). Envie a configuração completa; campos é a lista ordenada de perguntas, cada uma com key, label e required. title é sempre obrigatório. Até 40 campos; nomes editáveis até 120 caracteres. Campos personalizados precisam pertencer à lista. Cliente null usa o padrão da lista; landing null desvincula. Cada landing tem um único formulário. Só admin.',
+    escrita: true,
+    entrada: { formularioId: id('Formulário existente; omita para criar').optional(), ...EntradaFormularioSchema.shape },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      return { id: await formularios.salvarFormulario(sb, a.formularioId ?? null, a) }
+    },
+  }),
+
+  definir({
+    nome: 'alternar_formulario',
+    descricao: 'Ativa ou desativa o link público de um formulário. Desativar impede novos envios; as tarefas já criadas permanecem. Não reativa formulários arquivados. Só admin.',
+    escrita: true,
+    entrada: { formularioId: id('Formulário'), ativo: z.boolean() },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      await formularios.alternarFormulario(sb, a.formularioId, a.ativo)
+      return { ok: true }
+    },
+  }),
+
+  definir({
+    nome: 'arquivar_formulario',
+    descricao: 'Arquiva o formulário e desativa o link público. Preserva as tarefas e respostas já recebidas, sem exclusão definitiva. Só admin.',
+    escrita: true,
+    entrada: { formularioId: id('Formulário') },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      await formularios.arquivarFormulario(sb, a.formularioId)
+      return { ok: true }
     },
   }),
 
