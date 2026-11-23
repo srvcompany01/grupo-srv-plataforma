@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowDown, ArrowLeft, ArrowUp, ClipboardList, Copy, CopyPlus, Download, Eye, Globe, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
-import { useEffect, useId, useState, useTransition, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, useTransition, type CSSProperties, type ReactNode } from 'react'
 import { useConfirmar } from '@/componentes/ConfirmarProvider'
 import { avisar } from '@/componentes/tarefas/avisar'
 import { Button } from '@/componentes/ui/button'
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/componentes/ui/input'
 import { Interruptor } from '@/componentes/ui/interruptor'
 import { Textarea } from '@/componentes/ui/textarea'
-import { CATALOGO_PERGUNTAS, configuracaoFormulario, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
+import { CATALOGO_PERGUNTAS, EntradaFormularioSchema, configuracaoFormulario, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
 import { LANDINGS_COM_FORMULARIO } from '@/dominio/landings'
 import type { DadosFormularios, Formulario, RespostaFormulario } from '@/servicos/formularios'
 import { CampoPergunta, FormularioPublico } from '@/app/f/[token]/FormularioPublico'
@@ -30,9 +30,19 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
   const [celular, setCelular] = useState(false)
   const [amostra, setAmostra] = useState<RespostasFormulario>({})
   const [erro, setErro] = useState<string | null>(null)
+  const [campoInvalido, setCampoInvalido] = useState<'listaId' | 'responsavelId' | 'clienteId' | null>(null)
+  const listaRef = useRef<HTMLSelectElement>(null)
+  const responsavelRef = useRef<HTMLSelectElement>(null)
+  const clienteRef = useRef<HTMLSelectElement>(null)
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   const prefixo = useId()
+  useEffect(() => {
+    if (aba !== 'Opções' || !campoInvalido) return
+    const controle = { listaId: listaRef, responsavelId: responsavelRef, clienteId: clienteRef }[campoInvalido].current
+    controle?.focus({ preventScroll: true })
+    controle?.scrollIntoView({ block: 'center' })
+  }, [aba, campoInvalido])
   const config = configuracaoFormulario(entrada.configuracao)
   const campo = entrada.campos.find((c) => c.key === selecionada) ?? entrada.campos[0]
   const indice = entrada.campos.indexOf(campo)
@@ -40,7 +50,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
   const oferecidos = dados.listas.find((l) => l.id === entrada.listaId)?.oferecidos ?? []
   const extras = oferecidos.filter((c) => !entrada.campos.some((e) => e.key === c.key))
   const url = token && typeof window !== 'undefined' ? `${window.location.origin}/f/${token}` : ''
-  const mudar = (valores: Partial<EntradaFormulario>) => { setEntrada((a) => ({ ...a, ...valores })); setAlterado(true); setErro(null) }
+  const mudar = (valores: Partial<EntradaFormulario>) => { setEntrada((a) => ({ ...a, ...valores })); setAlterado(true); setErro(null); setCampoInvalido(null) }
   const configurar = (valores: Partial<ConfigFormulario>) => mudar({ configuracao: { ...config, ...valores } })
   const editar = (valores: Partial<CampoFormulario>) => mudar({ campos: entrada.campos.map((c) => c.key === campo.key ? { ...c, ...valores } : c) })
   const adicionar = (novo: CampoFormulario) => { if (entrada.campos.length >= 40) return; mudar({ campos: [...entrada.campos, novo] }); setSelecionada(novo.key) }
@@ -61,8 +71,26 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
     if (alterado && !(await confirmar({ titulo: 'Sair sem salvar?', descricao: 'As alterações que ainda não foram salvas serão descartadas.', confirmar: 'Sair sem salvar' }))) return
     aoFechar()
   }
-  const salvar = (publicar: boolean) => iniciar(async () => {
+  const salvar = (publicar: boolean) => {
+    const validacao = EntradaFormularioSchema.safeParse(entrada)
+    if (!validacao.success) {
+      const falha = validacao.error.issues[0]
+      setPrevia(false)
+      setErro(falha.message)
+      if (falha.path[0] === 'campos') {
+        setAba('Editor')
+        const indice = falha.path[1]
+        if (typeof indice === 'number' && entrada.campos[indice]) setSelecionada(entrada.campos[indice].key)
+      } else {
+        setAba('Opções')
+        const chave = falha.path[0]
+        setCampoInvalido(chave === 'listaId' || chave === 'responsavelId' || chave === 'clienteId' ? chave : null)
+      }
+      return
+    }
+    iniciar(async () => {
     setErro(null)
+    setCampoInvalido(null)
     try {
       const r = await salvarFormularioAcao(id, entrada, publicar)
       if (r.erro) { setErro(r.erro); return }
@@ -70,7 +98,8 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
       if (r.token) setToken(r.token)
       setAlterado(false); setRascunho(!publicar); avisar(r, true)
     } catch { setErro('Não foi possível salvar agora. Suas alterações continuam no editor.') }
-  })
+    })
+  }
   const copiar = async (texto: string) => {
     try { await navigator.clipboard.writeText(texto); avisar({ ok: 'Copiado.' }, true) }
     catch { avisar({ erro: 'Não foi possível copiar. Selecione o texto e copie manualmente.' }) }
@@ -84,11 +113,11 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
       <DialogTitle className={s.oculto}>Construtor de formulários</DialogTitle>
       <DialogDescription className={s.oculto}>Edite perguntas, personalize o preenchimento, compartilhe o link e consulte as respostas.</DialogDescription>
       <header className={s.topo}>
-        <div className={s.identidade}><Button variant="ghost" size="icon" onClick={fechar} aria-label="Voltar aos formulários"><ArrowLeft /></Button><div><strong>{entrada.nome}</strong><span>{alterado ? 'Alterações não salvas' : rascunho ? 'Rascunho' : 'Publicado'}</span></div></div>
+        <div className={s.identidade}><Button variant="ghost" size="icon" onClick={fechar} aria-label="Voltar aos formulários"><ArrowLeft /></Button><div><strong>{entrada.nome}</strong><span>{!entrada.listaId || !entrada.responsavelId ? 'Defina lista e responsável em Opções' : alterado ? 'Alterações não salvas' : rascunho ? 'Rascunho' : 'Publicado'}</span></div></div>
         <nav className={s.abas} role="tablist" aria-label="Seções do formulário">{(['Editor', 'Opções', 'Compartilhar', 'Respostas'] as Aba[]).map((a) => <button type="button" role="tab" id={`${prefixo}-${a}`} aria-controls={`${prefixo}-conteudo`} aria-selected={aba === a && !previa} key={a} onClick={() => { setPrevia(false); setAba(a) }}>{a}</button>)}</nav>
         <div className={s.acoes}><Button variant="secondary" onClick={() => setPrevia((v) => !v)}><Eye />{previa ? 'Voltar ao editor' : 'Ver prévia'}</Button><Button variant="secondary" disabled={pendente} onClick={() => salvar(false)}><Save />Salvar rascunho</Button><Button disabled={pendente} onClick={() => salvar(true)}><Globe />{pendente ? 'Salvando…' : 'Publicar'}</Button></div>
       </header>
-      {erro && <p className={s.erro} role="alert">{erro}</p>}
+      {erro && <p id={`${prefixo}-erro`} className={s.erro} role="alert">{erro}</p>}
       <div id={`${prefixo}-conteudo`} role="tabpanel" aria-labelledby={`${prefixo}-${aba}`} className={s.corpo} inert={pendente}>
         {previa ? <div className={s.previaCompleta}><div className={s.dispositivos}><Button variant="ghost" aria-pressed={!celular} onClick={() => setCelular(false)}><Monitor />Computador</Button><Button variant="ghost" aria-pressed={celular} onClick={() => setCelular(true)}><Smartphone />Celular</Button></div><div className={s.moldura} data-celular={celular}><FormularioPublico key={JSON.stringify(entrada)} token="previa" previa formulario={{ nome: entrada.nome, descricao: entrada.descricao, campos: perguntasPublicas, configuracao: config }} /></div></div> : aba === 'Editor' ? <div className={s.editor}>
           <aside className={s.perguntas} aria-label="Perguntas do formulário"><div className={s.tituloSecao}><strong>Perguntas</strong><span>{entrada.campos.length}/40</span></div><ol>{entrada.campos.map((c, i) => <li key={c.key}><button type="button" aria-pressed={c.key === campo.key} onClick={() => setSelecionada(c.key)}><span>{i + 1}</span><div><strong>{c.label}</strong><small>{nomeTipo(c)}{c.required ? ' · Obrigatória' : ''}</small></div></button></li>)}</ol>
@@ -112,7 +141,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
             <div className={s.ferramentasPergunta}><Button variant="secondary" disabled={entrada.campos.length >= 40} onClick={() => adicionar({ ...campo, key: `q_${crypto.randomUUID()}`, label: `${campo.label.slice(0, 110)} (cópia)`, tipo: campo.tipo ?? 'text', required: false, condicao: undefined })}><CopyPlus />Duplicar</Button><Button variant="destructive" disabled={campo.key === 'title'} onClick={retirar}><Trash2 />Retirar</Button></div>
           </aside>
         </div> : aba === 'Opções' ? <div className={s.opcoes}>
-          <Bloco titulo="Informações e destino"><Rotulo nome="Nome do formulário"><Input maxLength={120} value={entrada.nome} onChange={(e) => mudar({ nome: e.target.value })} /></Rotulo><Rotulo nome="Descrição do formulário"><Textarea rows={3} value={entrada.descricao} onChange={(e) => mudar({ descricao: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Lista de destino"><select value={entrada.listaId} onChange={(e) => { const lista = dados.listas.find((l) => l.id === e.target.value); mudar({ listaId: e.target.value, campos: entrada.campos.filter((c) => c.key.startsWith('q_') || c.key === 'title' || c.key === 'description' || lista?.oferecidos.some((o) => o.key === c.key)) }) }}><option value="">Selecione uma lista</option>{dados.listas.map((l) => <option key={l.id} value={l.id}>{l.caminho}</option>)}</select></Rotulo><Rotulo nome="Responsável"><select value={entrada.responsavelId} onChange={(e) => mudar({ responsavelId: e.target.value })}><option value="">Selecione uma pessoa</option>{dados.equipe.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></Rotulo></div><Rotulo nome="Cliente"><select value={entrada.clienteId ?? ''} onChange={(e) => mudar({ clienteId: e.target.value || null })}><option value="">Usar o cliente da lista</option>{dados.clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></Rotulo><Rotulo nome="Landing page ligada"><select value={entrada.landing ?? ''} onChange={(e) => mudar({ landing: e.target.value || null })}><option value="">Nenhuma</option>{LANDINGS_COM_FORMULARIO.map((l) => <option key={l.slug} value={l.slug}>{l.nome}</option>)}</select></Rotulo><p className={s.ajuda}>Cada resposta publicada gera uma tarefa. Perguntas independentes são guardadas na resposta e na descrição da tarefa.</p></Bloco>
+          <Bloco titulo="Informações e destino"><Rotulo nome="Nome do formulário"><Input maxLength={120} value={entrada.nome} onChange={(e) => mudar({ nome: e.target.value })} /></Rotulo><Rotulo nome="Descrição do formulário"><Textarea rows={3} value={entrada.descricao} onChange={(e) => mudar({ descricao: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Lista de destino"><select ref={listaRef} aria-invalid={campoInvalido === 'listaId'} aria-describedby={campoInvalido === 'listaId' && erro ? `${prefixo}-erro` : undefined} value={entrada.listaId} onChange={(e) => { const lista = dados.listas.find((l) => l.id === e.target.value); mudar({ listaId: e.target.value, campos: entrada.campos.filter((c) => c.key.startsWith('q_') || c.key === 'title' || c.key === 'description' || lista?.oferecidos.some((o) => o.key === c.key)) }) }}><option value="">Selecione uma lista</option>{dados.listas.map((l) => <option key={l.id} value={l.id}>{l.caminho}</option>)}</select></Rotulo><Rotulo nome="Responsável"><select ref={responsavelRef} aria-invalid={campoInvalido === 'responsavelId'} aria-describedby={campoInvalido === 'responsavelId' && erro ? `${prefixo}-erro` : undefined} value={entrada.responsavelId} onChange={(e) => mudar({ responsavelId: e.target.value })}><option value="">Selecione uma pessoa</option>{dados.equipe.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></Rotulo></div><Rotulo nome="Cliente"><select ref={clienteRef} aria-invalid={campoInvalido === 'clienteId'} aria-describedby={campoInvalido === 'clienteId' && erro ? `${prefixo}-erro` : undefined} value={entrada.clienteId ?? ''} onChange={(e) => mudar({ clienteId: e.target.value || null })}><option value="">Usar o cliente da lista</option>{dados.clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></Rotulo><Rotulo nome="Landing page ligada"><select value={entrada.landing ?? ''} onChange={(e) => mudar({ landing: e.target.value || null })}><option value="">Nenhuma</option>{LANDINGS_COM_FORMULARIO.map((l) => <option key={l.slug} value={l.slug}>{l.nome}</option>)}</select></Rotulo><p className={s.ajuda}>Cada resposta publicada gera uma tarefa. Perguntas independentes são guardadas na resposta e na descrição da tarefa.</p></Bloco>
           <Bloco titulo="Aparência"><Rotulo nome="Modo de preenchimento"><select value={config.modo} onChange={(e) => configurar({ modo: e.target.value as ConfigFormulario['modo'] })}><option value="conversa">Uma pergunta por vez</option><option value="pagina">Todos os campos na página</option></select></Rotulo><div className={s.cores}>{(['corBotao','corTexto','corResposta','corFundo'] as const).map((k, i) => <label key={k}>{['Botão','Pergunta','Resposta','Fundo'][i]}<input type="color" value={config[k]} onChange={(e) => configurar({ [k]: e.target.value })} /></label>)}</div><Rotulo nome="Logotipo (URL HTTPS)"><Input type="url" value={config.logo} onChange={(e) => configurar({ logo: e.target.value })} /></Rotulo><Rotulo nome="Imagem de fundo (URL HTTPS)"><Input type="url" value={config.imagemFundo} onChange={(e) => configurar({ imagemFundo: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Fonte"><select value={config.fonte} onChange={(e) => configurar({ fonte: e.target.value as ConfigFormulario['fonte'] })}><option value="sistema">Sistema</option><option value="serif">Serifada</option><option value="mono">Monoespaçada</option></select></Rotulo><Rotulo nome={`Bordas: ${config.bordas}px`}><input type="range" min={0} max={28} value={config.bordas} onChange={(e) => configurar({ bordas: Number(e.target.value) })} /></Rotulo></div></Bloco>
           <Bloco titulo="Boas-vindas"><LinhaSwitch nome="Exibir tela de boas-vindas" valor={config.boasVindas} mudar={(v) => configurar({ boasVindas: v })} /><Rotulo nome="Título de boas-vindas"><Input value={config.tituloBoasVindas} onChange={(e) => configurar({ tituloBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto de boas-vindas"><Textarea rows={3} value={config.textoBoasVindas} onChange={(e) => configurar({ textoBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão inicial"><Input value={config.botaoInicio} onChange={(e) => configurar({ botaoInicio: e.target.value })} /></Rotulo></Bloco>
           <Bloco titulo="Encerramento"><Rotulo nome="Mensagem de agradecimento"><Input value={config.tituloFinal} onChange={(e) => configurar({ tituloFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto de agradecimento"><Textarea rows={3} value={config.textoFinal} onChange={(e) => configurar({ textoFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão final"><Input value={config.botaoFinal} onChange={(e) => configurar({ botaoFinal: e.target.value })} /></Rotulo><Rotulo nome="Link do botão final (HTTPS)"><Input type="url" value={config.linkFinal} onChange={(e) => configurar({ linkFinal: e.target.value })} /></Rotulo><LinhaSwitch nome="Exibir pontuação ao final" valor={config.mostrarPontuacao} mudar={(v) => configurar({ mostrarPontuacao: v })} /><Rotulo nome="Texto do botão de envio"><Input value={config.textoEnvio} onChange={(e) => configurar({ textoEnvio: e.target.value })} /></Rotulo></Bloco>

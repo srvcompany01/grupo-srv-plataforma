@@ -7,7 +7,8 @@ export type TipoPergunta = typeof TIPOS_PERGUNTA[number]
 export const CATALOGO_PERGUNTAS: { tipo: TipoPergunta; nome: string }[] = [
   { tipo: 'text', nome: 'Resposta curta' }, { tipo: 'name', nome: 'Nome próprio' }, { tipo: 'email', nome: 'E-mail' }, { tipo: 'long_text', nome: 'Texto longo' }, { tipo: 'phone', nome: 'Telefone' }, { tipo: 'date', nome: 'Data' }, { tipo: 'site', nome: 'Link' }, { tipo: 'cpf', nome: 'CPF' }, { tipo: 'cnpj', nome: 'CNPJ' }, { tipo: 'number', nome: 'Número' }, { tipo: 'money', nome: 'Valor monetário' }, { tipo: 'address', nome: 'Endereço' }, { tipo: 'multiple_choice', nome: 'Múltipla escolha' }, { tipo: 'dropdown', nome: 'Seleção de lista' }, { tipo: 'rating', nome: 'Escala de satisfação' }, { tipo: 'checkbox', nome: 'Sim / não' }, { tipo: 'terms', nome: 'Termos de uso' }, { tipo: 'statement', nome: 'Mensagem' },
 ]
-const uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Identificador inválido.')
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const uuid = z.string().regex(UUID, 'A chave do campo é inválida. Retire esse campo e adicione-o novamente.')
 const chave = z.union([z.literal('title'), z.literal('description'), uuid, z.string().regex(/^q_[a-zA-Z0-9-]{8,60}$/)])
 const url = z.string().trim().max(2000).refine((v) => !v || /^https:\/\//i.test(v), 'Use um endereço HTTPS.')
 const cor = z.string().regex(/^#[0-9a-f]{6}$/i)
@@ -43,7 +44,9 @@ export const CamposFormulario = z.array(PerguntaSchema).min(1, 'Selecione os cam
   })
 }).transform((campos) => campos.map((c) => ({ ...c, required: c.key === 'title' || (c.tipo !== 'statement' && c.required) })))
 export const EntradaFormularioSchema = z.object({
-  listaId: uuid, clienteId: uuid.nullable(), responsavelId: uuid,
+  listaId: z.string().regex(UUID, 'Escolha a lista de destino em Opções para receber as tarefas.'),
+  clienteId: z.string().regex(UUID, 'Escolha um cliente válido em Opções ou use o cliente padrão da lista.').nullable(),
+  responsavelId: z.string().regex(UUID, 'Escolha o responsável pelas tarefas em Opções.'),
   nome: z.string().trim().min(1, 'Informe o nome do formulário.').max(120, 'O nome deve ter até 120 caracteres.'), descricao: z.string().trim(),
   landing: z.string().refine((v) => LANDINGS_COM_FORMULARIO.some((l) => l.slug === v), 'Landing page inválida.').nullable(),
   campos: CamposFormulario, configuracao: ConfigSchema.optional(),

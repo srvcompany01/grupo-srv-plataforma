@@ -33,6 +33,7 @@
 .campo { display: flex; flex-direction: column; gap: 7px; font-size: 12px; color: var(--text-2); min-width: 0; }
 .campo > span { display: flex; align-items: center; gap: 6px; }
 .campo select { width: 100%; min-height: 36px; padding: 6px 10px; font: inherit; border: 1px solid transparent; border-radius: var(--r-ctl); background: var(--bg-subtle); color: var(--text); }
+.campo select[aria-invalid='true'] { border-color: var(--red); background: var(--red-soft); }
 .campo input:not([type='range'], [type='color']) { min-height: 34px; }
 .campo textarea { min-height: 70px; }
 .interruptor { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
