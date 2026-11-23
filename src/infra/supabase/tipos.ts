@@ -705,9 +705,9 @@ export type Database = {
         ]
       }
       forms: {
-        Row: { active: boolean; archived_at: string | null; assignee_id: string; client_id: string | null; created_at: string; created_by: string | null; description: string | null; fields: Json; id: string; landing: string | null; list_id: string; name: string; token: string; updated_at: string }
-        Insert: { active?: boolean; archived_at?: string | null; assignee_id: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; landing?: string | null; list_id: string; name: string; token: string; updated_at?: string }
-        Update: { active?: boolean; archived_at?: string | null; assignee_id?: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; landing?: string | null; list_id?: string; name?: string; token?: string; updated_at?: string }
+        Row: { settings: Json; draft: Json | null; published_at: string | null; active: boolean; archived_at: string | null; assignee_id: string; client_id: string | null; created_at: string; created_by: string | null; description: string | null; fields: Json; id: string; landing: string | null; list_id: string; name: string; token: string; updated_at: string }
+        Insert: { settings?: Json; draft?: Json | null; published_at?: string | null; active?: boolean; archived_at?: string | null; assignee_id: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; landing?: string | null; list_id: string; name: string; token: string; updated_at?: string }
+        Update: { settings?: Json; draft?: Json | null; published_at?: string | null; active?: boolean; archived_at?: string | null; assignee_id?: string; client_id?: string | null; created_at?: string; created_by?: string | null; description?: string | null; fields?: Json; id?: string; landing?: string | null; list_id?: string; name?: string; token?: string; updated_at?: string }
         Relationships: [
           {
             foreignKeyName: "forms_list_id_fkey"
@@ -717,6 +717,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      form_submissions: {
+        Row: { id: string; form_id: string; task_id: string | null; answers: Json; questions: Json; score: number; attribution: Json; dedup_key: string | null; created_at: string }
+        Insert: { id?: string; form_id: string; task_id?: string | null; answers: Json; questions: Json; score?: number; attribution?: Json; dedup_key?: string | null; created_at?: string }
+        Update: { id?: string; form_id?: string; task_id?: string | null; answers?: Json; questions?: Json; score?: number; attribution?: Json; dedup_key?: string | null; created_at?: string }
+        Relationships: []
       }
       folders: {
         Row: {

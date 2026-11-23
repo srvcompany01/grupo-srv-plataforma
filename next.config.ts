@@ -17,14 +17,18 @@ const nextConfig: NextConfig = {
   // nem de o navegador adivinhar o tipo de um arquivo.
   async headers() {
     return [{
-      source: '/:caminho*',
+      source: '/:caminho((?!f/).*)',
       headers: [
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       ],
-    }]
+    }, { source: '/f/:token', headers: [
+      { key: 'Content-Security-Policy', value: "frame-ancestors 'self' https:" },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    ] }]
   },
   async redirects() {
     return [

@@ -232,7 +232,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         'Avisos automáticos no sino (não há ferramenta para dispará-los): toda segunda, admins e gestores recebem o resumo da semana de cada cliente com anúncios (leads, investido, custo por lead e conversão de clique para lead contra a semana anterior; começa com "Atenção" se os leads caíram ou o custo por lead subiu 25% ou mais); todo dia, campanha ligada sem gasto há 2 dias; e, só para admins, token da Meta inválido ou a 10 dias de vencer e erros do servidor em produção.',
         'Subtarefa é uma tarefa com paiId. Ela herda a lista e o cliente da tarefa mãe.',
         'Status são por lista, em 3 categorias: todo (a fazer), in_progress (em andamento), done (concluído). Uma lista nova já vem com status padrão.',
-        'Formulários públicos (Configurações → Formulários): listar_formularios traz formulários, listas e campos disponíveis; salvar_formulario cria ou edita a configuração completa, incluindo nomes, ordem e obrigatoriedade das perguntas; alternar_formulario controla o link; arquivar_formulario preserva as tarefas. Só admin. Cada envio cria uma tarefa com responsável. Não confundir com formulários instantâneos da Meta.',
+        'Formulários públicos (Configurações → Formulários): listar_formularios traz formulários, listas e campos disponíveis; salvar_formulario cria ou edita perguntas (tipos próprios com key q_<uuid>, nomes, descrições, opções, ordem, pontuação e condição baseada em pergunta anterior), aparência e modo de preenchimento conversa/pagina. publicar=false salva rascunho; publicar_formulario libera o último rascunho. duplicar_formulario copia sem respostas e sem landing; respostas_formulario traz os novos envios com tarefa e UTMs; alternar_formulario controla o link; arquivar_formulario preserva as tarefas. Só admin. Cada envio cria uma tarefa com responsável. Não confundir com formulários instantâneos da Meta.',
         'Campos personalizados pertencem a um espaço e são ligados a listas; o valor de cada tarefa vai em definir_valor_campo (ou em valoresCampos ao criar em lote). Gestão: listar_campos_do_espaco, criar_campo, atualizar_campo (nome, cor, ícone, opções), ligar_campo_a_lista, desligar_campo_da_lista e arquivar_campo (nunca exclui; os valores ficam). Só gestor do espaço altera campos.',
         'Descrições e comentários são texto simples; use quebras de linha para parágrafos.',
         'Financeiro (só o admin): lançamentos de entrada e despesa (equipe, tráfego pago, ferramentas…) com valor em reais, data, categoria, cliente opcional e situação paga/pendente. Use listar_lancamentos e resumir_financeiro (que traz também a margem de lucro do mês: líquida e de contribuição, pelo que está lançado, pago ou não, sem separar mensalidade de projeto e avulso; a de contribuição desconta só tráfego pago, freelancers e equipe; impostos entram na líquida); criar_lancamento grava um lançamento (repetirMeses repete todo mês). Para LER um item já subido (inclusive ativo, com texto, público e criativo) use detalhar_objeto_meta; para EDITAR nome, texto, título, descrição, botão, link, faixa etária ou fim use editar_objeto_meta (mostre o antes e o depois e confirme com a pessoa; item ativo exige confirmarAlteracaoEmAtivo). Status e orçamento continuam só por pausar_anuncio e propor_alteracao_anuncio. Não há exclusão por aqui.',
@@ -1381,12 +1381,44 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   definir({
     nome: 'salvar_formulario',
-    descricao: 'Cria um formulário público ou edita um existente (formularioId). Envie a configuração completa; campos é a lista ordenada de perguntas, cada uma com key, label e required. title é sempre obrigatório. Até 40 campos; nomes editáveis até 120 caracteres. Campos personalizados precisam pertencer à lista. Cliente null usa o padrão da lista; landing null desvincula. Cada landing tem um único formulário. Só admin.',
+    descricao: 'Cria um formulário público ou edita um existente (formularioId). Envie a configuração completa; campos é a lista ordenada de perguntas, cada uma com key, label e required. title é sempre obrigatório. Até 40 perguntas; nomes editáveis até 120 caracteres. Perguntas próprias usam key q_<uuid> e tipo de pergunta. configuracao define modo conversa/pagina, cores, boas-vindas, encerramento, pontuação, captura de UTMs e deduplicação. condicao mostra a pergunta só conforme uma resposta anterior. publicar=false guarda rascunho sem alterar a versão pública. Campos personalizados precisam pertencer à lista. Cliente null usa o padrão da lista; landing null desvincula. Cada landing tem um único formulário. Só admin.',
     escrita: true,
-    entrada: { formularioId: id('Formulário existente; omita para criar').optional(), ...EntradaFormularioSchema.shape },
+    entrada: { formularioId: id('Formulário existente; omita para criar').optional(), publicar: z.boolean().default(true).describe('false salva só o rascunho; true publica'), ...EntradaFormularioSchema.shape },
     executar: async ({ sb, papel }, a) => {
       if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
-      return { id: await formularios.salvarFormulario(sb, a.formularioId ?? null, a) }
+      return { id: await formularios.salvarFormulario(sb, a.formularioId ?? null, EntradaFormularioSchema.parse(a), a.publicar) }
+    },
+  }),
+
+  definir({
+    nome: 'publicar_formulario',
+    descricao: 'Publica o último rascunho salvo do formulário, liberando o link público. Só admin. Confira antes com listar_formularios.',
+    escrita: true,
+    entrada: { formularioId: id('Formulário com rascunho') },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      await formularios.publicarRascunhoFormulario(sb, a.formularioId)
+      return { ok: true }
+    },
+  }),
+  definir({
+    nome: 'duplicar_formulario',
+    descricao: 'Copia a configuração e as perguntas para um novo formulário em rascunho, com outro link e sem copiar respostas nem a ligação à landing. Só admin.',
+    escrita: true,
+    entrada: { formularioId: id('Formulário a copiar') },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      return { id: await formularios.duplicarFormulario(sb, a.formularioId) }
+    },
+  }),
+  definir({
+    nome: 'respostas_formulario',
+    descricao: 'Novas respostas do formulário: data, perguntas da versão respondida, valores, pontuação, origem UTM e tarefa criada. 50 por página (pagina começa em zero). Só admin. Tarefas criadas antes do histórico de respostas continuam nas listas, sem retropreenchimento.',
+    escrita: false,
+    entrada: { formularioId: id('Formulário'), pagina: z.number().int().min(0).default(0) },
+    executar: async ({ sb, papel }, a) => {
+      if (papel !== 'admin') throw new Error('Só admin gerencia formulários da plataforma.')
+      return formularios.respostasFormulario(sb, a.formularioId, a.pagina)
     },
   }),
 
