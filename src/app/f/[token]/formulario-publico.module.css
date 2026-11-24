@@ -28,6 +28,13 @@
 .sucesso h1 { margin: 0; font-size: 28px; line-height: 1.35; }
 .sucesso p { margin: 0; font-size: 16px; line-height: 1.6; white-space: pre-line; }
 .pontuacao { padding: 12px 16px; border-radius: var(--form-raio); background: color-mix(in srgb, var(--form-resposta) 10%, transparent); }
+.finalWhatsapp { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
+.acoesWhatsapp { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.acoesWhatsapp .voltar svg { width: 16px; height: 16px; }
+.resumoWhatsapp { width: 100%; min-width: 0; font-size: 14px; }
+.resumoWhatsapp summary { cursor: pointer; padding: 8px 0; }
+.resumoWhatsapp textarea { box-sizing: border-box; width: 100%; max-height: 400px; margin-top: 8px; padding: 16px; border: 1px solid color-mix(in srgb, var(--form-texto) 20%, transparent); border-radius: var(--form-raio); color: var(--form-texto); background: var(--form-fundo); font: inherit; line-height: 1.7; resize: vertical; }
+.avisoWhatsapp { font-size: 14px !important; opacity: .8; }
 .escolhas { display: flex; flex-direction: column; gap: 8px; }
 .opcao { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--form-resposta) 45%, transparent); border-radius: var(--form-raio); color: var(--form-resposta); background: color-mix(in srgb, var(--form-resposta) 4%, var(--form-fundo)); cursor: pointer; font-size: 16px; }
 .opcao input { accent-color: var(--form-resposta); }

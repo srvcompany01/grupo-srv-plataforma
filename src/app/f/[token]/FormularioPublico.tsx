@@ -1,9 +1,9 @@
 'use client'
 
-import { ArrowDown, ArrowLeft, ArrowRight, Check, CheckCircle2, LoaderCircle } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, LoaderCircle, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useId, useState, useTransition, type CSSProperties } from 'react'
-import { configuracaoFormulario, perguntasVisiveis, pontuacaoFormulario, validarResposta, type CampoFormulario, type RespostasFormulario, type ValorResposta } from '@/dominio/formularios'
+import { configuracaoFormulario, destinoWhatsappFormulario, perguntasVisiveis, pontuacaoFormulario, validarResposta, whatsappDoFormulario, type CampoFormulario, type MensagemWhatsappFormulario, type RespostasFormulario, type ValorResposta } from '@/dominio/formularios'
 import type { FormularioPublico as Dados, CampoPublico } from '@/servicos/formularios'
 import { enviarFormularioAcao } from './acoes'
 import s from './formulario-publico.module.css'
@@ -15,6 +15,7 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
   const [comecou, setComecou] = useState(!config.boasVindas)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
+  const [whatsapp, setWhatsapp] = useState<MensagemWhatsappFormulario | null>(null)
   const [pendente, iniciar] = useTransition()
   const campos = perguntasVisiveis(formulario.campos, respostas) as CampoPublico[]
   const posicao = Math.min(indice, Math.max(0, campos.length - 1))
@@ -36,7 +37,7 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
   const enviar = (armadilha: string) => iniciar(async () => {
     const invalidos = campos.map((c) => ({ c, erro: validarResposta(c, respostas[c.key]) })).find((r) => r.erro)
     if (invalidos) { setErro(invalidos.erro); setIndice(campos.indexOf(invalidos.c)); return }
-    if (previa) { setEnviado(true); return }
+    if (previa) { setWhatsapp(whatsappDoFormulario(formulario.nome, formulario.campos, respostas, config)); setEnviado(true); return }
     const form = new FormData()
     for (const c of campos) {
       if (c.tipo === 'statement') continue
@@ -53,7 +54,7 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
       }
     }
     setErro(null)
-    try { const r = await enviarFormularioAcao(token, form); if ('erro' in r) setErro(r.erro); else setEnviado(true) }
+    try { const r = await enviarFormularioAcao(token, form); if ('erro' in r) setErro(r.erro); else { setWhatsapp(r.whatsapp ?? null); setEnviado(true) } }
     catch { setErro('Não foi possível enviar agora. Suas respostas foram mantidas; tente de novo.') }
   })
   return (
@@ -62,7 +63,7 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
       {conversa && <div className={s.progresso} role="progressbar" aria-label="Progresso do formulário" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso}><span style={{ width: `${progresso}%` }} /></div>}
       {config.logo && <div className={s.logo}><Image unoptimized width={150} height={64} src={config.logo} alt="Logotipo" referrerPolicy="no-referrer" /></div>}
       <div className={s.cartao}>
-        {enviado ? <div className={s.sucesso} role="status"><CheckCircle2 aria-hidden /><h1>{config.tituloFinal}</h1><p>{config.textoFinal}</p>{config.mostrarPontuacao && <p className={s.pontuacao}>Sua pontuação: <strong>{pontuacaoFormulario(formulario.campos, respostas)}</strong></p>}{config.linkFinal && config.botaoFinal && <a className={s.botao} href={config.linkFinal} rel="noopener noreferrer">{config.botaoFinal}<ArrowRight aria-hidden /></a>}</div> : !comecou ? <section className={s.boasVindas}><h1>{config.tituloBoasVindas || formulario.nome}</h1><p>{config.textoBoasVindas || formulario.descricao}</p><button className={s.botao} type="button" onClick={() => setComecou(true)}>{config.botaoInicio}<ArrowRight aria-hidden /></button></section> : <>
+        {enviado ? <div className={s.sucesso}><CheckCircle2 aria-hidden /><h1 role="status">{config.tituloFinal}</h1><p>{config.textoFinal}</p>{config.mostrarPontuacao && <p className={s.pontuacao}>Sua pontuação: <strong>{pontuacaoFormulario(formulario.campos, respostas)}</strong></p>}{whatsapp ? <FinalWhatsapp whatsapp={whatsapp} rotulo={config.botaoFinal.trim() || 'Enviar pelo WhatsApp'} previa={previa} /> : config.destinoFinal === 'link' && config.linkFinal && config.botaoFinal ? <a className={s.botao} href={config.linkFinal} rel="noopener noreferrer">{config.botaoFinal}<ArrowRight aria-hidden /></a> : null}</div> : !comecou ? <section className={s.boasVindas}><h1>{config.tituloBoasVindas || formulario.nome}</h1><p>{config.textoBoasVindas || formulario.descricao}</p><button className={s.botao} type="button" onClick={() => setComecou(true)}>{config.botaoInicio}<ArrowRight aria-hidden /></button></section> : <>
           {!conversa && <header className={s.cabecalho}><h1>{formulario.nome}</h1>{formulario.descricao && <p>{formulario.descricao}</p>}</header>}
           <form className={s.formulario} aria-busy={pendente} onSubmit={(e) => { e.preventDefault(); if (conversa && !ultimo) avancar(); else enviar(String(new FormData(e.currentTarget).get('website') ?? '')) }}>
             {!conversa && <p className={s.instrucao}>Os campos com asterisco são obrigatórios.</p>}
@@ -85,6 +86,32 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
       </div>
     </section>
   )
+}
+
+function FinalWhatsapp({ whatsapp, rotulo, previa }: { whatsapp: MensagemWhatsappFormulario; rotulo: string; previa: boolean }) {
+  const [copiada, setCopiada] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const [copiando, setCopiando] = useState(false)
+  const destino = destinoWhatsappFormulario(whatsapp)
+  const copiar = async (abrir: boolean) => {
+    setCopiando(true); setErro(null)
+    try {
+      await navigator.clipboard.writeText(whatsapp.mensagem)
+      setCopiada(true)
+      if (abrir && !previa) window.location.assign(destino.url)
+    } catch { setErro('Não foi possível copiar automaticamente. Abra o resumo abaixo, selecione e copie a mensagem completa. Depois abra o WhatsApp e cole na conversa.') }
+    finally { setCopiando(false) }
+  }
+  return <div className={s.finalWhatsapp}>
+    <p>{previa ? 'Prévia da mensagem. O WhatsApp não será aberto.' : destino.copiarAntes ? 'Seu resumo ficou longo. Copie a mensagem completa e cole na conversa do WhatsApp para enviar.' : 'O WhatsApp abrirá com todas as respostas organizadas. Confira a mensagem e toque em enviar.'}</p>
+    <div className={s.acoesWhatsapp}>
+      {previa ? <button className={s.botao} type="button" disabled><MessageCircle aria-hidden />{rotulo}</button> : destino.copiarAntes ? <button className={s.botao} type="button" disabled={copiando} onClick={() => void copiar(true)}><MessageCircle aria-hidden />{copiando ? 'Copiando…' : 'Copiar resumo e abrir WhatsApp'}</button> : <a className={s.botao} href={destino.url} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden />{rotulo}</a>}
+      <button className={s.voltar} type="button" disabled={copiando} onClick={() => void copiar(false)}><Copy aria-hidden />{copiada ? 'Resumo copiado' : 'Copiar resumo'}</button>
+    </div>
+    {copiada && <p className={s.avisoWhatsapp} role="status">Mensagem completa copiada.</p>}
+    {erro && <><p className={s.erro} role="alert">{erro}</p>{!previa && <a className={s.voltar} href={`https://wa.me/${whatsapp.numero}`} target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>}</>}
+    <details className={s.resumoWhatsapp} open={erro ? true : undefined}><summary>Ver mensagem completa</summary><textarea aria-label="Mensagem para WhatsApp" readOnly rows={12} value={whatsapp.mensagem} onFocus={(e) => e.currentTarget.select()} /></details>
+  </div>
 }
 
 export function CampoPergunta({ campo: c, valor, aoMudar, numero }: { campo: CampoFormulario; valor?: ValorResposta; aoMudar: (v: ValorResposta) => void; numero?: number }) {

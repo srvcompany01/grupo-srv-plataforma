@@ -1,11 +1,11 @@
 'use server'
 
-import { perguntasVisiveis, validarResposta, type RespostasFormulario } from '@/dominio/formularios'
+import { configuracaoFormulario, perguntasVisiveis, validarResposta, whatsappDoFormulario, type MensagemWhatsappFormulario, type RespostasFormulario } from '@/dominio/formularios'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Json } from '@/infra/supabase/tipos'
 import { buscarFormularioPublico, enviarFormulario } from '@/servicos/formularios'
 
-export type RespostaPublica = { ok: true } | { erro: string }
+export type RespostaPublica = { ok: true; whatsapp?: MensagemWhatsappFormulario | null } | { erro: string }
 export async function enviarFormularioAcao(token: string, form: FormData): Promise<RespostaPublica> {
   if (String(form.get('website') ?? '').trim()) return { ok: true }
   const sb = criarClienteAdmin()
@@ -24,14 +24,15 @@ export async function enviarFormularioAcao(token: string, form: FormData): Promi
     if (erro) return { erro }
     if (c.tipo !== 'statement' && brutas[c.key] !== undefined && brutas[c.key] !== '') respostas[c.key] = brutas[c.key]
   }
+  const utm: Record<string, string> = {}
   if (formulario.configuracao?.capturarUtm) {
-    const utm: Record<string, string> = {}
     for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
       const v = form.get(`__${k}`); if (typeof v === 'string' && v.trim()) utm[k] = v.slice(0, 500)
     }
     respostas.__utm = utm
   }
-  try { await enviarFormulario(sb, token, respostas); return { ok: true } }
+  const whatsapp = whatsappDoFormulario(formulario.nome, formulario.campos, respostas as RespostasFormulario, configuracaoFormulario(formulario.configuracao), utm)
+  try { await enviarFormulario(sb, token, respostas); return { ok: true, whatsapp } }
   catch (e) {
     const erro = e as { code?: string; message?: string }
     if (erro.code === 'P0001' && erro.message) return { erro: erro.message }

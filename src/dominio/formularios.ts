@@ -12,17 +12,39 @@ const uuid = z.string().regex(UUID, 'A chave do campo é inválida. Retire esse 
 const chave = z.union([z.literal('title'), z.literal('description'), uuid, z.string().regex(/^q_[a-zA-Z0-9-]{8,60}$/)])
 const url = z.string().trim().max(2000).refine((v) => !v || /^https:\/\//i.test(v), 'Use um endereço HTTPS.')
 const cor = z.string().regex(/^#[0-9a-f]{6}$/i)
-const ConfigSchema = z.object({
+
+/** Aceita DDI explícito ou um número brasileiro com DDD. O link usa apenas os dígitos. */
+export function numeroWhatsappFormulario(valor: string): string | null {
+  const texto = valor.trim()
+  if (!texto || !/^\+?[\d\s().-]+$/.test(texto)) return null
+  const internacional = texto.startsWith('+') || texto.startsWith('00')
+  let numero = texto.replace(/\D/g, '')
+  if (texto.startsWith('00')) numero = numero.slice(2)
+  if (/^(\d)\1+$/.test(numero)) return null
+  if (!internacional && (numero.length === 10 || numero.length === 11)) {
+    if (!/^[1-9]{2}[2-9]\d{7,8}$/.test(numero)) return null
+    numero = `55${numero}`
+  }
+  if (numero.startsWith('55') && !/^55[1-9]{2}[2-9]\d{7,8}$/.test(numero)) return null
+  return /^[1-9]\d{9,14}$/.test(numero) && !/^(\d)\1+$/.test(numero) ? numero : null
+}
+
+export const ConfigFormularioSchema = z.object({
   usarDominioBiolytics: z.boolean().default(false).describe('Usa o endereço Biolytics do cliente selecionado; requer cliente com página da bio.'),
   modo: z.enum(['conversa', 'pagina']).default('pagina'),
   corBotao: cor.default('#111113'), corTexto: cor.default('#18181b'), corResposta: cor.default('#1d6fe0'), corFundo: cor.default('#ffffff'),
   logo: url.default(''), imagemFundo: url.default(''), fonte: z.enum(['sistema', 'serif', 'mono']).default('sistema'), bordas: z.number().int().min(0).max(28).default(12),
   boasVindas: z.boolean().default(false), tituloBoasVindas: z.string().max(200).default('Vamos começar?'), textoBoasVindas: z.string().max(2000).default(''), botaoInicio: z.string().trim().min(1).max(50).default('Começar'),
   tituloFinal: z.string().trim().min(1).max(200).default('Recebemos o seu pedido'), textoFinal: z.string().max(2000).default('Suas respostas foram registradas. Obrigado!'), botaoFinal: z.string().max(50).default(''), linkFinal: url.default(''), mostrarPontuacao: z.boolean().default(false),
+  destinoFinal: z.enum(['link', 'whatsapp']).default('link').describe('whatsapp abre o número cadastrado com um resumo completo das respostas, depois de salvar o envio.'),
+  whatsappFinal: z.string().trim().max(40, 'O número de WhatsApp está muito longo.').default('').describe('Número do botão final com DDI ou DDD brasileiro.'),
+  protocoloFinal: z.string().trim().max(120, 'O protocolo deve ter até 120 caracteres.').refine((v) => !/[\r\n]/.test(v), 'Informe o protocolo em uma única linha.').default('').describe('Texto opcional no rodapé da mensagem, por exemplo Meta Ads.'),
   textoEnvio: z.string().trim().min(1).max(50).default('Enviar respostas'), duplicadoPor: z.string().max(80).default(''), capturarUtm: z.boolean().default(true),
+}).superRefine((c, ctx) => {
+  if (c.destinoFinal === 'whatsapp' && !numeroWhatsappFormulario(c.whatsappFinal)) ctx.addIssue({ code: 'custom', path: ['whatsappFinal'], message: 'Informe um WhatsApp válido com DDD (Brasil) ou DDI, por exemplo +55 (91) 99999-9999.' })
 })
-export type ConfigFormulario = z.infer<typeof ConfigSchema>
-export function configuracaoFormulario(valor?: unknown): ConfigFormulario { return ConfigSchema.parse(valor ?? {}) }
+export type ConfigFormulario = z.infer<typeof ConfigFormularioSchema>
+export function configuracaoFormulario(valor?: unknown): ConfigFormulario { return ConfigFormularioSchema.parse(valor ?? {}) }
 
 /** A base vem do cadastro do cliente, nunca de um domínio digitado no formulário. */
 export function urlFormularioBiolytics(token: string, urlBiolytics: string | null | undefined): string | null {
@@ -55,7 +77,7 @@ export const EntradaFormularioSchema = z.object({
   responsavelId: z.string().regex(UUID, 'Escolha o responsável pelas tarefas em Opções.'),
   nome: z.string().trim().min(1, 'Informe o nome do formulário.').max(120, 'O nome deve ter até 120 caracteres.'), descricao: z.string().trim(),
   landing: z.string().refine((v) => LANDINGS_COM_FORMULARIO.some((l) => l.slug === v), 'Landing page inválida.').nullable(),
-  campos: CamposFormulario, configuracao: ConfigSchema.optional(),
+  campos: CamposFormulario, configuracao: ConfigFormularioSchema.optional(),
 })
 export type EntradaFormulario = Omit<z.input<typeof EntradaFormularioSchema>, 'campos'> & { campos: CampoFormulario[] }
 export const TIPOS_NO_FORMULARIO: ReadonlySet<TipoCampoPersonalizado> = new Set(['text', 'long_text', 'number', 'money', 'date', 'dropdown', 'checkbox', 'email', 'phone', 'site', 'rating'])
@@ -108,6 +130,44 @@ function documentoValido(valor: string, tipo: 'cpf' | 'cnpj'): boolean {
 }
 export function pontuacaoFormulario(campos: CampoFormulario[], respostas: RespostasFormulario): number {
   return perguntasVisiveis(campos, respostas).reduce((s, c) => s + (c.tipo === 'rating' ? Number(respostas[c.key] ?? 0) : (Array.isArray(respostas[c.key]) ? respostas[c.key] as string[] : [String(respostas[c.key] ?? '')]).reduce((n, v) => n + (c.pontos?.[v] ?? 0), 0)), 0)
+}
+
+export type MensagemWhatsappFormulario = { numero: string; mensagem: string }
+const textoDaMensagem = (v: string) => v.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim()
+const tituloDaMensagem = (v: string) => textoDaMensagem(v).replace(/[*_~`]/g, '').replace(/\s+/g, ' ')
+
+function respostaParaWhatsapp(c: CampoFormulario, valor: ValorResposta | undefined): string {
+  if (valor === undefined || valor === '' || (Array.isArray(valor) && !valor.length)) return 'Não informado'
+  if (Array.isArray(valor)) return valor.map((v) => `• ${textoDaMensagem(v)}`).join('\n')
+  if (typeof valor === 'boolean') return c.tipo === 'terms' ? valor ? 'Aceito' : 'Não aceito' : valor ? 'Sim' : 'Não'
+  if (typeof valor === 'number') return c.tipo === 'money' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor) : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 20 }).format(valor)
+  if (c.tipo === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor.split('-').reverse().join('/')
+  return textoDaMensagem(valor)
+}
+
+/** Perguntas na ordem do formulário; condições ocultas e textos sem resposta não entram. Não corta respostas. */
+export function whatsappDoFormulario(nome: string, campos: CampoFormulario[], respostas: RespostasFormulario, config: ConfigFormulario, origem: Record<string, string> = {}): MensagemWhatsappFormulario | null {
+  const numero = numeroWhatsappFormulario(config.whatsappFinal)
+  if (config.destinoFinal !== 'whatsapp' || !numero) return null
+  const blocos = [`*${tituloDaMensagem(nome)}*`, 'Respostas do formulário']
+  for (const c of perguntasVisiveis(campos, respostas)) {
+    if (c.tipo !== 'statement') blocos.push(`*${tituloDaMensagem(c.label)}*\n${respostaParaWhatsapp(c, respostas[c.key])}`)
+  }
+  if (config.mostrarPontuacao) blocos.push(`*Pontuação:* ${pontuacaoFormulario(campos, respostas)}`)
+  if (config.capturarUtm) {
+    const rotulos = { utm_source: 'Origem', utm_medium: 'Meio', utm_campaign: 'Campanha', utm_term: 'Termo', utm_content: 'Conteúdo', gclid: 'GCLID', fbclid: 'FBCLID' }
+    const linhas = Object.entries(rotulos).flatMap(([chave, rotulo]) => origem[chave] ? [`${rotulo}: ${textoDaMensagem(origem[chave])}`] : [])
+    if (linhas.length) blocos.push(`*Origem do contato*\n${linhas.join('\n')}`)
+  }
+  if (config.protocoloFinal) blocos.push(`───────────────\n*Protocolo:* ${tituloDaMensagem(config.protocoloFinal)}`)
+  return { numero, mensagem: blocos.join('\n\n') }
+}
+
+export function destinoWhatsappFormulario({ numero, mensagem }: MensagemWhatsappFormulario): { url: string; copiarAntes: boolean } {
+  const base = `https://wa.me/${numero}`
+  const url = `${base}?text=${encodeURIComponent(mensagem)}`
+  // Evita depender de links enormes em navegadores e apps: a mensagem completa continua disponível para copiar.
+  return url.length <= 8000 ? { url, copiarAntes: false } : { url: base, copiarAntes: true }
 }
 /** Compatibilidade com formulários e integrações anteriores. */
 export function respostasDoForm(campos: CampoFormulario[], tipos: Record<string, TipoCampoPersonalizado | undefined>, lerValor: (chave: string) => string | null): Record<string, string | number | boolean> {

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/componentes/ui/input'
 import { Interruptor } from '@/componentes/ui/interruptor'
 import { Textarea } from '@/componentes/ui/textarea'
-import { CATALOGO_PERGUNTAS, EntradaFormularioSchema, configuracaoFormulario, urlFormularioBiolytics, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
+import { CATALOGO_PERGUNTAS, ConfigFormularioSchema, EntradaFormularioSchema, configuracaoFormulario, urlFormularioBiolytics, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
 import { LANDINGS_COM_FORMULARIO } from '@/dominio/landings'
 import type { DadosFormularios, Formulario, RespostaFormulario } from '@/servicos/formularios'
 import { CampoPergunta, FormularioPublico } from '@/app/f/[token]/FormularioPublico'
@@ -31,20 +31,21 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
   const [celular, setCelular] = useState(false)
   const [amostra, setAmostra] = useState<RespostasFormulario>({})
   const [erro, setErro] = useState<string | null>(null)
-  const [campoInvalido, setCampoInvalido] = useState<'listaId' | 'responsavelId' | 'clienteId' | null>(null)
+  const [campoInvalido, setCampoInvalido] = useState<'listaId' | 'responsavelId' | 'clienteId' | 'whatsappFinal' | null>(null)
   const listaRef = useRef<HTMLSelectElement>(null)
   const responsavelRef = useRef<HTMLSelectElement>(null)
   const clienteRef = useRef<HTMLSelectElement>(null)
+  const whatsappRef = useRef<HTMLInputElement>(null)
   const [pendente, iniciar] = useTransition()
   const confirmar = useConfirmar()
   const prefixo = useId()
   useEffect(() => {
     if (aba !== 'Opções' || !campoInvalido) return
-    const controle = { listaId: listaRef, responsavelId: responsavelRef, clienteId: clienteRef }[campoInvalido].current
+    const controle = { listaId: listaRef, responsavelId: responsavelRef, clienteId: clienteRef, whatsappFinal: whatsappRef }[campoInvalido].current
     controle?.focus({ preventScroll: true })
     controle?.scrollIntoView({ block: 'center' })
   }, [aba, campoInvalido])
-  const config = configuracaoFormulario(entrada.configuracao)
+  const config: ConfigFormulario = { ...configuracaoFormulario(), ...entrada.configuracao }
   const campo = entrada.campos.find((c) => c.key === selecionada) ?? entrada.campos[0]
   const indice = entrada.campos.indexOf(campo)
   const vinculado = /^[0-9a-f-]{36}$/i.test(campo.key)
@@ -91,8 +92,8 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
         if (typeof indice === 'number' && entrada.campos[indice]) setSelecionada(entrada.campos[indice].key)
       } else {
         setAba('Opções')
-        const chave = falha.path[0]
-        setCampoInvalido(chave === 'listaId' || chave === 'responsavelId' || chave === 'clienteId' ? chave : null)
+        const chave = falha.path[0] === 'configuracao' ? falha.path[1] : falha.path[0]
+        setCampoInvalido(chave === 'whatsappFinal' || chave === 'listaId' || chave === 'responsavelId' || chave === 'clienteId' ? chave : null)
       }
       return
     }
@@ -109,6 +110,16 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
     } catch { setErro('Não foi possível salvar agora. Suas alterações continuam no editor.') }
     })
   }
+  const alternarPrevia = () => {
+    if (previa) { setPrevia(false); return }
+    const validacao = ConfigFormularioSchema.safeParse(config)
+    if (!validacao.success) {
+      setAba('Opções'); setErro(validacao.error.issues[0].message)
+      setCampoInvalido(validacao.error.issues[0].path[0] === 'whatsappFinal' ? 'whatsappFinal' : null)
+      return
+    }
+    setErro(null); setPrevia(true)
+  }
   const copiar = async (texto: string) => {
     try { await navigator.clipboard.writeText(texto); avisar({ ok: 'Copiado.' }, true) }
     catch { avisar({ erro: 'Não foi possível copiar. Selecione o texto e copie manualmente.' }) }
@@ -124,7 +135,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
       <header className={s.topo}>
         <div className={s.identidade}><Button variant="ghost" size="icon" onClick={fechar} aria-label="Voltar aos formulários"><ArrowLeft /></Button><div><strong>{entrada.nome}</strong><span>{!entrada.listaId || !entrada.responsavelId ? 'Defina lista e responsável em Opções' : alterado ? 'Alterações não salvas' : rascunho ? 'Rascunho' : 'Publicado'}</span></div></div>
         <nav className={s.abas} role="tablist" aria-label="Seções do formulário">{(['Editor', 'Opções', 'Compartilhar', 'Respostas'] as Aba[]).map((a) => <button type="button" role="tab" id={`${prefixo}-${a}`} aria-controls={`${prefixo}-conteudo`} aria-selected={aba === a && !previa} key={a} onClick={() => { setPrevia(false); setAba(a) }}>{a}</button>)}</nav>
-        <div className={s.acoes}><Button variant="secondary" onClick={() => setPrevia((v) => !v)}><Eye />{previa ? 'Voltar ao editor' : 'Ver prévia'}</Button><Button variant="secondary" disabled={pendente} onClick={() => salvar(false)}><Save />Salvar rascunho</Button><Button disabled={pendente} onClick={() => salvar(true)}><Globe />{pendente ? 'Salvando…' : 'Publicar'}</Button></div>
+        <div className={s.acoes}><Button variant="secondary" onClick={alternarPrevia}><Eye />{previa ? 'Voltar ao editor' : 'Ver prévia'}</Button><Button variant="secondary" disabled={pendente} onClick={() => salvar(false)}><Save />Salvar rascunho</Button><Button disabled={pendente} onClick={() => salvar(true)}><Globe />{pendente ? 'Salvando…' : 'Publicar'}</Button></div>
       </header>
       {erro && <p id={`${prefixo}-erro`} className={s.erro} role="alert">{erro}</p>}
       <div id={`${prefixo}-conteudo`} role="tabpanel" aria-labelledby={`${prefixo}-${aba}`} className={s.corpo} inert={pendente}>
@@ -154,7 +165,20 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
           <Bloco titulo="Endereço do formulário"><LinhaSwitch nome="Usar domínio Biolytics do cliente" valor={config.usarDominioBiolytics} mudar={(v) => configurar({ usarDominioBiolytics: v })} />{config.usarDominioBiolytics ? <><p className={s.ajuda}>{clienteBiolytics?.urlBiolytics ? `O formulário usará o endereço Biolytics de ${clienteBiolytics.nome}. Publique para aplicar a alteração.` : 'Selecione um cliente acima e crie a página dele em Biolytics para usar este endereço.'}</p>{clienteBiolytics?.urlBiolytics && <Input aria-label="Endereço Biolytics do formulário" readOnly value={urlBiolytics ?? `${clienteBiolytics.urlBiolytics}/f/…`} />}</> : <p className={s.ajuda}>O formulário usa o domínio da plataforma. Ative para usar o endereço Biolytics do cliente selecionado.</p>}</Bloco>
           <Bloco titulo="Aparência"><Rotulo nome="Modo de preenchimento"><select value={config.modo} onChange={(e) => configurar({ modo: e.target.value as ConfigFormulario['modo'] })}><option value="conversa">Uma pergunta por vez</option><option value="pagina">Todos os campos na página</option></select></Rotulo><div className={s.cores}>{(['corBotao','corTexto','corResposta','corFundo'] as const).map((k, i) => <label key={k}>{['Botão','Pergunta','Resposta','Fundo'][i]}<input type="color" value={config[k]} onChange={(e) => configurar({ [k]: e.target.value })} /></label>)}</div><Rotulo nome="Logotipo (URL HTTPS)"><Input type="url" value={config.logo} onChange={(e) => configurar({ logo: e.target.value })} /></Rotulo><Rotulo nome="Imagem de fundo (URL HTTPS)"><Input type="url" value={config.imagemFundo} onChange={(e) => configurar({ imagemFundo: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Fonte"><select value={config.fonte} onChange={(e) => configurar({ fonte: e.target.value as ConfigFormulario['fonte'] })}><option value="sistema">Sistema</option><option value="serif">Serifada</option><option value="mono">Monoespaçada</option></select></Rotulo><Rotulo nome={`Bordas: ${config.bordas}px`}><input type="range" min={0} max={28} value={config.bordas} onChange={(e) => configurar({ bordas: Number(e.target.value) })} /></Rotulo></div></Bloco>
           <Bloco titulo="Boas-vindas"><LinhaSwitch nome="Exibir tela de boas-vindas" valor={config.boasVindas} mudar={(v) => configurar({ boasVindas: v })} /><Rotulo nome="Título de boas-vindas"><Input value={config.tituloBoasVindas} onChange={(e) => configurar({ tituloBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto de boas-vindas"><Textarea rows={3} value={config.textoBoasVindas} onChange={(e) => configurar({ textoBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão inicial"><Input value={config.botaoInicio} onChange={(e) => configurar({ botaoInicio: e.target.value })} /></Rotulo></Bloco>
-          <Bloco titulo="Encerramento"><Rotulo nome="Mensagem de agradecimento"><Input value={config.tituloFinal} onChange={(e) => configurar({ tituloFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto de agradecimento"><Textarea rows={3} value={config.textoFinal} onChange={(e) => configurar({ textoFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão final"><Input value={config.botaoFinal} onChange={(e) => configurar({ botaoFinal: e.target.value })} /></Rotulo><Rotulo nome="Link do botão final (HTTPS)"><Input type="url" value={config.linkFinal} onChange={(e) => configurar({ linkFinal: e.target.value })} /></Rotulo><LinhaSwitch nome="Exibir pontuação ao final" valor={config.mostrarPontuacao} mudar={(v) => configurar({ mostrarPontuacao: v })} /><Rotulo nome="Texto do botão de envio"><Input value={config.textoEnvio} onChange={(e) => configurar({ textoEnvio: e.target.value })} /></Rotulo></Bloco>
+          <Bloco titulo="Encerramento">
+            <Rotulo nome="Mensagem de agradecimento"><Input value={config.tituloFinal} onChange={(e) => configurar({ tituloFinal: e.target.value })} /></Rotulo>
+            <Rotulo nome="Texto de agradecimento"><Textarea rows={3} value={config.textoFinal} onChange={(e) => configurar({ textoFinal: e.target.value })} /></Rotulo>
+            <Rotulo nome="Ação do botão final"><select value={config.destinoFinal} onChange={(e) => configurar({ destinoFinal: e.target.value as ConfigFormulario['destinoFinal'] })}><option value="link">Abrir um link</option><option value="whatsapp">Enviar respostas pelo WhatsApp</option></select></Rotulo>
+            <Rotulo nome="Texto do botão final"><Input maxLength={50} placeholder={config.destinoFinal === 'whatsapp' ? 'Enviar pelo WhatsApp' : 'Ex.: Continuar'} value={config.botaoFinal} onChange={(e) => configurar({ botaoFinal: e.target.value })} /></Rotulo>
+            {config.destinoFinal === 'whatsapp' ? <>
+              <Rotulo nome="WhatsApp de destino"><Input ref={whatsappRef} type="tel" inputMode="tel" autoComplete="tel" maxLength={40} placeholder="+55 (91) 99999-9999" aria-invalid={campoInvalido === 'whatsappFinal'} aria-describedby={campoInvalido === 'whatsappFinal' && erro ? `${prefixo}-erro` : undefined} value={config.whatsappFinal} onChange={(e) => configurar({ whatsappFinal: e.target.value })} /></Rotulo>
+              <p className={s.ajuda}>Cadastre o número que receberá os contatos. Números brasileiros podem usar apenas DDD e telefone; para outros países, informe +DDI.</p>
+              <Rotulo nome="Protocolo no rodapé da mensagem (opcional)"><Input maxLength={120} placeholder="Ex.: Meta Ads" value={config.protocoloFinal} onChange={(e) => configurar({ protocoloFinal: e.target.value })} /></Rotulo>
+              <p className={s.ajuda}>Depois de registrar as respostas, o botão abre o WhatsApp com o nome do formulário, perguntas e respostas organizadas, dados de origem disponíveis e o protocolo no rodapé. A pessoa confere a mensagem e confirma o envio no WhatsApp.</p>
+            </> : <Rotulo nome="Link do botão final (HTTPS)"><Input type="url" value={config.linkFinal} onChange={(e) => configurar({ linkFinal: e.target.value })} /></Rotulo>}
+            <LinhaSwitch nome="Exibir pontuação ao final" valor={config.mostrarPontuacao} mudar={(v) => configurar({ mostrarPontuacao: v })} />
+            <Rotulo nome="Texto do botão de envio"><Input value={config.textoEnvio} onChange={(e) => configurar({ textoEnvio: e.target.value })} /></Rotulo>
+          </Bloco>
           <Bloco titulo="Regras de recebimento"><LinhaSwitch nome="Capturar UTMs, GCLID e FBCLID" valor={config.capturarUtm} mudar={(v) => configurar({ capturarUtm: v })} /><Rotulo nome="Impedir repetição pela resposta de"><select value={config.duplicadoPor} onChange={(e) => configurar({ duplicadoPor: e.target.value })}><option value="">Não limitar envios duplicados</option>{entrada.campos.filter((c) => c.tipo !== 'statement').map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></Rotulo><p className={s.ajuda}>O mesmo valor não poderá gerar uma nova tarefa. Para fechar o link, desative o formulário na listagem.</p></Bloco>
         </div> : aba === 'Compartilhar' ? <div className={s.compartilhar}><Bloco titulo="Link público">{url ? <><p className={s.ajuda}>{rascunho ? 'Há um rascunho. O link exibe a última versão publicada.' : 'Compartilhe este endereço para receber respostas sem exigir login.'}</p><Input aria-label="Link público" readOnly value={url} /><div className={s.botoes}><Button onClick={() => copiar(url)}><Copy />Copiar link</Button><Button variant="secondary" asChild><a href={url} target="_blank" rel="noopener noreferrer">Abrir formulário</a></Button></div></> : <p className={s.ajuda}>Salve o formulário e reabra-o na listagem para copiar o link. Publique para liberar os envios.</p>}</Bloco>{url && <Bloco titulo="Incorporar em um site"><p className={s.ajuda}>Cole este código no bloco HTML do seu site.</p><Textarea aria-label="Código de incorporação" readOnly rows={4} value={`<iframe src="${url}" width="100%" height="700" title="Formulário" style="border:0"></iframe>`} /><Button variant="secondary" onClick={() => copiar(`<iframe src="${url}" width="100%" height="700" title="Formulário" style="border:0"></iframe>`)}><Copy />Copiar código</Button></Bloco>}</div> : id ? <Respostas id={id} /> : <div className={s.vazio}><ClipboardList /><h2>Nenhuma resposta ainda</h2><p>Publique seu formulário e compartilhe o link para começar a receber respostas.</p></div>}
       </div>
