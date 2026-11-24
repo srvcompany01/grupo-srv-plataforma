@@ -28,9 +28,9 @@ export function GerenciarFormularios({ formularios, listas, clientes, equipe }: 
   const podeCriar = listas.length > 0 && equipe.length > 0
   const ativos = formularios.filter((f) => f.ativo).length
 
-  const copiar = async (token: string) => {
+  const copiar = async (f: Formulario) => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/f/${token}`)
+      await navigator.clipboard.writeText(f.urlPublica ?? `${window.location.origin}/f/${f.token}`)
       avisar({ ok: 'Link copiado.' }, true)
     } catch {
       avisar({ erro: 'Não foi possível copiar. Abra o formulário e copie o endereço do navegador.' })
@@ -78,8 +78,8 @@ export function GerenciarFormularios({ formularios, listas, clientes, equipe }: 
               </div>
               <div className={s.acoes}>
                 <div className={s.ativacao}><Interruptor marcado={f.ativo} desabilitado={pendente || !f.publicadoEm} rotulo={`Ativar ${f.nome}`} aoMudar={(ativo) => iniciar(async () => void avisar(await alternarFormularioAcao(f.id, ativo), true))} /></div>
-                {f.ativo && <Button variant="ghost" size="icon" asChild><a href={`/f/${f.token}`} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${f.nome}`} title="Abrir formulário"><ExternalLink aria-hidden /></a></Button>}
-                <Button variant="secondary" onClick={() => copiar(f.token)} aria-label={`Copiar link de ${f.nome}`}><Copy aria-hidden /> Copiar link</Button>
+                {f.ativo && <Button variant="ghost" size="icon" asChild><a href={f.urlPublica ?? `/f/${f.token}`} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${f.nome}`} title="Abrir formulário"><ExternalLink aria-hidden /></a></Button>}
+                <Button variant="secondary" onClick={() => copiar(f)} aria-label={`Copiar link de ${f.nome}`}><Copy aria-hidden /> Copiar link</Button>
                 <Button variant="ghost" size="icon" disabled={pendente} onClick={() => iniciar(async () => void avisar(await duplicarFormularioAcao(f.id), true))} aria-label={`Duplicar ${f.nome}`} title="Duplicar"><CopyPlus aria-hidden /></Button>
                 <Button variant="ghost" size="icon" disabled={pendente} onClick={() => setEditando(f)} aria-label={`Editar ${f.nome}`} title="Editar"><Pencil aria-hidden /></Button>
                 <Button variant="ghost" size="icon" disabled={pendente} onClick={() => arquivar(f)} aria-label={`Arquivar ${f.nome}`} title="Arquivar"><Archive aria-hidden /></Button>

@@ -13,6 +13,7 @@ const chave = z.union([z.literal('title'), z.literal('description'), uuid, z.str
 const url = z.string().trim().max(2000).refine((v) => !v || /^https:\/\//i.test(v), 'Use um endereço HTTPS.')
 const cor = z.string().regex(/^#[0-9a-f]{6}$/i)
 const ConfigSchema = z.object({
+  usarDominioBiolytics: z.boolean().default(false).describe('Usa o endereço Biolytics do cliente selecionado; requer cliente com página da bio.'),
   modo: z.enum(['conversa', 'pagina']).default('pagina'),
   corBotao: cor.default('#111113'), corTexto: cor.default('#18181b'), corResposta: cor.default('#1d6fe0'), corFundo: cor.default('#ffffff'),
   logo: url.default(''), imagemFundo: url.default(''), fonte: z.enum(['sistema', 'serif', 'mono']).default('sistema'), bordas: z.number().int().min(0).max(28).default(12),
@@ -22,6 +23,11 @@ const ConfigSchema = z.object({
 })
 export type ConfigFormulario = z.infer<typeof ConfigSchema>
 export function configuracaoFormulario(valor?: unknown): ConfigFormulario { return ConfigSchema.parse(valor ?? {}) }
+
+/** A base vem do cadastro do cliente, nunca de um domínio digitado no formulário. */
+export function urlFormularioBiolytics(token: string, urlBiolytics: string | null | undefined): string | null {
+  return token && urlBiolytics ? `${urlBiolytics.replace(/\/$/, '')}/f/${encodeURIComponent(token)}` : null
+}
 export const PerguntaSchema = z.object({
   key: chave, label: z.string().trim().min(1, 'Preencha o nome de cada campo.').max(120, 'O nome de cada campo deve ter até 120 caracteres.'), required: z.boolean(),
   tipo: z.enum(TIPOS_PERGUNTA).optional(), descricao: z.string().max(2000).optional(), placeholder: z.string().max(200).optional(),

@@ -23,6 +23,8 @@ export function urlDaBio(slug: string, origem: string | null = null, dominio: st
 
 /** Reescreve o caminho que chega no domínio da bio para a rota interna; null = não existe (página em branco 404). */
 export function caminhoInternoDaBio(caminho: string): string | null {
+  const formulario = caminho.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/f\/([a-zA-Z0-9_-]{16,100})\/?$/)
+  if (formulario) return `/l/${formulario[1]}/f/${formulario[2]}`
   const m = caminho.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/ir\/([a-z0-9-]{1,40})|\/(v|quiz))?\/?$/)
   if (!m) return null
   return m[2] ? `/l/${m[1]}/ir/${m[2]}` : m[3] ? `/l/${m[1]}/${m[3]}` : `/l/${m[1]}`

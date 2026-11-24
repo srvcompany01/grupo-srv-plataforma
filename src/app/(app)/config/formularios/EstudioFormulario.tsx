@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/componentes/ui/input'
 import { Interruptor } from '@/componentes/ui/interruptor'
 import { Textarea } from '@/componentes/ui/textarea'
-import { CATALOGO_PERGUNTAS, EntradaFormularioSchema, configuracaoFormulario, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
+import { CATALOGO_PERGUNTAS, EntradaFormularioSchema, configuracaoFormulario, urlFormularioBiolytics, type CampoFormulario, type ConfigFormulario, type EntradaFormulario, type RespostasFormulario, type TipoPergunta } from '@/dominio/formularios'
 import { LANDINGS_COM_FORMULARIO } from '@/dominio/landings'
 import type { DadosFormularios, Formulario, RespostaFormulario } from '@/servicos/formularios'
 import { CampoPergunta, FormularioPublico } from '@/app/f/[token]/FormularioPublico'
@@ -21,6 +21,7 @@ type Aba = 'Editor' | 'Opções' | 'Compartilhar' | 'Respostas'
 export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario: Formulario | null; dados: Pick<DadosFormularios, 'listas' | 'clientes' | 'equipe'>; aoFechar: () => void }) {
   const [id, setId] = useState(formulario?.id ?? null)
   const [token, setToken] = useState(formulario?.token ?? '')
+  const [urlPublicada, setUrlPublicada] = useState(formulario?.urlPublica ?? null)
   const [entrada, setEntrada] = useState<EntradaFormulario>(() => ({ nome: formulario?.nome ?? 'Novo formulário', descricao: formulario?.descricao ?? '', listaId: formulario?.listaId ?? '', clienteId: formulario?.clienteId ?? null, responsavelId: formulario?.responsavelId ?? '', landing: formulario?.landing ?? null, campos: formulario?.campos ?? [{ key: 'title', label: 'Como podemos ajudar?', required: true, tipo: 'text' }], configuracao: configuracaoFormulario(formulario?.configuracao ?? { modo: 'conversa' }) }))
   const [aba, setAba] = useState<Aba>('Editor')
   const [selecionada, setSelecionada] = useState(entrada.campos[0].key)
@@ -49,7 +50,9 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
   const vinculado = /^[0-9a-f-]{36}$/i.test(campo.key)
   const oferecidos = dados.listas.find((l) => l.id === entrada.listaId)?.oferecidos ?? []
   const extras = oferecidos.filter((c) => !entrada.campos.some((e) => e.key === c.key))
-  const url = token && typeof window !== 'undefined' ? `${window.location.origin}/f/${token}` : ''
+  const clienteBiolytics = dados.clientes.find((c) => c.id === entrada.clienteId)
+  const urlBiolytics = urlFormularioBiolytics(token, clienteBiolytics?.urlBiolytics)
+  const url = urlPublicada ?? (token && typeof window !== 'undefined' ? `${window.location.origin}/f/${token}` : '')
   const mudar = (valores: Partial<EntradaFormulario>) => { setEntrada((a) => ({ ...a, ...valores })); setAlterado(true); setErro(null); setCampoInvalido(null) }
   const configurar = (valores: Partial<ConfigFormulario>) => mudar({ configuracao: { ...config, ...valores } })
   const editar = (valores: Partial<CampoFormulario>) => mudar({ campos: entrada.campos.map((c) => c.key === campo.key ? { ...c, ...valores } : c) })
@@ -72,6 +75,11 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
     aoFechar()
   }
   const salvar = (publicar: boolean) => {
+    if (config.usarDominioBiolytics && !clienteBiolytics?.urlBiolytics) {
+      setPrevia(false); setAba('Opções'); setCampoInvalido('clienteId')
+      setErro(entrada.clienteId ? 'Crie primeiro a página deste cliente na área Biolytics.' : 'Selecione um cliente para usar o domínio Biolytics.')
+      return
+    }
     const validacao = EntradaFormularioSchema.safeParse(entrada)
     if (!validacao.success) {
       const falha = validacao.error.issues[0]
@@ -96,6 +104,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
       if (r.erro) { setErro(r.erro); return }
       if (r.id) setId(r.id)
       if (r.token) setToken(r.token)
+      if (r.urlPublica !== undefined) setUrlPublicada(r.urlPublica)
       setAlterado(false); setRascunho(!publicar); avisar(r, true)
     } catch { setErro('Não foi possível salvar agora. Suas alterações continuam no editor.') }
     })
@@ -142,6 +151,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
           </aside>
         </div> : aba === 'Opções' ? <div className={s.opcoes}>
           <Bloco titulo="Informações e destino"><Rotulo nome="Nome do formulário"><Input maxLength={120} value={entrada.nome} onChange={(e) => mudar({ nome: e.target.value })} /></Rotulo><Rotulo nome="Descrição do formulário"><Textarea rows={3} value={entrada.descricao} onChange={(e) => mudar({ descricao: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Lista de destino"><select ref={listaRef} aria-invalid={campoInvalido === 'listaId'} aria-describedby={campoInvalido === 'listaId' && erro ? `${prefixo}-erro` : undefined} value={entrada.listaId} onChange={(e) => { const lista = dados.listas.find((l) => l.id === e.target.value); mudar({ listaId: e.target.value, campos: entrada.campos.filter((c) => c.key.startsWith('q_') || c.key === 'title' || c.key === 'description' || lista?.oferecidos.some((o) => o.key === c.key)) }) }}><option value="">Selecione uma lista</option>{dados.listas.map((l) => <option key={l.id} value={l.id}>{l.caminho}</option>)}</select></Rotulo><Rotulo nome="Responsável"><select ref={responsavelRef} aria-invalid={campoInvalido === 'responsavelId'} aria-describedby={campoInvalido === 'responsavelId' && erro ? `${prefixo}-erro` : undefined} value={entrada.responsavelId} onChange={(e) => mudar({ responsavelId: e.target.value })}><option value="">Selecione uma pessoa</option>{dados.equipe.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></Rotulo></div><Rotulo nome="Cliente"><select ref={clienteRef} aria-invalid={campoInvalido === 'clienteId'} aria-describedby={campoInvalido === 'clienteId' && erro ? `${prefixo}-erro` : undefined} value={entrada.clienteId ?? ''} onChange={(e) => mudar({ clienteId: e.target.value || null })}><option value="">Usar o cliente da lista</option>{dados.clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></Rotulo><Rotulo nome="Landing page ligada"><select value={entrada.landing ?? ''} onChange={(e) => mudar({ landing: e.target.value || null })}><option value="">Nenhuma</option>{LANDINGS_COM_FORMULARIO.map((l) => <option key={l.slug} value={l.slug}>{l.nome}</option>)}</select></Rotulo><p className={s.ajuda}>Cada resposta publicada gera uma tarefa. Perguntas independentes são guardadas na resposta e na descrição da tarefa.</p></Bloco>
+          <Bloco titulo="Endereço do formulário"><LinhaSwitch nome="Usar domínio Biolytics do cliente" valor={config.usarDominioBiolytics} mudar={(v) => configurar({ usarDominioBiolytics: v })} />{config.usarDominioBiolytics ? <><p className={s.ajuda}>{clienteBiolytics?.urlBiolytics ? `O formulário usará o endereço Biolytics de ${clienteBiolytics.nome}. Publique para aplicar a alteração.` : 'Selecione um cliente acima e crie a página dele em Biolytics para usar este endereço.'}</p>{clienteBiolytics?.urlBiolytics && <Input aria-label="Endereço Biolytics do formulário" readOnly value={urlBiolytics ?? `${clienteBiolytics.urlBiolytics}/f/…`} />}</> : <p className={s.ajuda}>O formulário usa o domínio da plataforma. Ative para usar o endereço Biolytics do cliente selecionado.</p>}</Bloco>
           <Bloco titulo="Aparência"><Rotulo nome="Modo de preenchimento"><select value={config.modo} onChange={(e) => configurar({ modo: e.target.value as ConfigFormulario['modo'] })}><option value="conversa">Uma pergunta por vez</option><option value="pagina">Todos os campos na página</option></select></Rotulo><div className={s.cores}>{(['corBotao','corTexto','corResposta','corFundo'] as const).map((k, i) => <label key={k}>{['Botão','Pergunta','Resposta','Fundo'][i]}<input type="color" value={config[k]} onChange={(e) => configurar({ [k]: e.target.value })} /></label>)}</div><Rotulo nome="Logotipo (URL HTTPS)"><Input type="url" value={config.logo} onChange={(e) => configurar({ logo: e.target.value })} /></Rotulo><Rotulo nome="Imagem de fundo (URL HTTPS)"><Input type="url" value={config.imagemFundo} onChange={(e) => configurar({ imagemFundo: e.target.value })} /></Rotulo><div className={s.grade}><Rotulo nome="Fonte"><select value={config.fonte} onChange={(e) => configurar({ fonte: e.target.value as ConfigFormulario['fonte'] })}><option value="sistema">Sistema</option><option value="serif">Serifada</option><option value="mono">Monoespaçada</option></select></Rotulo><Rotulo nome={`Bordas: ${config.bordas}px`}><input type="range" min={0} max={28} value={config.bordas} onChange={(e) => configurar({ bordas: Number(e.target.value) })} /></Rotulo></div></Bloco>
           <Bloco titulo="Boas-vindas"><LinhaSwitch nome="Exibir tela de boas-vindas" valor={config.boasVindas} mudar={(v) => configurar({ boasVindas: v })} /><Rotulo nome="Título de boas-vindas"><Input value={config.tituloBoasVindas} onChange={(e) => configurar({ tituloBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto de boas-vindas"><Textarea rows={3} value={config.textoBoasVindas} onChange={(e) => configurar({ textoBoasVindas: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão inicial"><Input value={config.botaoInicio} onChange={(e) => configurar({ botaoInicio: e.target.value })} /></Rotulo></Bloco>
           <Bloco titulo="Encerramento"><Rotulo nome="Mensagem de agradecimento"><Input value={config.tituloFinal} onChange={(e) => configurar({ tituloFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto de agradecimento"><Textarea rows={3} value={config.textoFinal} onChange={(e) => configurar({ textoFinal: e.target.value })} /></Rotulo><Rotulo nome="Texto do botão final"><Input value={config.botaoFinal} onChange={(e) => configurar({ botaoFinal: e.target.value })} /></Rotulo><Rotulo nome="Link do botão final (HTTPS)"><Input type="url" value={config.linkFinal} onChange={(e) => configurar({ linkFinal: e.target.value })} /></Rotulo><LinhaSwitch nome="Exibir pontuação ao final" valor={config.mostrarPontuacao} mudar={(v) => configurar({ mostrarPontuacao: v })} /><Rotulo nome="Texto do botão de envio"><Input value={config.textoEnvio} onChange={(e) => configurar({ textoEnvio: e.target.value })} /></Rotulo></Bloco>

@@ -1,4 +1,5 @@
-import { camposOferecidos, EntradaFormularioSchema, configuracaoFormulario, type ConfigFormulario, type TipoPergunta, type RespostasFormulario, type EntradaFormulario, type CampoFormulario } from '@/dominio/formularios'
+import { camposOferecidos, EntradaFormularioSchema, configuracaoFormulario, urlFormularioBiolytics, type ConfigFormulario, type TipoPergunta, type RespostasFormulario, type EntradaFormulario, type CampoFormulario } from '@/dominio/formularios'
+import { slugValido, urlDaBio } from '@/dominio/bio'
 import { gerarToken } from '@/dominio/token'
 import type { Supabase } from '@/infra/supabase/servidor'
 import type { Json } from '@/infra/supabase/tipos'
@@ -23,6 +24,7 @@ export type Formulario = {
   temRascunho: boolean
   publicadoEm: string | null
   totalRespostas: number
+  urlPublica?: string | null
 }
 
 export type ListaDoFormulario = { id: string; caminho: string; oferecidos: CampoFormulario[] }
@@ -30,7 +32,7 @@ export type ListaDoFormulario = { id: string; caminho: string; oferecidos: Campo
 export type DadosFormularios = {
   formularios: Formulario[]
   listas: ListaDoFormulario[]
-  clientes: { id: string; nome: string }[]
+  clientes: { id: string; nome: string; urlBiolytics?: string | null }[]
   equipe: { id: string; nome: string }[]
 }
 
@@ -43,6 +45,13 @@ export async function salvarFormulario(sb: Supabase, id: string | null, entrada:
   if (!validacao.success) throw erroFormulario(validacao.error.issues[0].message)
   const e = validacao.data
   const configuracao = configuracaoFormulario(e.configuracao)
+  if (configuracao.usarDominioBiolytics) {
+    if (!e.clienteId) throw erroFormulario('Selecione um cliente em Opções para usar o domínio Biolytics.')
+    if (!process.env.BIO_DOMINIO) throw erroFormulario('O domínio Biolytics ainda não está configurado na plataforma.')
+    const { data: cliente, error } = await sb.from('clients').select('bio_slug').eq('id', e.clienteId).maybeSingle()
+    if (error) throw error
+    if (!cliente?.bio_slug || !slugValido(cliente.bio_slug)) throw erroFormulario('Crie primeiro a página do cliente na área Biolytics para usar este endereço.')
+  }
   if (configuracao.duplicadoPor && !e.campos.some((c) => c.key === configuracao.duplicadoPor)) throw erroFormulario('Escolha uma pergunta existente para limitar envios duplicados.')
   const base = { list_id: e.listaId, client_id: e.clienteId, assignee_id: e.responsavelId, name: e.nome, description: e.descricao || null, landing: e.landing, fields: e.campos as unknown as Json, settings: configuracao as unknown as Json }
   const { data, error } = id
@@ -68,12 +77,14 @@ export async function arquivarFormulario(sb: Supabase, id: string): Promise<void
 
 /** Tela de gestão (admin): formulários ativos e o que a gestão precisa para criar e editar. */
 export async function dadosFormularios(sb: Supabase): Promise<DadosFormularios> {
-  const [gestao, linhas, clientes, equipe] = await Promise.all([
+  const [gestao, linhas, clientes, equipe, bios] = await Promise.all([
     dadosGestaoCampos(sb),
     sb.from('forms').select('id, list_id, client_id, assignee_id, name, description, token, active, landing, fields, settings, draft, published_at').is('archived_at', null).order('created_at'),
     listarClientes(sb),
     listarEquipe(sb),
+    sb.from('clients').select('id, bio_slug'),
   ])
+  const urlsBio = new Map(dados(bios).map((c) => [c.id, c.bio_slug && slugValido(c.bio_slug) && process.env.BIO_DOMINIO ? urlDaBio(c.bio_slug) : null]))
   return {
     formularios: await Promise.all(dados(linhas).map(async (f) => {
       const rascunho = EntradaFormularioSchema.safeParse(f.draft)
@@ -84,6 +95,7 @@ export async function dadosFormularios(sb: Supabase): Promise<DadosFormularios> 
         nome: e?.nome ?? f.name, descricao: e?.descricao ?? f.description, token: f.token, ativo: f.active, landing: e ? e.landing : f.landing,
         campos: e?.campos ?? f.fields as CampoFormulario[], configuracao: configuracaoFormulario(e?.configuracao ?? f.settings),
         temRascunho: !!f.draft, publicadoEm: f.published_at, totalRespostas: count ?? 0,
+        urlPublica: configuracaoFormulario(f.settings).usarDominioBiolytics ? urlFormularioBiolytics(f.token, f.client_id ? urlsBio.get(f.client_id) : null) : null,
       }
     })),
     listas: gestao.listas.map((l) => ({
@@ -91,7 +103,7 @@ export async function dadosFormularios(sb: Supabase): Promise<DadosFormularios> 
       caminho: l.caminho,
       oferecidos: camposOferecidos(gestao.campos.filter((c) => c.listaIds.includes(l.id))),
     })),
-    clientes: clientes.map((c) => ({ id: c.id, nome: c.nome })),
+    clientes: clientes.map((c) => ({ id: c.id, nome: c.nome, urlBiolytics: urlsBio.get(c.id) ?? null })),
     equipe: equipe.map((p) => ({ id: p.id, nome: p.nome })),
   }
 }
@@ -100,9 +112,14 @@ export type CampoPublico = CampoFormulario & { tipo: TipoPergunta; opcoes: strin
 export type FormularioPublico = { nome: string; descricao: string | null; campos: CampoPublico[]; configuracao?: ConfigFormulario }
 
 /** Usa o cliente de serviço: quem preenche não tem login. Só devolve formulário ativo. */
-export async function buscarFormularioPublico(sb: Supabase, token: string): Promise<FormularioPublico | null> {
-  const { data } = await sb.from('forms').select('name, description, fields, settings').eq('token', token).eq('active', true).is('archived_at', null).maybeSingle()
+export async function buscarFormularioPublico(sb: Supabase, token: string, slugBiolytics?: string): Promise<FormularioPublico | null> {
+  const { data } = await sb.from('forms').select('name, description, fields, settings, client_id').eq('token', token).eq('active', true).is('archived_at', null).maybeSingle()
   if (!data) return null
+  if (slugBiolytics !== undefined) {
+    if (!slugValido(slugBiolytics) || !data.client_id || !configuracaoFormulario(data.settings).usarDominioBiolytics) return null
+    const { data: cliente } = await sb.from('clients').select('bio_slug').eq('id', data.client_id).maybeSingle()
+    if (cliente?.bio_slug !== slugBiolytics) return null
+  }
   const campos = data.fields as CampoFormulario[]
   const ids = campos.map((c) => c.key).filter((k) => /^[0-9a-f-]{36}$/i.test(k))
   const defs = ids.length ? dados(await sb.from('custom_fields').select('id, type, config').in('id', ids)) : []
@@ -116,6 +133,20 @@ export async function buscarFormularioPublico(sb: Supabase, token: string): Prom
       return { ...c, tipo: c.tipo ?? (d?.type as TipoPergunta) ?? (c.key === 'description' ? 'long_text' : 'text'), opcoes: c.opcoes ?? ((d?.config as { options?: string[] } | undefined)?.options ?? []) }
     }),
   }
+}
+
+/** Endereço publicado: um rascunho não altera o link que já está em circulação. */
+export async function linkPublicadoFormulario(sb: Supabase, id: string): Promise<{ token: string; urlPublica: string | null } | null> {
+  const { data, error } = await sb.from('forms').select('token, settings, client_id').eq('id', id).is('archived_at', null).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  let urlPublica: string | null = null
+  if (configuracaoFormulario(data.settings).usarDominioBiolytics && data.client_id && process.env.BIO_DOMINIO) {
+    const { data: cliente, error } = await sb.from('clients').select('bio_slug').eq('id', data.client_id).maybeSingle()
+    if (error) throw error
+    if (cliente?.bio_slug && slugValido(cliente.bio_slug)) urlPublica = urlFormularioBiolytics(data.token, urlDaBio(cliente.bio_slug))
+  }
+  return { token: data.token, urlPublica }
 }
 
 /** Cria a tarefa do formulário e devolve o id dela. */

@@ -20,7 +20,7 @@ const muitosPedidos = () => new NextResponse(null, { status: 429, headers: { 'Re
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname
 
-  // Domínio dedicado às páginas da bio (BIO_DOMINIO): /<cliente> abre a página; qualquer outro caminho é 404 em branco.
+  // Domínio Biolytics (BIO_DOMINIO): /<cliente> abre a bio e /<cliente>/f/<token> abre o formulário do cliente.
   if (hostEhDaBio(req.headers.get('host'), process.env.BIO_DOMINIO)) {
     const interno = caminhoInternoDaBio(caminho)
     if (!interno) return new NextResponse(null, { status: 404 })

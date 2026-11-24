@@ -5,18 +5,17 @@ import type { EntradaFormulario } from '@/dominio/formularios'
 import { exigirAdmin } from '@/infra/supabase/sessao'
 import { criarClienteServidor } from '@/infra/supabase/servidor'
 import { tentar, type Resultado } from '@/servicos/acao'
-import { alternarFormulario, arquivarFormulario, duplicarFormulario, respostasFormulario, salvarFormulario, type RespostaFormulario } from '@/servicos/formularios'
+import { alternarFormulario, arquivarFormulario, duplicarFormulario, linkPublicadoFormulario, respostasFormulario, salvarFormulario, type RespostaFormulario } from '@/servicos/formularios'
 
 const atualizado = () => revalidatePath('/config/formularios')
-export async function salvarFormularioAcao(id: string | null, entrada: EntradaFormulario, publicar = true): Promise<{ ok?: string; erro?: string; id?: string; token?: string }> {
+export async function salvarFormularioAcao(id: string | null, entrada: EntradaFormulario, publicar = true): Promise<{ ok?: string; erro?: string; id?: string; token?: string; urlPublica?: string | null }> {
   await exigirAdmin()
   const sb = await criarClienteServidor()
   let salvo: string | undefined
   const r = await tentar(async () => { salvo = await salvarFormulario(sb, id, entrada, publicar) }, publicar ? 'Formulário publicado.' : 'Rascunho salvo.')
   if (!r?.erro) atualizado()
-  let token: string | undefined
-  if (salvo && !r?.erro) { const { data } = await sb.from('forms').select('token').eq('id', salvo).maybeSingle(); token = data?.token }
-  return { ...r, id: salvo, token }
+  const link = salvo && !r?.erro ? await linkPublicadoFormulario(sb, salvo) : null
+  return { ...r, id: salvo, ...(link ?? {}) }
 }
 export async function alternarFormularioAcao(id: string, ativo: boolean): Promise<Resultado> {
   await exigirAdmin(); const sb = await criarClienteServidor()
