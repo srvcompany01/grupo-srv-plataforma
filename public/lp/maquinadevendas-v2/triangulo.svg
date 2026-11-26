@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 465" fill="none">
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0v32" stroke="#fff" stroke-opacity=".07"/></pattern>
+    <linearGradient id="edge" x1="180" y1="160" x2="430" y2="392" gradientUnits="userSpaceOnUse"><stop stop-color="#ffd5c6"/><stop offset=".38" stop-color="#ff7565"/><stop offset="1" stop-color="#d91b20"/></linearGradient>
+    <linearGradient id="face" x1="300" y1="90" x2="300" y2="350" gradientUnits="userSpaceOnUse"><stop stop-color="#e2483c" stop-opacity=".28"/><stop offset="1" stop-color="#e2483c" stop-opacity=".04"/></linearGradient>
+  </defs>
+  <rect width="600" height="465" fill="url(#grid)"/>
+  <g stroke="#888" stroke-width=".8" opacity=".38" stroke-dasharray="2 6"><circle cx="300" cy="263" r="162"/><path d="M300 25v385M54 356h492"/></g>
+  <path d="m300 91 181 266H119Z" fill="url(#face)"/>
+  <path d="m119 357 181-266v16L130 370Zm0 0h362l-10 13H130Z" fill="#971e20"/>
+  <g stroke="url(#edge)" stroke-linejoin="round"><path d="m300 91 181 266H119Z" stroke-width="3"/><path d="m300 115 157 229H143Z" stroke-width="1.2"/></g>
+  <g stroke="#ff8475" stroke-opacity=".58" stroke-dasharray="4 5"><path d="M300 97v135m-172 120 114-67m230 67-114-67"/></g>
+  <g fill="#17171a" stroke="#ff7366" stroke-width="2"><circle cx="300" cy="91" r="9"/><circle cx="119" cy="357" r="9"/><circle cx="481" cy="357" r="9"/></g>
+  <g fill="#fff"><circle cx="300" cy="91" r="3"/><circle cx="119" cy="357" r="3"/><circle cx="481" cy="357" r="3"/></g>
+  <rect x="218" y="237" width="164" height="58" rx="4" fill="#211a1b" stroke="#bd5049"/>
+  <g fill="#f7f4ef" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"><text x="300" y="276" font-size="32" font-weight="700">Receita</text>
+  <g font-weight="600" font-size="23"><text x="300" y="58">Oferta</text><text x="119" y="407">Demanda</text><text x="481" y="407">Conversão</text></g></g>
+</svg>
