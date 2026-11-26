@@ -17,7 +17,7 @@ import { respostasFormularioAcao, salvarFormularioAcao } from './acoes'
 import s from './estudio.module.css'
 
 const nomeTipo = (c: CampoFormulario) => CATALOGO_PERGUNTAS.find((t) => t.tipo === (c.tipo ?? (c.key === 'description' ? 'long_text' : 'text')))?.nome ?? 'Resposta curta'
-type Aba = 'Editor' | 'Opções' | 'Compartilhar' | 'Respostas'
+type Aba = 'Editor' | 'Opções' | 'Rastreamento' | 'Compartilhar' | 'Respostas'
 export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario: Formulario | null; dados: Pick<DadosFormularios, 'listas' | 'clientes' | 'equipe'>; aoFechar: () => void }) {
   const [id, setId] = useState(formulario?.id ?? null)
   const [token, setToken] = useState(formulario?.token ?? '')
@@ -91,8 +91,8 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
         const indice = falha.path[1]
         if (typeof indice === 'number' && entrada.campos[indice]) setSelecionada(entrada.campos[indice].key)
       } else {
-        setAba('Opções')
         const chave = falha.path[0] === 'configuracao' ? falha.path[1] : falha.path[0]
+        setAba(RASTREIO.has(String(chave)) ? 'Rastreamento' : 'Opções')
         setCampoInvalido(chave === 'whatsappFinal' || chave === 'listaId' || chave === 'responsavelId' || chave === 'clienteId' ? chave : null)
       }
       return
@@ -114,7 +114,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
     if (previa) { setPrevia(false); return }
     const validacao = ConfigFormularioSchema.safeParse(config)
     if (!validacao.success) {
-      setAba('Opções'); setErro(validacao.error.issues[0].message)
+      setAba(RASTREIO.has(String(validacao.error.issues[0].path[0])) ? 'Rastreamento' : 'Opções'); setErro(validacao.error.issues[0].message)
       setCampoInvalido(validacao.error.issues[0].path[0] === 'whatsappFinal' ? 'whatsappFinal' : null)
       return
     }
@@ -134,7 +134,7 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
       <DialogDescription className={s.oculto}>Edite perguntas, personalize o preenchimento, compartilhe o link e consulte as respostas.</DialogDescription>
       <header className={s.topo}>
         <div className={s.identidade}><Button variant="ghost" size="icon" onClick={fechar} aria-label="Voltar aos formulários"><ArrowLeft /></Button><div><strong>{entrada.nome}</strong><span>{!entrada.listaId || !entrada.responsavelId ? 'Defina lista e responsável em Opções' : alterado ? 'Alterações não salvas' : rascunho ? 'Rascunho' : 'Publicado'}</span></div></div>
-        <nav className={s.abas} role="tablist" aria-label="Seções do formulário">{(['Editor', 'Opções', 'Compartilhar', 'Respostas'] as Aba[]).map((a) => <button type="button" role="tab" id={`${prefixo}-${a}`} aria-controls={`${prefixo}-conteudo`} aria-selected={aba === a && !previa} key={a} onClick={() => { setPrevia(false); setAba(a) }}>{a}</button>)}</nav>
+        <nav className={s.abas} role="tablist" aria-label="Seções do formulário">{(['Editor', 'Opções', 'Rastreamento', 'Compartilhar', 'Respostas'] as Aba[]).map((a) => <button type="button" role="tab" id={`${prefixo}-${a}`} aria-controls={`${prefixo}-conteudo`} aria-selected={aba === a && !previa} key={a} onClick={() => { setPrevia(false); setAba(a) }}>{a}</button>)}</nav>
         <div className={s.acoes}><Button variant="secondary" onClick={alternarPrevia}><Eye />{previa ? 'Voltar ao editor' : 'Ver prévia'}</Button><Button variant="secondary" disabled={pendente} onClick={() => salvar(false)}><Save />Salvar rascunho</Button><Button disabled={pendente} onClick={() => salvar(true)}><Globe />{pendente ? 'Salvando…' : 'Publicar'}</Button></div>
       </header>
       {erro && <p id={`${prefixo}-erro`} className={s.erro} role="alert">{erro}</p>}
@@ -180,11 +180,16 @@ export function EstudioFormulario({ formulario, dados, aoFechar }: { formulario:
             <Rotulo nome="Texto do botão de envio"><Input value={config.textoEnvio} onChange={(e) => configurar({ textoEnvio: e.target.value })} /></Rotulo>
           </Bloco>
           <Bloco titulo="Regras de recebimento"><LinhaSwitch nome="Capturar UTMs, GCLID e FBCLID" valor={config.capturarUtm} mudar={(v) => configurar({ capturarUtm: v })} /><Rotulo nome="Impedir repetição pela resposta de"><select value={config.duplicadoPor} onChange={(e) => configurar({ duplicadoPor: e.target.value })}><option value="">Não limitar envios duplicados</option>{entrada.campos.filter((c) => c.tipo !== 'statement').map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></Rotulo><p className={s.ajuda}>O mesmo valor não poderá gerar uma nova tarefa. Para fechar o link, desative o formulário na listagem.</p></Bloco>
+        </div> : aba === 'Rastreamento' ? <div className={s.opcoes}>
+          <Bloco titulo="Meta (Facebook e Instagram)"><Rotulo nome="ID do Pixel da Meta"><Input inputMode="numeric" maxLength={20} placeholder="Ex.: 123456789012345" value={config.metaPixelId} onChange={(e) => configurar({ metaPixelId: e.target.value.replace(/\D/g, '') })} /></Rotulo><Rotulo nome="Token da API de Conversões (opcional)"><Input type="password" autoComplete="off" maxLength={600} placeholder="Cole o token gerado no Gerenciador de Eventos" value={config.metaApiToken} onChange={(e) => configurar({ metaApiToken: e.target.value.trim() })} /></Rotulo><Rotulo nome="Código de teste (opcional)"><Input maxLength={40} placeholder="Ex.: TEST12345" value={config.metaCodigoTeste} onChange={(e) => configurar({ metaCodigoTeste: e.target.value.trim() })} /></Rotulo><p className={s.ajuda}>O Pixel registra PageView ao abrir o formulário e Lead a cada envio. Com o token, o mesmo Lead também vai pelo servidor (API de Conversões), com e-mail, telefone e nome criptografados, e a Meta descarta a duplicata. O token fica só no servidor. Use o código de teste para conferir em Gerenciador de Eventos → Testar eventos e apague depois.</p></Bloco>
+          <Bloco titulo="Google (Google Ads e Analytics)"><Rotulo nome="ID da tag do Google"><Input maxLength={30} placeholder="Ex.: AW-123456789 ou G-XXXXXXX" value={config.googleTagId} onChange={(e) => configurar({ googleTagId: e.target.value.trim().toUpperCase() })} /></Rotulo><Rotulo nome="Rótulo da conversão do Google Ads (opcional)"><Input maxLength={80} placeholder="Ex.: AbC-D_efG-h12_34" value={config.googleRotuloConversao} onChange={(e) => configurar({ googleRotuloConversao: e.target.value.trim() })} /></Rotulo><p className={s.ajuda}>A tag carrega ao abrir o formulário e registra generate_lead a cada envio. Com o rótulo, cada envio conta como conversão no Google Ads. O rótulo fica no snippet da conversão, depois da barra em send_to.</p></Bloco>
+          <p className={s.ajuda}>Nada é disparado na prévia. Publique para valer no link.</p>
         </div> : aba === 'Compartilhar' ? <div className={s.compartilhar}><Bloco titulo="Link público">{url ? <><p className={s.ajuda}>{rascunho ? 'Há um rascunho. O link exibe a última versão publicada.' : 'Compartilhe este endereço para receber respostas sem exigir login.'}</p><Input aria-label="Link público" readOnly value={url} /><div className={s.botoes}><Button onClick={() => copiar(url)}><Copy />Copiar link</Button><Button variant="secondary" asChild><a href={url} target="_blank" rel="noopener noreferrer">Abrir formulário</a></Button></div></> : <p className={s.ajuda}>Salve o formulário e reabra-o na listagem para copiar o link. Publique para liberar os envios.</p>}</Bloco>{url && <Bloco titulo="Incorporar em um site"><p className={s.ajuda}>Cole este código no bloco HTML do seu site.</p><Textarea aria-label="Código de incorporação" readOnly rows={4} value={`<iframe src="${url}" width="100%" height="700" title="Formulário" style="border:0"></iframe>`} /><Button variant="secondary" onClick={() => copiar(`<iframe src="${url}" width="100%" height="700" title="Formulário" style="border:0"></iframe>`)}><Copy />Copiar código</Button></Bloco>}</div> : id ? <Respostas id={id} /> : <div className={s.vazio}><ClipboardList /><h2>Nenhuma resposta ainda</h2><p>Publique seu formulário e compartilhe o link para começar a receber respostas.</p></div>}
       </div>
     </DialogContent>
   </Dialog>
 }
+const RASTREIO = new Set(['metaPixelId', 'metaApiToken', 'metaCodigoTeste', 'googleTagId', 'googleRotuloConversao'])
 function CheckCircleLabel() { return <span aria-hidden>✓</span> }
 function Rotulo({ nome, children }: { nome: string; children: ReactNode }) { return <label className={s.campo}><span>{nome}</span>{children}</label> }
 function LinhaSwitch({ nome, valor, mudar, desabilitado }: { nome: string; valor: boolean; mudar: (v: boolean) => void; desabilitado?: boolean }) { return <div className={s.interruptor}><span>{nome}</span><Interruptor marcado={valor} aoMudar={mudar} desabilitado={desabilitado} rotulo={nome} /></div> }

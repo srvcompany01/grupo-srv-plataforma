@@ -3,7 +3,10 @@
 import { configuracaoFormulario, perguntasVisiveis, validarResposta, whatsappDoFormulario, type MensagemWhatsappFormulario, type RespostasFormulario } from '@/dominio/formularios'
 import { criarClienteAdmin } from '@/infra/supabase/admin'
 import type { Json } from '@/infra/supabase/tipos'
+import { after } from 'next/server'
+import { headers } from 'next/headers'
 import { buscarFormularioPublico, enviarFormulario } from '@/servicos/formularios'
+import { enviarLeadMeta } from '@/servicos/meta-conversoes'
 
 export type RespostaPublica = { ok: true; whatsapp?: MensagemWhatsappFormulario | null } | { erro: string }
 export async function enviarFormularioAcao(token: string, form: FormData): Promise<RespostaPublica> {
@@ -32,7 +35,16 @@ export async function enviarFormularioAcao(token: string, form: FormData): Promi
     respostas.__utm = utm
   }
   const whatsapp = whatsappDoFormulario(formulario.nome, formulario.campos, respostas as RespostasFormulario, configuracaoFormulario(formulario.configuracao), utm)
-  try { await enviarFormulario(sb, token, respostas); return { ok: true, whatsapp } }
+  try {
+    await enviarFormulario(sb, token, respostas)
+    const config = configuracaoFormulario(formulario.configuracao)
+    if (config.metaPixelId && config.metaApiToken) {
+      const h = await headers(), texto = (k: string) => { const v = form.get(k); return typeof v === 'string' && v.trim() ? v.slice(0, 500) : null }
+      const ctx = { eventId: texto('__event_id') ?? crypto.randomUUID(), url: texto('__url') ?? '', ip: h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip'), userAgent: h.get('user-agent'), fbp: texto('__fbp'), fbc: texto('__fbc') }
+      after(() => enviarLeadMeta(config, formulario.nome, formulario.campos, respostas as RespostasFormulario, ctx))
+    }
+    return { ok: true, whatsapp }
+  }
   catch (e) {
     const erro = e as { code?: string; message?: string }
     if (erro.code === 'P0001' && erro.message) return { erro: erro.message }

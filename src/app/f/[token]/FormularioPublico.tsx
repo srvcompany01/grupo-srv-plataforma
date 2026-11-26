@@ -2,8 +2,9 @@
 
 import { ArrowDown, ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, LoaderCircle, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
+import Script from 'next/script'
 import { useId, useState, useTransition, type CSSProperties } from 'react'
-import { configuracaoFormulario, destinoWhatsappFormulario, perguntasVisiveis, pontuacaoFormulario, validarResposta, whatsappDoFormulario, type CampoFormulario, type MensagemWhatsappFormulario, type RespostasFormulario, type ValorResposta } from '@/dominio/formularios'
+import { configuracaoFormulario, type ConfigFormulario, destinoWhatsappFormulario, perguntasVisiveis, pontuacaoFormulario, validarResposta, whatsappDoFormulario, type CampoFormulario, type MensagemWhatsappFormulario, type RespostasFormulario, type ValorResposta } from '@/dominio/formularios'
 import type { FormularioPublico as Dados, CampoPublico } from '@/servicos/formularios'
 import { enviarFormularioAcao } from './acoes'
 import s from './formulario-publico.module.css'
@@ -53,12 +54,20 @@ export function FormularioPublico({ token, formulario, previa = false }: { token
         const valor = parametros.get(k); if (valor) form.set(`__${k}`, valor.slice(0, 500))
       }
     }
+    const eventId = crypto.randomUUID()
+    form.set('__event_id', eventId); form.set('__url', window.location.href.slice(0, 500))
+    const cookie = (n: string) => document.cookie.split('; ').find((c) => c.startsWith(`${n}=`))?.slice(n.length + 1)
+    const fbclid = new URLSearchParams(window.location.search).get('fbclid')
+    const fbp = cookie('_fbp'), fbc = cookie('_fbc') ?? (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined)
+    if (fbp) form.set('__fbp', fbp); if (fbc) form.set('__fbc', fbc)
     setErro(null)
-    try { const r = await enviarFormularioAcao(token, form); if ('erro' in r) setErro(r.erro); else { setWhatsapp(r.whatsapp ?? null); setEnviado(true) } }
+    try { const r = await enviarFormularioAcao(token, form); if ('erro' in r) setErro(r.erro); else { setWhatsapp(r.whatsapp ?? null); setEnviado(true); registrarConversao(config, formulario.nome, eventId) } }
     catch { setErro('Não foi possível enviar agora. Suas respostas foram mantidas; tente de novo.') }
   })
+  const rastreio = !previa && <Rastreamento config={config} />
   return (
     <section aria-label={formulario.nome} className={s.pagina} data-modo={config.modo} data-previa={previa} style={estilo}>
+      {rastreio}
       {previa && <div className={s.avisoPrevia}>Prévia · nenhum dado será enviado</div>}
       {conversa && <div className={s.progresso} role="progressbar" aria-label="Progresso do formulário" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso}><span style={{ width: `${progresso}%` }} /></div>}
       {config.logo && <div className={s.logo}><Image unoptimized width={150} height={64} src={config.logo} alt="Logotipo" referrerPolicy="no-referrer" /></div>}
@@ -126,4 +135,23 @@ export function CampoPergunta({ campo: c, valor, aoMudar, numero }: { campo: Cam
     {c.imagem && <div className={s.midia}><Image unoptimized width={800} height={400} src={c.imagem} alt="Imagem da pergunta" referrerPolicy="no-referrer" /></div>}
     {tipo === 'statement' ? null : tipo === 'multiple_choice' ? <div className={s.escolhas} role="group" aria-label={c.label}>{opcoes.map((o, i) => <label key={o} className={s.opcao} data-marcada={valores.includes(o)}><input type={c.multipla ? 'checkbox' : 'radio'} name={c.key} value={o} checked={valores.includes(o)} onChange={(e) => aoMudar(c.multipla ? e.target.checked ? [...valores, o] : valores.filter((v) => v !== o) : o)} /><span className={s.letra}>{String.fromCharCode(65 + i)}</span><span>{o}</span>{valores.includes(o) && <Check aria-hidden />}</label>)}</div> : tipo === 'rating' ? <div className={s.escala} role="group" aria-label={c.label}>{Array.from({ length: Math.min(10, Math.max(2, c.maximo ?? 5)) }, (_, i) => i + 1).map((n) => <button key={n} className={s.nota} aria-pressed={valor === n} type="button" onClick={() => aoMudar(n)}>{n}</button>)}</div> : tipo === 'checkbox' ? <div className={s.escolhas} role="group" aria-label={c.label}>{[true, false].map((v) => <label key={String(v)} className={s.opcao} data-marcada={valor === v}><input type="radio" name={c.key} checked={valor === v} onChange={() => aoMudar(v)} />{v ? 'Sim' : 'Não'}</label>)}</div> : tipo === 'terms' ? <label className={s.termos}><input id={id} type="checkbox" checked={valor === true} onChange={(e) => aoMudar(e.target.checked)} />Li e concordo com os termos apresentados.</label> : tipo === 'dropdown' ? <select id={id} aria-describedby={c.descricao ? `${id}-ajuda` : undefined} required={c.required} value={String(valor ?? '')} onChange={(e) => aoMudar(e.target.value)}><option value="" disabled={c.required}>{c.placeholder || 'Selecione uma opção'}</option>{opcoes.map((o) => <option key={o} value={o}>{o}</option>)}</select> : longo ? <textarea id={id} name={c.key} aria-describedby={c.descricao ? `${id}-ajuda` : undefined} rows={4} required={c.required} maxLength={c.limite ?? 20000} value={String(valor ?? '')} placeholder={c.placeholder || 'Escreva sua resposta…'} onChange={(e) => aoMudar(e.target.value)} /> : <input id={id} name={c.key} aria-describedby={c.descricao ? `${id}-ajuda` : undefined} required={c.required} maxLength={c.key === 'title' ? 200 : c.limite ?? 20000} min={c.minimo} max={c.maximo} step={tipo === 'number' || tipo === 'money' ? 'any' : undefined} type={tipo === 'email' ? 'email' : tipo === 'phone' ? 'tel' : tipo === 'date' ? 'date' : tipo === 'site' ? 'url' : tipo === 'number' || tipo === 'money' ? 'number' : 'text'} autoComplete={tipo === 'name' ? 'name' : tipo === 'email' ? 'email' : tipo === 'phone' ? 'tel' : undefined} value={String(valor ?? '')} placeholder={c.placeholder || (tipo === 'date' ? undefined : 'Sua resposta…')} onChange={(e) => aoMudar((tipo === 'number' || tipo === 'money') && e.target.value !== '' ? Number(e.target.value) : e.target.value)} />}
   </div>
+}
+
+type JanelaRastreio = Window & { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void }
+/** Pixel da Meta e tag do Google. IDs já validados no schema (só letras, números e hífen). */
+function Rastreamento({ config }: { config: ConfigFormulario }) {
+  return <>
+    {config.metaPixelId && <Script id="pixel-meta" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${JSON.stringify(config.metaPixelId)});fbq('track','PageView');`}</Script>}
+    {config.googleTagId && <><Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(config.googleTagId)}`} strategy="afterInteractive" /><Script id="tag-google" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config',${JSON.stringify(config.googleTagId)});`}</Script></>}
+  </>
+}
+function registrarConversao(config: ConfigFormulario, nome: string, eventId: string) {
+  const w = window as JanelaRastreio
+  try {
+    if (config.metaPixelId) w.fbq?.('track', 'Lead', { content_name: nome }, { eventID: eventId })
+    if (config.googleTagId) {
+      w.gtag?.('event', 'generate_lead', { form_name: nome })
+      if (config.googleRotuloConversao) w.gtag?.('event', 'conversion', { send_to: `${config.googleTagId}/${config.googleRotuloConversao}`, transaction_id: eventId })
+    }
+  } catch { /* rastreamento nunca impede o envio */ }
 }

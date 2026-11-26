@@ -39,12 +39,22 @@ export const ConfigFormularioSchema = z.object({
   destinoFinal: z.enum(['link', 'whatsapp']).default('link').describe('whatsapp abre o número cadastrado com um resumo completo das respostas, depois de salvar o envio.'),
   whatsappFinal: z.string().trim().max(40, 'O número de WhatsApp está muito longo.').default('').describe('Número do botão final com DDI ou DDD brasileiro.'),
   protocoloFinal: z.string().trim().max(120, 'O protocolo deve ter até 120 caracteres.').refine((v) => !/[\r\n]/.test(v), 'Informe o protocolo em uma única linha.').default('').describe('Texto opcional no rodapé da mensagem, por exemplo Meta Ads.'),
+  metaPixelId: z.string().trim().regex(/^(\d{5,20})?$/, 'O ID do Pixel da Meta tem apenas números.').default('').describe('Pixel da Meta: PageView ao abrir e Lead ao enviar.'),
+  metaApiToken: z.string().trim().max(600, 'O token da API de Conversões está muito longo.').regex(/^[A-Za-z0-9_-]*$/, 'Token da API de Conversões inválido.').default('').describe('Token da API de Conversões da Meta (servidor). Nunca vai para o navegador.'),
+  metaCodigoTeste: z.string().trim().max(40).regex(/^[A-Za-z0-9_-]*$/, 'Código de teste inválido.').default('').describe('test_event_code opcional para validar no Gerenciador de Eventos.'),
+  googleTagId: z.string().trim().regex(/^((AW|G|GT)-[A-Za-z0-9]{4,20})?$/, 'Use o ID da tag do Google no formato AW-123456789 ou G-XXXXXXX.').default('').describe('Tag do Google (Google Ads AW- ou Analytics G-).'),
+  googleRotuloConversao: z.string().trim().max(80).regex(/^[A-Za-z0-9_-]*$/, 'Rótulo de conversão inválido.').default('').describe('Rótulo da conversão do Google Ads disparada ao enviar.'),
   textoEnvio: z.string().trim().min(1).max(50).default('Enviar respostas'), duplicadoPor: z.string().max(80).default(''), capturarUtm: z.boolean().default(true),
 }).superRefine((c, ctx) => {
+  if (c.metaApiToken && !c.metaPixelId) ctx.addIssue({ code: 'custom', path: ['metaPixelId'], message: 'Informe o ID do Pixel da Meta para usar a API de Conversões.' })
+  if (c.googleRotuloConversao && !c.googleTagId.startsWith('AW-')) ctx.addIssue({ code: 'custom', path: ['googleTagId'], message: 'O rótulo de conversão exige uma tag do Google Ads (AW-…).' })
   if (c.destinoFinal === 'whatsapp' && !numeroWhatsappFormulario(c.whatsappFinal)) ctx.addIssue({ code: 'custom', path: ['whatsappFinal'], message: 'Informe um WhatsApp válido com DDD (Brasil) ou DDI, por exemplo +55 (91) 99999-9999.' })
 })
 export type ConfigFormulario = z.infer<typeof ConfigFormularioSchema>
 export function configuracaoFormulario(valor?: unknown): ConfigFormulario { return ConfigFormularioSchema.parse(valor ?? {}) }
+
+/** Remove o que é segredo do servidor antes de entregar a configuração ao navegador. */
+export function configuracaoParaNavegador(c: ConfigFormulario): ConfigFormulario { return { ...c, metaApiToken: c.metaApiToken ? 'configurado' : '' } }
 
 /** A base vem do cadastro do cliente, nunca de um domínio digitado no formulário. */
 export function urlFormularioBiolytics(token: string, urlBiolytics: string | null | undefined): string | null {
