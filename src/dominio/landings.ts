@@ -6,6 +6,7 @@
  */
 export const LANDINGS = [
   { slug: 'maquinadevendas', nome: 'Máquina de Vendas', source: 'landing_page_maquina_de_vendas' },
+  { slug: 'maquinadevendas-v2', nome: 'Máquina de Vendas V2', source: 'landing_page_maquina_de_vendas_v2' },
   { slug: 'calculadora', nome: 'Calculadora de ROI', source: null },
 ] as const
 
